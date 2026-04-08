@@ -181,13 +181,6 @@ const IS = { background:"#0D1117",border:"1px solid #30363D",borderRadius:6,colo
 
 export default function App() {
   const [authed, setAuthed] = useState(false);
-
-  useEffect(() => {
-    if (sessionStorage.getItem(AUTH_KEY) === "1") setAuthed(true);
-  }, []);
-
-  if (!authed) return <PasswordGate onAuth={() => setAuthed(true)} />;
-
   const [files,setFiles]=useState(SAMPLE);
   const [view,setView]=useState("active");
   const [activePhase,setActivePhase]=useState(null);
@@ -196,8 +189,24 @@ export default function App() {
   const [detail,setDetail]=useState(null);
   const [loaded,setLoaded]=useState(false);
 
-  useEffect(()=>{(async()=>{try{const r=await window.storage.get("pipe_v3");if(r?.value)setFiles(JSON.parse(r.value));}catch{}setLoaded(true);})();},[]);
-  useEffect(()=>{if(!loaded)return;(async()=>{try{await window.storage.set("pipe_v3",JSON.stringify(files));}catch{}})();},[files,loaded]);
+  useEffect(() => {
+    if (sessionStorage.getItem(AUTH_KEY) === "1") setAuthed(true);
+  }, []);
+
+  useEffect(()=>{
+    try{
+      const saved=localStorage.getItem("pipe_v3");
+      if(saved)setFiles(JSON.parse(saved));
+    }catch{}
+    setLoaded(true);
+  },[]);
+
+  useEffect(()=>{
+    if(!loaded)return;
+    try{localStorage.setItem("pipe_v3",JSON.stringify(files));}catch{}
+  },[files,loaded]);
+
+  if (!authed) return <PasswordGate onAuth={() => setAuthed(true)} />;
 
   const active=files.filter(f=>f.stage!==CLOSED_STAGE);
   const closed=files.filter(f=>f.stage===CLOSED_STAGE);
