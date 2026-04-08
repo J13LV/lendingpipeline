@@ -232,10 +232,46 @@ export default function App() {
     const unsub = onSnapshot(PIPELINE_DOC, (snap) => {
       if(snap.exists()){
         const data = snap.data();
-        if(data.files) setFiles(data.files);
+        if(data.files && data.files.length > 0){
+          setFiles(data.files);
+          setLoaded(true);
+        } else {
+          // Firebase empty — check localStorage for migration
+          try {
+            const local = localStorage.getItem("pipe_v3");
+            if(local){
+              const parsed = JSON.parse(local);
+              if(parsed && parsed.length > 0){
+                setFiles(parsed);
+                // Push local data up to Firebase immediately
+                setDoc(PIPELINE_DOC, {files: parsed}, {merge:true});
+              }
+            }
+          } catch{}
+          setLoaded(true);
+        }
+      } else {
+        // No Firebase doc yet — migrate from localStorage
+        try {
+          const local = localStorage.getItem("pipe_v3");
+          if(local){
+            const parsed = JSON.parse(local);
+            if(parsed && parsed.length > 0){
+              setFiles(parsed);
+              setDoc(PIPELINE_DOC, {files: parsed}, {merge:true});
+            }
+          }
+        } catch{}
+        setLoaded(true);
       }
+    }, ()=>{
+      // Firebase error — fall back to localStorage
+      try {
+        const local = localStorage.getItem("pipe_v3");
+        if(local) setFiles(JSON.parse(local));
+      } catch{}
       setLoaded(true);
-    }, ()=>setLoaded(true));
+    });
     return ()=>unsub();
   },[]);
 
