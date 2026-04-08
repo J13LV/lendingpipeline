@@ -180,7 +180,12 @@ function urgency(f) {
 const IS = { background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",padding:"9px 12px",fontSize:13,fontFamily:"'DM Mono','Courier New',monospace",width:"100%" };
 
 export default function App() {
-  const [authed, setAuthed] = useState(() => sessionStorage.getItem(AUTH_KEY) === "1");
+  const [authed, setAuthed] = useState(false);
+
+  useEffect(() => {
+    if (sessionStorage.getItem(AUTH_KEY) === "1") setAuthed(true);
+  }, []);
+
   if (!authed) return <PasswordGate onAuth={() => setAuthed(true)} />;
 
   const [files,setFiles]=useState(SAMPLE);
