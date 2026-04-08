@@ -1,4 +1,19 @@
 import { useState, useEffect } from "react";
+import { initializeApp } from "firebase/app";
+import { getFirestore, doc, setDoc, onSnapshot } from "firebase/firestore";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAiWBmWJ0eogqBuGiPnBzmv7kE76gc-SGA",
+  authDomain: "mortage-pipeline.firebaseapp.com",
+  projectId: "mortage-pipeline",
+  storageBucket: "mortage-pipeline.firebasestorage.app",
+  messagingSenderId: "55441151195",
+  appId: "1:55441151195:web:61fabc6bc0b1fafd8ca8fe"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp);
+const PIPELINE_DOC = doc(db, "pipeline", "main");
 
 const APP_PASSWORD = "DelValle2026";
 const AUTH_KEY = "dv_pipeline_auth";
@@ -213,16 +228,24 @@ export default function App() {
   }, []);
 
   useEffect(()=>{
-    try{
-      const saved=localStorage.getItem("pipe_v3");
-      if(saved)setFiles(JSON.parse(saved));
-    }catch{}
-    setLoaded(true);
+    // Real-time listener — all devices sync automatically
+    const unsub = onSnapshot(PIPELINE_DOC, (snap) => {
+      if(snap.exists()){
+        const data = snap.data();
+        if(data.files) setFiles(data.files);
+      }
+      setLoaded(true);
+    }, ()=>setLoaded(true));
+    return ()=>unsub();
   },[]);
 
   useEffect(()=>{
     if(!loaded)return;
-    try{localStorage.setItem("pipe_v3",JSON.stringify(files));}catch{}
+    // Save to Firebase — all devices update instantly
+    setDoc(PIPELINE_DOC, {files}, {merge:true}).catch(()=>{
+      // Fallback to localStorage if Firebase fails
+      try{localStorage.setItem("pipe_v3",JSON.stringify(files));}catch{}
+    });
   },[files,loaded]);
 
   if (!authed) return <PasswordGate onAuth={() => setAuthed(true)} />;
