@@ -1,5 +1,110 @@
 import { useState, useEffect } from "react";
 
+const APP_PASSWORD = "DelValle2026";
+const AUTH_KEY = "dv_pipeline_auth";
+
+function PasswordGate({ onAuth }) {
+  const [pw, setPw] = useState("");
+  const [error, setError] = useState(false);
+  const [shake, setShake] = useState(false);
+
+  function attempt() {
+    if (pw === APP_PASSWORD) {
+      sessionStorage.setItem(AUTH_KEY, "1");
+      onAuth();
+    } else {
+      setError(true);
+      setShake(true);
+      setPw("");
+      setTimeout(() => setShake(false), 600);
+    }
+  }
+
+  return (
+    <div style={{
+      background:"#0D1117", minHeight:"100vh", display:"flex",
+      alignItems:"center", justifyContent:"center", fontFamily:"'DM Mono','Courier New',monospace"
+    }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0;}
+        @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+        .shake{animation:shake .5s ease;}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+        .fade{animation:fadeIn .4s ease;}
+        input:focus{outline:none;}
+      `}</style>
+      <div className="fade" style={{
+        background:"#161B22", border:"1px solid #30363D", borderRadius:16,
+        padding:"40px 36px", width:"100%", maxWidth:400,
+        display:"flex", flexDirection:"column", alignItems:"center", gap:24
+      }}>
+        {/* Logo mark */}
+        <div style={{
+          width:56, height:56, borderRadius:"50%",
+          background:"linear-gradient(135deg,#C8922A,#F5A623)",
+          display:"flex", alignItems:"center", justifyContent:"center",
+          fontFamily:"Syne", fontWeight:800, fontSize:22, color:"#0D1117"
+        }}>DV</div>
+
+        {/* Title */}
+        <div style={{textAlign:"center"}}>
+          <div style={{fontFamily:"Syne", fontWeight:800, fontSize:22, color:"#E6EDF3", letterSpacing:"-0.5px"}}>
+            PIPELINE
+          </div>
+          <div style={{fontSize:11, color:"#484F58", letterSpacing:"2px", marginTop:4}}>
+            MORTGAGE BY DELVALLE · PRMG 541-A
+          </div>
+        </div>
+
+        {/* Input */}
+        <div className={shake ? "shake" : ""} style={{width:"100%", display:"flex", flexDirection:"column", gap:8}}>
+          <div style={{fontSize:11, color:"#484F58", letterSpacing:"1px"}}>ACCESS PASSWORD</div>
+          <input
+            type="password"
+            value={pw}
+            onChange={e => { setPw(e.target.value); setError(false); }}
+            onKeyDown={e => e.key === "Enter" && attempt()}
+            placeholder="Enter password..."
+            autoFocus
+            style={{
+              background:"#0D1117",
+              border: error ? "1px solid #E85D75" : "1px solid #30363D",
+              borderRadius:8, padding:"12px 14px",
+              color:"#E6EDF3", fontSize:14,
+              fontFamily:"'DM Mono','Courier New',monospace",
+              width:"100%", transition:"border .15s"
+            }}
+          />
+          {error && (
+            <div style={{fontSize:12, color:"#E85D75"}}>Incorrect password. Try again.</div>
+          )}
+        </div>
+
+        {/* Button */}
+        <button
+          onClick={attempt}
+          style={{
+            width:"100%", background:"#C8922A", color:"#0D1117",
+            borderRadius:8, padding:"13px 0", fontFamily:"DM Mono",
+            fontSize:13, fontWeight:500, border:"none", cursor:"pointer",
+            transition:"opacity .15s"
+          }}
+          onMouseOver={e => e.target.style.opacity=".85"}
+          onMouseOut={e => e.target.style.opacity="1"}
+        >
+          ACCESS PIPELINE →
+        </button>
+
+        <div style={{fontSize:11, color:"#30363D", textAlign:"center"}}>
+          Authorized personnel only · PRMG Branch 541-A
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 const PHASES = [
   { id: 1, label: "Pre-Qual", short: "PQ", color: "#4A90D9", bg: "#1a2a3a", stages: ["Lead Inquiry","Needs Assessment","Credit Pull","Income Verification","Pre-Qualification"] },
   { id: 2, label: "House Hunt", short: "HH", color: "#7EC8A4", bg: "#1a2e25", stages: ["Realtor Connected","Active Search","Offer Submitted","Under Contract"] },
@@ -75,6 +180,9 @@ function urgency(f) {
 const IS = { background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",padding:"9px 12px",fontSize:13,fontFamily:"'DM Mono','Courier New',monospace",width:"100%" };
 
 export default function App() {
+  const [authed, setAuthed] = useState(() => sessionStorage.getItem(AUTH_KEY) === "1");
+  if (!authed) return <PasswordGate onAuth={() => setAuthed(true)} />;
+
   const [files,setFiles]=useState(SAMPLE);
   const [view,setView]=useState("active");
   const [activePhase,setActivePhase]=useState(null);
