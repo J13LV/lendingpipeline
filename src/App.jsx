@@ -1366,6 +1366,7 @@ function AddModal({profile, onClose, onAdd}){
   const [stage,setStage]=useState("Lead Inquiry");
   const [closing,setClosing]=useState("");
   const [note,setNote]=useState("");
+  const [referralPartner,setReferralPartner]=useState("");
   // Default LO to the current user if they're admin/lo, otherwise Jose
   const defaultLo = (profile?.role === "admin" || profile?.role === "lo") ? profile.name : JOSE_LO;
   const [lo,setLo]=useState(defaultLo);
@@ -1374,7 +1375,16 @@ function AddModal({profile, onClose, onAdd}){
       <div className="fi" style={{background:"#161B22",border:"1px solid #30363D",borderRadius:12,padding:24,width:"100%",maxWidth:440,display:"flex",flexDirection:"column",gap:14}} onClick={e=>e.stopPropagation()}>
         <div style={{fontFamily:"Syne",fontWeight:800,fontSize:18,color:"#E6EDF3"}}>NEW FILE</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-          {[["BORROWER NAME *","text",borrower,setBorrower,"Full legal name","1/-1"],["LOAN AMOUNT","text",loan,setLoan,"350000","auto"],["LOAN TYPE","select",type,setType,null,"auto"],["STARTING STAGE","select2",stage,setStage,null,"1/-1"],["LOAN OFFICER","text",lo,setLo,"Jose Del Valle","1/-1"],["EXPECTED CLOSING DATE","date",closing,setClosing,null,"1/-1"],["NOTES","text",note,setNote,"Lead source, agent, key info...","1/-1"]].map(([l,t,v,sv,ph,gc])=>(
+          {[
+            ["BORROWER NAME *","text",borrower,setBorrower,"Full legal name","1/-1"],
+            ["LOAN AMOUNT","text",loan,setLoan,"350000","auto"],
+            ["LOAN TYPE","select",type,setType,null,"auto"],
+            ["STARTING STAGE","select2",stage,setStage,null,"1/-1"],
+            ["LOAN OFFICER","text",lo,setLo,"Jose Del Valle","1/-1"],
+            ["REFERRAL PARTNER","text",referralPartner,setReferralPartner,"Agent name, CPA, Smart Bee, walk-in...","1/-1"],
+            ["EXPECTED CLOSING DATE","date",closing,setClosing,null,"1/-1"],
+            ["NOTES","text",note,setNote,"Key info, conditions, special notes...","1/-1"],
+          ].map(([l,t,v,sv,ph,gc])=>(
             <div key={l} style={{gridColumn:gc}}>
               <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{l}</div>
               {t==="select"?<select value={v} onChange={e=>sv(e.target.value)} style={IS}>{LOAN_TYPE_GROUPS.map(g=><optgroup key={g.group} label={g.group}>{g.types.map(x=><option key={x}>{x}</option>)}</optgroup>)}</select>
@@ -1384,7 +1394,7 @@ function AddModal({profile, onClose, onAdd}){
           ))}
         </div>
         <div style={{display:"flex",gap:8}}>
-          <button className="hov" onClick={()=>{if(borrower.trim())onAdd({id:`f${Date.now()}`,borrower:borrower.trim(),loan:parseInt(loan)||0,type,stage,daysInStage:0,closing,note,bps:null,lo:lo||JOSE_LO,closedAt:null});}}
+          <button className="hov" onClick={()=>{if(borrower.trim())onAdd({id:`f${Date.now()}`,borrower:borrower.trim(),loan:parseInt(loan)||0,type,stage,daysInStage:0,closing,note,bps:null,lo:lo||JOSE_LO,referralPartner:referralPartner.trim()||null,closedAt:null});}}
             style={{flex:2,background:"#F5A623",color:"#0D1117",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,fontWeight:500}}>ADD TO PIPELINE</button>
           <button className="hov" onClick={onClose}
             style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12}}>CANCEL</button>
