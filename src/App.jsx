@@ -214,7 +214,7 @@ const IS = { background:"#0D1117",border:"1px solid #30363D",borderRadius:6,colo
 
 export default function App() {
   const [authed, setAuthed] = useState(false);
-  const [files,setFiles]=useState(SAMPLE);
+  const [files,setFiles]=useState([]);
   const [view,setView]=useState("active");
   const [commUnlocked,setCommUnlocked]=useState(false);
   const [activePhase,setActivePhase]=useState(null);
@@ -222,6 +222,7 @@ export default function App() {
   const [showAdd,setShowAdd]=useState(false);
   const [detail,setDetail]=useState(null);
   const [loaded,setLoaded]=useState(false);
+  const [saveStatus,setSaveStatus]=useState("idle"); // idle | saving | saved | error
 
   useEffect(() => {
     if (sessionStorage.getItem(AUTH_KEY) === "1") setAuthed(true);
@@ -245,9 +246,14 @@ export default function App() {
                 setFiles(parsed);
                 // Push local data up to Firebase immediately
                 setDoc(PIPELINE_DOC, {files: parsed}, {merge:true});
+                setLoaded(true);
+                return;
               }
             }
           } catch{}
+          // First-time user — seed sample data
+          setFiles(SAMPLE);
+          setDoc(PIPELINE_DOC, {files: SAMPLE}, {merge:true});
           setLoaded(true);
         }
       } else {
@@ -259,9 +265,14 @@ export default function App() {
             if(parsed && parsed.length > 0){
               setFiles(parsed);
               setDoc(PIPELINE_DOC, {files: parsed}, {merge:true});
+              setLoaded(true);
+              return;
             }
           }
         } catch{}
+        // First-time user, no local data — seed sample
+        setFiles(SAMPLE);
+        setDoc(PIPELINE_DOC, {files: SAMPLE}, {merge:true});
         setLoaded(true);
       }
     }, ()=>{
@@ -271,6 +282,7 @@ export default function App() {
         if(local) setFiles(JSON.parse(local));
       } catch{}
       setLoaded(true);
+      setSaveStatus("error");
     });
     return ()=>unsub();
   },[]);
@@ -278,13 +290,99 @@ export default function App() {
   useEffect(()=>{
     if(!loaded)return;
     // Save to Firebase — all devices update instantly
-    setDoc(PIPELINE_DOC, {files}, {merge:true}).catch(()=>{
+    setSaveStatus("saving");
+    setDoc(PIPELINE_DOC, {files}, {merge:true}).then(()=>{
+      // Also save a local backup mirror — belt and suspenders
+      try{localStorage.setItem("pipe_v3",JSON.stringify(files));}catch{}
+      setSaveStatus("saved");
+      setTimeout(()=>setSaveStatus(s=>s==="saved"?"idle":s), 2000);
+    }).catch(()=>{
       // Fallback to localStorage if Firebase fails
       try{localStorage.setItem("pipe_v3",JSON.stringify(files));}catch{}
+      setSaveStatus("error");
     });
   },[files,loaded]);
 
+  // Export current pipeline as a JSON backup file (download to user's computer)
+  function exportBackup(){
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      version: "1.0",
+      branch: "PRMG 541-A",
+      fileCount: files.length,
+      files: files,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `pipeline-backup-${new Date().toISOString().split("T")[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // Import a JSON backup file and replace current pipeline (with confirmation)
+  function importBackup(event){
+    const file = event.target.files?.[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const parsed = JSON.parse(e.target.result);
+        const incomingFiles = Array.isArray(parsed) ? parsed : parsed.files;
+        if(!Array.isArray(incomingFiles) || incomingFiles.length === 0){
+          alert("This file does not look like a valid pipeline backup. No files found.");
+          return;
+        }
+        const ok = confirm(
+          `Restore ${incomingFiles.length} loan files from backup?\n\n` +
+          `This will REPLACE your current pipeline of ${files.length} files.\n\n` +
+          `Tip: export a backup of the current pipeline first if you want to be safe.`
+        );
+        if(ok){
+          setFiles(incomingFiles);
+          alert(`Restored ${incomingFiles.length} files from backup.`);
+        }
+      } catch(err){
+        alert("Could not read backup file. Make sure it is a valid JSON file exported from this app.");
+      }
+    };
+    reader.readAsText(file);
+    // Reset the input so the same file can be re-selected later if needed
+    event.target.value = "";
+  }
+
   if (!authed) return <PasswordGate onAuth={() => setAuthed(true)} />;
+
+  if (!loaded) {
+    return (
+      <div style={{
+        background:"#0D1117", minHeight:"100vh",
+        display:"flex", flexDirection:"column",
+        alignItems:"center", justifyContent:"center",
+        fontFamily:"'DM Mono','Courier New',monospace", gap:18
+      }}>
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
+          @keyframes spin{to{transform:rotate(360deg)}}
+          @keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+          .spinner{width:40px;height:40px;border:3px solid #21262D;border-top-color:#F5A623;border-radius:50%;animation:spin .8s linear infinite;}
+          .pulse{animation:pulse 1.4s ease-in-out infinite;}
+        `}</style>
+        <div className="spinner"/>
+        <div style={{textAlign:"center"}}>
+          <div style={{fontFamily:"Syne",fontWeight:800,fontSize:18,color:"#E6EDF3",letterSpacing:"-0.5px"}}>
+            LOADING PIPELINE
+          </div>
+          <div className="pulse" style={{fontSize:11,color:"#484F58",letterSpacing:"2px",marginTop:6}}>
+            SYNCING WITH CLOUD DATABASE…
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const active=files.filter(f=>f.stage!==CLOSED_STAGE);
   const closed=files.filter(f=>f.stage===CLOSED_STAGE);
@@ -335,8 +433,31 @@ export default function App() {
           ))}
         </div>
         <div style={{marginLeft:"auto",display:"flex",gap:8,alignItems:"center"}}>
+          {/* Save status indicator — quietly shows the user that data is persisting */}
+          {saveStatus !== "idle" && (
+            <div style={{
+              fontSize:10, letterSpacing:"1px", padding:"4px 10px", borderRadius:12,
+              background: saveStatus==="saving" ? "#21262D" : saveStatus==="saved" ? "rgba(6,214,160,.1)" : "rgba(232,93,117,.15)",
+              color: saveStatus==="saving" ? "#8B949E" : saveStatus==="saved" ? "#06D6A0" : "#E85D75",
+              border: "1px solid " + (saveStatus==="saving" ? "#30363D" : saveStatus==="saved" ? "#06D6A0" : "#E85D75"),
+              fontFamily:"DM Mono"
+            }}>
+              {saveStatus==="saving" ? "● SAVING…" : saveStatus==="saved" ? "✓ SAVED" : "⚠ SAVE FAILED"}
+            </div>
+          )}
           <input placeholder="Search borrower..." value={search} onChange={e=>setSearch(e.target.value)}
             style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:6,padding:"7px 12px",color:"#E6EDF3",fontSize:12,width:170}}/>
+          <button className="hov" onClick={exportBackup}
+            title="Download a JSON backup of your entire pipeline. Save it to Google Drive weekly."
+            style={{background:"#21262D",color:"#8B949E",borderRadius:6,padding:"8px 12px",fontFamily:"DM Mono",fontSize:11,border:"1px solid #30363D"}}>
+            ↓ BACKUP
+          </button>
+          <label className="hov"
+            title="Restore your pipeline from a JSON backup file"
+            style={{background:"#21262D",color:"#8B949E",borderRadius:6,padding:"8px 12px",fontFamily:"DM Mono",fontSize:11,border:"1px solid #30363D",cursor:"pointer"}}>
+            ↑ RESTORE
+            <input type="file" accept="application/json,.json" onChange={importBackup} style={{display:"none"}}/>
+          </label>
           <button className="hov" onClick={()=>setShowAdd(true)}
             style={{background:"#F5A623",color:"#0D1117",borderRadius:6,padding:"8px 16px",fontFamily:"DM Mono",fontSize:12,fontWeight:500}}>
             + NEW FILE
