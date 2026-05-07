@@ -1216,15 +1216,19 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
   const fs2={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",padding:"8px 10px",fontSize:13,fontFamily:"'DM Mono','Courier New',monospace",width:"100%"};
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
-      <div className="fi" style={{background:"#161B22",border:"1px solid #30363D",borderRadius:12,padding:24,width:"100%",maxWidth:480,display:"flex",flexDirection:"column",gap:14}} onClick={e=>e.stopPropagation()}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+      <div className="fi" style={{background:"#161B22",border:"1px solid #30363D",borderRadius:12,width:"100%",maxWidth:480,maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
+        {/* HEADER — stays pinned at top */}
+        <div style={{padding:"20px 24px 16px",borderBottom:"1px solid #21262D",display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexShrink:0}}>
           <div>
             <div style={{fontFamily:"Syne",fontWeight:800,fontSize:18,color:"#E6EDF3"}}>{file.borrower}</div>
             <div style={{fontSize:12,color:"#8B949E"}}>{loanType} · ${parseInt(loanAmt||0).toLocaleString()}</div>
             {isClosed&&<div style={{marginTop:4,fontSize:11,color:"#06D6A0",fontWeight:500}}>✓ CLOSED — {file.closedAt}</div>}
           </div>
-          <button onClick={onClose} style={{background:"transparent",border:"none",color:"#484F58",fontSize:18,cursor:"pointer"}}>✕</button>
+          <button onClick={onClose} style={{background:"transparent",border:"none",color:"#484F58",fontSize:20,cursor:"pointer",padding:"0 0 0 12px"}}>✕</button>
         </div>
+
+        {/* SCROLLABLE BODY — form fields, stage, dates, notes, activity */}
+        <div style={{flex:1,overflowY:"auto",padding:"16px 24px",display:"flex",flexDirection:"column",gap:14}}>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
           <div>
             <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>LOAN TYPE</div>
@@ -1327,8 +1331,11 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
             )}
           </div>
         )}
+        </div>
+        {/* END SCROLLABLE BODY */}
 
-        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+        {/* FOOTER — pinned at bottom, always reachable */}
+        <div style={{padding:"14px 24px",borderTop:"1px solid #21262D",background:"#161B22",flexShrink:0,display:"flex",gap:8,flexWrap:"wrap"}}>
           <button className="hov" onClick={()=>{
             // Only include bps in the patch if user is admin (to avoid clobbering it with empty value)
             const patch = {note,closing,type:loanType,loan:parseInt(loanAmt)||file.loan,lo:lo||JOSE_LO,referralPartner};
@@ -1336,22 +1343,22 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
             onSave(patch);
             onClose();
           }}
-            style={{flex:2,background:"#F5A623",color:"#0D1117",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,fontWeight:500}}>SAVE</button>
+            style={{flex:2,background:"#F5A623",color:"#0D1117",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,fontWeight:500,border:"none",cursor:"pointer"}}>SAVE</button>
           {isClosed?(
             <button className="hov" onClick={onReopen}
-              style={{flex:2,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12}}>REOPEN FILE</button>
+              style={{flex:2,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"none",cursor:"pointer"}}>REOPEN FILE</button>
           ):(
             <>
               <button className="hov" onClick={onAdvance}
-                style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12}}>ADVANCE →</button>
+                style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"none",cursor:"pointer"}}>ADVANCE →</button>
               <button className="hov" onClick={()=>{if(confirm(`Close ${file.borrower}?`))onCloseFile();}}
-                style={{flex:1,background:"rgba(6,214,160,.1)",color:"#06D6A0",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"1px solid #06D6A0"}}>CLOSE ✓</button>
+                style={{flex:1,background:"rgba(6,214,160,.1)",color:"#06D6A0",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"1px solid #06D6A0",cursor:"pointer"}}>CLOSE ✓</button>
             </>
           )}
           {isAdmin && (
             <button className="hov" onClick={()=>{if(confirm("Delete permanently? This cannot be undone."))onDelete();}}
               title="Admin only — permanently delete this file"
-              style={{flex:1,background:"#21262D",color:"#E85D75",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12}}>✕ DEL</button>
+              style={{flex:1,background:"#21262D",color:"#E85D75",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"none",cursor:"pointer"}}>✕ DEL</button>
           )}
         </div>
       </div>
@@ -1372,8 +1379,14 @@ function AddModal({profile, onClose, onAdd}){
   const [lo,setLo]=useState(defaultLo);
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
-      <div className="fi" style={{background:"#161B22",border:"1px solid #30363D",borderRadius:12,padding:24,width:"100%",maxWidth:440,display:"flex",flexDirection:"column",gap:14}} onClick={e=>e.stopPropagation()}>
-        <div style={{fontFamily:"Syne",fontWeight:800,fontSize:18,color:"#E6EDF3"}}>NEW FILE</div>
+      <div className="fi" style={{background:"#161B22",border:"1px solid #30363D",borderRadius:12,width:"100%",maxWidth:440,maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
+        {/* HEADER */}
+        <div style={{padding:"20px 24px 16px",borderBottom:"1px solid #21262D",flexShrink:0}}>
+          <div style={{fontFamily:"Syne",fontWeight:800,fontSize:18,color:"#E6EDF3"}}>NEW FILE</div>
+        </div>
+
+        {/* SCROLLABLE BODY */}
+        <div style={{flex:1,overflowY:"auto",padding:"16px 24px"}}>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
           {[
             ["BORROWER NAME *","text",borrower,setBorrower,"Full legal name","1/-1"],
@@ -1393,11 +1406,15 @@ function AddModal({profile, onClose, onAdd}){
             </div>
           ))}
         </div>
-        <div style={{display:"flex",gap:8}}>
+        </div>
+        {/* END SCROLLABLE BODY */}
+
+        {/* FOOTER — pinned at bottom */}
+        <div style={{padding:"14px 24px",borderTop:"1px solid #21262D",background:"#161B22",flexShrink:0,display:"flex",gap:8}}>
           <button className="hov" onClick={()=>{if(borrower.trim())onAdd({id:`f${Date.now()}`,borrower:borrower.trim(),loan:parseInt(loan)||0,type,stage,daysInStage:0,closing,note,bps:null,lo:lo||JOSE_LO,referralPartner:referralPartner.trim()||null,closedAt:null});}}
-            style={{flex:2,background:"#F5A623",color:"#0D1117",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,fontWeight:500}}>ADD TO PIPELINE</button>
+            style={{flex:2,background:"#F5A623",color:"#0D1117",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,fontWeight:500,border:"none",cursor:"pointer"}}>ADD TO PIPELINE</button>
           <button className="hov" onClick={onClose}
-            style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12}}>CANCEL</button>
+            style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"none",cursor:"pointer"}}>CANCEL</button>
         </div>
       </div>
     </div>
