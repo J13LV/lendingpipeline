@@ -370,6 +370,7 @@ export default function App() {
   const [activePhase,setActivePhase]=useState(null);
   const [search,setSearch]=useState("");
   const [showAdd,setShowAdd]=useState(false);
+  const [showHelp,setShowHelp]=useState(false);
   const [detail,setDetail]=useState(null);
   const [loaded,setLoaded]=useState(false);
   const [saveStatus,setSaveStatus]=useState("idle"); // idle | saving | saved | error
@@ -685,6 +686,12 @@ export default function App() {
             + NEW FILE
           </button>
 
+          <button className="hov" onClick={()=>setShowHelp(true)}
+            title="Help & best practices"
+            style={{background:"transparent",color:"#8B949E",borderRadius:6,padding:"8px 10px",fontFamily:"DM Mono",fontSize:11,border:"1px solid #30363D",cursor:"pointer"}}>
+            ❓ HELP
+          </button>
+
           {/* User pill + logout */}
           <div style={{display:"flex",alignItems:"center",gap:8,paddingLeft:12,marginLeft:4,borderLeft:"1px solid #30363D"}}>
             <div style={{
@@ -869,6 +876,7 @@ export default function App() {
         setFiles(p=>[...p, {...stamped, createdBy:{uid:profile.uid,name:profile.name}, createdAt:new Date().toISOString()}]);
         setShowAdd(false);
       }}/>}
+      {showHelp&&<HelpModal profile={profile} onClose={()=>setShowHelp(false)}/>}
     </div>
   );
 }
@@ -1287,9 +1295,25 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
           </div>
         </div>
         <div>
-          <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>NOTES</div>
-          <textarea value={note} onChange={e=>setNote(e.target.value)} rows={3} placeholder="Add notes..."
-            style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",padding:"8px 10px",fontSize:12,fontFamily:"DM Mono",width:"100%",resize:"none"}}/>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:5}}>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px"}}>
+              NOTES <span style={{color:"#30363D"}}>· STATUS · BLOCKER · NEXT</span>
+            </div>
+            <div style={{
+              fontSize:10,
+              color: note.length > 200 ? "#E85D75" : note.length > 100 ? "#F5A623" : "#484F58",
+              fontFamily:"DM Mono",
+              letterSpacing:"0.5px"
+            }}>
+              {note.length}{note.length > 200 ? " · too long" : note.length > 100 ? " · keep it short" : ""}
+            </div>
+          </div>
+          <textarea value={note} onChange={e=>setNote(e.target.value)} rows={3}
+            placeholder={`Subm 4/12 · UW queue · review by 4/15`}
+            style={{background:"#0D1117",border:`1px solid ${note.length > 200 ? "#E85D75" : "#30363D"}`,borderRadius:6,color:"#E6EDF3",padding:"8px 10px",fontSize:12,fontFamily:"DM Mono",width:"100%",resize:"none"}}/>
+          <div style={{fontSize:9,color:"#484F58",marginTop:4,letterSpacing:"0.5px"}}>
+            Need help? Click <span style={{color:"#8B949E"}}>❓ HELP</span> at top for the full notes guide & abbreviations.
+          </div>
         </div>
 
         {/* Activity / audit trail */}
@@ -1396,7 +1420,7 @@ function AddModal({profile, onClose, onAdd}){
             ["LOAN OFFICER","text",lo,setLo,"Jose Del Valle","1/-1"],
             ["REFERRAL PARTNER","text",referralPartner,setReferralPartner,"Agent name, CPA, Smart Bee, walk-in...","1/-1"],
             ["EXPECTED CLOSING DATE","date",closing,setClosing,null,"1/-1"],
-            ["NOTES","text",note,setNote,"Key info, conditions, special notes...","1/-1"],
+            ["NOTES","text",note,setNote,"Subm 4/12 · UW queue · review by 4/15","1/-1"],
           ].map(([l,t,v,sv,ph,gc])=>(
             <div key={l} style={{gridColumn:gc}}>
               <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{l}</div>
@@ -1416,6 +1440,311 @@ function AddModal({profile, onClose, onAdd}){
           <button className="hov" onClick={onClose}
             style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"none",cursor:"pointer"}}>CANCEL</button>
         </div>
+      </div>
+    </div>
+  );
+}
+// ─── HELP MODAL ───
+// In-app reference guide. Tabbed layout: notes format, abbreviations, role-specific
+// workflows, and FAQs. Content adapts based on user's role.
+function HelpModal({profile, onClose}){
+  const [tab, setTab] = useState("notes");
+  const isAdmin = profile?.role === "admin";
+  const isLO = profile?.role === "lo";
+  const isAssistant = profile?.role === "assistant";
+
+  const tabs = [
+    {id:"notes", label:"📝 Notes Format", color:"#F5A623"},
+    {id:"abbrev", label:"📖 Abbreviations", color:"#4A90D9"},
+    {id:"workflow", label:"🔄 Daily Workflow", color:"#06D6A0"},
+    {id:"roles", label:"👥 Roles & Access", color:"#BD65E8"},
+    {id:"faq", label:"❓ FAQ", color:"#E85D75"},
+  ];
+
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
+      <div className="fi" style={{background:"#161B22",border:"1px solid #30363D",borderRadius:12,width:"100%",maxWidth:720,maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
+
+        {/* HEADER */}
+        <div style={{padding:"20px 24px 16px",borderBottom:"1px solid #21262D",flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+          <div>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:20,color:"#E6EDF3",letterSpacing:"-0.5px"}}>HELP & BEST PRACTICES</div>
+            <div style={{fontSize:11,color:"#484F58",letterSpacing:"1px",marginTop:3}}>PIPELINE · MORTGAGE BY DELVALLE · PRMG 541-A</div>
+          </div>
+          <button onClick={onClose} style={{background:"transparent",border:"none",color:"#484F58",fontSize:20,cursor:"pointer",padding:"0 0 0 12px"}}>✕</button>
+        </div>
+
+        {/* TAB BAR */}
+        <div style={{padding:"12px 24px",borderBottom:"1px solid #21262D",display:"flex",gap:6,flexWrap:"wrap",flexShrink:0,background:"#0D1117"}}>
+          {tabs.map(t=>(
+            <button key={t.id} className="hov" onClick={()=>setTab(t.id)}
+              style={{
+                background: tab===t.id ? t.color : "#21262D",
+                color: tab===t.id ? "#0D1117" : "#8B949E",
+                borderRadius:6, padding:"6px 12px", fontSize:11, fontFamily:"DM Mono", fontWeight:500,
+                border:"none", cursor:"pointer"
+              }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* SCROLLABLE BODY */}
+        <div style={{flex:1,overflowY:"auto",padding:"20px 24px"}}>
+
+          {/* NOTES FORMAT TAB */}
+          {tab==="notes" && (
+            <div style={{display:"flex",flexDirection:"column",gap:18,fontSize:13,color:"#E6EDF3",lineHeight:1.6}}>
+              <div>
+                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:16,color:"#F5A623",marginBottom:8}}>The STATUS · BLOCKER · NEXT format</div>
+                <div style={{color:"#8B949E"}}>
+                  Every loan note follows three short pieces, separated by the <span style={{color:"#F5A623"}}>·</span> character.
+                  Goal: anyone scanning the pipeline can understand a file in 3 seconds.
+                </div>
+              </div>
+
+              <div style={{background:"#0D1117",border:"1px solid #21262D",borderRadius:8,padding:14}}>
+                <div style={{display:"grid",gridTemplateColumns:"100px 1fr",gap:10,fontSize:12}}>
+                  <div style={{color:"#F5A623",fontWeight:500}}>STATUS</div>
+                  <div style={{color:"#8B949E"}}>One phrase about where the file substantively is right now (not just the stage name).</div>
+
+                  <div style={{color:"#F5A623",fontWeight:500}}>BLOCKER</div>
+                  <div style={{color:"#8B949E"}}>The single thing holding it up. If clean, write "<span style={{color:"#06D6A0"}}>none</span>" or "<span style={{color:"#06D6A0"}}>clean</span>".</div>
+
+                  <div style={{color:"#F5A623",fontWeight:500}}>NEXT</div>
+                  <div style={{color:"#8B949E"}}>The immediate next action — what + who + by when.</div>
+                </div>
+              </div>
+
+              <div>
+                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#E6EDF3",marginBottom:10}}>EXAMPLES BY STAGE</div>
+                <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                  {[
+                    {stage:"Submitted to UW", note:"Subm 4/12 · UW queue · review by 4/15"},
+                    {stage:"Conditional Approval", note:"CA 4/14 · 3 conds (PS, VOE, GL) · Bo upload by 4/19"},
+                    {stage:"Condition Clearing", note:"Conds in · BS rejected (stale) · Maria reupload by 4/18"},
+                    {stage:"Clear to Close", note:"CTC 4/17 · title prelim pending · COE 4/25"},
+                    {stage:"Doc Collection", note:"Need 2yr biz returns · Bo on vacation · resume 4/22"},
+                    {stage:"Appraisal Ordered", note:"Appr ordered 4/10 · pending sched · expected by 4/20"},
+                  ].map(ex=>(
+                    <div key={ex.stage} style={{display:"grid",gridTemplateColumns:"180px 1fr",gap:10,padding:"8px 12px",background:"#0D1117",borderRadius:6,fontSize:12,alignItems:"center"}}>
+                      <div style={{color:"#484F58",fontSize:10,letterSpacing:"1px"}}>{ex.stage.toUpperCase()}</div>
+                      <div style={{color:"#06D6A0",fontFamily:"DM Mono"}}>{ex.note}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#E6EDF3",marginBottom:10}}>RULES OF THUMB</div>
+                <ul style={{color:"#8B949E",paddingLeft:18,lineHeight:1.8}}>
+                  <li>Keep notes <strong style={{color:"#F5A623"}}>under 100 characters</strong> when possible. Counter turns yellow at 100, red at 200.</li>
+                  <li>Use <strong style={{color:"#E6EDF3"}}>dates</strong>, not "yesterday" or "last week" — dates won't get stale.</li>
+                  <li>Always include a <strong style={{color:"#E6EDF3"}}>NEXT action with a deadline</strong>. "Waiting" is not an action.</li>
+                  <li>If you need long context, put it in the <strong style={{color:"#E6EDF3"}}>Activity log</strong> via stage advances or use a separate document.</li>
+                  <li>Notes are for <strong style={{color:"#E6EDF3"}}>scanning</strong>, not storytelling.</li>
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {/* ABBREVIATIONS TAB */}
+          {tab==="abbrev" && (
+            <div style={{display:"flex",flexDirection:"column",gap:18,fontSize:13,color:"#E6EDF3"}}>
+              <div style={{color:"#8B949E",lineHeight:1.6}}>
+                Standard abbreviations everyone on the team uses. Stick to these so notes stay scannable and consistent.
+              </div>
+
+              {[
+                {title:"Documents", color:"#4A90D9", items:[
+                  ["PS","Paystubs"],["W2","W-2 forms"],["BS","Bank statements"],["TR","Tax returns"],
+                  ["VOE","Verification of Employment"],["VOR","Verification of Rent"],["VOD","Verification of Deposit"],
+                  ["GL","Gift letter"],["TC","Title commitment"],["HOI","Homeowner's insurance"],
+                  ["CD","Closing disclosure"],["LE","Loan estimate"],["AppR","Appraisal report"],
+                ]},
+                {title:"Stages & Actions", color:"#F5A623", items:[
+                  ["Subm","Submitted"],["CA","Conditional Approval"],["CTC","Clear to Close"],
+                  ["COE","Close of Escrow / closing date"],["Reissue","Reissue disclosures"],
+                  ["Redisc","Redisclose"],["Locked","Rate locked"],["Floating","Rate floating"],
+                  ["UW","Underwriting / Underwriter"],["Conds","Conditions"],
+                ]},
+                {title:"People", color:"#BD65E8", items:[
+                  ["LO","Loan Officer"],["LP","Loan Processor"],["TC","Title Coordinator"],
+                  ["UW","Underwriter"],["Bo","Borrower"],["CB","Co-borrower"],
+                  ["RA","Real estate agent"],["LA","Listing agent"],["BA","Buyer's agent"],
+                ]},
+                {title:"Status", color:"#06D6A0", items:[
+                  ["Clean","No blockers"],["Pending","Waiting on someone"],["Blocked","Stuck, needs intervention"],
+                  ["Rejected","Doc/cond rejected, needs redo"],["Stale","Doc expired, need fresh"],
+                  ["Cleared","Condition satisfied"],["Funded","Loan funded"],["Recorded","Recorded with county"],
+                ]},
+              ].map(group=>(
+                <div key={group.title}>
+                  <div style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:group.color,marginBottom:8,letterSpacing:"1px"}}>{group.title.toUpperCase()}</div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:6}}>
+                    {group.items.map(([abbr,full])=>(
+                      <div key={abbr} style={{display:"flex",gap:10,padding:"6px 10px",background:"#0D1117",borderRadius:5,fontSize:12,alignItems:"center"}}>
+                        <span style={{color:group.color,fontFamily:"DM Mono",fontWeight:500,minWidth:55}}>{abbr}</span>
+                        <span style={{color:"#8B949E"}}>{full}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* WORKFLOW TAB */}
+          {tab==="workflow" && (
+            <div style={{display:"flex",flexDirection:"column",gap:18,fontSize:13,color:"#E6EDF3",lineHeight:1.6}}>
+
+              <div>
+                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:16,color:"#06D6A0",marginBottom:8}}>Daily morning routine (5 min)</div>
+                <ol style={{color:"#8B949E",paddingLeft:18,lineHeight:1.8}}>
+                  <li>Open the pipeline. Check the <strong style={{color:"#E85D75"}}>CRITICAL</strong> count at the top — files closing in ≤3 days.</li>
+                  <li>Check phase tabs (PQ, HH, PR, UW, CP, CL, PC) — any phase with too many files in <strong style={{color:"#F5A623"}}>STALE</strong> status (5d+) needs attention.</li>
+                  <li>Click any file showing CRITICAL or STALE → read its note → decide today's action.</li>
+                  <li>Update notes for any file you touched yesterday so today's note reflects current state.</li>
+                </ol>
+              </div>
+
+              <div>
+                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:16,color:"#06D6A0",marginBottom:8}}>Adding a new file</div>
+                <ol style={{color:"#8B949E",paddingLeft:18,lineHeight:1.8}}>
+                  <li>Click <strong style={{color:"#F5A623"}}>+ NEW FILE</strong> at the top.</li>
+                  <li>Required: Borrower name. Everything else can be filled in later.</li>
+                  <li><strong>Always fill in REFERRAL PARTNER</strong> if you know it — this feeds the leaderboard.</li>
+                  <li>Set the starting STAGE based on where the file actually is (most new files start at "Lead Inquiry" or "Pre-Qualification").</li>
+                  <li>Click ADD TO PIPELINE.</li>
+                </ol>
+              </div>
+
+              <div>
+                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:16,color:"#06D6A0",marginBottom:8}}>Advancing a file through stages</div>
+                <ol style={{color:"#8B949E",paddingLeft:18,lineHeight:1.8}}>
+                  <li>Two ways to advance: click the <strong style={{color:"#E6EDF3"}}>ADVANCE →</strong> button on the card to go to the next stage, OR open the file and select a specific stage from the dropdown.</li>
+                  <li>The "days in stage" counter resets to 0 every time you advance — useful for catching files that are sitting too long.</li>
+                  <li><strong>Always update the note</strong> when you advance a stage so the new note reflects the new reality.</li>
+                </ol>
+              </div>
+
+              <div>
+                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:16,color:"#06D6A0",marginBottom:8}}>Closing a file</div>
+                <ol style={{color:"#8B949E",paddingLeft:18,lineHeight:1.8}}>
+                  <li>When the loan funds, click <strong style={{color:"#06D6A0"}}>CLOSE ✓</strong> on the card or in the file detail.</li>
+                  <li>The file moves to CLOSED FILES tab and counts toward your monthly production.</li>
+                  <li>If you closed by accident, open the file from the CLOSED FILES tab and click <strong style={{color:"#F5A623"}}>REOPEN FILE</strong>.</li>
+                </ol>
+              </div>
+
+              <div>
+                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:16,color:"#06D6A0",marginBottom:8}}>Weekly backup (Friday EOD)</div>
+                <ol style={{color:"#8B949E",paddingLeft:18,lineHeight:1.8}}>
+                  <li>Click <strong style={{color:"#E6EDF3"}}>↓ BACKUP</strong> at the top right. A JSON file downloads automatically.</li>
+                  <li>Move the file to a Google Drive folder named <strong>Pipeline Backups</strong>.</li>
+                  <li>That's it. Five seconds of work, total disaster recovery.</li>
+                </ol>
+              </div>
+
+            </div>
+          )}
+
+          {/* ROLES TAB */}
+          {tab==="roles" && (
+            <div style={{display:"flex",flexDirection:"column",gap:16,fontSize:13,color:"#E6EDF3",lineHeight:1.6}}>
+              <div style={{color:"#8B949E"}}>
+                You are signed in as <strong style={{color:profile.color}}>{profile.name}</strong> with role <strong style={{color:profile.color,textTransform:"uppercase"}}>{profile.role}</strong>.
+                Here's what each role can do:
+              </div>
+
+              {[
+                {role:"Admin", color:"#4A90D9", who:"Jose Del Valle (Branch Manager)", can:[
+                  "Create, edit, advance, close, reopen, and DELETE any file",
+                  "See the OVERRIDE & COMP dashboard (25 bps branch override calc)",
+                  "Edit the BPS comp on any file (controls LO commission)",
+                  "Restore the entire pipeline from a backup file",
+                  "View the My Personal LO Comp report",
+                  "See all LOs' production data on the Team Production tab",
+                ]},
+                {role:"LO (Loan Officer)", color:"#BD65E8", who:"Ana M Plasencia, Marelis Pinales", can:[
+                  "Create, edit, advance, and close any file in the branch",
+                  "See the FULL pipeline (all LOs' files visible for collaboration)",
+                  "View MY COMP tab — your personal commission breakdown for closed files",
+                  "Cannot see other LOs' personal comp",
+                  "Cannot edit BPS rates (set by admin)",
+                  "Cannot delete files (ask Jose to delete)",
+                  "Cannot restore the pipeline from a backup",
+                ]},
+                {role:"Assistant", color:"#F5A623", who:"Laura de Armas", can:[
+                  "Create, edit, and advance files",
+                  "Update notes, closing dates, stage progression",
+                  "See the full pipeline and team production stats (counts/volume)",
+                  "Cannot see ANY compensation data (BPS, override, personal comp)",
+                  "Cannot delete files",
+                  "Cannot restore the pipeline from a backup",
+                ]},
+              ].map(r=>(
+                <div key={r.role} style={{
+                  background: profile.role.toLowerCase() === r.role.split(" ")[0].toLowerCase() ? `${r.color}15` : "#0D1117",
+                  border: `1px solid ${profile.role.toLowerCase() === r.role.split(" ")[0].toLowerCase() ? r.color : "#21262D"}`,
+                  borderRadius:8, padding:14
+                }}>
+                  <div style={{display:"flex",alignItems:"baseline",gap:10,marginBottom:6}}>
+                    <div style={{fontFamily:"Syne",fontWeight:700,fontSize:15,color:r.color}}>{r.role.toUpperCase()}</div>
+                    <div style={{fontSize:11,color:"#484F58"}}>{r.who}</div>
+                  </div>
+                  <ul style={{color:"#8B949E",paddingLeft:18,lineHeight:1.7,fontSize:12}}>
+                    {r.can.map((c,i)=><li key={i}>{c}</li>)}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* FAQ TAB */}
+          {tab==="faq" && (
+            <div style={{display:"flex",flexDirection:"column",gap:14,fontSize:13,color:"#E6EDF3"}}>
+              {[
+                {q:"I made a change but don't see SAVED — did it save?",
+                 a:"Watch the top-right corner of the header. You'll see ● SAVING… briefly, then ✓ SAVED in green for 2 seconds. If you see ⚠ SAVE FAILED in red, your internet may be down — the change is still safe on your computer and will retry when you reconnect."},
+                {q:"How do I see who edited a file last?",
+                 a:"Open any loan and scroll to the ACTIVITY section near the bottom. You'll see 'Last edited by [name] · [time ago]' plus a 'SHOW ALL' link to expand the full history (last 20 actions)."},
+                {q:"I forgot my password.",
+                 a:"On the login screen, type your email, then click FORGOT? next to the password label. Click SEND RESET LINK. You'll get an email with a reset link in 1-2 minutes (check spam if not seen). Set a new password and sign in."},
+                {q:"How do I switch users on the same computer?",
+                 a:"Click SIGN OUT in the top-right header. Confirm the prompt. The login screen reappears — sign in with the other account's email + password."},
+                {q:"What's the difference between CLOSE and DELETE?",
+                 a:"CLOSE ✓ marks a loan as funded — moves it to the CLOSED FILES tab, counts toward production stats, and stays in your records. DELETE ✕ permanently removes the file (admin only) — use this only for test entries or files entered by mistake."},
+                {q:"What's a Critical/Warning/Stale loan?",
+                 a:"CRITICAL = closing in 3 days or less (red border). WARNING = closing in 7 days or less (orange). STALE = sitting in the same stage 5+ days (gray). These are visual cues so you know which files need attention today."},
+                {q:"How do I add a referral partner to track who sends business?",
+                 a:"On any new or existing file, fill in the REFERRAL PARTNER field with the source name (e.g., 'Smart Bee Client', 'APG Realty Group', 'Anamary Plasencia'). The Production → Referral Partners tab automatically builds a leaderboard. Be consistent with naming so the leaderboard groups correctly."},
+                {q:"My pipeline disappeared / data looks wrong.",
+                 a:"First, refresh the browser with Ctrl+Shift+R. If still wrong, ask Jose — he can restore from the most recent weekly backup using the ↑ RESTORE button (admin only). All your work since the last backup will need to be re-entered, so this is a last resort."},
+                {q:"Who do I ask if something breaks?",
+                 a:"Send Jose a screenshot of the issue and what you were doing right before it broke. Most issues are 5-minute fixes."},
+              ].map((item,i)=>(
+                <div key={i} style={{background:"#0D1117",border:"1px solid #21262D",borderRadius:8,padding:14}}>
+                  <div style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#E85D75",marginBottom:6}}>Q: {item.q}</div>
+                  <div style={{color:"#8B949E",fontSize:12,lineHeight:1.6}}>{item.a}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+        </div>
+
+        {/* FOOTER */}
+        <div style={{padding:"12px 24px",borderTop:"1px solid #21262D",background:"#0D1117",flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px"}}>
+            v2.0 · DEL VALLE LENDING CO.
+          </div>
+          <button onClick={onClose} className="hov"
+            style={{background:"#F5A623",color:"#0D1117",borderRadius:6,padding:"8px 18px",fontFamily:"DM Mono",fontSize:11,fontWeight:500,border:"none",cursor:"pointer"}}>
+            GOT IT ✓
+          </button>
+        </div>
+
       </div>
     </div>
   );
