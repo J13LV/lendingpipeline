@@ -976,6 +976,12 @@ function ProductionDashboard({profile, files, closed, active}){
     yearlyMap[yr].volume += m.volume;
   });
   const yearlyList = Object.values(yearlyMap).sort((a,b)=>b.year.localeCompare(a.year));
+
+  // ─── ORPHAN FILES ───
+  // Files where the LO field doesn't match any current team member.
+  // Causes: LO was set with a typo, was renamed, or a team member left.
+  const validLoNames = new Set(LO_LIST.map(l=>l.name));
+  const orphanFiles = files.filter(f=>!f.lo || !validLoNames.has(f.lo));
   // Best/worst month in last 12
   const bestMonth = last12Months.reduce((best,m)=>m.units>best.units?m:best, last12Months[0]);
   const worstMonth = last12Months.filter(m=>m.units>0).reduce((worst,m)=>m.units<worst.units?m:worst, last12Months.find(m=>m.units>0)||last12Months[0]);
@@ -1068,6 +1074,41 @@ function ProductionDashboard({profile, files, closed, active}){
             </div>
           ))}
         </div>
+
+        {/* ORPHAN FILES — files whose LO doesn't match any team member */}
+        {orphanFiles.length > 0 && (
+          <div style={{background:"#161B22",border:"1px solid #E85D7544",borderRadius:10,overflow:"hidden"}}>
+            <div style={{background:"rgba(232,93,117,.08)",borderBottom:"2px solid #E85D75",padding:"10px 16px",display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#E85D75",letterSpacing:"1px"}}>⚠ UNASSIGNED LO FILES</span>
+              <span style={{background:"#E85D75",color:"#0D1117",borderRadius:10,padding:"1px 8px",fontSize:11,fontWeight:500}}>{orphanFiles.length}</span>
+              <span style={{fontSize:11,color:"#8B949E",marginLeft:6}}>files where LO doesn't match any team member · won't show in production stats until fixed</span>
+            </div>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+              <thead>
+                <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
+                  {["BORROWER","TYPE","LOAN","STAGE","CURRENT LO VALUE"].map((h,i)=>(
+                    <th key={i} style={{padding:"8px 14px",textAlign:i<2?"left":i===2?"center":"left",fontSize:10,color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {orphanFiles.map((f,i)=>(
+                  <tr key={f.id} style={{borderBottom:"1px solid #21262D",background:i%2===0?"#0D1117":"#161B22"}}>
+                    <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"#E6EDF3"}}>{f.borrower}</td>
+                    <td style={{padding:"10px 14px",color:"#8B949E"}}>{f.type}</td>
+                    <td style={{padding:"10px 14px",textAlign:"center",color:"#06D6A0",fontWeight:500}}>${(f.loan/1000).toFixed(0)}K</td>
+                    <td style={{padding:"10px 14px",color:"#8B949E"}}>{f.stage}</td>
+                    <td style={{padding:"10px 14px",color:"#E85D75",fontWeight:500,fontStyle:"italic"}}>{f.lo ? `"${f.lo}"` : "(blank)"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div style={{padding:"10px 16px",borderTop:"1px solid #21262D",fontSize:11,color:"#8B949E",lineHeight:1.5}}>
+              <strong style={{color:"#E85D75"}}>To fix:</strong> Open each file from the pipeline (search by borrower name) → set the LOAN OFFICER dropdown to the correct team member → SAVE.
+              These files will then appear in production stats automatically.
+            </div>
+          </div>
+        )}
       </div>}
 
       {/* MONTHLY PRODUCTION TAB */}
@@ -1414,7 +1455,6 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
   const [loAssigned,setLoAssigned]=useState(file.lo||"Jose Del Valle");
   const [referralPartner,setReferralPartner]=useState(file.referralPartner||"");
   const [closedAt,setClosedAt]=useState(file.closedAt||"");
-  const [lo,setLo]=useState(file.lo||JOSE_LO);
   const ph=getPhase(stage);
   const fs2={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",padding:"8px 10px",fontSize:13,fontFamily:"'DM Mono','Courier New',monospace",width:"100%"};
   return(
@@ -1449,10 +1489,6 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
               <input value={bps} onChange={e=>setBps(e.target.value)} placeholder="150" style={{...fs2,color:"#F5A623"}}/>
             </div>
           )}
-          <div style={{gridColumn:"1/-1"}}>
-            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>LOAN OFFICER</div>
-            <input value={lo} onChange={e=>setLo(e.target.value)} placeholder="Jose Del Valle" style={fs2}/>
-          </div>
           {isAdmin && (
             <div style={{gridColumn:"1/-1"}}>
               <div style={{fontSize:10,color:"#484F58",marginTop:2}}>
@@ -1461,7 +1497,7 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
             </div>
           )}
           <div style={{gridColumn:"1/-1"}}>
-            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>LO ASSIGNED</div>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>LOAN OFFICER</div>
             <select value={loAssigned} onChange={e=>setLoAssigned(e.target.value)} style={fs2}>
               {LO_LIST.map(lo=><option key={lo.name} value={lo.name}>{lo.name} · {lo.role}</option>)}
             </select>
@@ -1574,7 +1610,9 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
         <div style={{padding:"14px 24px",borderTop:"1px solid #21262D",background:"#161B22",flexShrink:0,display:"flex",gap:8,flexWrap:"wrap"}}>
           <button className="hov" onClick={()=>{
             // Only include bps in the patch if user is admin (to avoid clobbering it with empty value)
-            const patch = {note,closing,type:loanType,loan:parseInt(loanAmt)||file.loan,lo:lo||JOSE_LO,referralPartner};
+            // loAssigned (dropdown) is the single source of truth for LO assignment.
+            // We write it to `lo` (the field production stats filter on) to keep them in sync.
+            const patch = {note,closing,type:loanType,loan:parseInt(loanAmt)||file.loan,lo:loAssigned||JOSE_LO,referralPartner};
             if(isAdmin) patch.bps = parseInt(bps)||null;
             // If admin edited the close date on a closed file, include it
             if(isAdmin && isClosed && closedAt) patch.closedAt = closedAt;
