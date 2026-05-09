@@ -591,9 +591,13 @@ export default function App() {
     return stampEdit({...f, stage:n.stage, daysInStage:0}, profile, "stage_advanced", {from:f.stage, to:n.stage});
   }));
   const closeFile=id=>{
-    setFiles(p=>p.map(f=>f.id===id
-      ? stampEdit({...f, stage:CLOSED_STAGE, closedAt:new Date().toISOString().split("T")[0], daysInStage:0}, profile, "closed", {from:f.stage})
-      : f));
+    setFiles(p=>p.map(f=>{
+      if(f.id!==id) return f;
+      // Use the file's closing date as the actual funded date.
+      // Falls back to today if no closing date was ever set.
+      const fundedDate = f.closing || new Date().toISOString().split("T")[0];
+      return stampEdit({...f, stage:CLOSED_STAGE, closedAt:fundedDate, daysInStage:0}, profile, "closed", {from:f.stage, closedAt:fundedDate});
+    }));
     setDetail(null);
   };
   const reopenFile=id=>{
@@ -941,6 +945,46 @@ function ProductionDashboard({profile, files, closed, active}){
   });
   const topRefs=Object.values(refMap).sort((a,b)=>b.total-a.total);
 
+  // ─── MONTHLY PRODUCTION ───
+  // Bucket closed files by month (using closedAt). Build a 12-month rolling window
+  // ending with the current month. Also group by year for annual breakdown.
+  const monthlyMap = {};
+  closed.forEach(f=>{
+    if(!f.closedAt) return;
+    const month = f.closedAt.slice(0,7); // YYYY-MM
+    if(!monthlyMap[month]) monthlyMap[month] = {month, units:0, volume:0, files:[]};
+    monthlyMap[month].units++;
+    monthlyMap[month].volume += (f.loan||0);
+    monthlyMap[month].files.push(f);
+  });
+  // Build last 12 months (oldest → newest, fill in zeros for empty months)
+  const last12Months = [];
+  const today = new Date();
+  for(let i=11; i>=0; i--){
+    const d = new Date(today.getFullYear(), today.getMonth()-i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+    last12Months.push(monthlyMap[key] || {month:key, units:0, volume:0, files:[]});
+  }
+  const maxUnits = Math.max(1, ...last12Months.map(m=>m.units));
+  const maxVolume = Math.max(1, ...last12Months.map(m=>m.volume));
+  // Annual totals
+  const yearlyMap = {};
+  Object.values(monthlyMap).forEach(m=>{
+    const yr = m.month.slice(0,4);
+    if(!yearlyMap[yr]) yearlyMap[yr] = {year:yr, units:0, volume:0};
+    yearlyMap[yr].units += m.units;
+    yearlyMap[yr].volume += m.volume;
+  });
+  const yearlyList = Object.values(yearlyMap).sort((a,b)=>b.year.localeCompare(a.year));
+  // Best/worst month in last 12
+  const bestMonth = last12Months.reduce((best,m)=>m.units>best.units?m:best, last12Months[0]);
+  const worstMonth = last12Months.filter(m=>m.units>0).reduce((worst,m)=>m.units<worst.units?m:worst, last12Months.find(m=>m.units>0)||last12Months[0]);
+  function monthLabel(m){
+    const [y,mm] = m.split("-");
+    const names = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    return `${names[parseInt(mm)-1]} '${y.slice(2)}`;
+  }
+
   // LO colors — pull from TEAM so colors stay consistent everywhere
   const loColors = LO_LIST.map(lo=>lo.color||"#4A90D9");
 
@@ -970,6 +1014,7 @@ function ProductionDashboard({profile, files, closed, active}){
       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
         {[
           ["team","🏆 TEAM PRODUCTION"],
+          ["monthly","📅 MONTHLY"],
           ["referrals","🤝 REFERRAL PARTNERS"],
           isLO && ["mycomp","💵 MY COMP"],
           isAdmin && ["override","💰 OVERRIDE & COMP"],
@@ -1023,6 +1068,155 @@ function ProductionDashboard({profile, files, closed, active}){
             </div>
           ))}
         </div>
+      </div>}
+
+      {/* MONTHLY PRODUCTION TAB */}
+      {prodTab==="monthly"&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
+
+        {/* Headline stats */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:10}}>
+          <div style={{background:"#161B22",border:"1px solid #06D6A044",borderTop:"3px solid #06D6A0",borderRadius:8,padding:12}}>
+            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>BEST MONTH (12MO)</div>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:18,color:"#06D6A0"}}>{bestMonth.units > 0 ? monthLabel(bestMonth.month) : "—"}</div>
+            <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>{bestMonth.units} units · ${(bestMonth.volume/1000).toFixed(0)}K</div>
+          </div>
+          <div style={{background:"#161B22",border:"1px solid #E85D7544",borderTop:"3px solid #E85D75",borderRadius:8,padding:12}}>
+            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>SLOWEST MONTH</div>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:18,color:"#E85D75"}}>{worstMonth.units > 0 ? monthLabel(worstMonth.month) : "—"}</div>
+            <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>{worstMonth.units} units · ${(worstMonth.volume/1000).toFixed(0)}K</div>
+          </div>
+          <div style={{background:"#161B22",border:"1px solid #4A90D944",borderTop:"3px solid #4A90D9",borderRadius:8,padding:12}}>
+            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>12-MO TOTAL UNITS</div>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:18,color:"#4A90D9"}}>{last12Months.reduce((s,m)=>s+m.units,0)}</div>
+            <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>loans funded</div>
+          </div>
+          <div style={{background:"#161B22",border:"1px solid #F5A62344",borderTop:"3px solid #F5A623",borderRadius:8,padding:12}}>
+            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>12-MO TOTAL VOLUME</div>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:18,color:"#F5A623"}}>${(last12Months.reduce((s,m)=>s+m.volume,0)/1e6).toFixed(2)}M</div>
+            <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>funded</div>
+          </div>
+        </div>
+
+        {/* 12-month UNITS bar chart */}
+        <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,padding:16}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+            <div style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#4A90D9",letterSpacing:"1px"}}>UNITS CLOSED · LAST 12 MONTHS</div>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px"}}>peak: {maxUnits} unit{maxUnits===1?"":"s"}</div>
+          </div>
+          <div style={{display:"flex",gap:6,alignItems:"flex-end",height:140,paddingTop:8}}>
+            {last12Months.map((m,i)=>{
+              const heightPct = m.units>0 ? Math.max(8, (m.units/maxUnits)*100) : 0;
+              const isBest = m.units===maxUnits && m.units>0;
+              const isCurrent = i===last12Months.length-1;
+              return (
+                <div key={m.month} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4,minWidth:0}}>
+                  <div style={{fontSize:10,fontFamily:"DM Mono",color:isBest?"#06D6A0":"#8B949E",fontWeight:isBest?500:400,minHeight:12}}>
+                    {m.units>0 ? m.units : ""}
+                  </div>
+                  <div style={{
+                    width:"100%",
+                    height:`${heightPct}%`,
+                    background: isBest ? "linear-gradient(180deg,#06D6A0,#03A77B)" : isCurrent ? "linear-gradient(180deg,#4A90D9,#2D6BAF)" : "#30363D",
+                    borderRadius:"3px 3px 0 0",
+                    transition:"all .2s",
+                    minHeight: m.units>0 ? 4 : 0,
+                  }}/>
+                  <div style={{fontSize:9,color:isCurrent?"#4A90D9":"#484F58",fontFamily:"DM Mono",letterSpacing:"0.5px",fontWeight:isCurrent?500:400,whiteSpace:"nowrap"}}>
+                    {monthLabel(m.month)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 12-month VOLUME bar chart */}
+        <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,padding:16}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+            <div style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#F5A623",letterSpacing:"1px"}}>FUNDED VOLUME · LAST 12 MONTHS</div>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px"}}>peak: ${(maxVolume/1000).toFixed(0)}K</div>
+          </div>
+          <div style={{display:"flex",gap:6,alignItems:"flex-end",height:140,paddingTop:8}}>
+            {last12Months.map((m,i)=>{
+              const heightPct = m.volume>0 ? Math.max(8, (m.volume/maxVolume)*100) : 0;
+              const isBest = m.volume===maxVolume && m.volume>0;
+              const isCurrent = i===last12Months.length-1;
+              return (
+                <div key={m.month} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4,minWidth:0}}>
+                  <div style={{fontSize:9,fontFamily:"DM Mono",color:isBest?"#F5A623":"#8B949E",fontWeight:isBest?500:400,minHeight:12,whiteSpace:"nowrap"}}>
+                    {m.volume>0 ? `$${(m.volume/1000).toFixed(0)}K` : ""}
+                  </div>
+                  <div style={{
+                    width:"100%",
+                    height:`${heightPct}%`,
+                    background: isBest ? "linear-gradient(180deg,#F5A623,#C8851A)" : isCurrent ? "linear-gradient(180deg,#4A90D9,#2D6BAF)" : "#30363D",
+                    borderRadius:"3px 3px 0 0",
+                    transition:"all .2s",
+                    minHeight: m.volume>0 ? 4 : 0,
+                  }}/>
+                  <div style={{fontSize:9,color:isCurrent?"#4A90D9":"#484F58",fontFamily:"DM Mono",letterSpacing:"0.5px",fontWeight:isCurrent?500:400,whiteSpace:"nowrap"}}>
+                    {monthLabel(m.month)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Monthly detail table */}
+        <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
+          <div style={{background:"#1a2a3a",borderBottom:"2px solid #4A90D9",padding:"10px 16px"}}>
+            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#4A90D9",letterSpacing:"1px"}}>MONTHLY DETAIL · 12-MONTH ROLLING</span>
+          </div>
+          <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+            <thead>
+              <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
+                {["MONTH","UNITS","VOLUME","AVG LOAN"].map((h,i)=>(
+                  <th key={i} style={{padding:"8px 14px",textAlign:i===0?"left":"center",fontSize:10,color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[...last12Months].reverse().map((m,i)=>(
+                <tr key={m.month} style={{borderBottom:"1px solid #21262D",background:i%2===0?"#0D1117":"#161B22"}}>
+                  <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"#E6EDF3"}}>{monthLabel(m.month)}</td>
+                  <td style={{padding:"10px 14px",textAlign:"center",color:m.units>0?"#06D6A0":"#30363D",fontWeight:500}}>{m.units}</td>
+                  <td style={{padding:"10px 14px",textAlign:"center",color:m.volume>0?"#F5A623":"#30363D",fontWeight:500}}>${(m.volume/1000).toFixed(0)}K</td>
+                  <td style={{padding:"10px 14px",textAlign:"center",color:"#8B949E"}}>{m.units>0?`$${(m.volume/m.units/1000).toFixed(0)}K`:"—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Annual summary */}
+        {yearlyList.length > 0 && (
+          <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
+            <div style={{background:"#261535",borderBottom:"2px solid #BD65E8",padding:"10px 16px"}}>
+              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#BD65E8",letterSpacing:"1px"}}>ANNUAL SUMMARY</span>
+            </div>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+              <thead>
+                <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
+                  {["YEAR","UNITS","VOLUME","AVG LOAN"].map((h,i)=>(
+                    <th key={i} style={{padding:"8px 14px",textAlign:i===0?"left":"center",fontSize:10,color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {yearlyList.map((y,i)=>(
+                  <tr key={y.year} style={{borderBottom:"1px solid #21262D",background:i%2===0?"#0D1117":"#161B22"}}>
+                    <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#BD65E8"}}>{y.year}</td>
+                    <td style={{padding:"10px 14px",textAlign:"center",color:"#06D6A0",fontWeight:500}}>{y.units}</td>
+                    <td style={{padding:"10px 14px",textAlign:"center",color:"#F5A623",fontWeight:500}}>${(y.volume/1e6).toFixed(2)}M</td>
+                    <td style={{padding:"10px 14px",textAlign:"center",color:"#8B949E"}}>${(y.volume/y.units/1000).toFixed(0)}K</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
       </div>}
 
       {/* REFERRAL PARTNERS TAB */}
@@ -1219,6 +1413,7 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
   const [bps,setBps]=useState(String(file.bps||""));
   const [loAssigned,setLoAssigned]=useState(file.lo||"Jose Del Valle");
   const [referralPartner,setReferralPartner]=useState(file.referralPartner||"");
+  const [closedAt,setClosedAt]=useState(file.closedAt||"");
   const [lo,setLo]=useState(file.lo||JOSE_LO);
   const ph=getPhase(stage);
   const fs2={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",padding:"8px 10px",fontSize:13,fontFamily:"'DM Mono','Courier New',monospace",width:"100%"};
@@ -1283,17 +1478,34 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
             {ALL_STAGES.map((s,i)=><option key={i} value={s.stage} style={{color:s.phase.color,background:"#0D1117"}}>[{s.phase.short}] {s.stage}</option>)}
           </select>
         </div>}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-          <div style={{background:"#0D1117",borderRadius:8,padding:12}}>
-            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>CLOSING DATE</div>
-            <input type="date" value={closing} onChange={e=>setClosing(e.target.value)}
-              style={{background:"transparent",border:"none",color:"#E6EDF3",fontSize:13,fontFamily:"DM Mono",width:"100%"}}/>
+        {isClosed && isAdmin ? (
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+            <div style={{background:"rgba(6,214,160,.06)",border:"1px solid #06D6A044",borderRadius:8,padding:12}}>
+              <div style={{fontSize:10,color:"#06D6A0",letterSpacing:"1px",marginBottom:5,fontWeight:500}}>ACTUAL CLOSE DATE <span style={{color:"#484F58"}}>· editable</span></div>
+              <input type="date" value={closedAt} onChange={e=>setClosedAt(e.target.value)}
+                style={{background:"transparent",border:"none",color:"#06D6A0",fontSize:13,fontFamily:"DM Mono",width:"100%",fontWeight:500}}/>
+              <div style={{fontSize:9,color:"#484F58",marginTop:4,letterSpacing:"0.5px"}}>The month this counts toward production</div>
+            </div>
+            <div style={{background:"#0D1117",borderRadius:8,padding:12}}>
+              <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>EXPECTED CLOSING DATE</div>
+              <input type="date" value={closing} onChange={e=>setClosing(e.target.value)}
+                style={{background:"transparent",border:"none",color:"#8B949E",fontSize:13,fontFamily:"DM Mono",width:"100%"}}/>
+              <div style={{fontSize:9,color:"#484F58",marginTop:4,letterSpacing:"0.5px"}}>Original target date</div>
+            </div>
           </div>
-          <div style={{background:"#0D1117",borderRadius:8,padding:12}}>
-            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>DAYS IN STAGE</div>
-            <div style={{fontSize:24,fontFamily:"Syne",fontWeight:800,color:file.daysInStage>=5?"#E85D75":"#E6EDF3"}}>{file.daysInStage}</div>
+        ) : (
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+            <div style={{background:"#0D1117",borderRadius:8,padding:12}}>
+              <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>CLOSING DATE</div>
+              <input type="date" value={closing} onChange={e=>setClosing(e.target.value)}
+                style={{background:"transparent",border:"none",color:"#E6EDF3",fontSize:13,fontFamily:"DM Mono",width:"100%"}}/>
+            </div>
+            <div style={{background:"#0D1117",borderRadius:8,padding:12}}>
+              <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>{isClosed ? "CLOSED" : "DAYS IN STAGE"}</div>
+              <div style={{fontSize:isClosed?14:24,fontFamily:"Syne",fontWeight:800,color:isClosed?"#06D6A0":(file.daysInStage>=5?"#E85D75":"#E6EDF3")}}>{isClosed ? file.closedAt : file.daysInStage}</div>
+            </div>
           </div>
-        </div>
+        )}
         <div>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:5}}>
             <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px"}}>
@@ -1364,6 +1576,8 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
             // Only include bps in the patch if user is admin (to avoid clobbering it with empty value)
             const patch = {note,closing,type:loanType,loan:parseInt(loanAmt)||file.loan,lo:lo||JOSE_LO,referralPartner};
             if(isAdmin) patch.bps = parseInt(bps)||null;
+            // If admin edited the close date on a closed file, include it
+            if(isAdmin && isClosed && closedAt) patch.closedAt = closedAt;
             onSave(patch);
             onClose();
           }}
