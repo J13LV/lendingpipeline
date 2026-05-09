@@ -608,10 +608,15 @@ export default function App() {
   };
   const updateFile=(id,patch)=>setFiles(p=>p.map(f=>{
     if(f.id!==id)return f;
+    // Auto-trim whitespace on string fields — prevents trailing-space orphan bugs
+    const cleanPatch = {};
+    for(const [k,v] of Object.entries(patch)){
+      cleanPatch[k] = typeof v === "string" ? v.trim() : v;
+    }
     // Compute a human-readable list of which fields changed
-    const changedFields = Object.keys(patch).filter(k=>JSON.stringify(f[k])!==JSON.stringify(patch[k]));
+    const changedFields = Object.keys(cleanPatch).filter(k=>JSON.stringify(f[k])!==JSON.stringify(cleanPatch[k]));
     if(changedFields.length===0)return f;
-    return stampEdit({...f, ...patch}, profile, "edited", {fields:changedFields});
+    return stampEdit({...f, ...cleanPatch}, profile, "edited", {fields:changedFields});
   }));
   const deleteFile=id=>{
     if(!isAdmin){
@@ -759,7 +764,22 @@ export default function App() {
 
 
         {/* PRODUCTION DASHBOARD */}
-        {view==="production"&&<ProductionDashboard profile={profile} files={files} closed={closed} active={active}/>}
+        {view==="production"&&<ProductionDashboard
+          profile={profile}
+          files={files}
+          closed={closed}
+          active={active}
+          onOpenFile={setDetail}
+          onBulkUpdate={(updates)=>{
+            // updates is an array of {id, lo} — apply each as a stamped edit, with whitespace trimmed
+            setFiles(prev=>prev.map(f=>{
+              const u = updates.find(x=>x.id===f.id);
+              if(!u) return f;
+              const cleanLo = typeof u.lo === "string" ? u.lo.trim() : u.lo;
+              return stampEdit({...f, lo:cleanLo}, profile, "edited", {fields:["lo"]});
+            }));
+          }}
+        />}
 
         {/* CLOSED TABLE */}
         {view==="closed"&&<div className="fi">
@@ -886,10 +906,11 @@ export default function App() {
 }
 
 
-function ProductionDashboard({profile, files, closed, active}){
+function ProductionDashboard({profile, files, closed, active, onOpenFile, onBulkUpdate}){
   const isAdmin = profile?.role === "admin";
   const isLO = profile?.role === "lo";
-  const [prodTab,setProdTab]=useState("team"); // team | override | referrals | mycomp
+  const [prodTab,setProdTab]=useState("team"); // team | override | referrals | mycomp | monthly
+  const [showAutoFixPreview, setShowAutoFixPreview] = useState(false);
 
   const thisMonth=new Date().toISOString().slice(0,7);
   const closedThisMonth=closed.filter(f=>f.closedAt&&f.closedAt.startsWith(thisMonth));
@@ -979,9 +1000,37 @@ function ProductionDashboard({profile, files, closed, active}){
 
   // ─── ORPHAN FILES ───
   // Files where the LO field doesn't match any current team member.
-  // Causes: LO was set with a typo, was renamed, or a team member left.
+  // For each orphan, suggest the best-match team member based on trimmed/normalized comparison.
   const validLoNames = new Set(LO_LIST.map(l=>l.name));
-  const orphanFiles = files.filter(f=>!f.lo || !validLoNames.has(f.lo));
+  function suggestLoMatch(rawLo){
+    if(!rawLo || typeof rawLo !== "string") return null;
+    const trimmed = rawLo.trim();
+    // 1. Exact match after trim
+    if(validLoNames.has(trimmed)) return trimmed;
+    // 2. Case-insensitive match after trim
+    const lcTrimmed = trimmed.toLowerCase();
+    const ciMatch = LO_LIST.find(l=>l.name.toLowerCase() === lcTrimmed);
+    if(ciMatch) return ciMatch.name;
+    // 3. Prefix match — "Ana M Plasencia Gonzalez" starts with "Ana M Plasencia"
+    const prefixMatch = LO_LIST.find(l=>lcTrimmed.startsWith(l.name.toLowerCase()) || l.name.toLowerCase().startsWith(lcTrimmed));
+    if(prefixMatch) return prefixMatch.name;
+    // 4. Last name fallback — "Plasencia" → match anyone with that surname
+    const lastWord = lcTrimmed.split(/\s+/).pop();
+    if(lastWord && lastWord.length > 3){
+      const surnameMatch = LO_LIST.find(l=>l.name.toLowerCase().includes(lastWord));
+      if(surnameMatch) return surnameMatch.name;
+    }
+    // 5. First-name fallback — "Ana" → "Ana M Plasencia"
+    const firstWord = lcTrimmed.split(/\s+/)[0];
+    if(firstWord && firstWord.length > 2){
+      const firstNameMatch = LO_LIST.find(l=>l.name.toLowerCase().startsWith(firstWord));
+      if(firstNameMatch) return firstNameMatch.name;
+    }
+    return null;
+  }
+  const orphanFiles = files.filter(f=>!f.lo || !validLoNames.has(f.lo))
+    .map(f=>({...f, _suggestedLo: suggestLoMatch(f.lo)}));
+  const autoFixableCount = orphanFiles.filter(f=>f._suggestedLo).length;
   // Best/worst month in last 12
   const bestMonth = last12Months.reduce((best,m)=>m.units>best.units?m:best, last12Months[0]);
   const worstMonth = last12Months.filter(m=>m.units>0).reduce((worst,m)=>m.units<worst.units?m:worst, last12Months.find(m=>m.units>0)||last12Months[0]);
@@ -1078,34 +1127,106 @@ function ProductionDashboard({profile, files, closed, active}){
         {/* ORPHAN FILES — files whose LO doesn't match any team member */}
         {orphanFiles.length > 0 && (
           <div style={{background:"#161B22",border:"1px solid #E85D7544",borderRadius:10,overflow:"hidden"}}>
-            <div style={{background:"rgba(232,93,117,.08)",borderBottom:"2px solid #E85D75",padding:"10px 16px",display:"flex",alignItems:"center",gap:10}}>
+            <div style={{background:"rgba(232,93,117,.08)",borderBottom:"2px solid #E85D75",padding:"10px 16px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
               <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#E85D75",letterSpacing:"1px"}}>⚠ UNASSIGNED LO FILES</span>
               <span style={{background:"#E85D75",color:"#0D1117",borderRadius:10,padding:"1px 8px",fontSize:11,fontWeight:500}}>{orphanFiles.length}</span>
-              <span style={{fontSize:11,color:"#8B949E",marginLeft:6}}>files where LO doesn't match any team member · won't show in production stats until fixed</span>
+              <span style={{fontSize:11,color:"#8B949E",marginLeft:6,flex:1,minWidth:200}}>won't show in production stats until fixed · click any row to open & fix manually</span>
+              {isAdmin && autoFixableCount > 0 && (
+                <button className="hov" onClick={()=>setShowAutoFixPreview(true)}
+                  style={{background:"#F5A623",color:"#0D1117",borderRadius:6,padding:"7px 14px",fontFamily:"DM Mono",fontSize:11,fontWeight:500,border:"none",cursor:"pointer"}}>
+                  ✨ AUTO-FIX {autoFixableCount}
+                </button>
+              )}
             </div>
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
               <thead>
                 <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
-                  {["BORROWER","TYPE","LOAN","STAGE","CURRENT LO VALUE"].map((h,i)=>(
+                  {["BORROWER","TYPE","LOAN","STAGE","CURRENT LO VALUE","SUGGESTED FIX"].map((h,i)=>(
                     <th key={i} style={{padding:"8px 14px",textAlign:i<2?"left":i===2?"center":"left",fontSize:10,color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {orphanFiles.map((f,i)=>(
-                  <tr key={f.id} style={{borderBottom:"1px solid #21262D",background:i%2===0?"#0D1117":"#161B22"}}>
+                  <tr key={f.id} className="row" onClick={()=>onOpenFile && onOpenFile(f)}
+                    style={{borderBottom:"1px solid #21262D",background:i%2===0?"#0D1117":"#161B22",cursor:"pointer"}}>
                     <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"#E6EDF3"}}>{f.borrower}</td>
                     <td style={{padding:"10px 14px",color:"#8B949E"}}>{f.type}</td>
                     <td style={{padding:"10px 14px",textAlign:"center",color:"#06D6A0",fontWeight:500}}>${(f.loan/1000).toFixed(0)}K</td>
                     <td style={{padding:"10px 14px",color:"#8B949E"}}>{f.stage}</td>
                     <td style={{padding:"10px 14px",color:"#E85D75",fontWeight:500,fontStyle:"italic"}}>{f.lo ? `"${f.lo}"` : "(blank)"}</td>
+                    <td style={{padding:"10px 14px"}}>
+                      {f._suggestedLo ? (
+                        <span style={{color:"#06D6A0",fontWeight:500}}>→ {f._suggestedLo}</span>
+                      ) : (
+                        <span style={{color:"#484F58",fontStyle:"italic"}}>no match · fix manually</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
             <div style={{padding:"10px 16px",borderTop:"1px solid #21262D",fontSize:11,color:"#8B949E",lineHeight:1.5}}>
-              <strong style={{color:"#E85D75"}}>To fix:</strong> Open each file from the pipeline (search by borrower name) → set the LOAN OFFICER dropdown to the correct team member → SAVE.
-              These files will then appear in production stats automatically.
+              <strong style={{color:"#06D6A0"}}>Tip:</strong> Click any row to open the file and fix manually.
+              {isAdmin && autoFixableCount > 0 && <> Or use <strong style={{color:"#F5A623"}}>AUTO-FIX</strong> to bulk-apply all suggested matches at once.</>}
+            </div>
+          </div>
+        )}
+
+        {/* AUTO-FIX PREVIEW MODAL */}
+        {showAutoFixPreview && isAdmin && (
+          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setShowAutoFixPreview(false)}>
+            <div className="fi" style={{background:"#161B22",border:"1px solid #30363D",borderRadius:12,width:"100%",maxWidth:680,maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
+              <div style={{padding:"20px 24px 16px",borderBottom:"1px solid #21262D",flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                <div>
+                  <div style={{fontFamily:"Syne",fontWeight:800,fontSize:18,color:"#F5A623"}}>✨ AUTO-FIX PREVIEW</div>
+                  <div style={{fontSize:11,color:"#8B949E",marginTop:4,lineHeight:1.5}}>
+                    Review the suggested LO assignments below. Click APPLY to update all {autoFixableCount} files at once.
+                    Each change is auditable and can be reverted by editing the file.
+                  </div>
+                </div>
+                <button onClick={()=>setShowAutoFixPreview(false)} style={{background:"transparent",border:"none",color:"#484F58",fontSize:20,cursor:"pointer",padding:"0 0 0 12px"}}>✕</button>
+              </div>
+              <div style={{flex:1,overflowY:"auto",padding:"12px 0"}}>
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+                  <thead>
+                    <tr style={{borderBottom:"1px solid #30363D"}}>
+                      {["BORROWER","CURRENT","→","NEW LO"].map((h,i)=>(
+                        <th key={i} style={{padding:"8px 14px",textAlign:"left",fontSize:10,color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {orphanFiles.filter(f=>f._suggestedLo).map((f,i)=>(
+                      <tr key={f.id} style={{borderBottom:"1px solid #21262D",background:i%2===0?"#0D1117":"#161B22"}}>
+                        <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"#E6EDF3"}}>{f.borrower}</td>
+                        <td style={{padding:"10px 14px",color:"#E85D75",fontStyle:"italic"}}>{f.lo ? `"${f.lo}"` : "(blank)"}</td>
+                        <td style={{padding:"10px 14px",color:"#484F58",textAlign:"center"}}>→</td>
+                        <td style={{padding:"10px 14px",color:"#06D6A0",fontWeight:500}}>{f._suggestedLo}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {orphanFiles.filter(f=>!f._suggestedLo).length > 0 && (
+                  <div style={{padding:"12px 24px",margin:"12px 16px",background:"rgba(232,93,117,.06)",border:"1px solid #E85D7544",borderRadius:8,fontSize:11,color:"#8B949E",lineHeight:1.6}}>
+                    <strong style={{color:"#E85D75"}}>Note:</strong> {orphanFiles.filter(f=>!f._suggestedLo).length} other orphan file{orphanFiles.filter(f=>!f._suggestedLo).length>1?"s":""} couldn't be auto-matched and will need to be fixed manually after this. Open them from the orphan list above.
+                  </div>
+                )}
+              </div>
+              <div style={{padding:"14px 24px",borderTop:"1px solid #21262D",background:"#161B22",flexShrink:0,display:"flex",gap:8}}>
+                <button className="hov" onClick={()=>{
+                  const updates = orphanFiles.filter(f=>f._suggestedLo).map(f=>({id:f.id, lo:f._suggestedLo}));
+                  if(onBulkUpdate) onBulkUpdate(updates);
+                  setShowAutoFixPreview(false);
+                }}
+                  style={{flex:2,background:"#F5A623",color:"#0D1117",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,fontWeight:500,border:"none",cursor:"pointer"}}>
+                  ✨ APPLY {autoFixableCount} FIXES
+                </button>
+                <button className="hov" onClick={()=>setShowAutoFixPreview(false)}
+                  style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"none",cursor:"pointer"}}>
+                  CANCEL
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -1612,7 +1733,15 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
             // Only include bps in the patch if user is admin (to avoid clobbering it with empty value)
             // loAssigned (dropdown) is the single source of truth for LO assignment.
             // We write it to `lo` (the field production stats filter on) to keep them in sync.
-            const patch = {note,closing,type:loanType,loan:parseInt(loanAmt)||file.loan,lo:loAssigned||JOSE_LO,referralPartner};
+            // Trim defensively to prevent any whitespace drift.
+            const patch = {
+              note: (note||"").trim(),
+              closing,
+              type: loanType,
+              loan: parseInt(loanAmt) || file.loan,
+              lo: (loAssigned || JOSE_LO).trim(),
+              referralPartner: (referralPartner||"").trim() || null,
+            };
             if(isAdmin) patch.bps = parseInt(bps)||null;
             // If admin edited the close date on a closed file, include it
             if(isAdmin && isClosed && closedAt) patch.closedAt = closedAt;
@@ -1687,7 +1816,7 @@ function AddModal({profile, onClose, onAdd}){
 
         {/* FOOTER — pinned at bottom */}
         <div style={{padding:"14px 24px",borderTop:"1px solid #21262D",background:"#161B22",flexShrink:0,display:"flex",gap:8}}>
-          <button className="hov" onClick={()=>{if(borrower.trim())onAdd({id:`f${Date.now()}`,borrower:borrower.trim(),loan:parseInt(loan)||0,type,stage,daysInStage:0,closing,note,bps:null,lo:lo||JOSE_LO,referralPartner:referralPartner.trim()||null,closedAt:null});}}
+          <button className="hov" onClick={()=>{if(borrower.trim())onAdd({id:`f${Date.now()}`,borrower:borrower.trim(),loan:parseInt(loan)||0,type,stage,daysInStage:0,closing,note:(note||"").trim(),bps:null,lo:(lo||JOSE_LO).trim(),referralPartner:referralPartner.trim()||null,closedAt:null});}}
             style={{flex:2,background:"#F5A623",color:"#0D1117",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,fontWeight:500,border:"none",cursor:"pointer"}}>ADD TO PIPELINE</button>
           <button className="hov" onClick={onClose}
             style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"none",cursor:"pointer"}}>CANCEL</button>
