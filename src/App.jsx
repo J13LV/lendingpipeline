@@ -866,6 +866,24 @@ export default function App() {
                           {f.lastEditedBy&&<div style={{fontSize:9,color:"#484F58",letterSpacing:"0.5px",borderTop:f.note?"none":"1px solid #21262D",paddingTop:f.note?0:6}}>
                             Edited by {f.lastEditedBy.name?.split(" ")[0]||"?"} · {timeAgo(f.lastEditedAt)}
                           </div>}
+                          {(f.phone || f.email) && (
+                            <div style={{display:"flex",gap:5,marginTop:2,flexWrap:"wrap"}}>
+                              {f.phone && (
+                                <a href={`tel:${f.phone.replace(/[^\d+]/g,"")}`} onClick={e=>e.stopPropagation()}
+                                  title={`Call ${f.phone}`}
+                                  style={{background:"rgba(74,144,217,.08)",border:"1px solid #4A90D944",borderRadius:4,padding:"3px 7px",color:"#4A90D9",fontSize:10,fontFamily:"DM Mono",textDecoration:"none"}}>
+                                  📱 {f.phone}
+                                </a>
+                              )}
+                              {f.email && (
+                                <a href={`mailto:${f.email}`} onClick={e=>e.stopPropagation()}
+                                  title={`Email ${f.email}`}
+                                  style={{background:"rgba(189,101,232,.08)",border:"1px solid #BD65E844",borderRadius:4,padding:"3px 7px",color:"#BD65E8",fontSize:10,fontFamily:"DM Mono",textDecoration:"none"}}>
+                                  ✉
+                                </a>
+                              )}
+                            </div>
+                          )}
                           <div style={{display:"flex",gap:6,marginTop:2}}>
                             <button className="hov" onClick={e=>{e.stopPropagation();advance(f.id);}}
                               style={{flex:1,background:"rgba(255,255,255,.05)",border:"1px solid #21262D",borderRadius:5,color:"#8B949E",fontSize:10,padding:"5px 0"}}>
@@ -1575,6 +1593,8 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
   const [bps,setBps]=useState(String(file.bps||""));
   const [loAssigned,setLoAssigned]=useState(file.lo||"Jose Del Valle");
   const [referralPartner,setReferralPartner]=useState(file.referralPartner||"");
+  const [phone,setPhone]=useState(file.phone||"");
+  const [email,setEmail]=useState(file.email||"");
   const [closedAt,setClosedAt]=useState(file.closedAt||"");
   const ph=getPhase(stage);
   const fs2={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",padding:"8px 10px",fontSize:13,fontFamily:"'DM Mono','Courier New',monospace",width:"100%"};
@@ -1587,6 +1607,24 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
             <div style={{fontFamily:"Syne",fontWeight:800,fontSize:18,color:"#E6EDF3"}}>{file.borrower}</div>
             <div style={{fontSize:12,color:"#8B949E"}}>{loanType} · ${parseInt(loanAmt||0).toLocaleString()}</div>
             {isClosed&&<div style={{marginTop:4,fontSize:11,color:"#06D6A0",fontWeight:500}}>✓ CLOSED — {file.closedAt}</div>}
+            {(phone || email) && (
+              <div style={{marginTop:8,display:"flex",gap:6,flexWrap:"wrap"}}>
+                {phone && (
+                  <a href={`tel:${phone.replace(/[^\d+]/g,"")}`} className="hov"
+                    title="Tap to call"
+                    style={{background:"rgba(74,144,217,.1)",border:"1px solid #4A90D955",borderRadius:5,padding:"4px 9px",color:"#4A90D9",fontSize:11,fontFamily:"DM Mono",textDecoration:"none",display:"inline-flex",alignItems:"center",gap:5}}>
+                    📱 {phone}
+                  </a>
+                )}
+                {email && (
+                  <a href={`mailto:${email}`} className="hov"
+                    title="Tap to email"
+                    style={{background:"rgba(189,101,232,.1)",border:"1px solid #BD65E855",borderRadius:5,padding:"4px 9px",color:"#BD65E8",fontSize:11,fontFamily:"DM Mono",textDecoration:"none",display:"inline-flex",alignItems:"center",gap:5}}>
+                    ✉ {email}
+                  </a>
+                )}
+              </div>
+            )}
           </div>
           <button onClick={onClose} style={{background:"transparent",border:"none",color:"#484F58",fontSize:20,cursor:"pointer",padding:"0 0 0 12px"}}>✕</button>
         </div>
@@ -1626,6 +1664,14 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
           <div style={{gridColumn:"1/-1"}}>
             <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>REFERRAL PARTNER</div>
             <input value={referralPartner} onChange={e=>setReferralPartner(e.target.value)} placeholder="Agent name, CPA, SmartBee, walk-in..." style={fs2}/>
+          </div>
+          <div>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>📱 PHONE</div>
+            <input type="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="(702) 555-1234" style={fs2}/>
+          </div>
+          <div>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>✉ EMAIL</div>
+            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="borrower@email.com" style={fs2}/>
           </div>
         </div>
         {!isClosed&&<div>
@@ -1741,6 +1787,8 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
               loan: parseInt(loanAmt) || file.loan,
               lo: (loAssigned || JOSE_LO).trim(),
               referralPartner: (referralPartner||"").trim() || null,
+              phone: (phone||"").trim() || null,
+              email: (email||"").trim() || null,
             };
             if(isAdmin) patch.bps = parseInt(bps)||null;
             // If admin edited the close date on a closed file, include it
@@ -1779,44 +1827,131 @@ function AddModal({profile, onClose, onAdd}){
   const [closing,setClosing]=useState("");
   const [note,setNote]=useState("");
   const [referralPartner,setReferralPartner]=useState("");
-  // Default LO to the current user if they're admin/lo, otherwise Jose
-  const defaultLo = (profile?.role === "admin" || profile?.role === "lo") ? profile.name : JOSE_LO;
+  const [phone,setPhone]=useState("");
+  const [email,setEmail]=useState("");
+  // Smart default for LO field:
+  // - Admin/LO creating a file: defaults to themselves
+  // - Assistant creating a file: defaults to first LO (Ana) — they'll need to confirm via dropdown
+  // The dropdown is constrained to valid LOs, so orphans from this form are now impossible.
+  const isAssistant = profile?.role === "assistant";
+  const defaultLo = isAssistant
+    ? (LO_LIST.find(l=>l.role==="LO")?.name || LO_LIST[0]?.name || JOSE_LO)
+    : profile?.name || JOSE_LO;
   const [lo,setLo]=useState(defaultLo);
+
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
-      <div className="fi" style={{background:"#161B22",border:"1px solid #30363D",borderRadius:12,width:"100%",maxWidth:440,maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
+      <div className="fi" style={{background:"#161B22",border:"1px solid #30363D",borderRadius:12,width:"100%",maxWidth:480,maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
         {/* HEADER */}
         <div style={{padding:"20px 24px 16px",borderBottom:"1px solid #21262D",flexShrink:0}}>
           <div style={{fontFamily:"Syne",fontWeight:800,fontSize:18,color:"#E6EDF3"}}>NEW FILE</div>
+          {isAssistant && (
+            <div style={{fontSize:11,color:"#F5A623",marginTop:4,letterSpacing:"0.5px"}}>
+              ⚠ Assistant view — please confirm the LOAN OFFICER below before adding.
+            </div>
+          )}
         </div>
 
         {/* SCROLLABLE BODY */}
-        <div style={{flex:1,overflowY:"auto",padding:"16px 24px"}}>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-          {[
-            ["BORROWER NAME *","text",borrower,setBorrower,"Full legal name","1/-1"],
-            ["LOAN AMOUNT","text",loan,setLoan,"350000","auto"],
-            ["LOAN TYPE","select",type,setType,null,"auto"],
-            ["STARTING STAGE","select2",stage,setStage,null,"1/-1"],
-            ["LOAN OFFICER","text",lo,setLo,"Jose Del Valle","1/-1"],
-            ["REFERRAL PARTNER","text",referralPartner,setReferralPartner,"Agent name, CPA, Smart Bee, walk-in...","1/-1"],
-            ["EXPECTED CLOSING DATE","date",closing,setClosing,null,"1/-1"],
-            ["NOTES","text",note,setNote,"Subm 4/12 · UW queue · review by 4/15","1/-1"],
-          ].map(([l,t,v,sv,ph,gc])=>(
-            <div key={l} style={{gridColumn:gc}}>
-              <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{l}</div>
-              {t==="select"?<select value={v} onChange={e=>sv(e.target.value)} style={IS}>{LOAN_TYPE_GROUPS.map(g=><optgroup key={g.group} label={g.group}>{g.types.map(x=><option key={x}>{x}</option>)}</optgroup>)}</select>
-              :t==="select2"?<select value={v} onChange={e=>sv(e.target.value)} style={IS}>{ALL_STAGES.map((s,i)=><option key={i} value={s.stage}>[{s.phase.short}] {s.stage}</option>)}</select>:t==="loSelect"?<select value={v} onChange={e=>sv(e.target.value)} style={IS}>{LO_LIST.map(lo=><option key={lo.name} value={lo.name}>{lo.name} · {lo.role}</option>)}</select>
-              :<input type={t==="date"?"date":"text"} value={v} onChange={e=>sv(e.target.value)} placeholder={ph||""} style={IS}/>}
+        <div style={{flex:1,overflowY:"auto",padding:"16px 24px",display:"flex",flexDirection:"column",gap:14}}>
+
+          {/* Borrower name — full width */}
+          <div>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>BORROWER NAME *</div>
+            <input value={borrower} onChange={e=>setBorrower(e.target.value)} placeholder="Full legal name" style={IS} autoFocus/>
+          </div>
+
+          {/* Phone + Email — side by side */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+            <div>
+              <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>📱 PHONE</div>
+              <input type="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="(702) 555-1234" style={IS}/>
             </div>
-          ))}
-        </div>
+            <div>
+              <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>✉ EMAIL</div>
+              <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="borrower@email.com" style={IS}/>
+            </div>
+          </div>
+
+          {/* Loan Amount + Type — side by side */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+            <div>
+              <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>LOAN AMOUNT</div>
+              <input value={loan} onChange={e=>setLoan(e.target.value)} placeholder="350000" style={IS}/>
+            </div>
+            <div>
+              <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>LOAN TYPE</div>
+              <select value={type} onChange={e=>setType(e.target.value)} style={IS}>
+                {LOAN_TYPE_GROUPS.map(g=><optgroup key={g.group} label={g.group}>{g.types.map(x=><option key={x}>{x}</option>)}</optgroup>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Starting stage — full width */}
+          <div>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>STARTING STAGE</div>
+            <select value={stage} onChange={e=>setStage(e.target.value)} style={IS}>
+              {ALL_STAGES.map((s,i)=><option key={i} value={s.stage}>[{s.phase.short}] {s.stage}</option>)}
+            </select>
+          </div>
+
+          {/* Loan Officer — DROPDOWN (was the bug — text input let typos through) */}
+          <div>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>
+              LOAN OFFICER {isAssistant && <span style={{color:"#F5A623"}}>· assigning on behalf of</span>}
+            </div>
+            <select value={lo} onChange={e=>setLo(e.target.value)} style={IS}>
+              {LO_LIST.map(l=><option key={l.name} value={l.name}>{l.name} · {l.role}</option>)}
+            </select>
+          </div>
+
+          {/* Referral partner */}
+          <div>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>REFERRAL PARTNER</div>
+            <input value={referralPartner} onChange={e=>setReferralPartner(e.target.value)} placeholder="Agent name, CPA, Smart Bee, walk-in..." style={IS}/>
+          </div>
+
+          {/* Expected closing date */}
+          <div>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>EXPECTED CLOSING DATE</div>
+            <input type="date" value={closing} onChange={e=>setClosing(e.target.value)} style={IS}/>
+          </div>
+
+          {/* Notes — uses the structured-format placeholder */}
+          <div>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>
+              NOTES <span style={{color:"#30363D"}}>· STATUS · BLOCKER · NEXT</span>
+            </div>
+            <input value={note} onChange={e=>setNote(e.target.value)} placeholder="Subm 4/12 · UW queue · review by 4/15" style={IS}/>
+          </div>
+
         </div>
         {/* END SCROLLABLE BODY */}
 
         {/* FOOTER — pinned at bottom */}
         <div style={{padding:"14px 24px",borderTop:"1px solid #21262D",background:"#161B22",flexShrink:0,display:"flex",gap:8}}>
-          <button className="hov" onClick={()=>{if(borrower.trim())onAdd({id:`f${Date.now()}`,borrower:borrower.trim(),loan:parseInt(loan)||0,type,stage,daysInStage:0,closing,note:(note||"").trim(),bps:null,lo:(lo||JOSE_LO).trim(),referralPartner:referralPartner.trim()||null,closedAt:null});}}
+          <button className="hov" onClick={()=>{
+            if(!borrower.trim()){
+              alert("Borrower name is required.");
+              return;
+            }
+            onAdd({
+              id:`f${Date.now()}`,
+              borrower:borrower.trim(),
+              loan:parseInt(loan)||0,
+              type,
+              stage,
+              daysInStage:0,
+              closing,
+              note:(note||"").trim(),
+              bps:null,
+              lo:(lo||JOSE_LO).trim(),
+              referralPartner:referralPartner.trim()||null,
+              phone:phone.trim()||null,
+              email:email.trim()||null,
+              closedAt:null,
+            });
+          }}
             style={{flex:2,background:"#F5A623",color:"#0D1117",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,fontWeight:500,border:"none",cursor:"pointer"}}>ADD TO PIPELINE</button>
           <button className="hov" onClick={onClose}
             style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"none",cursor:"pointer"}}>CANCEL</button>
