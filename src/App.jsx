@@ -24,9 +24,6 @@ const auth = getAuth(firebaseApp);
 const PIPELINE_DOC = doc(db, "pipeline", "main");
 
 // ─── TEAM ROSTER ───
-// Maps Firebase Auth UIDs to internal profile data + role.
-// To add/remove team members: create a new Auth user in Firebase Console,
-// copy their UID, and add them to this list with role: "admin" | "lo" | "assistant"
 const TEAM = {
   "vllTjiE2Aba8CKIC3UWGxMdzBcM2": { name: "Jose Del Valle",     short: "Jose",     role: "admin",     nmls: "2686066", color: "#4A90D9" },
   "iXcEzyc2nTTy2CJirLUz1FJ1oye2": { name: "Ana M Plasencia",    short: "Ana",      role: "lo",        nmls: "2683283", color: "#BD65E8" },
@@ -43,8 +40,32 @@ const EXCLUDED_TYPES = ["Lightning Equity Hybrid HELOC","Symmetry HELOC","CE Sec
   "FHA Streamline","FHA Streamline High Balance","VA IRRRL","VA IRRRL High Balance",
   "Fannie RefiNow","Freddie Refi Possible","USDA Streamlined Assist","CO CHFA FHA Streamline"];
 
+// ─── BANK-TO-BANK REFERRAL CONSTANTS ───
+// When a file can't be done at PRMG (product limits, credit, etc.), Jose refers
+// it to another banker and earns a referral fee. We also track inbound deals
+// where another banker sent us business.
+const REFERRED_OUT_STAGE = "REFERRED OUT — EXTERNAL BANK";
+const REFERRAL_FEE_BPS = 50; // bps earned on referred-out closed deals
+const REFERRAL_REASONS = [
+  "Credit Score Too Low",
+  "DTI / Income Issue",
+  "Product Not Offered at PRMG",
+  "Property Type Restriction",
+  "LTV / Down Payment Issue",
+  "Bankruptcy / Credit Event",
+  "Foreign National Buyer",
+  "Self-Employed Documentation",
+  "Investor / Non-Owner Restriction",
+  "Other",
+];
+const REFERRAL_STATUSES = [
+  "Pending at Banker",
+  "Closed (Funded)",
+  "Fell Through",
+  "Withdrawn by Borrower",
+];
+
 // ─── AUDIT HELPERS ───
-// Stamp a file with edit metadata + log an entry to its history (capped at 20 entries)
 function stampEdit(file, profile, action, extra={}){
   const entry = {
     uid: profile.uid,
@@ -62,7 +83,6 @@ function stampEdit(file, profile, action, extra={}){
   };
 }
 
-// Format a relative timestamp like "2h ago" / "3d ago" / "just now"
 function timeAgo(iso){
   if(!iso) return "";
   const diff = Date.now() - new Date(iso).getTime();
@@ -94,7 +114,6 @@ function LoginScreen() {
     setError("");
     try {
       await signInWithEmailAndPassword(auth, email.trim(), pw);
-      // onAuthStateChanged listener in App() will pick this up
     } catch (err) {
       setBusy(false);
       const code = err.code || "";
@@ -318,8 +337,6 @@ const LOAN_TYPE_GROUPS = [
 ];
 const LOAN_TYPES = LOAN_TYPE_GROUPS.flatMap(g => g.types);
 
-// LO_LIST derives from TEAM (admin + lo roles) so the production dashboard
-// and detail modals stay in sync when team members are added/removed.
 const LO_LIST = Object.entries(TEAM)
   .filter(([_,p]) => p.role === "admin" || p.role === "lo")
   .map(([uid,p]) => ({
@@ -330,29 +347,23 @@ const LO_LIST = Object.entries(TEAM)
     color: p.color,
   }));
 
-// Excluded loan types from override (per PRMG Pay Plan 02/02/2026)
 const OVERRIDE_EXCLUDED = ["Lightning Equity Hybrid HELOC","Symmetry HELOC","CE Second Elite","CE Second Expanded Access (ITIN)","CE Second Classic Elite (Piggyback)"];
 const OVERRIDE_BPS = 25;
 
 const SAMPLE = [
   { id:"f1", lo:"Jose Del Valle", borrower:"Ariel Villalobos", loan:385000, type:"Conventional", stage:"Condition Clearing", daysInStage:3, closing:"2026-04-14", note:"Waiting on updated pay stubs", bps:null, closedAt:null },
   { id:"f2", lo:"Jose Del Valle", borrower:"Maria Santos", loan:420000, type:"FHA", stage:"Appraisal Ordered", daysInStage:6, closing:"2026-04-28", note:"", bps:null, closedAt:null },
-  { id:"f3", lo:"Jose Del Valle", borrower:"James Ortega", loan:295000, type:"VA", stage:"Under Contract", daysInStage:2, closing:"2026-05-10", note:"Agent: Anamary APG", bps:null, closedAt:null },
-  { id:"f4", lo:"Jose Del Valle", borrower:"Linda Park", loan:510000, type:"Conventional", stage:"Submitted to UW", daysInStage:1, closing:"2026-04-22", note:"", bps:null, closedAt:null },
-  { id:"f5", lo:"Jose Del Valle", borrower:"Carlos Mendez", loan:340000, type:"FHA", stage:"Pre-Qualification", daysInStage:0, closing:"2026-05-20", note:"Smart Bee referral", bps:null, closedAt:null },
-  { id:"f6", lo:"Jose Del Valle", borrower:"Angela Torres", loan:275000, type:"Conventional", stage:"CD Issued", daysInStage:1, closing:"2026-04-09", note:"3-day wait ends 4/9", bps:null, closedAt:null },
-  { id:"f7", lo:"Jose Del Valle", borrower:"David Kim", loan:460000, type:"Conventional", stage:"Doc Collection", daysInStage:4, closing:"2026-05-02", note:"Self-employed — need 2yr biz returns", bps:null, closedAt:null },
-  { id:"f8", lo:"Jose Del Valle", borrower:"Rosa Jimenez", loan:318000, type:"FHA", stage:CLOSED_STAGE, daysInStage:0, closing:"2026-03-15", note:"Smooth close. Smart Bee referral.", bps:null, closedAt:"2026-03-15" },
-  { id:"f9", lo:"Jose Del Valle", borrower:"Tony Reyes", loan:425000, type:"Conventional", stage:CLOSED_STAGE, daysInStage:0, closing:"2026-03-28", note:"APG Realty. Requested Google review.", bps:null, closedAt:"2026-03-28" },
 ];
 
 function getPhase(stageName) {
   if (stageName === CLOSED_STAGE) return { id:99, label:"Closed", short:"✓", color:"#06D6A0", bg:"#00281e", stages:[CLOSED_STAGE] };
+  if (stageName === REFERRED_OUT_STAGE) return { id:98, label:"Referred Out", short:"REF", color:"#A78BFA", bg:"#1f1830", stages:[REFERRED_OUT_STAGE] };
   return PHASES.find(p => p.stages.includes(stageName)) || PHASES[0];
 }
 function daysTil(d) { return d ? Math.ceil((new Date(d)-new Date())/86400000) : null; }
 function urgency(f) {
   if (f.stage===CLOSED_STAGE) return "closed";
+  if (f.stage===REFERRED_OUT_STAGE) return "referred";
   const d=daysTil(f.closing);
   if(d!==null&&d<=3)return"critical";
   if(d!==null&&d<=7)return"warning";
@@ -363,8 +374,8 @@ function urgency(f) {
 const IS = { background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",padding:"9px 12px",fontSize:13,fontFamily:"'DM Mono','Courier New',monospace",width:"100%" };
 
 export default function App() {
-  const [currentUser, setCurrentUser] = useState(null); // Firebase Auth user object
-  const [authReady, setAuthReady] = useState(false);    // Has Firebase finished checking auth state?
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
   const [files,setFiles]=useState([]);
   const [view,setView]=useState("active");
   const [activePhase,setActivePhase]=useState(null);
@@ -373,14 +384,12 @@ export default function App() {
   const [showHelp,setShowHelp]=useState(false);
   const [detail,setDetail]=useState(null);
   const [loaded,setLoaded]=useState(false);
-  const [saveStatus,setSaveStatus]=useState("idle"); // idle | saving | saved | error
+  const [saveStatus,setSaveStatus]=useState("idle");
 
-  // Subscribe to Firebase Auth state — fires whenever user logs in/out
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       setAuthReady(true);
-      // Reset pipeline data when user changes (login/logout)
       if (!user) {
         setFiles([]);
         setLoaded(false);
@@ -389,7 +398,6 @@ export default function App() {
     return () => unsub();
   }, []);
 
-  // Build profile from currentUser. profile.uid is what we attach to audit log entries.
   const profile = currentUser
     ? { uid: currentUser.uid, email: currentUser.email, ...getProfile(currentUser.uid) }
     : null;
@@ -398,9 +406,7 @@ export default function App() {
   const isAssistant = profile?.role === "assistant";
 
   useEffect(()=>{
-    // Only subscribe to Firestore once the user is authenticated
     if (!currentUser) return;
-    // Real-time listener — all devices sync automatically
     const unsub = onSnapshot(PIPELINE_DOC, (snap) => {
       if(snap.exists()){
         const data = snap.data();
@@ -408,27 +414,23 @@ export default function App() {
           setFiles(data.files);
           setLoaded(true);
         } else {
-          // Firebase empty — check localStorage for migration
           try {
             const local = localStorage.getItem("pipe_v3");
             if(local){
               const parsed = JSON.parse(local);
               if(parsed && parsed.length > 0){
                 setFiles(parsed);
-                // Push local data up to Firebase immediately
                 setDoc(PIPELINE_DOC, {files: parsed}, {merge:true});
                 setLoaded(true);
                 return;
               }
             }
           } catch{}
-          // First-time user — seed sample data
           setFiles(SAMPLE);
           setDoc(PIPELINE_DOC, {files: SAMPLE}, {merge:true});
           setLoaded(true);
         }
       } else {
-        // No Firebase doc yet — migrate from localStorage
         try {
           const local = localStorage.getItem("pipe_v3");
           if(local){
@@ -441,13 +443,11 @@ export default function App() {
             }
           }
         } catch{}
-        // First-time user, no local data — seed sample
         setFiles(SAMPLE);
         setDoc(PIPELINE_DOC, {files: SAMPLE}, {merge:true});
         setLoaded(true);
       }
     }, ()=>{
-      // Firebase error — fall back to localStorage
       try {
         const local = localStorage.getItem("pipe_v3");
         if(local) setFiles(JSON.parse(local));
@@ -460,21 +460,17 @@ export default function App() {
 
   useEffect(()=>{
     if(!loaded || !currentUser)return;
-    // Save to Firebase — all devices update instantly
     setSaveStatus("saving");
     setDoc(PIPELINE_DOC, {files}, {merge:true}).then(()=>{
-      // Also save a local backup mirror — belt and suspenders
       try{localStorage.setItem("pipe_v3",JSON.stringify(files));}catch{}
       setSaveStatus("saved");
       setTimeout(()=>setSaveStatus(s=>s==="saved"?"idle":s), 2000);
     }).catch(()=>{
-      // Fallback to localStorage if Firebase fails
       try{localStorage.setItem("pipe_v3",JSON.stringify(files));}catch{}
       setSaveStatus("error");
     });
   },[files,loaded]);
 
-  // Export current pipeline as a JSON backup file (download to user's computer)
   function exportBackup(){
     const payload = {
       exportedAt: new Date().toISOString(),
@@ -494,7 +490,6 @@ export default function App() {
     URL.revokeObjectURL(url);
   }
 
-  // Import a JSON backup file and replace current pipeline (with confirmation)
   function importBackup(event){
     const file = event.target.files?.[0];
     if(!file) return;
@@ -521,11 +516,9 @@ export default function App() {
       }
     };
     reader.readAsText(file);
-    // Reset the input so the same file can be re-selected later if needed
     event.target.value = "";
   }
 
-  // Loading screen while Firebase Auth is initializing
   if (!authReady) {
     return (
       <div style={{
@@ -544,7 +537,6 @@ export default function App() {
     );
   }
 
-  // Not signed in → show login
   if (!currentUser) return <LoginScreen />;
 
   if (!loaded) {
@@ -575,16 +567,29 @@ export default function App() {
     );
   }
 
-  const active=files.filter(f=>f.stage!==CLOSED_STAGE);
+  // ─── FILE PARTITIONING ───
+  // Active = working pipeline (not closed, not referred out)
+  // Closed = funded loans
+  // ReferredOut = loans we sent to another bank
+  // Inbound = loans another banker sent to us (flag, can be in any stage)
+  const active=files.filter(f=>f.stage!==CLOSED_STAGE && f.stage!==REFERRED_OUT_STAGE);
   const closed=files.filter(f=>f.stage===CLOSED_STAGE);
+  const referredOut=files.filter(f=>f.stage===REFERRED_OUT_STAGE);
+  const inbound=files.filter(f=>f.isInbound);
 
-  const display=(view==="closed"?closed:active)
+  const display=(
+    view==="closed" ? closed :
+    view==="referred" ? referredOut :
+    view==="inbound" ? inbound :
+    active
+  )
     .filter(f=>!search||f.borrower.toLowerCase().includes(search.toLowerCase()))
     .filter(f=>!activePhase||getPhase(f.stage).id===activePhase);
 
-  // All file mutations stamp the change with the current user via stampEdit().
   const advance=id=>setFiles(p=>p.map(f=>{
     if(f.id!==id)return f;
+    // Don't auto-advance referred-out or closed files
+    if(f.stage===CLOSED_STAGE || f.stage===REFERRED_OUT_STAGE)return f;
     const i=ALL_STAGES.findIndex(s=>s.stage===f.stage);
     const n=ALL_STAGES[i+1];
     if(!n)return f;
@@ -593,8 +598,7 @@ export default function App() {
   const closeFile=id=>{
     setFiles(p=>p.map(f=>{
       if(f.id!==id) return f;
-      // Use the file's closing date as the actual funded date.
-      // Falls back to today if no closing date was ever set.
+      if(f.stage===REFERRED_OUT_STAGE) return f; // can't close a referred-out file at PRMG
       const fundedDate = f.closing || new Date().toISOString().split("T")[0];
       return stampEdit({...f, stage:CLOSED_STAGE, closedAt:fundedDate, daysInStage:0}, profile, "closed", {from:f.stage, closedAt:fundedDate});
     }));
@@ -608,12 +612,10 @@ export default function App() {
   };
   const updateFile=(id,patch)=>setFiles(p=>p.map(f=>{
     if(f.id!==id)return f;
-    // Auto-trim whitespace on string fields — prevents trailing-space orphan bugs
     const cleanPatch = {};
     for(const [k,v] of Object.entries(patch)){
       cleanPatch[k] = typeof v === "string" ? v.trim() : v;
     }
-    // Compute a human-readable list of which fields changed
     const changedFields = Object.keys(cleanPatch).filter(k=>JSON.stringify(f[k])!==JSON.stringify(cleanPatch[k]));
     if(changedFields.length===0)return f;
     return stampEdit({...f, ...cleanPatch}, profile, "edited", {fields:changedFields});
@@ -663,7 +665,6 @@ export default function App() {
           ))}
         </div>
         <div style={{marginLeft:"auto",display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-          {/* Save status indicator — quietly shows the user that data is persisting */}
           {saveStatus !== "idle" && (
             <div style={{
               fontSize:10, letterSpacing:"1px", padding:"4px 10px", borderRadius:12,
@@ -701,7 +702,6 @@ export default function App() {
             ❓ HELP
           </button>
 
-          {/* User pill + logout */}
           <div style={{display:"flex",alignItems:"center",gap:8,paddingLeft:12,marginLeft:4,borderLeft:"1px solid #30363D"}}>
             <div style={{
               width:32, height:32, borderRadius:"50%",
@@ -727,9 +727,14 @@ export default function App() {
         </div>
       </div>
 
-      {/* TAB BAR */}
+      {/* TAB BAR — added REFERRED OUT and INBOUND filters */}
       <div style={{background:"#161B22",borderBottom:"1px solid #21262D",padding:"10px 24px",display:"flex",gap:8,alignItems:"center",overflowX:"auto"}}>
-        {[["ACTIVE PIPELINE",active.length,"active","#4A90D9"],["CLOSED FILES",closed.length,"closed","#06D6A0"]].map(([l,c,v,col])=>(
+        {[
+          ["ACTIVE PIPELINE",active.length,"active","#4A90D9"],
+          ["CLOSED FILES",closed.length,"closed","#06D6A0"],
+          ["🔀 REFERRED OUT",referredOut.length,"referred","#A78BFA"],
+          ["🤝 INBOUND",inbound.length,"inbound","#FFD166"],
+        ].map(([l,c,v,col])=>(
           <button key={v} className="hov" onClick={()=>{setView(v);setActivePhase(null);}}
             style={{background:view===v?col:"#21262D",color:view===v?"#0D1117":col,borderRadius:6,padding:"6px 14px",fontSize:11,fontFamily:"DM Mono",fontWeight:500,whiteSpace:"nowrap"}}>
             {l} · {c}
@@ -762,16 +767,15 @@ export default function App() {
       {/* CONTENT */}
       <div style={{padding:"20px 24px"}}>
 
-
-        {/* PRODUCTION DASHBOARD */}
         {view==="production"&&<ProductionDashboard
           profile={profile}
           files={files}
           closed={closed}
           active={active}
+          referredOut={referredOut}
+          inbound={inbound}
           onOpenFile={setDetail}
           onBulkUpdate={(updates)=>{
-            // updates is an array of {id, lo} — apply each as a stamped edit, with whitespace trimmed
             setFiles(prev=>prev.map(f=>{
               const u = updates.find(x=>x.id===f.id);
               if(!u) return f;
@@ -780,6 +784,104 @@ export default function App() {
             }));
           }}
         />}
+
+        {/* REFERRED OUT TABLE */}
+        {view==="referred"&&<div className="fi">
+          <div style={{marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#A78BFA"}}>🔀 REFERRED OUT — {referredOut.length} TOTAL</span>
+            <span style={{fontSize:11,color:"#484F58"}}>Files sent to external bankers. Click any row to view details + track outcome.</span>
+          </div>
+          {display.length===0?<div style={{padding:40,textAlign:"center",color:"#30363D",fontSize:13}}>
+            No referred-out files yet.<br/><br/>
+            <span style={{fontSize:11}}>To refer a file: open any active loan → change STAGE to "REFERRED OUT — EXTERNAL BANK" → fill in receiving banker details.</span>
+          </div>:(
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+              <thead>
+                <tr style={{background:"#161B22",borderBottom:"2px solid #A78BFA"}}>
+                  {["BORROWER","LOAN TYPE","AMOUNT","REFERRED TO","REASON","STATUS","FEE EARNED"].map((h,i)=>(
+                    <th key={i} style={{padding:"10px 14px",textAlign:"left",fontSize:10,color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {display.map((f,i)=>{
+                  const ro = f.referredOut || {};
+                  const isFunded = ro.status === "Closed (Funded)";
+                  const finalAmount = parseInt(ro.finalLoanAmount)||f.loan||0;
+                  const feeEarned = isFunded ? Math.round(finalAmount * REFERRAL_FEE_BPS / 10000) : 0;
+                  return (
+                    <tr key={f.id} className="row" style={{borderBottom:"1px solid #21262D",cursor:"pointer"}} onClick={()=>setDetail(f)}>
+                      <td style={{padding:"11px 14px",fontFamily:"Syne",fontWeight:700,color:"#E6EDF3",background:i%2===0?"#0D1117":"#161B22"}}>{f.borrower}</td>
+                      <td style={{padding:"11px 14px",color:"#8B949E",background:i%2===0?"#0D1117":"#161B22"}}>{f.type}</td>
+                      <td style={{padding:"11px 14px",color:"#A78BFA",fontWeight:500,background:i%2===0?"#0D1117":"#161B22"}}>${(f.loan/1000).toFixed(0)}K</td>
+                      <td style={{padding:"11px 14px",color:"#E6EDF3",background:i%2===0?"#0D1117":"#161B22"}}>
+                        {ro.bankerName||"—"}<br/>
+                        <span style={{fontSize:10,color:"#484F58"}}>{ro.bankerCompany||""}</span>
+                      </td>
+                      <td style={{padding:"11px 14px",color:"#8B949E",fontSize:11,background:i%2===0?"#0D1117":"#161B22"}}>{ro.reason||"—"}</td>
+                      <td style={{padding:"11px 14px",background:i%2===0?"#0D1117":"#161B22"}}>
+                        <span style={{
+                          fontSize:10,padding:"3px 7px",borderRadius:4,
+                          background: ro.status==="Closed (Funded)" ? "rgba(6,214,160,.15)" :
+                                      ro.status==="Fell Through" ? "rgba(232,93,117,.15)" :
+                                      ro.status==="Withdrawn by Borrower" ? "rgba(139,148,158,.15)" :
+                                      "rgba(245,166,35,.15)",
+                          color: ro.status==="Closed (Funded)" ? "#06D6A0" :
+                                 ro.status==="Fell Through" ? "#E85D75" :
+                                 ro.status==="Withdrawn by Borrower" ? "#8B949E" :
+                                 "#F5A623",
+                        }}>{ro.status||"Pending"}</span>
+                      </td>
+                      <td style={{padding:"11px 14px",color:isFunded?"#06D6A0":"#484F58",fontWeight:500,background:i%2===0?"#0D1117":"#161B22"}}>
+                        {feeEarned > 0 ? `$${feeEarned.toLocaleString()}` : "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>}
+
+        {/* INBOUND VIEW */}
+        {view==="inbound"&&<div className="fi">
+          <div style={{marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#FFD166"}}>🤝 INBOUND REFERRALS — {inbound.length} TOTAL</span>
+            <span style={{fontSize:11,color:"#484F58"}}>Files sent TO us by external bankers. They follow normal pipeline stages.</span>
+          </div>
+          {display.length===0?<div style={{padding:40,textAlign:"center",color:"#30363D",fontSize:13}}>
+            No inbound referrals yet.<br/><br/>
+            <span style={{fontSize:11}}>To add an inbound: click "+ NEW FILE" → check "This is an inbound referral" at the top.</span>
+          </div>:(
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+              <thead>
+                <tr style={{background:"#161B22",borderBottom:"2px solid #FFD166"}}>
+                  {["BORROWER","LOAN TYPE","AMOUNT","REFERRED BY","STAGE","CLOSING"].map((h,i)=>(
+                    <th key={i} style={{padding:"10px 14px",textAlign:"left",fontSize:10,color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {display.map((f,i)=>{
+                  const rb = f.referringBanker || {};
+                  return (
+                    <tr key={f.id} className="row" style={{borderBottom:"1px solid #21262D",cursor:"pointer"}} onClick={()=>setDetail(f)}>
+                      <td style={{padding:"11px 14px",fontFamily:"Syne",fontWeight:700,color:"#E6EDF3",background:i%2===0?"#0D1117":"#161B22"}}>{f.borrower}</td>
+                      <td style={{padding:"11px 14px",color:"#8B949E",background:i%2===0?"#0D1117":"#161B22"}}>{f.type}</td>
+                      <td style={{padding:"11px 14px",color:"#FFD166",fontWeight:500,background:i%2===0?"#0D1117":"#161B22"}}>${(f.loan/1000).toFixed(0)}K</td>
+                      <td style={{padding:"11px 14px",color:"#E6EDF3",background:i%2===0?"#0D1117":"#161B22"}}>
+                        {rb.bankerName||"—"}<br/>
+                        <span style={{fontSize:10,color:"#484F58"}}>{rb.bankerCompany||""}</span>
+                      </td>
+                      <td style={{padding:"11px 14px",color:getPhase(f.stage).color,fontWeight:500,fontSize:11,background:i%2===0?"#0D1117":"#161B22"}}>{f.stage}</td>
+                      <td style={{padding:"11px 14px",color:"#8B949E",background:i%2===0?"#0D1117":"#161B22"}}>{f.closedAt||f.closing||"—"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>}
 
         {/* CLOSED TABLE */}
         {view==="closed"&&<div className="fi">
@@ -844,7 +946,10 @@ export default function App() {
                           style={{background:"#0D1117",border:`1px solid ${uc}`,borderRadius:8,padding:"12px 14px",display:"flex",flexDirection:"column",gap:8}}>
                           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
                             <div>
-                              <div style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#E6EDF3",lineHeight:1.2}}>{f.borrower}</div>
+                              <div style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#E6EDF3",lineHeight:1.2}}>
+                                {f.borrower}
+                                {f.isInbound && <span title="Inbound referral" style={{marginLeft:6,fontSize:10,color:"#FFD166"}}>🤝</span>}
+                              </div>
                               <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>{f.type} · ${(f.loan/1000).toFixed(0)}k</div>
                               {f.lo&&<div style={{fontSize:10,color:"#484F58",marginTop:1}}>{f.lo.split(" ")[0]}{f.referralPartner?` · ${f.referralPartner.split(" ")[0]}`:""}</div>}
                             </div>
@@ -924,21 +1029,19 @@ export default function App() {
 }
 
 
-function ProductionDashboard({profile, files, closed, active, onOpenFile, onBulkUpdate}){
+function ProductionDashboard({profile, files, closed, active, referredOut, inbound, onOpenFile, onBulkUpdate}){
   const isAdmin = profile?.role === "admin";
   const isLO = profile?.role === "lo";
-  const [prodTab,setProdTab]=useState("team"); // team | override | referrals | mycomp | monthly
+  const [prodTab,setProdTab]=useState("team");
   const [showAutoFixPreview, setShowAutoFixPreview] = useState(false);
 
   const thisMonth=new Date().toISOString().slice(0,7);
   const closedThisMonth=closed.filter(f=>f.closedAt&&f.closedAt.startsWith(thisMonth));
 
-  // Volume calcs
   const closedVol=closed.reduce((s,f)=>s+(f.loan||0),0);
   const activeVol=active.reduce((s,f)=>s+(f.loan||0),0);
   const monthVol=closedThisMonth.reduce((s,f)=>s+(f.loan||0),0);
 
-  // Per-LO stats (volume + count) — no comp shown
   const loStats=LO_LIST.map(lo=>{
     const loFiles=files.filter(f=>f.lo===lo.name);
     const loClosed=closed.filter(f=>f.lo===lo.name);
@@ -951,14 +1054,12 @@ function ProductionDashboard({profile, files, closed, active, onOpenFile, onBulk
       monthVol:loMonthClosed.reduce((s,f)=>s+(f.loan||0),0)};
   });
 
-  // Override calc (25 bps, excludes HELOC/2nd products per PRMG pay plan)
   const isEligible=f=>!OVERRIDE_EXCLUDED.includes(f.type);
   const overrideComp=f=>isEligible(f)?Math.round((f.loan||0)*OVERRIDE_BPS/10000):0;
   const totalOverride=closed.reduce((s,f)=>s+overrideComp(f),0);
   const monthOverride=closedThisMonth.reduce((s,f)=>s+overrideComp(f),0);
   const eligibleVol=closed.filter(isEligible).reduce((s,f)=>s+(f.loan||0),0);
 
-  // Per-LO override
   const loOverride=LO_LIST.map(lo=>{
     const loClosed=closed.filter(f=>f.lo===lo.name);
     const loEligible=loClosed.filter(isEligible);
@@ -967,12 +1068,10 @@ function ProductionDashboard({profile, files, closed, active, onOpenFile, onBulk
       closedCount:loClosed.length, excludedCount:loClosed.filter(f=>!isEligible(f)).length};
   });
 
-  // Personal LO comp (own files only, 150 bps default)
   const myComp=f=>Math.round((f.loan||0)*(f.bps||BPS_RATE)/10000);
   const myClosedFiles = closed.filter(f=>f.lo===profile.name);
   const myTotalComp = myClosedFiles.reduce((s,f)=>s+myComp(f),0);
 
-  // Referral partner tracker
   const refMap={};
   files.forEach(f=>{
     if(!f.referralPartner)return;
@@ -984,19 +1083,67 @@ function ProductionDashboard({profile, files, closed, active, onOpenFile, onBulk
   });
   const topRefs=Object.values(refMap).sort((a,b)=>b.total-a.total);
 
-  // ─── MONTHLY PRODUCTION ───
-  // Bucket closed files by month (using closedAt). Build a 12-month rolling window
-  // ending with the current month. Also group by year for annual breakdown.
+  // ─── BANK-TO-BANK REFERRAL METRICS ───
+  // Outbound: deals we referred to other bankers
+  const outboundFunded = (referredOut||[]).filter(f=>(f.referredOut||{}).status==="Closed (Funded)");
+  const outboundPending = (referredOut||[]).filter(f=>!(f.referredOut||{}).status || (f.referredOut||{}).status==="Pending at Banker");
+  const outboundLost = (referredOut||[]).filter(f=>(f.referredOut||{}).status==="Fell Through" || (f.referredOut||{}).status==="Withdrawn by Borrower");
+  const outboundFundedVol = outboundFunded.reduce((s,f)=>{
+    const ro = f.referredOut||{};
+    return s + (parseInt(ro.finalLoanAmount)||f.loan||0);
+  }, 0);
+  const outboundTotalVol = (referredOut||[]).reduce((s,f)=>s+(f.loan||0), 0);
+  // Fees earned on outbound deals that closed (50 bps × final loan amount)
+  const outboundFeesEarned = outboundFunded.reduce((s,f)=>{
+    const ro = f.referredOut||{};
+    const finalAmt = parseInt(ro.finalLoanAmount)||f.loan||0;
+    return s + Math.round(finalAmt * REFERRAL_FEE_BPS / 10000);
+  }, 0);
+  // What PRMG would have earned at full BPS comp
+  const outboundWouldHaveEarned = outboundFunded.reduce((s,f)=>{
+    const ro = f.referredOut||{};
+    const finalAmt = parseInt(ro.finalLoanAmount)||f.loan||0;
+    return s + Math.round(finalAmt * (f.bps||BPS_RATE) / 10000);
+  }, 0);
+  const outboundLostComp = outboundWouldHaveEarned - outboundFeesEarned;
+
+  // Inbound: deals other bankers sent to us
+  const inboundList = inbound || [];
+  const inboundClosed = inboundList.filter(f=>f.stage===CLOSED_STAGE);
+  const inboundActive = inboundList.filter(f=>f.stage!==CLOSED_STAGE && f.stage!==REFERRED_OUT_STAGE);
+  const inboundFundedVol = inboundClosed.reduce((s,f)=>s+(f.loan||0), 0);
+  const inboundActiveVol = inboundActive.reduce((s,f)=>s+(f.loan||0), 0);
+  // Comp earned on inbound closed deals (full BPS)
+  const inboundCompEarned = inboundClosed.reduce((s,f)=>s+Math.round((f.loan||0)*(f.bps||BPS_RATE)/10000), 0);
+
+  // Reciprocity by banker (combine outbound + inbound per banker name)
+  const bankerMap = {};
+  (referredOut||[]).forEach(f=>{
+    const ro = f.referredOut||{};
+    const name = ro.bankerName || "(unknown)";
+    if(!bankerMap[name]) bankerMap[name] = {name, company:ro.bankerCompany||"", sentOut:0, sentOutVol:0, receivedIn:0, receivedInVol:0};
+    bankerMap[name].sentOut++;
+    bankerMap[name].sentOutVol += (f.loan||0);
+  });
+  inboundList.forEach(f=>{
+    const rb = f.referringBanker||{};
+    const name = rb.bankerName || "(unknown)";
+    if(!bankerMap[name]) bankerMap[name] = {name, company:rb.bankerCompany||"", sentOut:0, sentOutVol:0, receivedIn:0, receivedInVol:0};
+    bankerMap[name].receivedIn++;
+    bankerMap[name].receivedInVol += (f.loan||0);
+  });
+  const bankerReciprocity = Object.values(bankerMap).sort((a,b)=>(b.sentOut+b.receivedIn)-(a.sentOut+a.receivedIn));
+
+  // Monthly production aggregation (closed files)
   const monthlyMap = {};
   closed.forEach(f=>{
     if(!f.closedAt) return;
-    const month = f.closedAt.slice(0,7); // YYYY-MM
+    const month = f.closedAt.slice(0,7);
     if(!monthlyMap[month]) monthlyMap[month] = {month, units:0, volume:0, files:[]};
     monthlyMap[month].units++;
     monthlyMap[month].volume += (f.loan||0);
     monthlyMap[month].files.push(f);
   });
-  // Build last 12 months (oldest → newest, fill in zeros for empty months)
   const last12Months = [];
   const today = new Date();
   for(let i=11; i>=0; i--){
@@ -1006,7 +1153,6 @@ function ProductionDashboard({profile, files, closed, active, onOpenFile, onBulk
   }
   const maxUnits = Math.max(1, ...last12Months.map(m=>m.units));
   const maxVolume = Math.max(1, ...last12Months.map(m=>m.volume));
-  // Annual totals
   const yearlyMap = {};
   Object.values(monthlyMap).forEach(m=>{
     const yr = m.month.slice(0,4);
@@ -1016,29 +1162,21 @@ function ProductionDashboard({profile, files, closed, active, onOpenFile, onBulk
   });
   const yearlyList = Object.values(yearlyMap).sort((a,b)=>b.year.localeCompare(a.year));
 
-  // ─── ORPHAN FILES ───
-  // Files where the LO field doesn't match any current team member.
-  // For each orphan, suggest the best-match team member based on trimmed/normalized comparison.
   const validLoNames = new Set(LO_LIST.map(l=>l.name));
   function suggestLoMatch(rawLo){
     if(!rawLo || typeof rawLo !== "string") return null;
     const trimmed = rawLo.trim();
-    // 1. Exact match after trim
     if(validLoNames.has(trimmed)) return trimmed;
-    // 2. Case-insensitive match after trim
     const lcTrimmed = trimmed.toLowerCase();
     const ciMatch = LO_LIST.find(l=>l.name.toLowerCase() === lcTrimmed);
     if(ciMatch) return ciMatch.name;
-    // 3. Prefix match — "Ana M Plasencia Gonzalez" starts with "Ana M Plasencia"
     const prefixMatch = LO_LIST.find(l=>lcTrimmed.startsWith(l.name.toLowerCase()) || l.name.toLowerCase().startsWith(lcTrimmed));
     if(prefixMatch) return prefixMatch.name;
-    // 4. Last name fallback — "Plasencia" → match anyone with that surname
     const lastWord = lcTrimmed.split(/\s+/).pop();
     if(lastWord && lastWord.length > 3){
       const surnameMatch = LO_LIST.find(l=>l.name.toLowerCase().includes(lastWord));
       if(surnameMatch) return surnameMatch.name;
     }
-    // 5. First-name fallback — "Ana" → "Ana M Plasencia"
     const firstWord = lcTrimmed.split(/\s+/)[0];
     if(firstWord && firstWord.length > 2){
       const firstNameMatch = LO_LIST.find(l=>l.name.toLowerCase().startsWith(firstWord));
@@ -1049,7 +1187,6 @@ function ProductionDashboard({profile, files, closed, active, onOpenFile, onBulk
   const orphanFiles = files.filter(f=>!f.lo || !validLoNames.has(f.lo))
     .map(f=>({...f, _suggestedLo: suggestLoMatch(f.lo)}));
   const autoFixableCount = orphanFiles.filter(f=>f._suggestedLo).length;
-  // Best/worst month in last 12
   const bestMonth = last12Months.reduce((best,m)=>m.units>best.units?m:best, last12Months[0]);
   const worstMonth = last12Months.filter(m=>m.units>0).reduce((worst,m)=>m.units<worst.units?m:worst, last12Months.find(m=>m.units>0)||last12Months[0]);
   function monthLabel(m){
@@ -1058,13 +1195,12 @@ function ProductionDashboard({profile, files, closed, active, onOpenFile, onBulk
     return `${names[parseInt(mm)-1]} '${y.slice(2)}`;
   }
 
-  // LO colors — pull from TEAM so colors stay consistent everywhere
   const loColors = LO_LIST.map(lo=>lo.color||"#4A90D9");
 
   return(
     <div className="fi" style={{display:"flex",flexDirection:"column",gap:16}}>
 
-      {/* BRANCH STATS — always visible */}
+      {/* BRANCH STATS */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:10}}>
         {[
           {label:"TOTAL FILES",value:files.length,color:"#4A90D9"},
@@ -1083,12 +1219,13 @@ function ProductionDashboard({profile, files, closed, active, onOpenFile, onBulk
         ))}
       </div>
 
-      {/* INNER TAB BAR — role-based */}
+      {/* INNER TAB BAR — now includes BANK REFERRALS */}
       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
         {[
           ["team","🏆 TEAM PRODUCTION"],
           ["monthly","📅 MONTHLY"],
           ["referrals","🤝 REFERRAL PARTNERS"],
+          ["bankrefs","🏦 BANK REFERRALS"],
           isLO && ["mycomp","💵 MY COMP"],
           isAdmin && ["override","💰 OVERRIDE & COMP"],
         ].filter(Boolean).map(([t,l])=>(
@@ -1142,7 +1279,6 @@ function ProductionDashboard({profile, files, closed, active, onOpenFile, onBulk
           ))}
         </div>
 
-        {/* ORPHAN FILES — files whose LO doesn't match any team member */}
         {orphanFiles.length > 0 && (
           <div style={{background:"#161B22",border:"1px solid #E85D7544",borderRadius:10,overflow:"hidden"}}>
             <div style={{background:"rgba(232,93,117,.08)",borderBottom:"2px solid #E85D75",padding:"10px 16px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
@@ -1184,14 +1320,9 @@ function ProductionDashboard({profile, files, closed, active, onOpenFile, onBulk
                 ))}
               </tbody>
             </table>
-            <div style={{padding:"10px 16px",borderTop:"1px solid #21262D",fontSize:11,color:"#8B949E",lineHeight:1.5}}>
-              <strong style={{color:"#06D6A0"}}>Tip:</strong> Click any row to open the file and fix manually.
-              {isAdmin && autoFixableCount > 0 && <> Or use <strong style={{color:"#F5A623"}}>AUTO-FIX</strong> to bulk-apply all suggested matches at once.</>}
-            </div>
           </div>
         )}
 
-        {/* AUTO-FIX PREVIEW MODAL */}
         {showAutoFixPreview && isAdmin && (
           <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setShowAutoFixPreview(false)}>
             <div className="fi" style={{background:"#161B22",border:"1px solid #30363D",borderRadius:12,width:"100%",maxWidth:680,maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
@@ -1200,7 +1331,6 @@ function ProductionDashboard({profile, files, closed, active, onOpenFile, onBulk
                   <div style={{fontFamily:"Syne",fontWeight:800,fontSize:18,color:"#F5A623"}}>✨ AUTO-FIX PREVIEW</div>
                   <div style={{fontSize:11,color:"#8B949E",marginTop:4,lineHeight:1.5}}>
                     Review the suggested LO assignments below. Click APPLY to update all {autoFixableCount} files at once.
-                    Each change is auditable and can be reverted by editing the file.
                   </div>
                 </div>
                 <button onClick={()=>setShowAutoFixPreview(false)} style={{background:"transparent",border:"none",color:"#484F58",fontSize:20,cursor:"pointer",padding:"0 0 0 12px"}}>✕</button>
@@ -1225,11 +1355,6 @@ function ProductionDashboard({profile, files, closed, active, onOpenFile, onBulk
                     ))}
                   </tbody>
                 </table>
-                {orphanFiles.filter(f=>!f._suggestedLo).length > 0 && (
-                  <div style={{padding:"12px 24px",margin:"12px 16px",background:"rgba(232,93,117,.06)",border:"1px solid #E85D7544",borderRadius:8,fontSize:11,color:"#8B949E",lineHeight:1.6}}>
-                    <strong style={{color:"#E85D75"}}>Note:</strong> {orphanFiles.filter(f=>!f._suggestedLo).length} other orphan file{orphanFiles.filter(f=>!f._suggestedLo).length>1?"s":""} couldn't be auto-matched and will need to be fixed manually after this. Open them from the orphan list above.
-                  </div>
-                )}
               </div>
               <div style={{padding:"14px 24px",borderTop:"1px solid #21262D",background:"#161B22",flexShrink:0,display:"flex",gap:8}}>
                 <button className="hov" onClick={()=>{
@@ -1250,10 +1375,8 @@ function ProductionDashboard({profile, files, closed, active, onOpenFile, onBulk
         )}
       </div>}
 
-      {/* MONTHLY PRODUCTION TAB */}
+      {/* MONTHLY TAB */}
       {prodTab==="monthly"&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
-
-        {/* Headline stats */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:10}}>
           <div style={{background:"#161B22",border:"1px solid #06D6A044",borderTop:"3px solid #06D6A0",borderRadius:8,padding:12}}>
             <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>BEST MONTH (12MO)</div>
@@ -1277,7 +1400,6 @@ function ProductionDashboard({profile, files, closed, active, onOpenFile, onBulk
           </div>
         </div>
 
-        {/* 12-month UNITS bar chart */}
         <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,padding:16}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
             <div style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#4A90D9",letterSpacing:"1px"}}>UNITS CLOSED · LAST 12 MONTHS</div>
@@ -1310,7 +1432,6 @@ function ProductionDashboard({profile, files, closed, active, onOpenFile, onBulk
           </div>
         </div>
 
-        {/* 12-month VOLUME bar chart */}
         <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,padding:16}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
             <div style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#F5A623",letterSpacing:"1px"}}>FUNDED VOLUME · LAST 12 MONTHS</div>
@@ -1343,7 +1464,6 @@ function ProductionDashboard({profile, files, closed, active, onOpenFile, onBulk
           </div>
         </div>
 
-        {/* Monthly detail table */}
         <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
           <div style={{background:"#1a2a3a",borderBottom:"2px solid #4A90D9",padding:"10px 16px"}}>
             <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#4A90D9",letterSpacing:"1px"}}>MONTHLY DETAIL · 12-MONTH ROLLING</span>
@@ -1369,7 +1489,6 @@ function ProductionDashboard({profile, files, closed, active, onOpenFile, onBulk
           </table>
         </div>
 
-        {/* Annual summary */}
         {yearlyList.length > 0 && (
           <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
             <div style={{background:"#261535",borderBottom:"2px solid #BD65E8",padding:"10px 16px"}}>
@@ -1396,10 +1515,9 @@ function ProductionDashboard({profile, files, closed, active, onOpenFile, onBulk
             </table>
           </div>
         )}
-
       </div>}
 
-      {/* REFERRAL PARTNERS TAB */}
+      {/* REFERRAL PARTNERS TAB (existing — sources of business) */}
       {prodTab==="referrals"&&<div>
         {topRefs.length===0?<div style={{padding:32,textAlign:"center",color:"#30363D",fontSize:13}}>No referral partners tracked yet. Add partner names to your files to see them here.</div>:(
           <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
@@ -1434,10 +1552,141 @@ function ProductionDashboard({profile, files, closed, active, onOpenFile, onBulk
         )}
       </div>}
 
-      {/* OVERRIDE & COMP TAB — manager only */}
-      {prodTab==="override"&&isAdmin&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
+      {/* BANK REFERRALS TAB — bank-to-bank tracking */}
+      {prodTab==="bankrefs"&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
 
-        {/* Override summary */}
+        {/* Headline metrics */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:10}}>
+          <div style={{background:"#161B22",border:"1px solid #A78BFA44",borderTop:"3px solid #A78BFA",borderRadius:8,padding:12}}>
+            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>REFERRED OUT (TOTAL)</div>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:20,color:"#A78BFA"}}>{(referredOut||[]).length}</div>
+            <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>${(outboundTotalVol/1000).toFixed(0)}K orig. volume</div>
+          </div>
+          <div style={{background:"#161B22",border:"1px solid #06D6A044",borderTop:"3px solid #06D6A0",borderRadius:8,padding:12}}>
+            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>OUTBOUND FUNDED</div>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:20,color:"#06D6A0"}}>{outboundFunded.length}</div>
+            <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>${(outboundFundedVol/1000).toFixed(0)}K closed at banker</div>
+          </div>
+          <div style={{background:"#161B22",border:"1px solid #F5A62344",borderTop:"3px solid #F5A623",borderRadius:8,padding:12}}>
+            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>FEES EARNED (50 BPS)</div>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:20,color:"#F5A623"}}>${outboundFeesEarned.toLocaleString()}</div>
+            <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>on referred-out funded</div>
+          </div>
+          {isAdmin && (
+            <div style={{background:"#161B22",border:"1px solid #E85D7544",borderTop:"3px solid #E85D75",borderRadius:8,padding:12}}>
+              <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>LOST COMP (GROSS)</div>
+              <div style={{fontFamily:"Syne",fontWeight:800,fontSize:20,color:"#E85D75"}}>${outboundLostComp.toLocaleString()}</div>
+              <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>vs. {BPS_RATE} bps PRMG comp</div>
+            </div>
+          )}
+        </div>
+
+        {/* Inbound metrics */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:10}}>
+          <div style={{background:"#161B22",border:"1px solid #FFD16644",borderTop:"3px solid #FFD166",borderRadius:8,padding:12}}>
+            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>INBOUND (TOTAL)</div>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:20,color:"#FFD166"}}>{inboundList.length}</div>
+            <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>from external bankers</div>
+          </div>
+          <div style={{background:"#161B22",border:"1px solid #06D6A044",borderTop:"3px solid #06D6A0",borderRadius:8,padding:12}}>
+            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>INBOUND CLOSED</div>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:20,color:"#06D6A0"}}>{inboundClosed.length}</div>
+            <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>${(inboundFundedVol/1000).toFixed(0)}K funded</div>
+          </div>
+          <div style={{background:"#161B22",border:"1px solid #4A90D944",borderTop:"3px solid #4A90D9",borderRadius:8,padding:12}}>
+            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>INBOUND ACTIVE</div>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:20,color:"#4A90D9"}}>{inboundActive.length}</div>
+            <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>${(inboundActiveVol/1000).toFixed(0)}K in pipeline</div>
+          </div>
+          {isAdmin && (
+            <div style={{background:"#161B22",border:"1px solid #06D6A044",borderTop:"3px solid #06D6A0",borderRadius:8,padding:12}}>
+              <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>COMP FROM INBOUND</div>
+              <div style={{fontFamily:"Syne",fontWeight:800,fontSize:20,color:"#06D6A0"}}>${inboundCompEarned.toLocaleString()}</div>
+              <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>{BPS_RATE} bps on closed</div>
+            </div>
+          )}
+        </div>
+
+        {/* Reciprocity table */}
+        <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
+          <div style={{background:"#1f1830",borderBottom:"2px solid #A78BFA",padding:"10px 16px",display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#A78BFA",letterSpacing:"1px"}}>🏦 BANKER RECIPROCITY</span>
+            <span style={{fontSize:11,color:"#8B949E"}}>who's sending what · spot imbalances</span>
+          </div>
+          {bankerReciprocity.length === 0 ? (
+            <div style={{padding:24,textAlign:"center",color:"#30363D",fontSize:12}}>
+              No banker referrals tracked yet.<br/>
+              <span style={{fontSize:10,marginTop:6,display:"block"}}>Refer a file out OR add an inbound referral to populate this table.</span>
+            </div>
+          ) : (
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+              <thead>
+                <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
+                  {["BANKER","COMPANY","SENT TO THEM","THEY SENT US","VOLUME OUT","VOLUME IN","BALANCE"].map((h,i)=>(
+                    <th key={i} style={{padding:"8px 14px",textAlign:i<2?"left":"center",fontSize:10,color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {bankerReciprocity.map((b,i)=>{
+                  const netCount = b.receivedIn - b.sentOut;
+                  const netLabel = netCount > 0 ? `+${netCount} (favoring you)` : netCount < 0 ? `${netCount} (favoring them)` : "even";
+                  const netColor = netCount > 0 ? "#06D6A0" : netCount < 0 ? "#E85D75" : "#8B949E";
+                  return (
+                    <tr key={b.name} style={{borderBottom:"1px solid #21262D",background:i%2===0?"#0D1117":"#161B22"}}>
+                      <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"#E6EDF3"}}>{b.name}</td>
+                      <td style={{padding:"10px 14px",color:"#8B949E",fontSize:11}}>{b.company || "—"}</td>
+                      <td style={{padding:"10px 14px",textAlign:"center",color:"#A78BFA",fontWeight:500}}>{b.sentOut}</td>
+                      <td style={{padding:"10px 14px",textAlign:"center",color:"#FFD166",fontWeight:500}}>{b.receivedIn}</td>
+                      <td style={{padding:"10px 14px",textAlign:"center",color:"#A78BFA",fontSize:11}}>${(b.sentOutVol/1000).toFixed(0)}K</td>
+                      <td style={{padding:"10px 14px",textAlign:"center",color:"#FFD166",fontSize:11}}>${(b.receivedInVol/1000).toFixed(0)}K</td>
+                      <td style={{padding:"10px 14px",textAlign:"center",color:netColor,fontWeight:500,fontSize:11}}>{netLabel}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* Year-end summary */}
+        {isAdmin && (outboundFunded.length > 0 || inboundClosed.length > 0) && (
+          <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
+            <div style={{background:"#1a1000",borderBottom:"2px solid #F5A623",padding:"10px 16px"}}>
+              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#F5A623",letterSpacing:"1px"}}>💰 YEAR-END COMP IMPACT</span>
+            </div>
+            <div style={{padding:"16px 18px",display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:14}}>
+              <div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>OUTBOUND — WHAT YOU WOULD HAVE EARNED AT PRMG</div>
+                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:18,color:"#8B949E"}}>${outboundWouldHaveEarned.toLocaleString()}</div>
+                <div style={{fontSize:10,color:"#484F58",marginTop:3}}>{BPS_RATE} bps × ${(outboundFundedVol/1000).toFixed(0)}K</div>
+              </div>
+              <div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>WHAT YOU EARNED IN REFERRAL FEES</div>
+                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:18,color:"#F5A623"}}>${outboundFeesEarned.toLocaleString()}</div>
+                <div style={{fontSize:10,color:"#484F58",marginTop:3}}>{REFERRAL_FEE_BPS} bps × ${(outboundFundedVol/1000).toFixed(0)}K</div>
+              </div>
+              <div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>NET LOST COMP (OUTBOUND)</div>
+                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:18,color:"#E85D75"}}>${outboundLostComp.toLocaleString()}</div>
+                <div style={{fontSize:10,color:"#484F58",marginTop:3}}>opportunity cost</div>
+              </div>
+              <div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>INBOUND COMP EARNED</div>
+                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:18,color:"#06D6A0"}}>${inboundCompEarned.toLocaleString()}</div>
+                <div style={{fontSize:10,color:"#484F58",marginTop:3}}>{BPS_RATE} bps × ${(inboundFundedVol/1000).toFixed(0)}K</div>
+              </div>
+            </div>
+            <div style={{padding:"12px 18px",borderTop:"1px solid #21262D",background:"#0D1117",fontSize:11,color:"#8B949E",lineHeight:1.6}}>
+              <strong style={{color:"#F5A623"}}>Read it:</strong> Outbound is what PRMG can't do that you sent away — you got <strong style={{color:"#F5A623"}}>${outboundFeesEarned.toLocaleString()}</strong> in referral fees but missed <strong style={{color:"#E85D75"}}>${outboundLostComp.toLocaleString()}</strong> in PRMG comp. Inbound is what bankers send your way — you earned <strong style={{color:"#06D6A0"}}>${inboundCompEarned.toLocaleString()}</strong> from those. Use this to negotiate product expansion at PRMG, or to evaluate broker/correspondent options.
+            </div>
+          </div>
+        )}
+
+      </div>}
+
+      {/* OVERRIDE & COMP TAB */}
+      {prodTab==="override"&&isAdmin&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:10}}>
           {[
             {label:"ELIGIBLE VOLUME",value:`$${(eligibleVol/1e6).toFixed(2)}M`,color:"#F5A623",sub:"excl. HELOC, 2nd TD"},
@@ -1453,7 +1702,6 @@ function ProductionDashboard({profile, files, closed, active, onOpenFile, onBulk
           ))}
         </div>
 
-        {/* Override by LO */}
         <div style={{background:"#161B22",border:"1px solid #F5A62333",borderRadius:10,overflow:"hidden"}}>
           <div style={{background:"#1a1000",borderBottom:"2px solid #F5A623",padding:"10px 16px"}}>
             <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#F5A623",letterSpacing:"1px"}}>OVERRIDE BREAKDOWN BY LO — {OVERRIDE_BPS} BPS</span>
@@ -1494,7 +1742,6 @@ function ProductionDashboard({profile, files, closed, active, onOpenFile, onBulk
           </table>
         </div>
 
-        {/* My personal LO comp — dynamic to current admin */}
         <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
           <div style={{background:"#1a2a3a",borderBottom:"2px solid #4A90D9",padding:"10px 16px",display:"flex",alignItems:"center",gap:10}}>
             <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#4A90D9",letterSpacing:"1px"}}>MY PERSONAL LO COMP — {profile.name.toUpperCase()}</span>
@@ -1532,10 +1779,9 @@ function ProductionDashboard({profile, files, closed, active, onOpenFile, onBulk
           </table>
           {myClosedFiles.length===0&&<div style={{padding:24,textAlign:"center",color:"#30363D",fontSize:12}}>No personal closed files yet.</div>}
         </div>
-
       </div>}
 
-      {/* MY COMP TAB — for LOs to see their own comp without seeing team-wide override */}
+      {/* MY COMP TAB */}
       {prodTab==="mycomp"&&isLO&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
         <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
           <div style={{background:"#1a2a3a",borderBottom:"2px solid #4A90D9",padding:"10px 16px",display:"flex",alignItems:"center",gap:10}}>
@@ -1585,28 +1831,60 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
   const isAdmin = profile?.role === "admin";
   const isAssistant = profile?.role === "assistant";
   const [showHistory, setShowHistory] = useState(false);
-  const [note,setNote]=useState(file.note);
-  const [closing,setClosing]=useState(file.closing);
+  const [note,setNote]=useState(file.note||"");
+  const [closing,setClosing]=useState(file.closing||"");
   const [stage,setStage]=useState(file.stage);
   const [loanType,setLoanType]=useState(file.type);
-  const [loanAmt,setLoanAmt]=useState(String(file.loan));
+  const [loanAmt,setLoanAmt]=useState(String(file.loan||""));
   const [bps,setBps]=useState(String(file.bps||""));
   const [loAssigned,setLoAssigned]=useState(file.lo||"Jose Del Valle");
   const [referralPartner,setReferralPartner]=useState(file.referralPartner||"");
   const [phone,setPhone]=useState(file.phone||"");
   const [email,setEmail]=useState(file.email||"");
   const [closedAt,setClosedAt]=useState(file.closedAt||"");
+
+  // Outbound referral (when stage = REFERRED_OUT_STAGE)
+  const ro = file.referredOut || {};
+  const [outBankerName,setOutBankerName]=useState(ro.bankerName||"");
+  const [outBankerCompany,setOutBankerCompany]=useState(ro.bankerCompany||"");
+  const [outBankerPhone,setOutBankerPhone]=useState(ro.bankerPhone||"");
+  const [outBankerEmail,setOutBankerEmail]=useState(ro.bankerEmail||"");
+  const [outReason,setOutReason]=useState(ro.reason||"");
+  const [outStatus,setOutStatus]=useState(ro.status||"Pending at Banker");
+  const [outFinalLoan,setOutFinalLoan]=useState(String(ro.finalLoanAmount||""));
+  const [outCloseDate,setOutCloseDate]=useState(ro.closeDate||"");
+
+  // Inbound referral metadata (when isInbound is true)
+  const rb = file.referringBanker || {};
+  const [inBankerName,setInBankerName]=useState(rb.bankerName||"");
+  const [inBankerCompany,setInBankerCompany]=useState(rb.bankerCompany||"");
+  const [inBankerPhone,setInBankerPhone]=useState(rb.bankerPhone||"");
+  const [inBankerEmail,setInBankerEmail]=useState(rb.bankerEmail||"");
+
   const ph=getPhase(stage);
+  const isReferredOut = stage === REFERRED_OUT_STAGE;
+  const isInbound = !!file.isInbound;
   const fs2={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",padding:"8px 10px",fontSize:13,fontFamily:"'DM Mono','Courier New',monospace",width:"100%"};
+
+  // Live fee calculations for referred-out files
+  const finalLoanForCalc = parseInt(outFinalLoan)||parseInt(loanAmt)||file.loan||0;
+  const feeEarned = outStatus === "Closed (Funded)" ? Math.round(finalLoanForCalc * REFERRAL_FEE_BPS / 10000) : 0;
+  const wouldHaveEarned = outStatus === "Closed (Funded)" ? Math.round(finalLoanForCalc * (parseInt(bps)||BPS_RATE) / 10000) : 0;
+  const lostComp = wouldHaveEarned - feeEarned;
+
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
       <div className="fi" style={{background:"#161B22",border:"1px solid #30363D",borderRadius:12,width:"100%",maxWidth:480,maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
-        {/* HEADER — stays pinned at top */}
+        {/* HEADER */}
         <div style={{padding:"20px 24px 16px",borderBottom:"1px solid #21262D",display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexShrink:0}}>
           <div>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:18,color:"#E6EDF3"}}>{file.borrower}</div>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:18,color:"#E6EDF3"}}>
+              {file.borrower}
+              {isInbound && <span title="Inbound referral" style={{marginLeft:8,fontSize:12,color:"#FFD166"}}>🤝 INBOUND</span>}
+            </div>
             <div style={{fontSize:12,color:"#8B949E"}}>{loanType} · ${parseInt(loanAmt||0).toLocaleString()}</div>
             {isClosed&&<div style={{marginTop:4,fontSize:11,color:"#06D6A0",fontWeight:500}}>✓ CLOSED — {file.closedAt}</div>}
+            {isReferredOut&&<div style={{marginTop:4,fontSize:11,color:"#A78BFA",fontWeight:500}}>🔀 REFERRED OUT — {ro.bankerCompany||"external bank"}</div>}
             {(phone || email) && (
               <div style={{marginTop:8,display:"flex",gap:6,flexWrap:"wrap"}}>
                 {phone && (
@@ -1629,7 +1907,7 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
           <button onClick={onClose} style={{background:"transparent",border:"none",color:"#484F58",fontSize:20,cursor:"pointer",padding:"0 0 0 12px"}}>✕</button>
         </div>
 
-        {/* SCROLLABLE BODY — form fields, stage, dates, notes, activity */}
+        {/* SCROLLABLE BODY */}
         <div style={{flex:1,overflowY:"auto",padding:"16px 24px",display:"flex",flexDirection:"column",gap:14}}>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
           <div>
@@ -1674,13 +1952,147 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
             <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="borrower@email.com" style={fs2}/>
           </div>
         </div>
+
+        {/* INBOUND REFERRAL SECTION — when file came from another banker */}
+        {isInbound && (
+          <div style={{background:"rgba(255,209,102,.06)",border:"1px solid #FFD16644",borderRadius:8,padding:14,display:"flex",flexDirection:"column",gap:10}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:2}}>
+              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#FFD166",letterSpacing:"1px"}}>🤝 INBOUND — REFERRING BANKER</span>
+              <span style={{fontSize:10,color:"#8B949E"}}>who sent you this deal</span>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+              <div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>BANKER NAME</div>
+                <input value={inBankerName} onChange={e=>setInBankerName(e.target.value)} placeholder="John Doe" style={fs2}/>
+              </div>
+              <div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>COMPANY</div>
+                <input value={inBankerCompany} onChange={e=>setInBankerCompany(e.target.value)} placeholder="XYZ Mortgage" style={fs2}/>
+              </div>
+              <div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>📱 BANKER PHONE</div>
+                <input type="tel" value={inBankerPhone} onChange={e=>setInBankerPhone(e.target.value)} placeholder="(702) 555-0000" style={fs2}/>
+              </div>
+              <div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>✉ BANKER EMAIL</div>
+                <input type="email" value={inBankerEmail} onChange={e=>setInBankerEmail(e.target.value)} placeholder="banker@company.com" style={fs2}/>
+              </div>
+            </div>
+            {(inBankerPhone || inBankerEmail) && (
+              <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:2}}>
+                {inBankerPhone && (
+                  <a href={`tel:${inBankerPhone.replace(/[^\d+]/g,"")}`}
+                    style={{background:"rgba(255,209,102,.1)",border:"1px solid #FFD16655",borderRadius:5,padding:"4px 9px",color:"#FFD166",fontSize:11,fontFamily:"DM Mono",textDecoration:"none"}}>
+                    📱 Call banker
+                  </a>
+                )}
+                {inBankerEmail && (
+                  <a href={`mailto:${inBankerEmail}`}
+                    style={{background:"rgba(255,209,102,.1)",border:"1px solid #FFD16655",borderRadius:5,padding:"4px 9px",color:"#FFD166",fontSize:11,fontFamily:"DM Mono",textDecoration:"none"}}>
+                    ✉ Email banker
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {!isClosed&&<div>
           <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>STAGE</div>
           <select value={stage} onChange={e=>{setStage(e.target.value);onSave({stage:e.target.value,daysInStage:0});}}
             style={{background:"#0D1117",border:`1px solid ${ph.color}`,borderRadius:6,color:ph.color,padding:"8px 10px",fontSize:13,fontFamily:"DM Mono",width:"100%"}}>
             {ALL_STAGES.map((s,i)=><option key={i} value={s.stage} style={{color:s.phase.color,background:"#0D1117"}}>[{s.phase.short}] {s.stage}</option>)}
+            <optgroup label="── Bank-to-Bank Referral ──">
+              <option value={REFERRED_OUT_STAGE} style={{color:"#A78BFA",background:"#0D1117"}}>🔀 REFERRED OUT — EXTERNAL BANK</option>
+            </optgroup>
           </select>
         </div>}
+
+        {/* OUTBOUND REFERRAL SECTION — when stage = REFERRED OUT */}
+        {isReferredOut && (
+          <div style={{background:"rgba(167,139,250,.06)",border:"1px solid #A78BFA44",borderRadius:8,padding:14,display:"flex",flexDirection:"column",gap:10}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:2}}>
+              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#A78BFA",letterSpacing:"1px"}}>🔀 OUTBOUND — RECEIVING BANKER</span>
+              <span style={{fontSize:10,color:"#8B949E"}}>who you sent this deal to</span>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+              <div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>BANKER NAME</div>
+                <input value={outBankerName} onChange={e=>setOutBankerName(e.target.value)} placeholder="Jane Smith" style={fs2}/>
+              </div>
+              <div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>COMPANY</div>
+                <input value={outBankerCompany} onChange={e=>setOutBankerCompany(e.target.value)} placeholder="ABC Mortgage" style={fs2}/>
+              </div>
+              <div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>📱 BANKER PHONE</div>
+                <input type="tel" value={outBankerPhone} onChange={e=>setOutBankerPhone(e.target.value)} placeholder="(702) 555-0000" style={fs2}/>
+              </div>
+              <div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>✉ BANKER EMAIL</div>
+                <input type="email" value={outBankerEmail} onChange={e=>setOutBankerEmail(e.target.value)} placeholder="banker@company.com" style={fs2}/>
+              </div>
+              <div style={{gridColumn:"1/-1"}}>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>REFERRAL REASON</div>
+                <select value={outReason} onChange={e=>setOutReason(e.target.value)} style={fs2}>
+                  <option value="">-- Select reason --</option>
+                  {REFERRAL_REASONS.map(r=><option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+              <div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>STATUS</div>
+                <select value={outStatus} onChange={e=>setOutStatus(e.target.value)} style={fs2}>
+                  {REFERRAL_STATUSES.map(s=><option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+              <div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>CLOSE DATE (AT BANKER)</div>
+                <input type="date" value={outCloseDate} onChange={e=>setOutCloseDate(e.target.value)} style={fs2}/>
+              </div>
+              <div style={{gridColumn:"1/-1"}}>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>FINAL LOAN AMOUNT AT BANKER <span style={{color:"#484F58",fontWeight:400}}>· (may differ from original)</span></div>
+                <input value={outFinalLoan} onChange={e=>setOutFinalLoan(e.target.value)} placeholder={String(file.loan||"350000")} style={fs2}/>
+              </div>
+            </div>
+            {(outBankerPhone || outBankerEmail) && (
+              <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:2}}>
+                {outBankerPhone && (
+                  <a href={`tel:${outBankerPhone.replace(/[^\d+]/g,"")}`}
+                    style={{background:"rgba(167,139,250,.1)",border:"1px solid #A78BFA55",borderRadius:5,padding:"4px 9px",color:"#A78BFA",fontSize:11,fontFamily:"DM Mono",textDecoration:"none"}}>
+                    📱 Call banker
+                  </a>
+                )}
+                {outBankerEmail && (
+                  <a href={`mailto:${outBankerEmail}`}
+                    style={{background:"rgba(167,139,250,.1)",border:"1px solid #A78BFA55",borderRadius:5,padding:"4px 9px",color:"#A78BFA",fontSize:11,fontFamily:"DM Mono",textDecoration:"none"}}>
+                    ✉ Email banker
+                  </a>
+                )}
+              </div>
+            )}
+            {/* Live fee calc — admin only */}
+            {isAdmin && outStatus === "Closed (Funded)" && (
+              <div style={{background:"#0D1117",border:"1px solid #21262D",borderRadius:6,padding:12,marginTop:4}}>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:8}}>COMP CALCULATION</div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
+                  <div>
+                    <div style={{fontSize:9,color:"#484F58",marginBottom:2}}>FEE EARNED ({REFERRAL_FEE_BPS} BPS)</div>
+                    <div style={{fontFamily:"Syne",fontWeight:700,fontSize:15,color:"#F5A623"}}>${feeEarned.toLocaleString()}</div>
+                  </div>
+                  <div>
+                    <div style={{fontSize:9,color:"#484F58",marginBottom:2}}>WOULD HAVE ({parseInt(bps)||BPS_RATE} BPS)</div>
+                    <div style={{fontFamily:"Syne",fontWeight:700,fontSize:15,color:"#8B949E"}}>${wouldHaveEarned.toLocaleString()}</div>
+                  </div>
+                  <div>
+                    <div style={{fontSize:9,color:"#484F58",marginBottom:2}}>LOST COMP</div>
+                    <div style={{fontFamily:"Syne",fontWeight:700,fontSize:15,color:"#E85D75"}}>${lostComp.toLocaleString()}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {isClosed && isAdmin ? (
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
             <div style={{background:"rgba(6,214,160,.06)",border:"1px solid #06D6A044",borderRadius:8,padding:12}}>
@@ -1696,7 +2108,7 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
               <div style={{fontSize:9,color:"#484F58",marginTop:4,letterSpacing:"0.5px"}}>Original target date</div>
             </div>
           </div>
-        ) : (
+        ) : !isReferredOut ? (
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
             <div style={{background:"#0D1117",borderRadius:8,padding:12}}>
               <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>CLOSING DATE</div>
@@ -1708,7 +2120,8 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
               <div style={{fontSize:isClosed?14:24,fontFamily:"Syne",fontWeight:800,color:isClosed?"#06D6A0":(file.daysInStage>=5?"#E85D75":"#E6EDF3")}}>{isClosed ? file.closedAt : file.daysInStage}</div>
             </div>
           </div>
-        )}
+        ) : null}
+
         <div>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:5}}>
             <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px"}}>
@@ -1724,14 +2137,13 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
             </div>
           </div>
           <textarea value={note} onChange={e=>setNote(e.target.value)} rows={3}
-            placeholder={`Subm 4/12 · UW queue · review by 4/15`}
+            placeholder={isReferredOut ? "Status update from receiving banker..." : "Subm 4/12 · UW queue · review by 4/15"}
             style={{background:"#0D1117",border:`1px solid ${note.length > 200 ? "#E85D75" : "#30363D"}`,borderRadius:6,color:"#E6EDF3",padding:"8px 10px",fontSize:12,fontFamily:"DM Mono",width:"100%",resize:"none"}}/>
           <div style={{fontSize:9,color:"#484F58",marginTop:4,letterSpacing:"0.5px"}}>
             Need help? Click <span style={{color:"#8B949E"}}>❓ HELP</span> at top for the full notes guide & abbreviations.
           </div>
         </div>
 
-        {/* Activity / audit trail */}
         {(file.lastEditedBy || (file.history && file.history.length > 0)) && (
           <div style={{background:"#0D1117",borderRadius:8,padding:12,border:"1px solid #21262D"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -1773,13 +2185,9 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
         </div>
         {/* END SCROLLABLE BODY */}
 
-        {/* FOOTER — pinned at bottom, always reachable */}
+        {/* FOOTER */}
         <div style={{padding:"14px 24px",borderTop:"1px solid #21262D",background:"#161B22",flexShrink:0,display:"flex",gap:8,flexWrap:"wrap"}}>
           <button className="hov" onClick={()=>{
-            // Only include bps in the patch if user is admin (to avoid clobbering it with empty value)
-            // loAssigned (dropdown) is the single source of truth for LO assignment.
-            // We write it to `lo` (the field production stats filter on) to keep them in sync.
-            // Trim defensively to prevent any whitespace drift.
             const patch = {
               note: (note||"").trim(),
               closing,
@@ -1791,8 +2199,30 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
               email: (email||"").trim() || null,
             };
             if(isAdmin) patch.bps = parseInt(bps)||null;
-            // If admin edited the close date on a closed file, include it
             if(isAdmin && isClosed && closedAt) patch.closedAt = closedAt;
+            // Persist outbound referral data when stage is REFERRED_OUT
+            if(isReferredOut){
+              patch.referredOut = {
+                bankerName: (outBankerName||"").trim(),
+                bankerCompany: (outBankerCompany||"").trim(),
+                bankerPhone: (outBankerPhone||"").trim(),
+                bankerEmail: (outBankerEmail||"").trim(),
+                reason: outReason,
+                status: outStatus,
+                finalLoanAmount: parseInt(outFinalLoan) || null,
+                closeDate: outCloseDate || null,
+                referredDate: ro.referredDate || new Date().toISOString().split("T")[0],
+              };
+            }
+            // Persist inbound referring banker
+            if(isInbound){
+              patch.referringBanker = {
+                bankerName: (inBankerName||"").trim(),
+                bankerCompany: (inBankerCompany||"").trim(),
+                bankerPhone: (inBankerPhone||"").trim(),
+                bankerEmail: (inBankerEmail||"").trim(),
+              };
+            }
             onSave(patch);
             onClose();
           }}
@@ -1800,12 +2230,28 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
           {isClosed?(
             <button className="hov" onClick={onReopen}
               style={{flex:2,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"none",cursor:"pointer"}}>REOPEN FILE</button>
+          ):isReferredOut?(
+            <button className="hov" onClick={()=>{
+              if(confirm(`Bring ${file.borrower} back into PRMG pipeline? This will reset stage to Lead Inquiry and clear outbound banker data.`)){
+                onSave({stage:"Lead Inquiry", daysInStage:0, referredOut: null});
+                onClose();
+              }
+            }}
+              style={{flex:2,background:"#21262D",color:"#A78BFA",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"1px solid #A78BFA",cursor:"pointer"}}>↩ PULL BACK</button>
           ):(
             <>
               <button className="hov" onClick={onAdvance}
                 style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"none",cursor:"pointer"}}>ADVANCE →</button>
               <button className="hov" onClick={()=>{if(confirm(`Close ${file.borrower}?`))onCloseFile();}}
                 style={{flex:1,background:"rgba(6,214,160,.1)",color:"#06D6A0",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"1px solid #06D6A0",cursor:"pointer"}}>CLOSE ✓</button>
+              <button className="hov" onClick={()=>{
+                if(confirm(`Refer ${file.borrower} to another bank?\n\nThe file moves to REFERRED OUT. You'll fill in the receiving banker's details next.`)){
+                  setStage(REFERRED_OUT_STAGE);
+                  onSave({stage:REFERRED_OUT_STAGE, daysInStage:0});
+                }
+              }}
+                title="Refer this file out to another banker"
+                style={{flex:1,background:"rgba(167,139,250,.1)",color:"#A78BFA",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"1px solid #A78BFA",cursor:"pointer"}}>🔀 REFER</button>
             </>
           )}
           {isAdmin && (
@@ -1829,10 +2275,14 @@ function AddModal({profile, onClose, onAdd}){
   const [referralPartner,setReferralPartner]=useState("");
   const [phone,setPhone]=useState("");
   const [email,setEmail]=useState("");
-  // Smart default for LO field:
-  // - Admin/LO creating a file: defaults to themselves
-  // - Assistant creating a file: defaults to first LO (Ana) — they'll need to confirm via dropdown
-  // The dropdown is constrained to valid LOs, so orphans from this form are now impossible.
+
+  // Inbound referral metadata (set if checkbox is checked)
+  const [isInbound,setIsInbound]=useState(false);
+  const [inBankerName,setInBankerName]=useState("");
+  const [inBankerCompany,setInBankerCompany]=useState("");
+  const [inBankerPhone,setInBankerPhone]=useState("");
+  const [inBankerEmail,setInBankerEmail]=useState("");
+
   const isAssistant = profile?.role === "assistant";
   const defaultLo = isAssistant
     ? (LO_LIST.find(l=>l.role==="LO")?.name || LO_LIST[0]?.name || JOSE_LO)
@@ -1842,7 +2292,6 @@ function AddModal({profile, onClose, onAdd}){
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
       <div className="fi" style={{background:"#161B22",border:"1px solid #30363D",borderRadius:12,width:"100%",maxWidth:480,maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
-        {/* HEADER */}
         <div style={{padding:"20px 24px 16px",borderBottom:"1px solid #21262D",flexShrink:0}}>
           <div style={{fontFamily:"Syne",fontWeight:800,fontSize:18,color:"#E6EDF3"}}>NEW FILE</div>
           {isAssistant && (
@@ -1852,16 +2301,57 @@ function AddModal({profile, onClose, onAdd}){
           )}
         </div>
 
-        {/* SCROLLABLE BODY */}
         <div style={{flex:1,overflowY:"auto",padding:"16px 24px",display:"flex",flexDirection:"column",gap:14}}>
 
-          {/* Borrower name — full width */}
+          {/* INBOUND REFERRAL TOGGLE — at top so it's visible */}
+          <label style={{
+            display:"flex",alignItems:"center",gap:10,
+            background: isInbound ? "rgba(255,209,102,.08)" : "#0D1117",
+            border: isInbound ? "1px solid #FFD16655" : "1px solid #21262D",
+            borderRadius:8, padding:"10px 12px", cursor:"pointer"
+          }}>
+            <input type="checkbox" checked={isInbound} onChange={e=>setIsInbound(e.target.checked)}
+              style={{accentColor:"#FFD166",width:16,height:16,cursor:"pointer"}}/>
+            <div style={{flex:1}}>
+              <div style={{fontSize:12,color: isInbound ? "#FFD166" : "#E6EDF3",fontFamily:"Syne",fontWeight:700,letterSpacing:"0.5px"}}>
+                🤝 This is an inbound referral from another banker
+              </div>
+              <div style={{fontSize:10,color:"#8B949E",marginTop:2}}>
+                Tag this file so you can track who sent it your way + measure reciprocity at year end.
+              </div>
+            </div>
+          </label>
+
+          {/* INBOUND BANKER FIELDS — shown only when checkbox is checked */}
+          {isInbound && (
+            <div style={{background:"rgba(255,209,102,.04)",border:"1px solid #FFD16633",borderRadius:8,padding:14,display:"flex",flexDirection:"column",gap:10}}>
+              <div style={{fontSize:11,color:"#FFD166",fontFamily:"Syne",fontWeight:700,letterSpacing:"1px",marginBottom:2}}>REFERRING BANKER</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                <div>
+                  <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>BANKER NAME</div>
+                  <input value={inBankerName} onChange={e=>setInBankerName(e.target.value)} placeholder="John Doe" style={IS}/>
+                </div>
+                <div>
+                  <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>COMPANY</div>
+                  <input value={inBankerCompany} onChange={e=>setInBankerCompany(e.target.value)} placeholder="XYZ Mortgage" style={IS}/>
+                </div>
+                <div>
+                  <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>📱 PHONE</div>
+                  <input type="tel" value={inBankerPhone} onChange={e=>setInBankerPhone(e.target.value)} placeholder="(702) 555-0000" style={IS}/>
+                </div>
+                <div>
+                  <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>✉ EMAIL</div>
+                  <input type="email" value={inBankerEmail} onChange={e=>setInBankerEmail(e.target.value)} placeholder="banker@company.com" style={IS}/>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div>
             <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>BORROWER NAME *</div>
             <input value={borrower} onChange={e=>setBorrower(e.target.value)} placeholder="Full legal name" style={IS} autoFocus/>
           </div>
 
-          {/* Phone + Email — side by side */}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
             <div>
               <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>📱 PHONE</div>
@@ -1873,7 +2363,6 @@ function AddModal({profile, onClose, onAdd}){
             </div>
           </div>
 
-          {/* Loan Amount + Type — side by side */}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
             <div>
               <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>LOAN AMOUNT</div>
@@ -1887,7 +2376,6 @@ function AddModal({profile, onClose, onAdd}){
             </div>
           </div>
 
-          {/* Starting stage — full width */}
           <div>
             <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>STARTING STAGE</div>
             <select value={stage} onChange={e=>setStage(e.target.value)} style={IS}>
@@ -1895,7 +2383,6 @@ function AddModal({profile, onClose, onAdd}){
             </select>
           </div>
 
-          {/* Loan Officer — DROPDOWN (was the bug — text input let typos through) */}
           <div>
             <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>
               LOAN OFFICER {isAssistant && <span style={{color:"#F5A623"}}>· assigning on behalf of</span>}
@@ -1905,19 +2392,16 @@ function AddModal({profile, onClose, onAdd}){
             </select>
           </div>
 
-          {/* Referral partner */}
           <div>
             <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>REFERRAL PARTNER</div>
             <input value={referralPartner} onChange={e=>setReferralPartner(e.target.value)} placeholder="Agent name, CPA, Smart Bee, walk-in..." style={IS}/>
           </div>
 
-          {/* Expected closing date */}
           <div>
             <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>EXPECTED CLOSING DATE</div>
             <input type="date" value={closing} onChange={e=>setClosing(e.target.value)} style={IS}/>
           </div>
 
-          {/* Notes — uses the structured-format placeholder */}
           <div>
             <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>
               NOTES <span style={{color:"#30363D"}}>· STATUS · BLOCKER · NEXT</span>
@@ -1926,16 +2410,14 @@ function AddModal({profile, onClose, onAdd}){
           </div>
 
         </div>
-        {/* END SCROLLABLE BODY */}
 
-        {/* FOOTER — pinned at bottom */}
         <div style={{padding:"14px 24px",borderTop:"1px solid #21262D",background:"#161B22",flexShrink:0,display:"flex",gap:8}}>
           <button className="hov" onClick={()=>{
             if(!borrower.trim()){
               alert("Borrower name is required.");
               return;
             }
-            onAdd({
+            const newFile = {
               id:`f${Date.now()}`,
               borrower:borrower.trim(),
               loan:parseInt(loan)||0,
@@ -1950,7 +2432,17 @@ function AddModal({profile, onClose, onAdd}){
               phone:phone.trim()||null,
               email:email.trim()||null,
               closedAt:null,
-            });
+            };
+            if(isInbound){
+              newFile.isInbound = true;
+              newFile.referringBanker = {
+                bankerName: inBankerName.trim(),
+                bankerCompany: inBankerCompany.trim(),
+                bankerPhone: inBankerPhone.trim(),
+                bankerEmail: inBankerEmail.trim(),
+              };
+            }
+            onAdd(newFile);
           }}
             style={{flex:2,background:"#F5A623",color:"#0D1117",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,fontWeight:500,border:"none",cursor:"pointer"}}>ADD TO PIPELINE</button>
           <button className="hov" onClick={onClose}
@@ -1960,9 +2452,7 @@ function AddModal({profile, onClose, onAdd}){
     </div>
   );
 }
-// ─── HELP MODAL ───
-// In-app reference guide. Tabbed layout: notes format, abbreviations, role-specific
-// workflows, and FAQs. Content adapts based on user's role.
+
 function HelpModal({profile, onClose}){
   const [tab, setTab] = useState("notes");
   const isAdmin = profile?.role === "admin";
@@ -1973,6 +2463,7 @@ function HelpModal({profile, onClose}){
     {id:"notes", label:"📝 Notes Format", color:"#F5A623"},
     {id:"abbrev", label:"📖 Abbreviations", color:"#4A90D9"},
     {id:"workflow", label:"🔄 Daily Workflow", color:"#06D6A0"},
+    {id:"refs", label:"🏦 Bank Referrals", color:"#A78BFA"},
     {id:"roles", label:"👥 Roles & Access", color:"#BD65E8"},
     {id:"faq", label:"❓ FAQ", color:"#E85D75"},
   ];
@@ -1981,7 +2472,6 @@ function HelpModal({profile, onClose}){
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
       <div className="fi" style={{background:"#161B22",border:"1px solid #30363D",borderRadius:12,width:"100%",maxWidth:720,maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
 
-        {/* HEADER */}
         <div style={{padding:"20px 24px 16px",borderBottom:"1px solid #21262D",flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div>
             <div style={{fontFamily:"Syne",fontWeight:800,fontSize:20,color:"#E6EDF3",letterSpacing:"-0.5px"}}>HELP & BEST PRACTICES</div>
@@ -1990,7 +2480,6 @@ function HelpModal({profile, onClose}){
           <button onClick={onClose} style={{background:"transparent",border:"none",color:"#484F58",fontSize:20,cursor:"pointer",padding:"0 0 0 12px"}}>✕</button>
         </div>
 
-        {/* TAB BAR */}
         <div style={{padding:"12px 24px",borderBottom:"1px solid #21262D",display:"flex",gap:6,flexWrap:"wrap",flexShrink:0,background:"#0D1117"}}>
           {tabs.map(t=>(
             <button key={t.id} className="hov" onClick={()=>setTab(t.id)}
@@ -2005,10 +2494,8 @@ function HelpModal({profile, onClose}){
           ))}
         </div>
 
-        {/* SCROLLABLE BODY */}
         <div style={{flex:1,overflowY:"auto",padding:"20px 24px"}}>
 
-          {/* NOTES FORMAT TAB */}
           {tab==="notes" && (
             <div style={{display:"flex",flexDirection:"column",gap:18,fontSize:13,color:"#E6EDF3",lineHeight:1.6}}>
               <div>
@@ -2018,20 +2505,16 @@ function HelpModal({profile, onClose}){
                   Goal: anyone scanning the pipeline can understand a file in 3 seconds.
                 </div>
               </div>
-
               <div style={{background:"#0D1117",border:"1px solid #21262D",borderRadius:8,padding:14}}>
                 <div style={{display:"grid",gridTemplateColumns:"100px 1fr",gap:10,fontSize:12}}>
                   <div style={{color:"#F5A623",fontWeight:500}}>STATUS</div>
                   <div style={{color:"#8B949E"}}>One phrase about where the file substantively is right now (not just the stage name).</div>
-
                   <div style={{color:"#F5A623",fontWeight:500}}>BLOCKER</div>
                   <div style={{color:"#8B949E"}}>The single thing holding it up. If clean, write "<span style={{color:"#06D6A0"}}>none</span>" or "<span style={{color:"#06D6A0"}}>clean</span>".</div>
-
                   <div style={{color:"#F5A623",fontWeight:500}}>NEXT</div>
                   <div style={{color:"#8B949E"}}>The immediate next action — what + who + by when.</div>
                 </div>
               </div>
-
               <div>
                 <div style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#E6EDF3",marginBottom:10}}>EXAMPLES BY STAGE</div>
                 <div style={{display:"flex",flexDirection:"column",gap:10}}>
@@ -2040,8 +2523,6 @@ function HelpModal({profile, onClose}){
                     {stage:"Conditional Approval", note:"CA 4/14 · 3 conds (PS, VOE, GL) · Bo upload by 4/19"},
                     {stage:"Condition Clearing", note:"Conds in · BS rejected (stale) · Maria reupload by 4/18"},
                     {stage:"Clear to Close", note:"CTC 4/17 · title prelim pending · COE 4/25"},
-                    {stage:"Doc Collection", note:"Need 2yr biz returns · Bo on vacation · resume 4/22"},
-                    {stage:"Appraisal Ordered", note:"Appr ordered 4/10 · pending sched · expected by 4/20"},
                   ].map(ex=>(
                     <div key={ex.stage} style={{display:"grid",gridTemplateColumns:"180px 1fr",gap:10,padding:"8px 12px",background:"#0D1117",borderRadius:6,fontSize:12,alignItems:"center"}}>
                       <div style={{color:"#484F58",fontSize:10,letterSpacing:"1px"}}>{ex.stage.toUpperCase()}</div>
@@ -2050,27 +2531,14 @@ function HelpModal({profile, onClose}){
                   ))}
                 </div>
               </div>
-
-              <div>
-                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#E6EDF3",marginBottom:10}}>RULES OF THUMB</div>
-                <ul style={{color:"#8B949E",paddingLeft:18,lineHeight:1.8}}>
-                  <li>Keep notes <strong style={{color:"#F5A623"}}>under 100 characters</strong> when possible. Counter turns yellow at 100, red at 200.</li>
-                  <li>Use <strong style={{color:"#E6EDF3"}}>dates</strong>, not "yesterday" or "last week" — dates won't get stale.</li>
-                  <li>Always include a <strong style={{color:"#E6EDF3"}}>NEXT action with a deadline</strong>. "Waiting" is not an action.</li>
-                  <li>If you need long context, put it in the <strong style={{color:"#E6EDF3"}}>Activity log</strong> via stage advances or use a separate document.</li>
-                  <li>Notes are for <strong style={{color:"#E6EDF3"}}>scanning</strong>, not storytelling.</li>
-                </ul>
-              </div>
             </div>
           )}
 
-          {/* ABBREVIATIONS TAB */}
           {tab==="abbrev" && (
             <div style={{display:"flex",flexDirection:"column",gap:18,fontSize:13,color:"#E6EDF3"}}>
               <div style={{color:"#8B949E",lineHeight:1.6}}>
                 Standard abbreviations everyone on the team uses. Stick to these so notes stay scannable and consistent.
               </div>
-
               {[
                 {title:"Documents", color:"#4A90D9", items:[
                   ["PS","Paystubs"],["W2","W-2 forms"],["BS","Bank statements"],["TR","Tax returns"],
@@ -2081,18 +2549,13 @@ function HelpModal({profile, onClose}){
                 {title:"Stages & Actions", color:"#F5A623", items:[
                   ["Subm","Submitted"],["CA","Conditional Approval"],["CTC","Clear to Close"],
                   ["COE","Close of Escrow / closing date"],["Reissue","Reissue disclosures"],
-                  ["Redisc","Redisclose"],["Locked","Rate locked"],["Floating","Rate floating"],
+                  ["Locked","Rate locked"],["Floating","Rate floating"],
                   ["UW","Underwriting / Underwriter"],["Conds","Conditions"],
                 ]},
                 {title:"People", color:"#BD65E8", items:[
                   ["LO","Loan Officer"],["LP","Loan Processor"],["TC","Title Coordinator"],
                   ["UW","Underwriter"],["Bo","Borrower"],["CB","Co-borrower"],
-                  ["RA","Real estate agent"],["LA","Listing agent"],["BA","Buyer's agent"],
-                ]},
-                {title:"Status", color:"#06D6A0", items:[
-                  ["Clean","No blockers"],["Pending","Waiting on someone"],["Blocked","Stuck, needs intervention"],
-                  ["Rejected","Doc/cond rejected, needs redo"],["Stale","Doc expired, need fresh"],
-                  ["Cleared","Condition satisfied"],["Funded","Loan funded"],["Recorded","Recorded with county"],
+                  ["RA","Real estate agent"],
                 ]},
               ].map(group=>(
                 <div key={group.title}>
@@ -2110,10 +2573,8 @@ function HelpModal({profile, onClose}){
             </div>
           )}
 
-          {/* WORKFLOW TAB */}
           {tab==="workflow" && (
             <div style={{display:"flex",flexDirection:"column",gap:18,fontSize:13,color:"#E6EDF3",lineHeight:1.6}}>
-
               <div>
                 <div style={{fontFamily:"Syne",fontWeight:700,fontSize:16,color:"#06D6A0",marginBottom:8}}>Daily morning routine (5 min)</div>
                 <ol style={{color:"#8B949E",paddingLeft:18,lineHeight:1.8}}>
@@ -2123,56 +2584,63 @@ function HelpModal({profile, onClose}){
                   <li>Update notes for any file you touched yesterday so today's note reflects current state.</li>
                 </ol>
               </div>
-
-              <div>
-                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:16,color:"#06D6A0",marginBottom:8}}>Adding a new file</div>
-                <ol style={{color:"#8B949E",paddingLeft:18,lineHeight:1.8}}>
-                  <li>Click <strong style={{color:"#F5A623"}}>+ NEW FILE</strong> at the top.</li>
-                  <li>Required: Borrower name. Everything else can be filled in later.</li>
-                  <li><strong>Always fill in REFERRAL PARTNER</strong> if you know it — this feeds the leaderboard.</li>
-                  <li>Set the starting STAGE based on where the file actually is (most new files start at "Lead Inquiry" or "Pre-Qualification").</li>
-                  <li>Click ADD TO PIPELINE.</li>
-                </ol>
-              </div>
-
-              <div>
-                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:16,color:"#06D6A0",marginBottom:8}}>Advancing a file through stages</div>
-                <ol style={{color:"#8B949E",paddingLeft:18,lineHeight:1.8}}>
-                  <li>Two ways to advance: click the <strong style={{color:"#E6EDF3"}}>ADVANCE →</strong> button on the card to go to the next stage, OR open the file and select a specific stage from the dropdown.</li>
-                  <li>The "days in stage" counter resets to 0 every time you advance — useful for catching files that are sitting too long.</li>
-                  <li><strong>Always update the note</strong> when you advance a stage so the new note reflects the new reality.</li>
-                </ol>
-              </div>
-
-              <div>
-                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:16,color:"#06D6A0",marginBottom:8}}>Closing a file</div>
-                <ol style={{color:"#8B949E",paddingLeft:18,lineHeight:1.8}}>
-                  <li>When the loan funds, click <strong style={{color:"#06D6A0"}}>CLOSE ✓</strong> on the card or in the file detail.</li>
-                  <li>The file moves to CLOSED FILES tab and counts toward your monthly production.</li>
-                  <li>If you closed by accident, open the file from the CLOSED FILES tab and click <strong style={{color:"#F5A623"}}>REOPEN FILE</strong>.</li>
-                </ol>
-              </div>
-
-              <div>
-                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:16,color:"#06D6A0",marginBottom:8}}>Weekly backup (Friday EOD)</div>
-                <ol style={{color:"#8B949E",paddingLeft:18,lineHeight:1.8}}>
-                  <li>Click <strong style={{color:"#E6EDF3"}}>↓ BACKUP</strong> at the top right. A JSON file downloads automatically.</li>
-                  <li>Move the file to a Google Drive folder named <strong>Pipeline Backups</strong>.</li>
-                  <li>That's it. Five seconds of work, total disaster recovery.</li>
-                </ol>
-              </div>
-
             </div>
           )}
 
-          {/* ROLES TAB */}
+          {tab==="refs" && (
+            <div style={{display:"flex",flexDirection:"column",gap:18,fontSize:13,color:"#E6EDF3",lineHeight:1.6}}>
+              <div>
+                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:16,color:"#A78BFA",marginBottom:8}}>🏦 Bank-to-Bank Referrals</div>
+                <div style={{color:"#8B949E"}}>
+                  When PRMG can't handle a file (product, credit, niche), refer it out to another banker and track everything.
+                  When other bankers send you deals, tag the inbound so you can measure reciprocity at year end.
+                </div>
+              </div>
+
+              <div style={{background:"rgba(167,139,250,.06)",border:"1px solid #A78BFA44",borderRadius:8,padding:14}}>
+                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#A78BFA",marginBottom:8}}>🔀 Outbound — Referring a file OUT</div>
+                <ol style={{color:"#8B949E",paddingLeft:18,lineHeight:1.8,fontSize:12}}>
+                  <li>Open the file → change STAGE to <strong style={{color:"#A78BFA"}}>REFERRED OUT — EXTERNAL BANK</strong></li>
+                  <li>Fill in the receiving banker's name, company, phone, and email</li>
+                  <li>Select a REFERRAL REASON (credit, product, property type, etc.)</li>
+                  <li>Set STATUS to "Pending at Banker" while you wait for outcome</li>
+                  <li>Once the deal closes, update STATUS to "Closed (Funded)" + enter FINAL LOAN AMOUNT at banker + CLOSE DATE</li>
+                  <li>Your <strong style={{color:"#F5A623"}}>{REFERRAL_FEE_BPS} bps referral fee</strong> auto-calculates. Lost comp (vs PRMG comp) shows alongside.</li>
+                </ol>
+              </div>
+
+              <div style={{background:"rgba(255,209,102,.06)",border:"1px solid #FFD16644",borderRadius:8,padding:14}}>
+                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#FFD166",marginBottom:8}}>🤝 Inbound — A banker sends YOU a file</div>
+                <ol style={{color:"#8B949E",paddingLeft:18,lineHeight:1.8,fontSize:12}}>
+                  <li>Click <strong style={{color:"#F5A623"}}>+ NEW FILE</strong> as usual</li>
+                  <li>At the top, check the box <strong style={{color:"#FFD166"}}>"This is an inbound referral from another banker"</strong></li>
+                  <li>Fill in the referring banker's name, company, phone, and email</li>
+                  <li>Continue with normal borrower info → ADD TO PIPELINE</li>
+                  <li>The file lives in <strong style={{color:"#FFD166"}}>🤝 INBOUND</strong> tab + the normal pipeline (it has a 🤝 badge on its card)</li>
+                  <li>Process and close normally — you earn your full PRMG comp on inbound closed deals</li>
+                </ol>
+              </div>
+
+              <div>
+                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#E6EDF3",marginBottom:8}}>Year-end view</div>
+                <div style={{color:"#8B949E",fontSize:12,lineHeight:1.7}}>
+                  Production → <strong style={{color:"#F5A623"}}>🏦 BANK REFERRALS</strong> tab shows:
+                </div>
+                <ul style={{color:"#8B949E",paddingLeft:18,lineHeight:1.8,fontSize:12,marginTop:6}}>
+                  <li>Outbound totals: # sent out, $ fees earned, $ lost comp</li>
+                  <li>Inbound totals: # received, $ closed at PRMG, $ comp earned</li>
+                  <li>Reciprocity table: per-banker balance (who's sending who what)</li>
+                  <li>Year-end comp impact summary (admin only)</li>
+                </ul>
+              </div>
+            </div>
+          )}
+
           {tab==="roles" && (
             <div style={{display:"flex",flexDirection:"column",gap:16,fontSize:13,color:"#E6EDF3",lineHeight:1.6}}>
               <div style={{color:"#8B949E"}}>
                 You are signed in as <strong style={{color:profile.color}}>{profile.name}</strong> with role <strong style={{color:profile.color,textTransform:"uppercase"}}>{profile.role}</strong>.
-                Here's what each role can do:
               </div>
-
               {[
                 {role:"Admin", color:"#4A90D9", who:"Jose Del Valle (Branch Manager)", can:[
                   "Create, edit, advance, close, reopen, and DELETE any file",
@@ -2181,23 +2649,22 @@ function HelpModal({profile, onClose}){
                   "Restore the entire pipeline from a backup file",
                   "View the My Personal LO Comp report",
                   "See all LOs' production data on the Team Production tab",
+                  "See the year-end LOST COMP from outbound bank referrals",
                 ]},
                 {role:"LO (Loan Officer)", color:"#BD65E8", who:"Ana M Plasencia, Marelis Pinales", can:[
                   "Create, edit, advance, and close any file in the branch",
                   "See the FULL pipeline (all LOs' files visible for collaboration)",
                   "View MY COMP tab — your personal commission breakdown for closed files",
+                  "Track bank referrals (outbound + inbound)",
                   "Cannot see other LOs' personal comp",
                   "Cannot edit BPS rates (set by admin)",
-                  "Cannot delete files (ask Jose to delete)",
-                  "Cannot restore the pipeline from a backup",
                 ]},
                 {role:"Assistant", color:"#F5A623", who:"Laura de Armas", can:[
                   "Create, edit, and advance files",
                   "Update notes, closing dates, stage progression",
                   "See the full pipeline and team production stats (counts/volume)",
-                  "Cannot see ANY compensation data (BPS, override, personal comp)",
+                  "Cannot see ANY compensation data (BPS, override, personal comp, referral fee detail)",
                   "Cannot delete files",
-                  "Cannot restore the pipeline from a backup",
                 ]},
               ].map(r=>(
                 <div key={r.role} style={{
@@ -2217,28 +2684,23 @@ function HelpModal({profile, onClose}){
             </div>
           )}
 
-          {/* FAQ TAB */}
           {tab==="faq" && (
             <div style={{display:"flex",flexDirection:"column",gap:14,fontSize:13,color:"#E6EDF3"}}>
               {[
+                {q:"How do I refer a file out to another banker?",
+                 a:"Open the file → change STAGE to 'REFERRED OUT — EXTERNAL BANK' (the last option in the stage dropdown). A purple banker info section appears. Fill in banker name, company, phone, email, reason, and status. Save."},
+                {q:"How do I track an inbound referral from a banker?",
+                 a:"Click '+ NEW FILE'. At the top, check 'This is an inbound referral from another banker'. Fill in the referring banker's info. Add the borrower normally. The file gets a 🤝 badge in the pipeline and shows up under the 🤝 INBOUND tab."},
+                {q:"How does the 50 bps referral fee calculate?",
+                 a:"When you mark a referred-out file as 'Closed (Funded)' and enter the final loan amount at the banker, the system auto-calculates 50 bps × that loan amount. You'll see this on the BANK REFERRALS dashboard."},
+                {q:"What does 'lost comp' mean on the dashboard?",
+                 a:"For each referred-out closed deal: lost comp = (your normal PRMG bps × loan) − (50 bps referral fee). It shows what you would have earned if PRMG could have done the deal. Use this to make a case for product expansion."},
+                {q:"What's the difference between Referral Partner and Bank Referral?",
+                 a:"Referral Partner = the source who sent you the borrower (Smart Bee client, agent, CPA, family member). Tracked on the existing REFERRAL PARTNERS tab. Bank Referral = formal bank-to-bank deal flow with another mortgage banker. Tracked on the new BANK REFERRALS tab. Both can coexist on the same file."},
                 {q:"I made a change but don't see SAVED — did it save?",
-                 a:"Watch the top-right corner of the header. You'll see ● SAVING… briefly, then ✓ SAVED in green for 2 seconds. If you see ⚠ SAVE FAILED in red, your internet may be down — the change is still safe on your computer and will retry when you reconnect."},
-                {q:"How do I see who edited a file last?",
-                 a:"Open any loan and scroll to the ACTIVITY section near the bottom. You'll see 'Last edited by [name] · [time ago]' plus a 'SHOW ALL' link to expand the full history (last 20 actions)."},
+                 a:"Watch the top-right corner of the header. You'll see ● SAVING… briefly, then ✓ SAVED in green for 2 seconds."},
                 {q:"I forgot my password.",
-                 a:"On the login screen, type your email, then click FORGOT? next to the password label. Click SEND RESET LINK. You'll get an email with a reset link in 1-2 minutes (check spam if not seen). Set a new password and sign in."},
-                {q:"How do I switch users on the same computer?",
-                 a:"Click SIGN OUT in the top-right header. Confirm the prompt. The login screen reappears — sign in with the other account's email + password."},
-                {q:"What's the difference between CLOSE and DELETE?",
-                 a:"CLOSE ✓ marks a loan as funded — moves it to the CLOSED FILES tab, counts toward production stats, and stays in your records. DELETE ✕ permanently removes the file (admin only) — use this only for test entries or files entered by mistake."},
-                {q:"What's a Critical/Warning/Stale loan?",
-                 a:"CRITICAL = closing in 3 days or less (red border). WARNING = closing in 7 days or less (orange). STALE = sitting in the same stage 5+ days (gray). These are visual cues so you know which files need attention today."},
-                {q:"How do I add a referral partner to track who sends business?",
-                 a:"On any new or existing file, fill in the REFERRAL PARTNER field with the source name (e.g., 'Smart Bee Client', 'APG Realty Group', 'Anamary Plasencia'). The Production → Referral Partners tab automatically builds a leaderboard. Be consistent with naming so the leaderboard groups correctly."},
-                {q:"My pipeline disappeared / data looks wrong.",
-                 a:"First, refresh the browser with Ctrl+Shift+R. If still wrong, ask Jose — he can restore from the most recent weekly backup using the ↑ RESTORE button (admin only). All your work since the last backup will need to be re-entered, so this is a last resort."},
-                {q:"Who do I ask if something breaks?",
-                 a:"Send Jose a screenshot of the issue and what you were doing right before it broke. Most issues are 5-minute fixes."},
+                 a:"On the login screen, type your email, then click FORGOT? next to the password label. Click SEND RESET LINK."},
               ].map((item,i)=>(
                 <div key={i} style={{background:"#0D1117",border:"1px solid #21262D",borderRadius:8,padding:14}}>
                   <div style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#E85D75",marginBottom:6}}>Q: {item.q}</div>
@@ -2250,10 +2712,9 @@ function HelpModal({profile, onClose}){
 
         </div>
 
-        {/* FOOTER */}
         <div style={{padding:"12px 24px",borderTop:"1px solid #21262D",background:"#0D1117",flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px"}}>
-            v2.0 · DEL VALLE LENDING CO.
+            v2.1 · DEL VALLE LENDING CO. · BANK REFERRALS
           </div>
           <button onClick={onClose} className="hov"
             style={{background:"#F5A623",color:"#0D1117",borderRadius:6,padding:"8px 18px",fontFamily:"DM Mono",fontSize:11,fontWeight:500,border:"none",cursor:"pointer"}}>
