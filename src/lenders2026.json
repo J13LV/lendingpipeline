@@ -1,0 +1,8941 @@
+{
+ "sourceFile": "Lender_List_2026.xlsx",
+ "year": 2026,
+ "productCapabilities": {
+  "conventional": [
+   {
+    "id": "conventional",
+    "label": "Conventional"
+   },
+   {
+    "id": "arm",
+    "label": "ARM"
+   },
+   {
+    "id": "home_ready_possible",
+    "label": "Home Ready/Possible"
+   },
+   {
+    "id": "manual_underwrite",
+    "label": "Manual Underwrite"
+   },
+   {
+    "id": "tbd_underwrite",
+    "label": "TBD Underwrite"
+   }
+  ],
+  "fha": [
+   {
+    "id": "fha",
+    "label": "FHA"
+   },
+   {
+    "id": "streamline",
+    "label": "Streamline"
+   },
+   {
+    "id": "arm",
+    "label": "ARM"
+   },
+   {
+    "id": "down_to_500_fico",
+    "label": "Down to 500 FICO"
+   },
+   {
+    "id": "no_fico",
+    "label": "No FICO"
+   },
+   {
+    "id": "manual_underwrite",
+    "label": "Manual Underwrite"
+   },
+   {
+    "id": "tbd_underwrite",
+    "label": "TBD Underwrite"
+   },
+   {
+    "id": "no_loan_amount_limit",
+    "label": "No Loan Amount Limit"
+   }
+  ],
+  "va": [
+   {
+    "id": "va",
+    "label": "VA"
+   },
+   {
+    "id": "irrrl",
+    "label": "IRRRL"
+   },
+   {
+    "id": "arm",
+    "label": "ARM"
+   },
+   {
+    "id": "down_to_500_fico",
+    "label": "Down to 500 FICO"
+   },
+   {
+    "id": "no_fico",
+    "label": "No FICO"
+   },
+   {
+    "id": "manual_underwrite",
+    "label": "Manual Underwrite"
+   },
+   {
+    "id": "tbd_underwrite",
+    "label": "TBD Underwrite"
+   }
+  ],
+  "usda": [
+   {
+    "id": "usda",
+    "label": "USDA"
+   },
+   {
+    "id": "manual_underwrite",
+    "label": "Manual Underwrite"
+   },
+   {
+    "id": "tbd_underwrite",
+    "label": "TBD Underwrite"
+   }
+  ],
+  "dpa": [
+   {
+    "id": "fha_dpa",
+    "label": "FHA DPA"
+   },
+   {
+    "id": "conventional_dpa",
+    "label": "Conventional DPA"
+   },
+   {
+    "id": "chenoa",
+    "label": "Chenoa"
+   },
+   {
+    "id": "calhfa",
+    "label": "CalHFA"
+   },
+   {
+    "id": "state_bond_grants",
+    "label": "State Bond/Grants"
+   }
+  ],
+  "jumbo": [
+   {
+    "id": "max_comp",
+    "label": "Max Comp"
+   },
+   {
+    "id": "jumbo",
+    "label": "Jumbo"
+   },
+   {
+    "id": "arm",
+    "label": "ARM"
+   },
+   {
+    "id": "no_ratio",
+    "label": "No Ratio"
+   }
+  ],
+  "second": [
+   {
+    "id": "heloc",
+    "label": "HELOC"
+   },
+   {
+    "id": "heloan",
+    "label": "HELOAN"
+   },
+   {
+    "id": "fixed_2nd",
+    "label": "Fixed 2nd"
+   },
+   {
+    "id": "piggyback",
+    "label": "Piggyback"
+   },
+   {
+    "id": "st_lien_heloc",
+    "label": "st Lien HELOC"
+   },
+   {
+    "id": "bank_statement_heloc",
+    "label": "Bank Statement HELOC"
+   },
+   {
+    "id": "dscr_heloc",
+    "label": "DSCR HELOC"
+   }
+  ],
+  "nonqm": [
+   {
+    "id": "bank_statement",
+    "label": "Bank Statement"
+   },
+   {
+    "id": "profit_and_loss",
+    "label": "Profit and Loss"
+   },
+   {
+    "id": "asset_depletion_utilization",
+    "label": "Asset Depletion/Utilization"
+   },
+   {
+    "id": "wvoe",
+    "label": "WVOE"
+   },
+   {
+    "id": "dscr",
+    "label": "DSCR"
+   },
+   {
+    "id": "no_ratio",
+    "label": "No Ratio"
+   },
+   {
+    "id": "fix_n_flip",
+    "label": "Fix N Flip"
+   },
+   {
+    "id": "cross_collateral_blanket",
+    "label": "Cross Collateral/Blanket"
+   },
+   {
+    "id": "bridge",
+    "label": "Bridge"
+   },
+   {
+    "id": "itin",
+    "label": "ITIN"
+   },
+   {
+    "id": "foreign_national",
+    "label": "Foreign National"
+   },
+   {
+    "id": "non_warrantable_condo",
+    "label": "Non Warrantable Condo"
+   },
+   {
+    "id": "stated_income",
+    "label": "Stated Income"
+   },
+   {
+    "id": "recent_credit_events",
+    "label": "Recent Credit Events"
+   },
+   {
+    "id": "close_in_llc",
+    "label": "Close in LLC"
+   },
+   {
+    "id": "tbd_underwrite",
+    "label": "TBD Underwrite"
+   }
+  ],
+  "bridge": [
+   {
+    "id": "bridge",
+    "label": "Bridge"
+   },
+   {
+    "id": "commercial_bridge",
+    "label": "Commercial Bridge"
+   }
+  ],
+  "mfh": [
+   {
+    "id": "real_property",
+    "label": "Real property"
+   },
+   {
+    "id": "chattel_leased_land",
+    "label": "Chattel/leased land"
+   },
+   {
+    "id": "pre_hud",
+    "label": "Pre- HUD"
+   },
+   {
+    "id": "single_wide",
+    "label": "Single Wide"
+   }
+  ],
+  "reverse": [],
+  "construction": [
+   {
+    "id": "one_time_close",
+    "label": "One-Time Close"
+   },
+   {
+    "id": "two_time_close",
+    "label": "Two-Time Close"
+   },
+   {
+    "id": "construction_to_perm",
+    "label": "Construction to Perm"
+   },
+   {
+    "id": "ground_up",
+    "label": "Ground - Up"
+   },
+   {
+    "id": "fix_n_flip",
+    "label": "Fix N Flip"
+   },
+   {
+    "id": "jumbo",
+    "label": "Jumbo"
+   },
+   {
+    "id": "spec_homes",
+    "label": "Spec Homes"
+   },
+   {
+    "id": "owner_builder",
+    "label": "Owner-Builder"
+   },
+   {
+    "id": "owner_occupied",
+    "label": "Owner Occupied"
+   }
+  ],
+  "renovation": [
+   {
+    "id": "conventional",
+    "label": "Conventional"
+   },
+   {
+    "id": "fha_203k",
+    "label": "FHA 203K"
+   },
+   {
+    "id": "fha_203h_disaster",
+    "label": "FHA 203H (disaster)"
+   },
+   {
+    "id": "usda",
+    "label": "USDA"
+   },
+   {
+    "id": "va",
+    "label": "VA"
+   },
+   {
+    "id": "homestyle_reno",
+    "label": "HomeStyle Reno"
+   },
+   {
+    "id": "choicerenovation",
+    "label": "CHOICERenovation"
+   },
+   {
+    "id": "fix_n_flip",
+    "label": "Fix N Flip"
+   },
+   {
+    "id": "ground_up",
+    "label": "Ground - Up"
+   }
+  ],
+  "commercial": [
+   {
+    "id": "residential_5_unit",
+    "label": "Residential 5+ Unit"
+   },
+   {
+    "id": "non_residential_commercial",
+    "label": "Non Residential Commercial"
+   },
+   {
+    "id": "commercial_bridge",
+    "label": "Commercial Bridge"
+   },
+   {
+    "id": "mix_use_properties",
+    "label": "Mix Use Properties"
+   }
+  ],
+  "private": [],
+  "other": [
+   {
+    "id": "section_184",
+    "label": "Section 184"
+   },
+   {
+    "id": "agricultural",
+    "label": "Agricultural"
+   },
+   {
+    "id": "cannabis",
+    "label": "Cannabis"
+   },
+   {
+    "id": "land_loans",
+    "label": "Land Loans"
+   },
+   {
+    "id": "physician",
+    "label": "Physician"
+   }
+  ],
+  "correspondent": [
+   {
+    "id": "dscr",
+    "label": "DSCR"
+   },
+   {
+    "id": "bank_statement",
+    "label": "Bank Statement"
+   },
+   {
+    "id": "jumbo",
+    "label": "Jumbo"
+   }
+  ]
+ },
+ "lenders": [
+  {
+   "id": "11_mortgage",
+   "name": "11 Mortgage",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Kim Kriel",
+     "phone": "203-300-4847",
+     "email": "Kim.Kriel@elevenmortgage.com"
+    }
+   ],
+   "website": "www.elevenmortgage.com",
+   "guidelines": "https://elevenmortgage.encompasstpoconnect.com/#/home/tpo-documents",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": 275,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "manual_underwrite",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "arm",
+     "fha",
+     "manual_underwrite",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "arm",
+     "irrrl",
+     "manual_underwrite",
+     "tbd_underwrite",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "tbd_underwrite",
+     "usda"
+    ],
+    "dpa": [
+     "calhfa",
+     "chenoa",
+     "fha_dpa",
+     "state_bond_grants"
+    ],
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "bank_statement",
+     "dscr",
+     "non_warrantable_condo",
+     "profit_and_loss"
+    ],
+    "mfh": [
+     "real_property",
+     "single_wide"
+    ],
+    "other": [
+     "physician"
+    ],
+    "correspondent": [
+     "bank_statement",
+     "dscr",
+     "jumbo"
+    ]
+   }
+  },
+  {
+   "id": "1st_tribal_lending",
+   "name": "1st Tribal Lending",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Angela Casas",
+     "phone": "415-209-3287",
+     "email": "angela.casas@1tribal.com"
+    }
+   ],
+   "website": "https://www.1tribal.com/",
+   "guidelines": "https://www.1tribal.com/",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "other": [
+     "section_184"
+    ]
+   }
+  },
+  {
+   "id": "1st_tribal_lending_all_programs_subject_to_hud_184_only",
+   "name": "1st Tribal Lending (all programs subject to HUD 184 Only)",
+   "note": "all programs subject to HUD 184 Only",
+   "contacts": [
+    {
+     "ae": "Angela Casas",
+     "phone": "415-209-3287",
+     "email": "angela.casas@1tribal.com"
+    }
+   ],
+   "website": "https://www.1tribal.com/",
+   "guidelines": "https://www.1tribal.com/",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "mfh": [
+     "real_property"
+    ]
+   }
+  },
+  {
+   "id": "5th_street_capital",
+   "name": "5th Street Capital",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Todd Geritz",
+     "phone": "818-430-5429",
+     "email": "todd.geritz@5thstcap.com"
+    },
+    {
+     "ae": "Yvette Misek",
+     "phone": "949-887-0284",
+     "email": "yvette@5thstcap.com"
+    }
+   ],
+   "website": "https://www.5thstcap.com/",
+   "guidelines": "https://www.5thstcap.com/guidelines",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "manual_underwrite",
+     "tbd_underwrite"
+    ],
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "fixed_2nd",
+     "heloan"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "tbd_underwrite",
+     "wvoe"
+    ],
+    "commercial": [
+     "mix_use_properties",
+     "residential_5_unit"
+    ],
+    "other": [
+     "cannabis"
+    ]
+   }
+  },
+  {
+   "id": "acc_mortgage",
+   "name": "ACC Mortgage",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Darlene Mason-Lopez",
+     "phone": "602-367-2857",
+     "email": "darlene.masonlopez@accmortgage.com"
+    }
+   ],
+   "website": "https://www.accwholesaleportal.com/",
+   "guidelines": "https://accmortgage.com/",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": true,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "fixed_2nd"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events"
+    ],
+    "other": [
+     "cannabis"
+    ]
+   }
+  },
+  {
+   "id": "acra_lending",
+   "name": "Acra Lending",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Scott Bashaar",
+     "phone": "480-440-1198",
+     "email": "teambfg@acralending.com"
+    },
+    {
+     "ae": "Chris Murphree",
+     "phone": "415-992-1166",
+     "email": "teambfg@acralending.com"
+    }
+   ],
+   "website": "www.acralending.com",
+   "guidelines": "https://acralending.com/broker-resources/",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events",
+     "wvoe"
+    ],
+    "mfh": [
+     "real_property"
+    ],
+    "commercial": [
+     "mix_use_properties",
+     "residential_5_unit"
+    ]
+   }
+  },
+  {
+   "id": "ad_mortgage",
+   "name": "AD Mortgage",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Edward Webb",
+     "phone": "786-788-6437",
+     "email": "edward.webb@admortgage.com"
+    },
+    {
+     "ae": "Roselyn Stauber",
+     "phone": "602-332-4000",
+     "email": "roselyn.stauber@admortgage.com"
+    },
+    {
+     "ae": "Alex Russu",
+     "phone": "786-982-7230",
+     "email": "alex.russu@admortgage.com"
+    },
+    {
+     "ae": "Alex Russo",
+     "phone": "786-982-7230",
+     "email": "alex.russo@admortgage.com"
+    }
+   ],
+   "website": "www.admortgage.com",
+   "guidelines": "https://admortgage.com/ad-learning-center/documents-forms/",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible"
+    ],
+    "fha": [
+     "fha",
+     "manual_underwrite",
+     "streamline"
+    ],
+    "va": [
+     "irrrl",
+     "manual_underwrite",
+     "va"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "bank_statement_heloc",
+     "dscr_heloc",
+     "fixed_2nd",
+     "heloan",
+     "piggyback"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events"
+    ],
+    "mfh": [
+     "real_property",
+     "single_wide"
+    ],
+    "commercial": [
+     "mix_use_properties",
+     "residential_5_unit"
+    ],
+    "other": [
+     "agricultural"
+    ]
+   }
+  },
+  {
+   "id": "advancial_federal_credit_union",
+   "name": "Advancial Federal Credit Union",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Doug Andel",
+     "phone": "Direct: 972-201-1626 Mobile: 602-295-8170",
+     "email": "dandel@advancial.org"
+    }
+   ],
+   "website": "https://www.advancial.org/wholesale",
+   "guidelines": "https://advancial.org/wholesale/wholesale-rates/",
+   "lenderPaidBps": 100,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": 15000,
+   "products": {
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bridge",
+     "close_in_llc",
+     "foreign_national",
+     "non_warrantable_condo",
+     "tbd_underwrite"
+    ],
+    "bridge": [
+     "bridge"
+    ],
+    "other": [
+     "agricultural"
+    ]
+   }
+  },
+  {
+   "id": "ahl_funding",
+   "name": "AHL Funding",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Reece Carroll",
+     "phone": "Direct: 714-477-7989 Mobile: 714-794-4425",
+     "email": "reece.carroll@AHLFunding.com"
+    }
+   ],
+   "website": "Ahlfunding.com",
+   "guidelines": "Contact AE",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "fixed_2nd"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss"
+    ],
+    "commercial": [
+     "mix_use_properties",
+     "residential_5_unit"
+    ]
+   }
+  },
+  {
+   "id": "american_heritage_lending_llc",
+   "name": "American Heritage Lending, LLC",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Evan Kaplan",
+     "phone": "Direct: 313-221-8566 Mobile: 248-703-4121",
+     "email": "evan.kaplan@ahlend.com"
+    }
+   ],
+   "website": "https://ahlendtpo.com/",
+   "guidelines": "https://ahlendtpo.com/broker/#products",
+   "lenderPaidBps": 300,
+   "borrowerPaidOnly": false,
+   "minComp": 1000,
+   "maxComp": 90000,
+   "products": {
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "bridge",
+     "close_in_llc",
+     "dscr",
+     "fix_n_flip",
+     "foreign_national",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events"
+    ],
+    "bridge": [
+     "bridge"
+    ],
+    "construction": [
+     "fix_n_flip",
+     "ground_up"
+    ],
+    "renovation": [
+     "fix_n_flip"
+    ],
+    "commercial": [
+     "mix_use_properties",
+     "residential_5_unit"
+    ],
+    "other": [
+     "cannabis",
+     "physician"
+    ]
+   }
+  },
+  {
+   "id": "american_pride_bank",
+   "name": "American Pride Bank",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Justin Putz",
+     "phone": "612-877-2134",
+     "email": "tpotraining@americanpride.bank"
+    }
+   ],
+   "website": "www.apbwholesale.com",
+   "guidelines": "www.apbwholesale.com",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": true,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "bank_statement_heloc",
+     "fixed_2nd",
+     "heloan",
+     "heloc"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "cross_collateral_blanket",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "wvoe"
+    ],
+    "construction": [
+     "construction_to_perm",
+     "ground_up",
+     "jumbo",
+     "one_time_close",
+     "owner_builder",
+     "owner_occupied"
+    ],
+    "commercial": [
+     "residential_5_unit"
+    ]
+   }
+  },
+  {
+   "id": "american_senior_living",
+   "name": "American Senior Living",
+   "note": "(High Tech)",
+   "contacts": [
+    {
+     "ae": "Iona Osment",
+     "phone": "949-625-4314",
+     "email": "iosment@americansenior.com"
+    }
+   ],
+   "website": "www.htlwholesale.com",
+   "guidelines": "www.htlwholesale.com",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "reverse": []
+   }
+  },
+  {
+   "id": "amerisbank",
+   "name": "AmerisBank",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "JD Meadow",
+     "phone": "415-637‐8263",
+     "email": "JD.Meadows@amerisbank.com"
+    }
+   ],
+   "website": "N/A",
+   "guidelines": "N/A",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "conventional"
+    ],
+    "fha": [
+     "fha"
+    ],
+    "va": [
+     "va"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "heloc"
+    ],
+    "nonqm": [
+     "bank_statement",
+     "non_warrantable_condo"
+    ]
+   }
+  },
+  {
+   "id": "ameritrust_mortgage",
+   "name": "Ameritrust Mortgage",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Ryan Bagan",
+     "phone": "661-414-4730",
+     "email": "r.bagan@ameritrusttpo.com"
+    },
+    {
+     "ae": "Chris Pinney",
+     "phone": "714-476-1538",
+     "email": "teamcp@ameritrusttpo.com"
+    }
+   ],
+   "website": "https://ameritrusttpo.com",
+   "guidelines": "https://ameritrusttpo.com/programs/?section=wholesale",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "conventional",
+     "home_ready_possible",
+     "manual_underwrite",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "arm",
+     "fha",
+     "manual_underwrite",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "arm",
+     "irrrl",
+     "manual_underwrite",
+     "tbd_underwrite",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "tbd_underwrite",
+     "usda"
+    ],
+    "dpa": [
+     "fha_dpa"
+    ],
+    "second": [
+     "fixed_2nd"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "tbd_underwrite",
+     "wvoe"
+    ],
+    "mfh": [
+     "real_property"
+    ],
+    "commercial": [
+     "residential_5_unit"
+    ]
+   }
+  },
+  {
+   "id": "amortgage_boutique",
+   "name": "aMortgage Boutique",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Kim Barron",
+     "phone": "210-831-2986",
+     "email": "kim.barron@amortgageboutique.com"
+    }
+   ],
+   "website": "www.welovetpo.com",
+   "guidelines": "www.welovetpo.com",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "manual_underwrite",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "fha",
+     "manual_underwrite",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "irrrl",
+     "manual_underwrite",
+     "tbd_underwrite",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "tbd_underwrite",
+     "usda"
+    ],
+    "dpa": [
+     "calhfa",
+     "conventional_dpa",
+     "fha_dpa",
+     "state_bond_grants"
+    ],
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "fixed_2nd",
+     "heloan",
+     "piggyback"
+    ],
+    "nonqm": [
+     "bank_statement",
+     "close_in_llc",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "tbd_underwrite",
+     "wvoe"
+    ],
+    "mfh": [
+     "real_property"
+    ],
+    "construction": [
+     "two_time_close"
+    ],
+    "other": [
+     "physician"
+    ]
+   }
+  },
+  {
+   "id": "amwest_funding_corp",
+   "name": "AmWest Funding Corp",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Annie Chang",
+     "phone": "Mobile: 678-650-0465 Office: 470-369-7718",
+     "email": "annie.chang@amwestfunding.com"
+    }
+   ],
+   "website": "https://amwestwholesale.com/",
+   "guidelines": "https://amwestwholesale.com/",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "conventional"
+    ],
+    "fha": [
+     "fha"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "heloc"
+    ]
+   }
+  },
+  {
+   "id": "anchor",
+   "name": "Anchor",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Mike Urban",
+     "phone": "949-441-2200",
+     "email": "mikeu@anchorloans.com"
+    }
+   ],
+   "website": "https://www.anchorloans.com/originators/mike-urban",
+   "guidelines": "https://www.anchorloans.com/originators/mike-urban",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": true,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "nonqm": [
+     "cross_collateral_blanket",
+     "dscr",
+     "fix_n_flip",
+     "foreign_national"
+    ],
+    "bridge": [
+     "bridge"
+    ],
+    "mfh": [
+     "real_property"
+    ],
+    "construction": [
+     "fix_n_flip",
+     "ground_up",
+     "owner_builder",
+     "spec_homes"
+    ],
+    "private": [],
+    "other": [
+     "land_loans"
+    ]
+   }
+  },
+  {
+   "id": "angel_oak",
+   "name": "Angel Oak",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Mike Haslett",
+     "phone": "480-295-5037",
+     "email": "mike.haslett@angeloakms.com"
+    }
+   ],
+   "website": "www.angeloakms.com",
+   "guidelines": "https://angeloakms.com/programs/",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "bank_statement_heloc",
+     "fixed_2nd",
+     "heloan",
+     "heloc",
+     "st_lien_heloc"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events"
+    ],
+    "construction": [
+     "construction_to_perm"
+    ]
+   }
+  },
+  {
+   "id": "apex_commercial_capital",
+   "name": "Apex Commercial Capital",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Andrew Teller",
+     "phone": "484-571-5158",
+     "email": "ateller@apexcommercial.com"
+    }
+   ],
+   "website": "www.apexcommercial.com",
+   "guidelines": "www.apexcommercial.com",
+   "lenderPaidBps": 500,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "nonqm": [
+     "close_in_llc",
+     "dscr",
+     "profit_and_loss",
+     "recent_credit_events",
+     "stated_income"
+    ],
+    "commercial": [
+     "mix_use_properties",
+     "non_residential_commercial",
+     "residential_5_unit"
+    ],
+    "other": [
+     "cannabis"
+    ]
+   }
+  },
+  {
+   "id": "applewood_funding_inc",
+   "name": "Applewood Funding, Inc.",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Joel McDaniel",
+     "phone": "480-947-0042",
+     "email": "applewoodfunding@af.phxcoxmail.com"
+    }
+   ],
+   "website": "N/A",
+   "guidelines": "contact investor",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "private": []
+   }
+  },
+  {
+   "id": "arc_home_llc",
+   "name": "ARC Home LLC",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "George Ramirez",
+     "phone": "925-588-3633",
+     "email": "gramirez@archome.com"
+    }
+   ],
+   "website": "https://wholesale.archomellc.com",
+   "guidelines": "https://wholesale.archomellc.com/uploads/sites/17046/public/Arc_Underwriting_Guide_10_30_2025_n.pdf",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "conventional"
+    ],
+    "fha": [
+     "fha"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "heloc"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events"
+    ]
+   }
+  },
+  {
+   "id": "ardri",
+   "name": "ARDRI",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Shelita Christian",
+     "phone": "818-570-7234",
+     "email": "shelita@ardri.ai"
+    }
+   ],
+   "website": "https://ardri.ai/yvette-misek",
+   "guidelines": "https://ardri.ai/loan-programs/",
+   "lenderPaidBps": 300,
+   "borrowerPaidOnly": false,
+   "minComp": 300,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "bridge",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "wvoe"
+    ],
+    "bridge": [
+     "bridge"
+    ],
+    "commercial": [
+     "mix_use_properties",
+     "residential_5_unit"
+    ]
+   }
+  },
+  {
+   "id": "asset_based_lending_abl",
+   "name": "Asset Based Lending (ABL)",
+   "note": "ABL",
+   "contacts": [
+    {
+     "ae": "Marc Himmel",
+     "phone": "818-296-0936",
+     "email": "marc.himmel@ablfunding.com"
+    },
+    {
+     "ae": "Seth Blumenthal",
+     "phone": "602-549-2841",
+     "email": "seth.blumenthal@ablfunding.com"
+    }
+   ],
+   "website": "ablfunding.com",
+   "guidelines": "Contact AE",
+   "lenderPaidBps": 400,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "nonqm": [
+     "bridge",
+     "dscr",
+     "fix_n_flip",
+     "foreign_national"
+    ],
+    "bridge": [
+     "bridge"
+    ],
+    "construction": [
+     "fix_n_flip"
+    ],
+    "renovation": [
+     "fix_n_flip"
+    ],
+    "commercial": [
+     "residential_5_unit"
+    ],
+    "private": []
+   }
+  },
+  {
+   "id": "axos_bank",
+   "name": "Axos Bank",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Emme Fridge",
+     "phone": "615-491-3215",
+     "email": "EFridge@axosbank.com"
+    }
+   ],
+   "website": "https://www.axosbank.com/",
+   "guidelines": "https://www.axosbank.com/partners/wholesale-correspondent-portfolio-lending/support",
+   "lenderPaidBps": 125,
+   "borrowerPaidOnly": false,
+   "minComp": 125,
+   "maxComp": 50000,
+   "products": {
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "fixed_2nd"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "bridge",
+     "close_in_llc",
+     "cross_collateral_blanket",
+     "dscr",
+     "foreign_national",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "wvoe"
+    ],
+    "bridge": [
+     "bridge"
+    ],
+    "construction": [
+     "construction_to_perm",
+     "ground_up",
+     "jumbo",
+     "one_time_close",
+     "owner_occupied",
+     "spec_homes"
+    ],
+    "other": [
+     "cannabis"
+    ]
+   }
+  },
+  {
+   "id": "barrett_capital_group",
+   "name": "Barrett Capital Group",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Jonathan Ortiz",
+     "phone": "480-297-2956",
+     "email": "jonathan@barrettcg.com"
+    }
+   ],
+   "website": "www.barrettcg.com",
+   "guidelines": "contact investor",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "private": []
+   }
+  },
+  {
+   "id": "bluebell_international_llc",
+   "name": "Bluebell International, LLC",
+   "note": null,
+   "contacts": [],
+   "website": "www.bluebellfunding.com",
+   "guidelines": "contact investor",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "private": []
+   }
+  },
+  {
+   "id": "bluepoint",
+   "name": "BluePoint",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Gary Williamson",
+     "phone": "949-842-7792",
+     "email": "gwilliamson@bluepointmtg.com"
+    }
+   ],
+   "website": "https://bluepointmtg.com",
+   "guidelines": "https://bluepointmtg.com",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "conventional"
+    ],
+    "fha": [
+     "fha"
+    ],
+    "va": [
+     "va"
+    ],
+    "dpa": [
+     "fha_dpa"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "bank_statement",
+     "dscr"
+    ],
+    "mfh": [
+     "real_property"
+    ]
+   }
+  },
+  {
+   "id": "brokers_advantage_mortgage",
+   "name": "Brokers Advantage Mortgage",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Frankie Rodriguez",
+     "phone": "714-552-2138",
+     "email": "frodriguez@brokersadvantagemtg.com"
+    },
+    {
+     "ae": "Janiz Hernandez",
+     "phone": "714-925-7320",
+     "email": "jahernandez@brokersadvantagemtg.com"
+    }
+   ],
+   "website": "https://brokersadvantagemortgage.com/resources",
+   "guidelines": "https://brokersadvantagemortgage.com/products",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": true,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "second": [
+     "heloan"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "stated_income",
+     "wvoe"
+    ]
+   }
+  },
+  {
+   "id": "brokers_first_funding",
+   "name": "Brokers First Funding",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Derek Teklak",
+     "phone": "714-745-6747",
+     "email": "dteklak@bffws.com"
+    }
+   ],
+   "website": "https://bffws.com/",
+   "guidelines": "https://bffws.com/respirce-center/",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": 275,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "manual_underwrite",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "arm",
+     "down_to_500_fico",
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "arm",
+     "down_to_500_fico",
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "tbd_underwrite",
+     "va"
+    ],
+    "dpa": [
+     "calhfa",
+     "fha_dpa"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "heloan"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "cross_collateral_blanket",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events",
+     "tbd_underwrite"
+    ]
+   }
+  },
+  {
+   "id": "button_finance_inc",
+   "name": "Button Finance, Inc",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Rob Campbell",
+     "phone": "609-694-8699",
+     "email": "rob@buttonfinance.com"
+    }
+   ],
+   "website": "https://buttonfinance.encompasstpoconnect.com/#/content/login",
+   "guidelines": "https://buttonfinance.com/partner-resources/",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": true,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "second": [
+     "bank_statement_heloc",
+     "fixed_2nd",
+     "heloan",
+     "heloc",
+     "piggyback",
+     "st_lien_heloc"
+    ]
+   }
+  },
+  {
+   "id": "cake_mortgage",
+   "name": "Cake Mortgage",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Team Barrett",
+     "phone": "833-717-0401",
+     "email": "teambarrett@cakehome.com"
+    },
+    {
+     "ae": "AE Team",
+     "phone": "877-274-2610",
+     "email": "teambarrett@cakehome.com"
+    }
+   ],
+   "website": "www.caketpo.com",
+   "guidelines": "www.caketpo.com",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "conventional"
+    ],
+    "fha": [
+     "fha"
+    ],
+    "va": [
+     "va"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "heloc"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events",
+     "tbd_underwrite",
+     "wvoe"
+    ],
+    "mfh": [
+     "real_property"
+    ],
+    "commercial": [
+     "residential_5_unit"
+    ]
+   }
+  },
+  {
+   "id": "capital_fund_1",
+   "name": "Capital Fund 1",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Gabrial Carter",
+     "phone": "720-679-2348",
+     "email": "gabrial@capitalfund1.com"
+    }
+   ],
+   "website": "www.capitalfund1.com",
+   "guidelines": "contact investor",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "private": []
+   }
+  },
+  {
+   "id": "cardinal_financial",
+   "name": "Cardinal Financial",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Bert Jones",
+     "phone": "904-477-0072",
+     "email": "Bert.Jones@CardinalFinancial.com"
+    }
+   ],
+   "website": "https://octane.cardinalfinancial.com/",
+   "guidelines": "https://octane.cardinalfinancial.com/#/a/toolbox/myWorkspace/loanHome/library",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": 275,
+   "maxComp": 20000,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible"
+    ],
+    "fha": [
+     "arm",
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline"
+    ],
+    "va": [
+     "arm",
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "usda"
+    ],
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "profit_and_loss",
+     "wvoe"
+    ],
+    "mfh": [
+     "real_property",
+     "single_wide"
+    ],
+    "renovation": [
+     "choicerenovation",
+     "conventional",
+     "fha_203h_disaster",
+     "fha_203k",
+     "homestyle_reno"
+    ]
+   }
+  },
+  {
+   "id": "carrington_wholesale",
+   "name": "Carrington Wholesale",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Staci Goodman",
+     "phone": "949-517-6116",
+     "email": "staci.goodman@carringtonms.com"
+    }
+   ],
+   "website": "www.carringtonwholesale.com",
+   "guidelines": "www.carringtonwholesale.com",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "conventional",
+     "home_ready_possible"
+    ],
+    "fha": [
+     "down_to_500_fico",
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline"
+    ],
+    "va": [
+     "down_to_500_fico",
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "va"
+    ],
+    "usda": [
+     "usda"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "wvoe"
+    ],
+    "mfh": [
+     "real_property"
+    ]
+   }
+  },
+  {
+   "id": "castor_financial",
+   "name": "Castor Financial",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "John Margain",
+     "phone": "562-668-1115",
+     "email": "jmargain@castorloans.com"
+    }
+   ],
+   "website": "www.castorloans.com",
+   "guidelines": "www.castorloans.com/pricer",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": true,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "second": [
+     "fixed_2nd"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events"
+    ]
+   }
+  },
+  {
+   "id": "change_wholesale",
+   "name": "Change Wholesale",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Connie Foyle",
+     "phone": "602-684-9687",
+     "email": "Connie.Foyle@ChangeWholesale.com"
+    }
+   ],
+   "website": "https://changewholesale.com",
+   "guidelines": "https://changewholesale.com",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": 275,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "conventional"
+    ],
+    "fha": [
+     "fha",
+     "streamline"
+    ],
+    "va": [
+     "irrrl",
+     "va"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "bank_statement_heloc",
+     "fixed_2nd"
+    ],
+    "nonqm": [
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "stated_income",
+     "wvoe"
+    ]
+   }
+  },
+  {
+   "id": "civic_financial_services_llc",
+   "name": "Civic Financial Services, LLC",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Jack Robinson",
+     "phone": "310-947-4017",
+     "email": "jack.robinson@civicfs.com"
+    }
+   ],
+   "website": "N/A",
+   "guidelines": "contact investor",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "private": []
+   }
+  },
+  {
+   "id": "clearedge_lending",
+   "name": "ClearEdge Lending",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Janine Truman",
+     "phone": "702-556-3499",
+     "email": "jtruman@clearedgelending.com"
+    }
+   ],
+   "website": "https://clearedgelending.com/",
+   "guidelines": "https://clearedgelending.com/",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": 275,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional"
+    ],
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "fixed_2nd"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events",
+     "wvoe"
+    ],
+    "commercial": [
+     "mix_use_properties",
+     "residential_5_unit"
+    ]
+   }
+  },
+  {
+   "id": "click_n_close",
+   "name": "Click n Close",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Jon Eldridge",
+     "phone": "704-960-9765",
+     "email": "jon.eldridge@clicknclose.com"
+    }
+   ],
+   "website": "www.cnc3rdparty.com/barrett",
+   "guidelines": "https://www.cnc3rdparty.com/programs-1",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "conventional",
+     "home_ready_possible"
+    ],
+    "fha": [
+     "arm",
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline"
+    ],
+    "va": [
+     "arm",
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "usda"
+    ],
+    "dpa": [
+     "fha_dpa"
+    ],
+    "mfh": [
+     "real_property"
+    ],
+    "construction": [
+     "one_time_close"
+    ],
+    "renovation": [
+     "conventional",
+     "fha_203h_disaster",
+     "fha_203k",
+     "homestyle_reno"
+    ]
+   }
+  },
+  {
+   "id": "cmg",
+   "name": "CMG",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Ian Potter",
+     "phone": "949-683-0808",
+     "email": "ipotter@cmgfi.com"
+    }
+   ],
+   "website": "https://www.cmgclear.com/wholesale/",
+   "guidelines": "https://www.cmgclear.com/wholesale/",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": 275,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "arm",
+     "fha",
+     "manual_underwrite",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "arm",
+     "irrrl",
+     "manual_underwrite",
+     "tbd_underwrite",
+     "va"
+    ],
+    "usda": [
+     "tbd_underwrite",
+     "usda"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "mfh": [
+     "real_property"
+    ],
+    "renovation": [
+     "fha_203h_disaster"
+    ]
+   }
+  },
+  {
+   "id": "corevest",
+   "name": "CoreVest",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Paul Trapani",
+     "phone": "Mobile: 408-502-2278 Office: 213-583-5922",
+     "email": "paul.trapani@cvest.com"
+    }
+   ],
+   "website": "www.corevestfinance.com/about-our-company",
+   "guidelines": "www.corevestfinance.com/about-our-company",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "bridge",
+     "close_in_llc",
+     "cross_collateral_blanket",
+     "dscr",
+     "foreign_national",
+     "non_warrantable_condo"
+    ],
+    "bridge": [
+     "bridge"
+    ],
+    "construction": [
+     "fix_n_flip"
+    ],
+    "renovation": [
+     "fix_n_flip"
+    ],
+    "commercial": [
+     "residential_5_unit"
+    ]
+   }
+  },
+  {
+   "id": "cv3_financial",
+   "name": "CV3 Financial",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Jack Robinson",
+     "phone": "310-947-4017",
+     "email": "jack.robinson@cv3financial.com"
+    }
+   ],
+   "website": "https://cv3financial.com/",
+   "guidelines": "https://cv3financial.com/",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "bank_statement",
+     "bridge",
+     "close_in_llc",
+     "cross_collateral_blanket",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "non_warrantable_condo"
+    ],
+    "bridge": [
+     "bridge"
+    ],
+    "construction": [
+     "fix_n_flip"
+    ],
+    "renovation": [
+     "fix_n_flip"
+    ]
+   }
+  },
+  {
+   "id": "deephaven_north_co_il_mi_mn_mo_ne_nj_nv_oh_wi",
+   "name": "Deephaven (North) CO, IL, MI, MN, MO, NE, NJ, NV, OH, WI",
+   "note": "North",
+   "contacts": [
+    {
+     "ae": "Brad Salin",
+     "phone": "704-930-9737",
+     "email": "bsalin@deephavenmortgage.com"
+    }
+   ],
+   "website": "www.deephavenmortgage.com",
+   "guidelines": "www.deephavenmortgage.com",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "bank_statement",
+     "bridge",
+     "dscr",
+     "fix_n_flip",
+     "non_warrantable_condo"
+    ],
+    "bridge": [
+     "bridge"
+    ],
+    "construction": [
+     "fix_n_flip"
+    ],
+    "renovation": [
+     "fix_n_flip"
+    ]
+   }
+  },
+  {
+   "id": "deephaven_southeast_al_fl_ga_ms_nc_sc",
+   "name": "Deephaven (Southeast) AL, FL, GA, MS, NC, SC",
+   "note": "Southeast",
+   "contacts": [
+    {
+     "ae": "Mark Latsko",
+     "phone": "704-741-8419",
+     "email": "mlatsko@deephavenmortgage.com"
+    }
+   ],
+   "website": "www.deephavenmortgage.com",
+   "guidelines": "www.deephavenmortgage.com",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "bank_statement",
+     "bridge",
+     "dscr",
+     "fix_n_flip",
+     "non_warrantable_condo"
+    ],
+    "bridge": [
+     "bridge"
+    ],
+    "construction": [
+     "fix_n_flip"
+    ],
+    "renovation": [
+     "fix_n_flip"
+    ]
+   }
+  },
+  {
+   "id": "deephaven_west_az_ca_hi_or_ut_wa_tx",
+   "name": "Deephaven (West) AZ, CA, HI, OR, UT, WA, TX)",
+   "note": "West",
+   "contacts": [
+    {
+     "ae": "Jamie Pierce",
+     "phone": "858-405-0401",
+     "email": "jpierce@deephavenmortgage.com"
+    }
+   ],
+   "website": "www.deephavenmortgage.com",
+   "guidelines": "www.deephavenmortgage.com",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "bank_statement",
+     "bridge",
+     "dscr",
+     "fix_n_flip",
+     "non_warrantable_condo"
+    ],
+    "bridge": [
+     "bridge"
+    ],
+    "construction": [
+     "fix_n_flip"
+    ],
+    "renovation": [
+     "fix_n_flip"
+    ]
+   }
+  },
+  {
+   "id": "elend",
+   "name": "eLend",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Andrew L'Abbate",
+     "phone": "973-588-8564",
+     "email": "andrew.labbate@elend.com"
+    },
+    {
+     "ae": "Michael Boller",
+     "phone": "973-387-7012",
+     "email": "michael.boller@elend.com"
+    }
+   ],
+   "website": "afrloancenter.com",
+   "guidelines": "https://resources.afrloancenter.com/home",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": 1000,
+   "maxComp": 35000,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional"
+    ],
+    "fha": [
+     "fha",
+     "manual_underwrite",
+     "streamline"
+    ],
+    "va": [
+     "irrrl",
+     "manual_underwrite",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "usda"
+    ],
+    "dpa": [
+     "fha_dpa"
+    ],
+    "mfh": [
+     "real_property",
+     "single_wide"
+    ],
+    "renovation": [
+     "choicerenovation",
+     "conventional",
+     "fha_203h_disaster",
+     "fha_203k",
+     "homestyle_reno",
+     "usda",
+     "va"
+    ]
+   }
+  },
+  {
+   "id": "emporium_tpo",
+   "name": "Emporium TPO",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Chris Leone",
+     "phone": "480-242-8643",
+     "email": "chris.leone@emporiumtpo.com"
+    }
+   ],
+   "website": "https://emporiumtpo.com",
+   "guidelines": "https://emporiumtpo.com/product-matrix.html",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events",
+     "wvoe"
+    ]
+   }
+  },
+  {
+   "id": "equity_prime_epm",
+   "name": "Equity Prime (EPM)",
+   "note": "EPM",
+   "contacts": [
+    {
+     "ae": "Christian Santa Cruz",
+     "phone": "401-330-7602",
+     "email": "csantacruz@epm.net"
+    },
+    {
+     "ae": "Chris Ayer",
+     "phone": "704-839-1448",
+     "email": "chris.ayer@epm.net"
+    }
+   ],
+   "website": "www.epmwholesale.com",
+   "guidelines": "www.epmwholesale.com",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "manual_underwrite"
+    ],
+    "fha": [
+     "arm",
+     "down_to_500_fico",
+     "fha",
+     "no_fico",
+     "streamline"
+    ],
+    "va": [
+     "arm",
+     "down_to_500_fico",
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "usda"
+    ],
+    "dpa": [
+     "fha_dpa"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "bank_statement",
+     "dscr"
+    ],
+    "mfh": [
+     "real_property",
+     "single_wide"
+    ],
+    "renovation": [
+     "choicerenovation",
+     "conventional",
+     "fha_203h_disaster",
+     "fha_203k",
+     "homestyle_reno",
+     "va"
+    ]
+   }
+  },
+  {
+   "id": "equity_wave",
+   "name": "Equity Wave",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Debbie Suddarth",
+     "phone": "949-584-1622",
+     "email": "debbi@equitywavelending.com"
+    }
+   ],
+   "website": "www.equitywavelending.com",
+   "guidelines": "contact investor",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "private": []
+   }
+  },
+  {
+   "id": "equity_wave_lending",
+   "name": "Equity Wave Lending",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Debbi Suddarth",
+     "phone": "949-584-1622",
+     "email": "debbi@equitywavelending.com"
+    }
+   ],
+   "website": "https://equitywavelending.com/",
+   "guidelines": "https://equitywavelending.com/",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": true,
+   "minComp": 3995,
+   "maxComp": 3995,
+   "products": {
+    "second": [
+     "fixed_2nd"
+    ],
+    "bridge": [
+     "commercial_bridge"
+    ],
+    "commercial": [
+     "commercial_bridge",
+     "mix_use_properties",
+     "non_residential_commercial",
+     "residential_5_unit"
+    ]
+   }
+  },
+  {
+   "id": "exponential_mortgage",
+   "name": "Exponential Mortgage",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Mark Montano",
+     "phone": "919-830-7000",
+     "email": "markm@exponentialmortgage.com"
+    },
+    {
+     "ae": "Tony Wang",
+     "phone": "917-868-8271",
+     "email": "tonywang@exponentialmortgage.com"
+    }
+   ],
+   "website": "https://exponentialmortgagetpo.encompasstpoconnect.com/#/content/home_460493",
+   "guidelines": "https://exponentialmortgagetpo.encompasstpoconnect.com/#/content/home_460493",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": 275,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "manual_underwrite",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "fha"
+    ],
+    "va": [
+     "va"
+    ],
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "bank_statement_heloc",
+     "dscr_heloc",
+     "fixed_2nd",
+     "heloan",
+     "piggyback"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "cross_collateral_blanket",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events",
+     "tbd_underwrite",
+     "wvoe"
+    ],
+    "bridge": [
+     "bridge"
+    ],
+    "reverse": [],
+    "commercial": [
+     "mix_use_properties",
+     "residential_5_unit"
+    ],
+    "private": []
+   }
+  },
+  {
+   "id": "fbc_mortgage",
+   "name": "FBC Mortgage",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Nora Chavez",
+     "phone": "805-506-1051",
+     "email": "nchavez@fbctpo.com"
+    }
+   ],
+   "website": "https://www.fbctpo.com",
+   "guidelines": "https://www.fbctpo.com",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 1000,
+   "maxComp": 50000,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "arm",
+     "fha",
+     "manual_underwrite",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "arm",
+     "irrrl",
+     "manual_underwrite",
+     "tbd_underwrite",
+     "va"
+    ],
+    "usda": [
+     "tbd_underwrite",
+     "usda"
+    ],
+    "dpa": [
+     "conventional_dpa",
+     "fha_dpa"
+    ],
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "bridge"
+    ],
+    "bridge": [
+     "bridge"
+    ],
+    "mfh": [
+     "real_property"
+    ],
+    "renovation": [
+     "choicerenovation",
+     "conventional",
+     "fha_203h_disaster",
+     "fha_203k",
+     "homestyle_reno"
+    ]
+   }
+  },
+  {
+   "id": "fcm_tpo",
+   "name": "FCM TPO",
+   "note": "First Colony Wholesale",
+   "contacts": [
+    {
+     "ae": "Robb Fordham",
+     "phone": "818-568-6505",
+     "email": "robb.fordham@fcmtpo.com"
+    }
+   ],
+   "website": "https://fcmtpo.com/",
+   "guidelines": "https://fcmtpo.com/products/",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": 20000,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "arm",
+     "fha",
+     "manual_underwrite",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "arm",
+     "irrrl",
+     "manual_underwrite",
+     "tbd_underwrite",
+     "va"
+    ],
+    "usda": [
+     "usda"
+    ],
+    "dpa": [
+     "fha_dpa"
+    ],
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "non_warrantable_condo",
+     "profit_and_loss"
+    ],
+    "mfh": [
+     "real_property"
+    ]
+   }
+  },
+  {
+   "id": "fembi_florida_only",
+   "name": "FEMBI (Florida ONLY)",
+   "note": "Florida ONLY",
+   "contacts": [
+    {
+     "ae": "Charles Richardson",
+     "phone": "813-263-8787",
+     "email": "charles.richardson@fembi.com"
+    }
+   ],
+   "website": "https://brokers.fembi.com",
+   "guidelines": "https://brokers.fembi.com/",
+   "lenderPaidBps": 150,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "other": [
+     "physician"
+    ]
+   }
+  },
+  {
+   "id": "finance_of_america",
+   "name": "Finance of America",
+   "note": "COMMERCIAL",
+   "contacts": [
+    {
+     "ae": "Micheal Tehensky",
+     "phone": "224-585-4511",
+     "email": "michael.tehensky@facolending.com"
+    }
+   ],
+   "website": "www.facolending.com",
+   "guidelines": "www.facolending.com",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": true,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "nonqm": [
+     "bridge",
+     "close_in_llc",
+     "dscr",
+     "fix_n_flip",
+     "no_ratio"
+    ],
+    "bridge": [
+     "bridge"
+    ],
+    "construction": [
+     "fix_n_flip",
+     "ground_up"
+    ],
+    "renovation": [
+     "fix_n_flip"
+    ],
+    "commercial": [
+     "residential_5_unit"
+    ]
+   }
+  },
+  {
+   "id": "finance_of_american_mortgage_reverse",
+   "name": "Finance of American Mortgage Reverse",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Cheryl McGrath",
+     "phone": "310-729-7503",
+     "email": "cheryl.mcgrath@far.com"
+    }
+   ],
+   "website": "https://www.farwholesale.com/xcelerate/",
+   "guidelines": "contact AE",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "reverse": []
+   }
+  },
+  {
+   "id": "first_national_bank_of_america",
+   "name": "First National Bank of America",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Jason Garvey",
+     "phone": "517-679-6618",
+     "email": "jason.garvey@fnba.com"
+    }
+   ],
+   "website": "https://www.fnba.com/wholesale/",
+   "guidelines": "https://www.fnba.com/wholesale/",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": true,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "conventional",
+     "manual_underwrite"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events",
+     "wvoe"
+    ],
+    "mfh": [
+     "pre_hud",
+     "real_property",
+     "single_wide"
+    ],
+    "other": [
+     "land_loans"
+    ]
+   }
+  },
+  {
+   "id": "first_tech_federal_credit_union",
+   "name": "First Tech Federal Credit Union",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Philip Aust",
+     "phone": "541-350-5042",
+     "email": "philip.aust@firsttechfed.com"
+    }
+   ],
+   "website": "https://ftwholesale.firsttechfed.com/#/content/login",
+   "guidelines": "https://encompass-ep9.api.elliemae.com/v2/media/vault/files/3ead52ba-a874-4f7a-927a-918b4d3b4ec0?tokencreator=Encompass&tokenexpires=1766593922&token=eiiJIgtNgOr3KFiVTAXfpk9NzEJz%2bhtgwEphhjF7LF1qrmuS42ApsnbP8KKyh76GIxE097BR3jANxqoaMAh4Sw%3d%3d",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "second": [
+     "heloc",
+     "piggyback",
+     "st_lien_heloc"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "foreign_national",
+     "itin",
+     "wvoe"
+    ]
+   }
+  },
+  {
+   "id": "florida_capital_bank_flcb",
+   "name": "Florida Capital Bank (FLCB)",
+   "note": "FLCB",
+   "contacts": [
+    {
+     "ae": "Christina Bianco",
+     "phone": "425-426-4358",
+     "email": "cbianco@flcb.com"
+    }
+   ],
+   "website": "www.flcbmtg.com",
+   "guidelines": "www.flcbmtg.com",
+   "lenderPaidBps": 150,
+   "borrowerPaidOnly": false,
+   "minComp": 2750,
+   "maxComp": 15000,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "arm",
+     "fha",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "arm",
+     "irrrl",
+     "manual_underwrite",
+     "tbd_underwrite",
+     "va"
+    ],
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "fixed_2nd",
+     "heloc",
+     "piggyback",
+     "st_lien_heloc"
+    ],
+    "bridge": [
+     "bridge"
+    ],
+    "mfh": [
+     "real_property"
+    ]
+   }
+  },
+  {
+   "id": "flyhomes_mortgage_llc",
+   "name": "Flyhomes Mortgage, LLC",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Greg Notvedt",
+     "phone": "641-329-0419",
+     "email": "gnotvedt@flyhomes.com"
+    }
+   ],
+   "website": "www.flyhomesmortgage.com",
+   "guidelines": "www.flyhomesmortgage.com",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "bridge": [
+     "bridge"
+    ]
+   }
+  },
+  {
+   "id": "forward_lending",
+   "name": "Forward Lending",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Kendrick Green",
+     "phone": "213-819-1276",
+     "email": "kgreen@forwardlendingmtg.com"
+    }
+   ],
+   "website": "www.forwardlendingmtg.com",
+   "guidelines": "forwardlendingmtg.com - programs section",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": 275,
+   "maxComp": 99999,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "manual_underwrite",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "arm",
+     "down_to_500_fico",
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "arm",
+     "down_to_500_fico",
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "tbd_underwrite",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "tbd_underwrite",
+     "usda"
+    ],
+    "dpa": [
+     "calhfa",
+     "fha_dpa"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "bank_statement_heloc",
+     "dscr_heloc",
+     "fixed_2nd",
+     "heloan",
+     "heloc"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events",
+     "wvoe"
+    ],
+    "commercial": [
+     "non_residential_commercial",
+     "residential_5_unit"
+    ]
+   }
+  },
+  {
+   "id": "foundation_mortgage",
+   "name": "Foundation Mortgage",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Ian Verdugo",
+     "phone": "714-803-8109",
+     "email": "iverdugo@foundationmortgage.com"
+    }
+   ],
+   "website": "https://3558362661.encompasstpoconnect.com/#/content/vanillalogin",
+   "guidelines": "Contact AE",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": 200,
+   "products": {
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "fixed_2nd",
+     "heloan"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "wvoe"
+    ],
+    "commercial": [
+     "mix_use_properties",
+     "residential_5_unit"
+    ]
+   }
+  },
+  {
+   "id": "foundation_specialty_finance",
+   "name": "Foundation Specialty Finance",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Rich Hauser",
+     "phone": "858-603-9351",
+     "email": "rhauser@foundationspecialtyfinance.com"
+    }
+   ],
+   "website": "foundationspecialtyfinance.com",
+   "guidelines": "Contact AE",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "bridge",
+     "close_in_llc",
+     "cross_collateral_blanket",
+     "dscr",
+     "fix_n_flip",
+     "no_ratio",
+     "non_warrantable_condo",
+     "stated_income"
+    ],
+    "bridge": [
+     "bridge",
+     "commercial_bridge"
+    ],
+    "construction": [
+     "fix_n_flip",
+     "ground_up",
+     "jumbo",
+     "owner_builder",
+     "spec_homes",
+     "two_time_close"
+    ],
+    "renovation": [
+     "fix_n_flip"
+    ],
+    "commercial": [
+     "commercial_bridge",
+     "mix_use_properties",
+     "non_residential_commercial",
+     "residential_5_unit"
+    ]
+   }
+  },
+  {
+   "id": "freedom_wholesale",
+   "name": "Freedom Wholesale",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Shelly Pattison",
+     "phone": "602-903-9400",
+     "email": "shelly.pattison@freedommortgage.com"
+    }
+   ],
+   "website": "https://clientcf.freedomwholesale.com/",
+   "guidelines": "https://clientcf.freedomwholesale.com/",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": 750,
+   "maxComp": 19999,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "arm",
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "arm",
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "tbd_underwrite",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "tbd_underwrite",
+     "usda"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "mfh": [
+     "real_property"
+    ],
+    "renovation": [
+     "fha_203k"
+    ]
+   }
+  },
+  {
+   "id": "fsb",
+   "name": "FSB",
+   "note": "(SBA Loans)",
+   "contacts": [
+    {
+     "ae": "Hunter Myers",
+     "phone": "502-420-8493",
+     "email": "hmyers@fsbbank.net"
+    }
+   ],
+   "website": "https://fsb-sbl.com/",
+   "guidelines": "https://fsb-sbl.com/",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": true,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "construction": [
+     "owner_occupied"
+    ],
+    "commercial": [
+     "non_residential_commercial"
+    ]
+   }
+  },
+  {
+   "id": "fund_loans",
+   "name": "Fund Loans",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Sean Murray",
+     "phone": "760-655-3991",
+     "email": "Smurray@fundloans.com"
+    }
+   ],
+   "website": "https://www.fundloans.com",
+   "guidelines": "https://www.fundloans.com/guidelines",
+   "lenderPaidBps": 250,
+   "borrowerPaidOnly": false,
+   "minComp": 250,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "bank_statement_heloc",
+     "dscr_heloc",
+     "fixed_2nd",
+     "heloan",
+     "piggyback"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events",
+     "tbd_underwrite",
+     "wvoe"
+    ],
+    "other": [
+     "cannabis"
+    ]
+   }
+  },
+  {
+   "id": "futures_financial",
+   "name": "FUTURES Financial",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Kendra Rommel",
+     "phone": "714-612-4710",
+     "email": "kendra@futuresfinancial.com"
+    }
+   ],
+   "website": "www.FUTURESFinancial.com",
+   "guidelines": "Contact AE",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": true,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "bridge",
+     "close_in_llc",
+     "cross_collateral_blanket",
+     "dscr",
+     "fix_n_flip",
+     "non_warrantable_condo"
+    ],
+    "bridge": [
+     "bridge",
+     "commercial_bridge"
+    ],
+    "mfh": [
+     "real_property"
+    ],
+    "construction": [
+     "fix_n_flip",
+     "ground_up",
+     "jumbo",
+     "owner_builder",
+     "spec_homes"
+    ],
+    "renovation": [
+     "fix_n_flip"
+    ],
+    "commercial": [
+     "residential_5_unit"
+    ],
+    "private": []
+   }
+  },
+  {
+   "id": "g1_group",
+   "name": "G1 Group",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Troy Smith",
+     "phone": "443-218-2537",
+     "email": "info@g1wins.com"
+    }
+   ],
+   "website": "www.g1wins.com",
+   "guidelines": "www.g1wins.com",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": 275,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "bank_statement_heloc",
+     "fixed_2nd",
+     "heloan",
+     "heloc",
+     "piggyback",
+     "st_lien_heloc"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "bridge",
+     "close_in_llc",
+     "cross_collateral_blanket",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "wvoe"
+    ],
+    "bridge": [
+     "bridge"
+    ],
+    "renovation": []
+   }
+  },
+  {
+   "id": "genesis_capital",
+   "name": "Genesis Capital",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Stephanie Gossett",
+     "phone": "415-735-1004",
+     "email": "stephanie.gossett@genesiscapital.com"
+    }
+   ],
+   "website": "Contact AE",
+   "guidelines": "Contact AE",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": true,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "nonqm": [
+     "bridge",
+     "close_in_llc",
+     "fix_n_flip",
+     "foreign_national"
+    ],
+    "bridge": [
+     "bridge"
+    ],
+    "construction": [
+     "fix_n_flip",
+     "ground_up",
+     "owner_occupied",
+     "spec_homes"
+    ],
+    "renovation": [
+     "fix_n_flip"
+    ],
+    "commercial": [
+     "residential_5_unit"
+    ],
+    "private": []
+   }
+  },
+  {
+   "id": "geo_funding",
+   "name": "Geo Funding",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Xavier Padilla",
+     "phone": "909-234-5446",
+     "email": "xavier.padilla@geofunding.com"
+    }
+   ],
+   "website": "https://geofunding.com/",
+   "guidelines": "https://geofunding.com/wholesale/",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "conventional"
+    ],
+    "fha": [
+     "fha",
+     "streamline"
+    ],
+    "dpa": [
+     "fha_dpa"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "wvoe"
+    ]
+   }
+  },
+  {
+   "id": "giant_lending",
+   "name": "GIANT Lending",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Michael Turturro",
+     "phone": "949-355-4454",
+     "email": "mt@thegiantlending.com"
+    }
+   ],
+   "website": "www.thegiantlending.com",
+   "guidelines": "www.thegiantlending.com",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": 275,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "arm",
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "tbd_underwrite",
+     "va"
+    ],
+    "dpa": [
+     "calhfa",
+     "conventional_dpa",
+     "fha_dpa"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "bank_statement_heloc",
+     "dscr_heloc",
+     "fixed_2nd",
+     "heloan",
+     "piggyback"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events",
+     "stated_income",
+     "tbd_underwrite",
+     "wvoe"
+    ],
+    "mfh": [
+     "real_property"
+    ],
+    "construction": [
+     "construction_to_perm"
+    ],
+    "commercial": [
+     "mix_use_properties",
+     "residential_5_unit"
+    ]
+   }
+  },
+  {
+   "id": "gold_star_wholesale",
+   "name": "Gold Star Wholesale",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Rishard Hudson",
+     "phone": "248-238-3011",
+     "email": "rhudson@goldstarfinancial.com"
+    }
+   ],
+   "website": "https://wholesale.goldstarfinancial.com/",
+   "guidelines": "https://support.goldstarfinancial.com/hc/en-us/",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "manual_underwrite",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "arm",
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "arm",
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "tbd_underwrite",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "tbd_underwrite",
+     "usda"
+    ],
+    "dpa": [
+     "conventional_dpa",
+     "fha_dpa",
+     "state_bond_grants"
+    ]
+   }
+  },
+  {
+   "id": "greenbox_loans",
+   "name": "Greenbox Loans",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Marc Noddle",
+     "phone": "Mobile: 818-259-1259 Office: 213-235-4331",
+     "email": "mnoddle@greenboxloans.com"
+    }
+   ],
+   "website": "https://greenboxloans.com",
+   "guidelines": "Contact AE",
+   "lenderPaidBps": 150,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "second": [
+     "fixed_2nd",
+     "heloan"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events",
+     "wvoe"
+    ]
+   }
+  },
+  {
+   "id": "griffin_capital_funding_church_loans",
+   "name": "Griffin Capital Funding (Church Loans)",
+   "note": "Church Loans",
+   "contacts": [],
+   "website": "www.churchloans.net",
+   "guidelines": "contact investor",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "private": []
+   }
+  },
+  {
+   "id": "hd_lending",
+   "name": "HD Lending",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Geoff Ball",
+     "phone": "480-688-8686",
+     "email": "geoff@hd-lending.com"
+    }
+   ],
+   "website": "www.hd-lending.com",
+   "guidelines": "contact investor",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "private": []
+   }
+  },
+  {
+   "id": "hd_lending_az_only",
+   "name": "HD Lending (AZ Only)",
+   "note": "AZ Only",
+   "contacts": [
+    {
+     "ae": "Geoff Ball",
+     "phone": "480-688-8686",
+     "email": "geoff@hd-lending.com"
+    }
+   ],
+   "website": "www.hd-lending.com",
+   "guidelines": "N/A",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": true,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "second": [
+     "fixed_2nd"
+    ],
+    "nonqm": [
+     "bank_statement",
+     "bridge",
+     "close_in_llc",
+     "cross_collateral_blanket",
+     "fix_n_flip",
+     "foreign_national",
+     "itin",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events",
+     "stated_income"
+    ],
+    "bridge": [
+     "bridge",
+     "commercial_bridge"
+    ],
+    "mfh": [
+     "pre_hud",
+     "real_property",
+     "single_wide"
+    ],
+    "construction": [
+     "fix_n_flip",
+     "ground_up",
+     "owner_builder",
+     "owner_occupied",
+     "spec_homes"
+    ],
+    "renovation": [
+     "conventional"
+    ],
+    "commercial": [
+     "commercial_bridge",
+     "mix_use_properties",
+     "non_residential_commercial",
+     "residential_5_unit"
+    ],
+    "other": [
+     "cannabis"
+    ]
+   }
+  },
+  {
+   "id": "hilton_financial_corporation",
+   "name": "Hilton Financial Corporation",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Jack Hilton Sr.",
+     "phone": "602-375-8951",
+     "email": "jack@hiltoncorp.com"
+    }
+   ],
+   "website": "www.hiltonloans.com",
+   "guidelines": "www.hiltonloans.com",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "nonqm": [
+     "bridge",
+     "close_in_llc",
+     "cross_collateral_blanket",
+     "fix_n_flip",
+     "itin",
+     "no_ratio",
+     "profit_and_loss"
+    ],
+    "bridge": [
+     "bridge",
+     "commercial_bridge"
+    ],
+    "mfh": [
+     "real_property",
+     "single_wide"
+    ],
+    "construction": [
+     "fix_n_flip",
+     "ground_up",
+     "owner_builder",
+     "spec_homes",
+     "two_time_close"
+    ],
+    "renovation": [],
+    "commercial": [
+     "mix_use_properties",
+     "residential_5_unit"
+    ],
+    "other": [
+     "land_loans"
+    ]
+   }
+  },
+  {
+   "id": "homebridge_wholesale",
+   "name": "Homebridge Wholesale",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Brian Caldwell",
+     "phone": "425-949-9302",
+     "email": "brian.caldwell@homebridge.com"
+    }
+   ],
+   "website": "www.homebridgewholesale.com",
+   "guidelines": "https://www.homebridgewholesale.com/products-and-guidelines/",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": 275,
+   "maxComp": 20000,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "manual_underwrite"
+    ],
+    "fha": [
+     "arm",
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline"
+    ],
+    "va": [
+     "arm",
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "usda"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "bank_statement_heloc",
+     "dscr_heloc",
+     "heloc",
+     "piggyback",
+     "st_lien_heloc"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events",
+     "tbd_underwrite"
+    ],
+    "mfh": [
+     "real_property"
+    ]
+   }
+  },
+  {
+   "id": "hometown_equity",
+   "name": "Hometown Equity",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Cynthia Gray",
+     "phone": "213-377-4869",
+     "email": "cgray@htem.com"
+    }
+   ],
+   "website": "www.htem.com",
+   "guidelines": "www.htem.com",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "conventional"
+    ],
+    "fha": [
+     "fha"
+    ],
+    "va": [
+     "va"
+    ],
+    "usda": [
+     "usda"
+    ],
+    "nonqm": []
+   }
+  },
+  {
+   "id": "homexpress",
+   "name": "HomeXpress",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Matthew Brogdon",
+     "phone": "801-440-4877",
+     "email": "mbrogdon@homexmortgage.com"
+    },
+    {
+     "ae": "Jason Vidaurri",
+     "phone": "734-377-8972",
+     "email": "jvidaurri@homexmortgage.com"
+    }
+   ],
+   "website": "www.homexmortgage.com",
+   "guidelines": "www.homexmortgage.com",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": 275,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "conventional"
+    ],
+    "fha": [
+     "fha",
+     "manual_underwrite",
+     "streamline"
+    ],
+    "va": [
+     "va"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events"
+    ],
+    "other": [
+     "cannabis"
+    ]
+   }
+  },
+  {
+   "id": "icecap",
+   "name": "IceCap",
+   "note": "(Bluefin Group)",
+   "contacts": [
+    {
+     "ae": "Mordi Lati",
+     "phone": "Mobile: 917-294-1180 Office: 718-532-4695",
+     "email": "mlati@icecapgroup.com"
+    }
+   ],
+   "website": "https://icecapgroup.com/brokers/blufin/",
+   "guidelines": "https://icecapgroup.com/brokers/blufin/",
+   "lenderPaidBps": 250,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "nonqm": [
+     "bridge",
+     "close_in_llc",
+     "dscr",
+     "fix_n_flip",
+     "foreign_national",
+     "itin",
+     "non_warrantable_condo"
+    ],
+    "bridge": [
+     "bridge",
+     "commercial_bridge"
+    ],
+    "construction": [
+     "fix_n_flip",
+     "ground_up"
+    ],
+    "renovation": [
+     "fix_n_flip"
+    ],
+    "commercial": [
+     "commercial_bridge",
+     "mix_use_properties",
+     "residential_5_unit"
+    ],
+    "private": []
+   }
+  },
+  {
+   "id": "iron_bridge",
+   "name": "Iron Bridge",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Richard Kaimie",
+     "phone": "971-803-7803",
+     "email": "richard@ironbridgelending.com"
+    }
+   ],
+   "website": "www.ironbridgelending.com",
+   "guidelines": "contact investor",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "private": []
+   }
+  },
+  {
+   "id": "iron_bridge_lending",
+   "name": "Iron Bridge Lending",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Richard Kaimie",
+     "phone": "971-803-7803",
+     "email": "richard@ironbridgelending.com"
+    }
+   ],
+   "website": "www.ironbridgelending.com",
+   "guidelines": "www.ironbridgelending.com",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "nonqm": [
+     "fix_n_flip"
+    ],
+    "construction": [
+     "fix_n_flip"
+    ],
+    "renovation": [
+     "fix_n_flip"
+    ]
+   }
+  },
+  {
+   "id": "jet_mortgage",
+   "name": "Jet Mortgage",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Jared Hilton",
+     "phone": "469-733-5352",
+     "email": "jared.hilton@jetmortgage.com"
+    }
+   ],
+   "website": "https://jetmortgage.com/",
+   "guidelines": "https://jetmortgage.com/loan-product/",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "conventional",
+     "home_ready_possible"
+    ],
+    "fha": [
+     "fha",
+     "streamline"
+    ],
+    "va": [
+     "irrrl",
+     "va"
+    ],
+    "dpa": [
+     "fha_dpa"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "bank_statement_heloc",
+     "dscr_heloc",
+     "fixed_2nd",
+     "heloan"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events",
+     "stated_income",
+     "wvoe"
+    ]
+   }
+  },
+  {
+   "id": "jmac",
+   "name": "JMAC",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Jeffrey Warner",
+     "phone": "909-239-1807",
+     "email": "jeffrey.warner@jmaclending.com"
+    }
+   ],
+   "website": "http://www.jmaclending.com",
+   "guidelines": "https://help.jmaclending.com/hc/en-us/articles/16291475609875-Program-Guidelines-Checklists",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "manual_underwrite"
+    ],
+    "fha": [
+     "down_to_500_fico",
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline"
+    ],
+    "va": [
+     "down_to_500_fico",
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "va"
+    ],
+    "usda": [
+     "usda"
+    ],
+    "dpa": [
+     "fha_dpa",
+     "state_bond_grants"
+    ],
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "bank_statement_heloc",
+     "fixed_2nd",
+     "heloan"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events",
+     "wvoe"
+    ],
+    "mfh": [
+     "real_property"
+    ],
+    "commercial": [
+     "mix_use_properties",
+     "residential_5_unit"
+    ]
+   }
+  },
+  {
+   "id": "kenwood_mortgage_investments",
+   "name": "Kenwood Mortgage Investments",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Randy Persson",
+     "phone": "602-369-3894",
+     "email": "randy@kenwoodmortgage.com"
+    }
+   ],
+   "website": "www.kenwoodmortgage.com",
+   "guidelines": "contact investor",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "private": []
+   }
+  },
+  {
+   "id": "kenwood_mortgage_investments_az_only",
+   "name": "Kenwood Mortgage Investments (AZ Only)",
+   "note": "AZ Only",
+   "contacts": [
+    {
+     "ae": "Randy Persson",
+     "phone": "480-783-8800",
+     "email": "randy@kenwoodmortgage.com"
+    }
+   ],
+   "website": "www.kenwoodmortgage.com",
+   "guidelines": "www.kenwoodmortgage.com",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "nonqm": [
+     "fix_n_flip"
+    ],
+    "bridge": [
+     "bridge",
+     "commercial_bridge"
+    ],
+    "mfh": [
+     "real_property"
+    ],
+    "construction": [
+     "fix_n_flip",
+     "ground_up",
+     "owner_builder",
+     "spec_homes"
+    ],
+    "renovation": [
+     "fix_n_flip"
+    ],
+    "commercial": [
+     "mix_use_properties",
+     "non_residential_commercial",
+     "residential_5_unit"
+    ],
+    "other": [
+     "land_loans"
+    ]
+   }
+  },
+  {
+   "id": "keystone_funding",
+   "name": "Keystone Funding",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Barbara Ferullo",
+     "phone": "617-293-5357",
+     "email": "BFerullo@KeystoneFunding.com"
+    }
+   ],
+   "website": "https://flex.keystonefunding.com/home",
+   "guidelines": "https://keystonebroker.com/",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "conventional",
+     "home_ready_possible",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "fha",
+     "manual_underwrite",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "irrrl",
+     "manual_underwrite",
+     "tbd_underwrite",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "tbd_underwrite",
+     "usda"
+    ],
+    "mfh": [
+     "real_property"
+    ]
+   }
+  },
+  {
+   "id": "kiavi",
+   "name": "Kiavi",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Ken Hara",
+     "phone": "415-223-3829",
+     "email": "ken.hara@kiavi.com"
+    }
+   ],
+   "website": "https://www.kiavi.com/broker",
+   "guidelines": "https://www.kiavi.com/resources/broker",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": true,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "nonqm": [
+     "bridge",
+     "close_in_llc",
+     "dscr",
+     "fix_n_flip"
+    ],
+    "bridge": [
+     "bridge"
+    ],
+    "mfh": [
+     "real_property"
+    ],
+    "construction": [
+     "fix_n_flip",
+     "ground_up"
+    ],
+    "renovation": [
+     "fix_n_flip"
+    ],
+    "commercial": [
+     "residential_5_unit"
+    ],
+    "private": []
+   }
+  },
+  {
+   "id": "kind_lending",
+   "name": "Kind Lending",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Jason Littig",
+     "phone": "217-433-9408",
+     "email": "jlittig@kindlending.com"
+    },
+    {
+     "ae": "Dusty Ferschweiler",
+     "phone": "503-490-7524",
+     "email": "dusty@kindlending.com"
+    }
+   ],
+   "website": "https://kwikie.kindlending.com/",
+   "guidelines": "https://kwikie.kindlending.com/forms",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": 99000,
+   "products": {
+    "conventional": [
+     "conventional",
+     "home_ready_possible"
+    ],
+    "fha": [
+     "arm",
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline"
+    ],
+    "va": [
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "usda"
+    ],
+    "dpa": [
+     "calhfa",
+     "fha_dpa"
+    ],
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "fixed_2nd",
+     "heloan",
+     "heloc",
+     "piggyback",
+     "st_lien_heloc"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "wvoe"
+    ],
+    "mfh": [
+     "real_property",
+     "single_wide"
+    ],
+    "correspondent": [
+     "bank_statement",
+     "dscr",
+     "jumbo"
+    ]
+   }
+  },
+  {
+   "id": "kings_mortgage",
+   "name": "Kings Mortgage",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "John Eyster",
+     "phone": "407-748-4501",
+     "email": "eyster@kingsmtg247.com"
+    }
+   ],
+   "website": "www.kingsmortgage.com",
+   "guidelines": "www.kingsmortgage.com",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "conventional"
+    ],
+    "fha": [
+     "fha",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "irrrl",
+     "va"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "dscr",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "wvoe"
+    ]
+   }
+  },
+  {
+   "id": "land_home_financial",
+   "name": "Land Home Financial",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Susan Moore",
+     "phone": "415-271-0971",
+     "email": "susan.moore@lhfs.com"
+    }
+   ],
+   "website": "www.lhfswholesale.com",
+   "guidelines": "https://wholesale.lhfs.com/login?ReturnUrl=%2Fbroker-resources",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": 3000,
+   "maxComp": 30000,
+   "products": {
+    "conventional": [
+     "conventional",
+     "home_ready_possible",
+     "manual_underwrite"
+    ],
+    "fha": [
+     "fha",
+     "manual_underwrite",
+     "streamline"
+    ],
+    "va": [
+     "irrrl",
+     "manual_underwrite",
+     "va"
+    ],
+    "usda": [
+     "usda"
+    ],
+    "dpa": [
+     "calhfa",
+     "conventional_dpa",
+     "fha_dpa",
+     "state_bond_grants"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "bank_statement",
+     "itin",
+     "profit_and_loss",
+     "tbd_underwrite"
+    ],
+    "mfh": [
+     "real_property"
+    ],
+    "reverse": [],
+    "other": [
+     "cannabis"
+    ]
+   }
+  },
+  {
+   "id": "lead_plus_wholesale",
+   "name": "Lead Plus Wholesale",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Jordan Threatt",
+     "phone": "980-395-5939",
+     "email": "Jordan.threatt@leadpluswholesale.com"
+    }
+   ],
+   "website": "https://leadpluswholesale.com",
+   "guidelines": "https://leadpluswholesale.com/products",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": true,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "fixed_2nd",
+     "heloan",
+     "piggyback"
+    ],
+    "commercial": [
+     "mix_use_properties",
+     "residential_5_unit"
+    ]
+   }
+  },
+  {
+   "id": "legacy_group_capital",
+   "name": "Legacy Group Capital",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Jana Arnold",
+     "phone": "425-985-1819",
+     "email": "janaa@legacyg.com"
+    }
+   ],
+   "website": "N/A",
+   "guidelines": "N/A",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": true,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "nonqm": [
+     "bridge",
+     "fix_n_flip"
+    ],
+    "bridge": [
+     "bridge"
+    ],
+    "construction": [
+     "fix_n_flip",
+     "ground_up",
+     "jumbo",
+     "owner_builder",
+     "owner_occupied",
+     "spec_homes",
+     "two_time_close"
+    ],
+    "renovation": [
+     "fix_n_flip"
+    ],
+    "private": []
+   }
+  },
+  {
+   "id": "lemarr_lending_group_llc",
+   "name": "LeMarr Lending Group, LLC",
+   "note": "(AZ Only)",
+   "contacts": [
+    {
+     "ae": "Gellaine Faith Alipar",
+     "phone": "N/A",
+     "email": "Gellaine@lemarrlendinggroup.com"
+    }
+   ],
+   "website": "www.lemarrlendinggroup.com",
+   "guidelines": "www.lemarrlendinggroup.com",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "nonqm": [
+     "bridge",
+     "fix_n_flip"
+    ],
+    "bridge": [
+     "bridge",
+     "commercial_bridge"
+    ],
+    "construction": [
+     "ground_up",
+     "spec_homes"
+    ],
+    "renovation": [
+     "fix_n_flip"
+    ],
+    "commercial": [
+     "commercial_bridge",
+     "non_residential_commercial",
+     "residential_5_unit"
+    ],
+    "private": [],
+    "other": [
+     "land_loans"
+    ]
+   }
+  },
+  {
+   "id": "lending_pros",
+   "name": "Lending Pros",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Vincent Dempsey (Olson)",
+     "phone": "760-713-0005",
+     "email": "vincent@golendingpros.com"
+    },
+    {
+     "ae": "Vincent Olson",
+     "phone": "760-713-0005",
+     "email": "vincent@golendingpros.com"
+    }
+   ],
+   "website": "https://golendingpros.com/",
+   "guidelines": "https://golendingpros.com - programs tab",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": 275,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible"
+    ],
+    "fha": [
+     "arm",
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline"
+    ],
+    "va": [
+     "arm",
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "va"
+    ],
+    "usda": [
+     "usda"
+    ],
+    "dpa": [
+     "calhfa",
+     "fha_dpa"
+    ],
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "bank_statement_heloc",
+     "dscr_heloc",
+     "fixed_2nd",
+     "heloan",
+     "heloc",
+     "st_lien_heloc"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events",
+     "wvoe"
+    ],
+    "mfh": [
+     "real_property"
+    ],
+    "commercial": [
+     "mix_use_properties",
+     "non_residential_commercial",
+     "residential_5_unit"
+    ],
+    "other": [
+     "agricultural"
+    ]
+   }
+  },
+  {
+   "id": "lendsure_mortgage",
+   "name": "LendSure Mortgage",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Krista Russo",
+     "phone": "727-635-8544",
+     "email": "krusso@lendsure.com"
+    }
+   ],
+   "website": "https://lendsure.com",
+   "guidelines": "https://lendsure.com",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": 275,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "bridge",
+     "close_in_llc",
+     "dscr",
+     "fix_n_flip",
+     "foreign_national",
+     "itin",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "tbd_underwrite"
+    ],
+    "bridge": [
+     "bridge"
+    ],
+    "construction": [
+     "construction_to_perm",
+     "fix_n_flip"
+    ],
+    "renovation": [
+     "fix_n_flip"
+    ],
+    "other": [
+     "agricultural",
+     "cannabis"
+    ]
+   }
+  },
+  {
+   "id": "lendz_financial",
+   "name": "Lendz Financial",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Mike Boghos",
+     "phone": "321-229-2310",
+     "email": "mike.boghos@lendzfinancial.com"
+    }
+   ],
+   "website": "https://lendzfinancial.com/wholesale",
+   "guidelines": "https://lendzfinancial.com/wholesale",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": true,
+   "minComp": 275,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "fixed_2nd",
+     "heloan",
+     "piggyback"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "cross_collateral_blanket",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events",
+     "wvoe"
+    ],
+    "commercial": [
+     "mix_use_properties",
+     "residential_5_unit"
+    ],
+    "other": [
+     "agricultural"
+    ]
+   }
+  },
+  {
+   "id": "loan_lock_prime",
+   "name": "Loan Lock Prime",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Joe Katter",
+     "phone": "714-317-2730",
+     "email": "joe.katter@llprime.com"
+    }
+   ],
+   "website": "www.loanlockprime.com",
+   "guidelines": "https://loanlockprime.com/products/",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "manual_underwrite",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "arm",
+     "down_to_500_fico",
+     "fha",
+     "manual_underwrite",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "arm",
+     "down_to_500_fico",
+     "irrrl",
+     "manual_underwrite",
+     "tbd_underwrite",
+     "va"
+    ],
+    "dpa": [
+     "calhfa",
+     "chenoa",
+     "fha_dpa"
+    ],
+    "second": [
+     "bank_statement_heloc",
+     "dscr_heloc",
+     "fixed_2nd",
+     "heloan",
+     "heloc",
+     "piggyback",
+     "st_lien_heloc"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events",
+     "tbd_underwrite",
+     "wvoe"
+    ],
+    "mfh": [
+     "real_property"
+    ],
+    "commercial": [
+     "mix_use_properties",
+     "residential_5_unit"
+    ]
+   }
+  },
+  {
+   "id": "loan_simple",
+   "name": "Loan Simple",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Tara Russell",
+     "phone": "859-533-9071",
+     "email": "trussell@loansimple.com"
+    }
+   ],
+   "website": "https://tpo.loansimple.com/#/content/home_210638",
+   "guidelines": "https://tpo.loansimple.com/#/content/home_210638",
+   "lenderPaidBps": 150,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "conventional"
+    ],
+    "fha": [
+     "fha",
+     "no_fico"
+    ],
+    "va": [
+     "no_fico",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "usda"
+    ],
+    "dpa": [
+     "calhfa",
+     "conventional_dpa",
+     "fha_dpa",
+     "state_bond_grants"
+    ],
+    "mfh": [
+     "real_property",
+     "single_wide"
+    ]
+   }
+  },
+  {
+   "id": "loan_united_wholesale",
+   "name": "Loan United Wholesale",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Melisa Tucker",
+     "phone": "678-515-5160",
+     "email": "mtucker@loanunited.com"
+    }
+   ],
+   "website": "www.luwholesale.com",
+   "guidelines": "www.luwholesale.com",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "conventional"
+    ],
+    "fha": [
+     "down_to_500_fico",
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline"
+    ],
+    "va": [
+     "down_to_500_fico",
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "va"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "mfh": [
+     "real_property"
+    ]
+   }
+  },
+  {
+   "id": "loanspark",
+   "name": "Loanspark",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Sasha Yablonovsky",
+     "phone": "617-648-9083",
+     "email": "sasha@loanspark.com"
+    }
+   ],
+   "website": "www.loanspark.com",
+   "guidelines": "https://docs.google.com/spreadsheets/d/1vKMooCWQ7NUy22D762OP_DLDfKQ7oRGL/edit?gid=1920505947#gid=1920505947",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": true,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "nonqm": [
+     "bridge",
+     "close_in_llc",
+     "cross_collateral_blanket",
+     "dscr",
+     "fix_n_flip",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo"
+    ],
+    "bridge": [
+     "bridge",
+     "commercial_bridge"
+    ],
+    "construction": [
+     "fix_n_flip",
+     "ground_up",
+     "spec_homes"
+    ],
+    "renovation": [
+     "fix_n_flip"
+    ],
+    "commercial": [
+     "commercial_bridge",
+     "mix_use_properties",
+     "non_residential_commercial",
+     "residential_5_unit"
+    ],
+    "private": []
+   }
+  },
+  {
+   "id": "loanstream_wholesale_mortgage",
+   "name": "LoanStream Wholesale Mortgage",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Team Allen",
+     "phone": "949-933-8835",
+     "email": "teamallen@lsmortgage.com"
+    }
+   ],
+   "website": "https://loanstreamwholesale.com",
+   "guidelines": "https://loanstreamwholesale.com/programs/",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": 275,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "arm",
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "arm",
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "tbd_underwrite",
+     "va"
+    ],
+    "usda": [
+     "usda"
+    ],
+    "dpa": [
+     "calhfa",
+     "fha_dpa"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "bank_statement_heloc",
+     "dscr_heloc",
+     "fixed_2nd",
+     "heloan",
+     "heloc",
+     "st_lien_heloc"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events",
+     "wvoe"
+    ],
+    "mfh": [
+     "real_property"
+    ]
+   }
+  },
+  {
+   "id": "logan_finance",
+   "name": "Logan Finance",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Nikki Kirk",
+     "phone": "214-354-4406",
+     "email": "nkirk@loganfinance.com"
+    }
+   ],
+   "website": "www.loganwholesale.com",
+   "guidelines": "www.loganwholesale.com/experience-by-logan/",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "non_warrantable_condo",
+     "profit_and_loss"
+    ],
+    "commercial": [
+     "residential_5_unit"
+    ]
+   }
+  },
+  {
+   "id": "logan_investments",
+   "name": "Logan Investments",
+   "note": null,
+   "contacts": [],
+   "website": "www.loganinvestments.com",
+   "guidelines": "contact investor",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "private": []
+   }
+  },
+  {
+   "id": "longbridge_financial",
+   "name": "Longbridge Financial",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Jonathan Maiolatesi",
+     "phone": "248-705-8647",
+     "email": "jmaiolatesi@longbridge-financial.com"
+    }
+   ],
+   "website": "contact AE",
+   "guidelines": "N/A",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "reverse": []
+   }
+  },
+  {
+   "id": "luxury_mortgage_corp",
+   "name": "Luxury Mortgage Corp",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Michael J. Nuzzo",
+     "phone": "Mobile: 203-273-4389 Office: 203-569-4242",
+     "email": "mnuzzo@luxurymortgage.com"
+    }
+   ],
+   "website": "https://luxurymortgagewholesale.com/",
+   "guidelines": "https://luxurymortgagewholesale.com/",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin"
+    ],
+    "commercial": [
+     "mix_use_properties",
+     "residential_5_unit"
+    ]
+   }
+  },
+  {
+   "id": "mega_capital",
+   "name": "MEGA Capital",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Jill Taylor",
+     "phone": "602-762-8525",
+     "email": "jill@mcfunding.com"
+    }
+   ],
+   "website": "https://mcfunding.com/",
+   "guidelines": "https://mcfunding.com/products/",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": 275,
+   "maxComp": 30000,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "fha",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "irrrl",
+     "tbd_underwrite",
+     "va"
+    ],
+    "usda": [
+     "usda"
+    ],
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "bank_statement_heloc",
+     "fixed_2nd",
+     "heloc",
+     "piggyback"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "dscr",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "wvoe"
+    ],
+    "mfh": [
+     "real_property"
+    ]
+   }
+  },
+  {
+   "id": "merchants_funding_llc",
+   "name": "Merchants Funding, LLC",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Mark Steinbeck",
+     "phone": "office: 480-889-7569 cell:602-410-0845",
+     "email": "msteinbeck@merchantsmtg.com"
+    }
+   ],
+   "website": "www.merchantsmtg.com",
+   "guidelines": "contact investor",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "private": []
+   }
+  },
+  {
+   "id": "michigan_mutual_inc",
+   "name": "Michigan Mutual, Inc.",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Sandra Valvano",
+     "phone": "813-579-1176",
+     "email": "svalvano@michiganmutual.com"
+    }
+   ],
+   "website": "michiganmutual.encompasstpoconnect.com",
+   "guidelines": "michiganmutual.encompasstpoconnect.com",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": 25000,
+   "products": {
+    "conventional": [
+     "conventional"
+    ],
+    "fha": [
+     "fha",
+     "manual_underwrite",
+     "streamline"
+    ],
+    "va": [
+     "irrrl",
+     "manual_underwrite",
+     "va"
+    ],
+    "usda": [
+     "usda"
+    ],
+    "dpa": [
+     "fha_dpa"
+    ]
+   }
+  },
+  {
+   "id": "mlb_wholesale_mortgage",
+   "name": "MLB Wholesale Mortgage",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Maria Parada",
+     "phone": "832-423-2365",
+     "email": "mparada@mlbmortgage.com"
+    }
+   ],
+   "website": "www.mlbwholesale.com",
+   "guidelines": "www.mlbwholesale.com",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "conventional",
+     "home_ready_possible",
+     "manual_underwrite"
+    ],
+    "fha": [
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline"
+    ],
+    "va": [
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "usda"
+    ],
+    "dpa": [
+     "fha_dpa"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "bridge",
+     "dscr",
+     "non_warrantable_condo",
+     "profit_and_loss"
+    ],
+    "bridge": [
+     "bridge"
+    ],
+    "mfh": [
+     "real_property"
+    ],
+    "renovation": [
+     "conventional",
+     "fha_203h_disaster",
+     "fha_203k",
+     "homestyle_reno",
+     "usda",
+     "va"
+    ]
+   }
+  },
+  {
+   "id": "moneyhouse",
+   "name": "MoneyHouse",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Nick Rosynek",
+     "phone": "708-899-0808",
+     "email": "nrosynek@moneyhouseus.com"
+    }
+   ],
+   "website": "https://www.moneyhouseus.com/",
+   "guidelines": "https://www.moneyhouseus.com/",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "reverse": []
+   }
+  },
+  {
+   "id": "mortgage_financial_services_only_texas",
+   "name": "Mortgage Financial Services (only TEXAS)",
+   "note": "only TEXAS",
+   "contacts": [
+    {
+     "ae": "Brad Parlin",
+     "phone": "214-668-0397",
+     "email": "bparlin@mfsus.com"
+    }
+   ],
+   "website": "www.mfstpo.com",
+   "guidelines": "www.mfstpo.com",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "fha",
+     "manual_underwrite",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "arm",
+     "irrrl",
+     "manual_underwrite",
+     "tbd_underwrite",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "tbd_underwrite",
+     "usda"
+    ],
+    "dpa": [
+     "conventional_dpa",
+     "fha_dpa",
+     "state_bond_grants"
+    ]
+   }
+  },
+  {
+   "id": "mortgage_solutions",
+   "name": "Mortgage Solutions",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Richard Eampietro",
+     "phone": "949-287-9525",
+     "email": "richard.eampietro@mortgagesolutions.net"
+    }
+   ],
+   "website": "https://msfwholesale.net/",
+   "guidelines": "https://acrobat.adobe.com/id/urn:aaid:sc:VA6C2:f389d5b4-bcb3-4ac6-93c6-b799149e7731?viewer%21megaVerb=group-discover",
+   "lenderPaidBps": 225,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "conventional"
+    ],
+    "fha": [
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "tbd_underwrite",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "tbd_underwrite",
+     "usda"
+    ],
+    "dpa": [
+     "fha_dpa"
+    ],
+    "mfh": [
+     "real_property"
+    ],
+    "other": [
+     "agricultural",
+     "land_loans"
+    ]
+   }
+  },
+  {
+   "id": "mortgageone_tpo",
+   "name": "MortgageOne TPO",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Joe Solaro",
+     "phone": "480-648-7781",
+     "email": "jsolaro@m1tpo.com"
+    }
+   ],
+   "website": "https://m1tpo.encompasstpoconnect.com",
+   "guidelines": "https://m1tpo.encompasstpoconnect.com/#/tpo-documents",
+   "lenderPaidBps": 225,
+   "borrowerPaidOnly": false,
+   "minComp": 225,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "conventional",
+     "home_ready_possible",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "fha",
+     "manual_underwrite",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "irrrl",
+     "manual_underwrite",
+     "tbd_underwrite",
+     "va"
+    ],
+    "dpa": [
+     "fha_dpa"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "fixed_2nd",
+     "heloan",
+     "piggyback"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "tbd_underwrite",
+     "wvoe"
+    ],
+    "mfh": [
+     "real_property",
+     "single_wide"
+    ]
+   }
+  },
+  {
+   "id": "mutual_of_omaha",
+   "name": "Mutual of Omaha",
+   "note": "(SUSPENDED)",
+   "contacts": [
+    {
+     "ae": "Sam Golub",
+     "phone": "847-450-0663",
+     "email": "sgolub@mutualmortgage.com"
+    }
+   ],
+   "website": "https://moomwholesale.com/",
+   "guidelines": "https://mybarrettfinancial.com/correspondent.html",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "correspondent": [
+     "dscr"
+    ]
+   }
+  },
+  {
+   "id": "mutual_of_omaha_forward_fha_only_all_other_products_must_go_correspondent",
+   "name": "Mutual of Omaha (Forward) - FHA only, all other products must go Correspondent",
+   "note": "Forward",
+   "contacts": [
+    {
+     "ae": "Sam Golub",
+     "phone": "847-450-0663",
+     "email": "sgolub@mutualmortgage.com"
+    }
+   ],
+   "website": "https://moomwholesale.com/",
+   "guidelines": "https://moomwholesale.com/",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "conventional",
+     "manual_underwrite"
+    ],
+    "fha": [
+     "fha"
+    ],
+    "va": [
+     "va"
+    ],
+    "usda": [
+     "usda"
+    ],
+    "mfh": [
+     "real_property"
+    ]
+   }
+  },
+  {
+   "id": "mutual_of_omaha_reverse",
+   "name": "Mutual of Omaha (Reverse)",
+   "note": "Reverse",
+   "contacts": [
+    {
+     "ae": "James Raymond",
+     "phone": "201-280-2012",
+     "email": "jraymond@mutualmortgage.com"
+    }
+   ],
+   "website": "https://mutualmortgagewholesale.com",
+   "guidelines": "https://mutualmortgagewholesale.com",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "reverse": []
+   }
+  },
+  {
+   "id": "nations_direct_mortgage",
+   "name": "Nations Direct Mortgage",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Bobby McIntyre",
+     "phone": "609-970-5080",
+     "email": "bmcintyre@myndm.com"
+    }
+   ],
+   "website": "www.myndm.com",
+   "guidelines": "ww.myndm.com/products",
+   "lenderPaidBps": 250,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "manual_underwrite",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "fha",
+     "manual_underwrite",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "dpa": [
+     "fha_dpa"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "bank_statement_heloc",
+     "dscr_heloc",
+     "fixed_2nd",
+     "heloan",
+     "piggyback"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "profit_and_loss"
+    ]
+   }
+  },
+  {
+   "id": "new_day_commercial_capital",
+   "name": "New Day Commercial Capital",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Jack White",
+     "phone": "949-878-7890",
+     "email": "jwhite@newdaycommercial.com"
+    }
+   ],
+   "website": "https://newdaycommercial.com",
+   "guidelines": "https://newdaycommercial.com",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "commercial": [
+     "mix_use_properties",
+     "non_residential_commercial",
+     "residential_5_unit"
+    ]
+   }
+  },
+  {
+   "id": "newfi_wholesale",
+   "name": "Newfi Wholesale",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Jerry Hassler",
+     "phone": "602-750-3033",
+     "email": "jerry@newfi.com"
+    }
+   ],
+   "website": "www.newfiwholesale.com",
+   "guidelines": "www.newfiwholesale.com",
+   "lenderPaidBps": 225,
+   "borrowerPaidOnly": false,
+   "minComp": 225,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "fixed_2nd",
+     "heloan"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "wvoe"
+    ]
+   }
+  },
+  {
+   "id": "newpoint_mortgage_llc",
+   "name": "NewPoint Mortgage LLC",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Mike Quintero",
+     "phone": "301-591-6404",
+     "email": "mike.quintero@newpointmortgage.com"
+    }
+   ],
+   "website": "https://newpointmortgage.com/",
+   "guidelines": "https://newpointmortgage.com/broker-resources/matrices/",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": true,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "bank_statement_heloc",
+     "fixed_2nd",
+     "heloan",
+     "heloc",
+     "piggyback"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "bridge",
+     "close_in_llc",
+     "dscr",
+     "fix_n_flip",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events",
+     "wvoe"
+    ],
+    "bridge": [
+     "bridge",
+     "commercial_bridge"
+    ],
+    "construction": [
+     "fix_n_flip",
+     "ground_up",
+     "spec_homes"
+    ],
+    "renovation": [
+     "fix_n_flip"
+    ],
+    "commercial": [
+     "commercial_bridge",
+     "mix_use_properties",
+     "non_residential_commercial",
+     "residential_5_unit"
+    ],
+    "private": [],
+    "other": []
+   }
+  },
+  {
+   "id": "newrez",
+   "name": "NewRez",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Libby Shambeau",
+     "phone": "602-432-8117",
+     "email": "Libby.Shambeau@newrez.com"
+    }
+   ],
+   "website": "https://www.newrezwholesale.com/",
+   "guidelines": "https://blueprint.newrezwholesale.com/home",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 3500,
+   "maxComp": 50000,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "manual_underwrite"
+    ],
+    "fha": [
+     "arm",
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline"
+    ],
+    "va": [
+     "arm",
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "usda"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "fixed_2nd"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "non_warrantable_condo",
+     "profit_and_loss"
+    ],
+    "mfh": [
+     "real_property",
+     "single_wide"
+    ],
+    "other": [
+     "agricultural",
+     "section_184"
+    ],
+    "correspondent": [
+     "bank_statement",
+     "dscr",
+     "jumbo"
+    ]
+   }
+  },
+  {
+   "id": "newwave_lending",
+   "name": "NewWave Lending",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Kelly Zuo",
+     "phone": "626-780-7979",
+     "email": "Kelly.zuo@newwavelending.com"
+    }
+   ],
+   "website": "https://newwavelending.com/",
+   "guidelines": "https://www.newwavelending.com/resources",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "fha",
+     "streamline"
+    ],
+    "dpa": [
+     "calhfa"
+    ],
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "fixed_2nd",
+     "heloan"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "wvoe"
+    ]
+   }
+  },
+  {
+   "id": "nexbank",
+   "name": "NexBank",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Lance Hackney",
+     "phone": "214-534-8921",
+     "email": "Lance.hackney@nexbank.com"
+    }
+   ],
+   "website": "https://mortgage.nexbank.com/index",
+   "guidelines": "https://mortgage.nexbank.com/index",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": 20000,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible"
+    ],
+    "fha": [
+     "fha"
+    ],
+    "va": [
+     "irrrl",
+     "va"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "dscr"
+    ]
+   }
+  },
+  {
+   "id": "nextres",
+   "name": "Nextres",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Mitchell Ayzenberg",
+     "phone": "215-919-7786",
+     "email": "mayzenberg@nextres.com"
+    }
+   ],
+   "website": "commercial.nextres.com",
+   "guidelines": "https://commercial.nextres.com/resources",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": true,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "second": [
+     "fixed_2nd"
+    ],
+    "nonqm": [
+     "bridge",
+     "close_in_llc",
+     "fix_n_flip",
+     "foreign_national",
+     "itin"
+    ],
+    "bridge": [
+     "bridge",
+     "commercial_bridge"
+    ],
+    "construction": [
+     "fix_n_flip",
+     "ground_up",
+     "spec_homes",
+     "two_time_close"
+    ],
+    "renovation": [
+     "fix_n_flip"
+    ],
+    "commercial": [
+     "commercial_bridge",
+     "mix_use_properties",
+     "residential_5_unit"
+    ]
+   }
+  },
+  {
+   "id": "nmsi_group",
+   "name": "NMSI Group",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Jasvir Pardiwalla",
+     "phone": "916-956-9305",
+     "email": "jas@nmsigroup.com"
+    }
+   ],
+   "website": "www.nmsigroup.com",
+   "guidelines": "www.nmsigroup.com",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible"
+    ],
+    "fha": [
+     "arm",
+     "fha",
+     "streamline"
+    ],
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "bank_statement_heloc",
+     "fixed_2nd",
+     "heloan"
+    ],
+    "nonqm": [
+     "bank_statement",
+     "dscr",
+     "profit_and_loss",
+     "wvoe"
+    ]
+   }
+  },
+  {
+   "id": "nqm_funding_llc",
+   "name": "NQM Funding, LLC.",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Chris Farruggio",
+     "phone": "602-301-3529",
+     "email": "cfarruggio@nqmf.com"
+    }
+   ],
+   "website": "https://nqmf.com",
+   "guidelines": "https://nqmf.com",
+   "lenderPaidBps": 225,
+   "borrowerPaidOnly": false,
+   "minComp": 225,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events"
+    ]
+   }
+  },
+  {
+   "id": "oaktree_funding_corp",
+   "name": "Oaktree Funding Corp",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Multiple AE's",
+     "phone": "N/A",
+     "email": "barrett@oaktreefunding.com"
+    }
+   ],
+   "website": "https://www.nonqmexpert.com",
+   "guidelines": "https://www.nonqmexpert.com/oaktree-advantage-products/",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": 100000,
+   "products": {
+    "conventional": [
+     "conventional"
+    ],
+    "fha": [
+     "fha"
+    ],
+    "va": [
+     "irrrl",
+     "va"
+    ],
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "bank_statement_heloc",
+     "fixed_2nd",
+     "heloan",
+     "heloc",
+     "piggyback",
+     "st_lien_heloc"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "bridge",
+     "close_in_llc",
+     "cross_collateral_blanket",
+     "dscr",
+     "fix_n_flip",
+     "foreign_national",
+     "itin",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events",
+     "tbd_underwrite",
+     "wvoe"
+    ],
+    "bridge": [
+     "bridge"
+    ],
+    "construction": [
+     "construction_to_perm",
+     "fix_n_flip",
+     "one_time_close"
+    ],
+    "renovation": [
+     "fix_n_flip"
+    ],
+    "commercial": [
+     "mix_use_properties",
+     "residential_5_unit"
+    ],
+    "other": [
+     "cannabis"
+    ]
+   }
+  },
+  {
+   "id": "open_mortgage_wholesale",
+   "name": "Open Mortgage Wholesale",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Nancy Currie",
+     "phone": "469-634-6764",
+     "email": "nancycurrie@openwholesale.com"
+    }
+   ],
+   "website": "www.openwholesale.com",
+   "guidelines": "www.openwholesale.com",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": 275,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "conventional",
+     "home_ready_possible"
+    ],
+    "fha": [
+     "down_to_500_fico",
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline"
+    ],
+    "va": [
+     "down_to_500_fico",
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "usda"
+    ],
+    "dpa": [
+     "fha_dpa"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events",
+     "wvoe"
+    ],
+    "mfh": [
+     "real_property",
+     "single_wide"
+    ],
+    "other": [
+     "agricultural"
+    ]
+   }
+  },
+  {
+   "id": "orion",
+   "name": "Orion",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Erin Harden",
+     "phone": "727-465-6522",
+     "email": "eharden@orionlending.com"
+    },
+    {
+     "ae": "Sue Whitney",
+     "phone": "602-677-3850",
+     "email": "swhitney@orionlending.com"
+    }
+   ],
+   "website": "www.orionlending.com",
+   "guidelines": "https://star.orionlending.com/STAR/Rates",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": 275,
+   "maxComp": 20000,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "manual_underwrite"
+    ],
+    "fha": [
+     "arm",
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline"
+    ],
+    "va": [
+     "arm",
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "usda"
+    ],
+    "dpa": [
+     "conventional_dpa",
+     "fha_dpa"
+    ],
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss"
+    ],
+    "mfh": [
+     "real_property"
+    ],
+    "other": [
+     "physician"
+    ]
+   }
+  },
+  {
+   "id": "oval_mortgage",
+   "name": "OVAL Mortgage",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Jason York",
+     "phone": "757-537-5314",
+     "email": "jy@ovalmortgage.com"
+    }
+   ],
+   "website": "https://ovalmortgage.com/",
+   "guidelines": "https://ovalmortgage.com/wp-content/uploads/2024/03/OVAL-Overlays.pdf",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "va": [
+     "arm",
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "tbd_underwrite",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "tbd_underwrite",
+     "usda"
+    ],
+    "mfh": [
+     "real_property"
+    ]
+   }
+  },
+  {
+   "id": "park_place_finance",
+   "name": "Park Place Finance",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Dylan Redmond",
+     "phone": "512-605-1362",
+     "email": "dredmond@parkplaceus.com"
+    },
+    {
+     "ae": "Max Wettstein",
+     "phone": "512-631-7827",
+     "email": "maxw@parkplaceus.com"
+    }
+   ],
+   "website": "https://parkplacefinance.com",
+   "guidelines": "https://parkplacefinance.com",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": true,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "nonqm": [
+     "bridge",
+     "cross_collateral_blanket",
+     "dscr",
+     "fix_n_flip"
+    ],
+    "bridge": [
+     "bridge"
+    ],
+    "construction": [
+     "fix_n_flip",
+     "ground_up",
+     "owner_builder",
+     "spec_homes"
+    ],
+    "renovation": [
+     "fix_n_flip"
+    ],
+    "private": []
+   }
+  },
+  {
+   "id": "parkview_financial",
+   "name": "Parkview Financial",
+   "note": null,
+   "contacts": [],
+   "website": "www.parkviewloan.com",
+   "guidelines": "contact investor",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "private": []
+   }
+  },
+  {
+   "id": "pb_financial_group_corp",
+   "name": "PB Financial Group Corp.",
+   "note": "(Hard Money)",
+   "contacts": [
+    {
+     "ae": "Francis V. Estipona",
+     "phone": "323-935-5555",
+     "email": "francis@calhardmoney.com"
+    }
+   ],
+   "website": "calhardmoney.com",
+   "guidelines": "calhardmoney.com",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": true,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "fixed_2nd"
+    ],
+    "nonqm": [
+     "bank_statement",
+     "bridge",
+     "close_in_llc",
+     "cross_collateral_blanket",
+     "dscr",
+     "fix_n_flip",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "profit_and_loss",
+     "stated_income",
+     "tbd_underwrite"
+    ],
+    "bridge": [
+     "bridge",
+     "commercial_bridge"
+    ],
+    "mfh": [
+     "real_property"
+    ],
+    "construction": [
+     "construction_to_perm",
+     "fix_n_flip",
+     "ground_up",
+     "owner_builder"
+    ],
+    "renovation": [
+     "fix_n_flip"
+    ],
+    "commercial": [
+     "commercial_bridge",
+     "mix_use_properties",
+     "non_residential_commercial",
+     "residential_5_unit"
+    ],
+    "private": [],
+    "other": [
+     "land_loans"
+    ]
+   }
+  },
+  {
+   "id": "pennymac_tpo",
+   "name": "PENNYMAC TPO",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Please see Pennymac\ncontact sheet",
+     "phone": "Please see Pennymac contact sheet",
+     "email": "TeamBarrett@Pennymac.com"
+    },
+    {
+     "ae": "Multiple AEs",
+     "phone": "408-210-0583",
+     "email": "TeamBarrett@Pennymac.com"
+    }
+   ],
+   "website": "https://tpo.pennymac.com/",
+   "guidelines": "https://tpo.pennymac.com/broker-resources/tag/products-and-programs/",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 2500,
+   "maxComp": 30000,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible"
+    ],
+    "fha": [
+     "arm",
+     "fha",
+     "manual_underwrite",
+     "streamline"
+    ],
+    "va": [
+     "arm",
+     "irrrl",
+     "manual_underwrite",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "usda"
+    ],
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "heloan"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "dscr",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "wvoe"
+    ],
+    "mfh": [
+     "real_property"
+    ],
+    "correspondent": [
+     "jumbo"
+    ]
+   }
+  },
+  {
+   "id": "plaza_home_mortgage",
+   "name": "Plaza Home Mortgage",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Megan Trigg",
+     "phone": "602-910-1949",
+     "email": "megan.trigg@plazahomemortgage.com"
+    }
+   ],
+   "website": "www.plazahomemortgage.com",
+   "guidelines": "https://www.plazahomemortgage.com/clients/phmguidelines/",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 1500,
+   "maxComp": 25000,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible"
+    ],
+    "fha": [
+     "arm",
+     "fha",
+     "manual_underwrite",
+     "streamline"
+    ],
+    "va": [
+     "arm",
+     "irrrl",
+     "manual_underwrite",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "usda"
+    ],
+    "dpa": [
+     "calhfa",
+     "fha_dpa",
+     "state_bond_grants"
+    ],
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "fixed_2nd"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events"
+    ],
+    "mfh": [
+     "real_property",
+     "single_wide"
+    ],
+    "reverse": [],
+    "renovation": [
+     "conventional",
+     "fha_203h_disaster",
+     "fha_203k",
+     "homestyle_reno",
+     "usda",
+     "va"
+    ]
+   }
+  },
+  {
+   "id": "power_tpo",
+   "name": "Power TPO",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Mark Holcomb",
+     "phone": "404-819-5272",
+     "email": "mholcomb@powertpo.com"
+    }
+   ],
+   "website": "https://portal.powertpo.com",
+   "guidelines": "https://portal.powertpo.com/#content/products_376627",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "conventional",
+     "home_ready_possible",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "fha",
+     "manual_underwrite",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "irrrl",
+     "manual_underwrite",
+     "tbd_underwrite",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "tbd_underwrite",
+     "usda"
+    ],
+    "dpa": [
+     "chenoa",
+     "fha_dpa"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "bank_statement",
+     "dscr",
+     "non_warrantable_condo"
+    ],
+    "mfh": [
+     "real_property"
+    ],
+    "correspondent": [
+     "bank_statement",
+     "dscr",
+     "jumbo"
+    ]
+   }
+  },
+  {
+   "id": "prmg",
+   "name": "PRMG",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Alice Cordova",
+     "phone": "602-550-8665",
+     "email": "acordova@prmg.net"
+    },
+    {
+     "ae": "Bobby Costa",
+     "phone": "602-399-4558",
+     "email": "bcosta@prmg.net"
+    },
+    {
+     "ae": "Euan Black",
+     "phone": "480-779-4238",
+     "email": "eblack@prmg.net"
+    },
+    {
+     "ae": "Lori Rivera",
+     "phone": "214-796-5919",
+     "email": "lorir@prmg.net"
+    }
+   ],
+   "website": "https://tpo.prmg.net",
+   "guidelines": "https://tpo.prmg.net",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": 275,
+   "maxComp": 20000,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "arm",
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "arm",
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "tbd_underwrite",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "tbd_underwrite",
+     "usda"
+    ],
+    "dpa": [
+     "calhfa",
+     "chenoa",
+     "fha_dpa",
+     "state_bond_grants"
+    ],
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "fixed_2nd",
+     "piggyback"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events",
+     "tbd_underwrite"
+    ],
+    "mfh": [
+     "real_property",
+     "single_wide"
+    ],
+    "other": [
+     "cannabis"
+    ],
+    "correspondent": [
+     "bank_statement",
+     "dscr",
+     "jumbo"
+    ]
+   }
+  },
+  {
+   "id": "quontic_bank",
+   "name": "Quontic Bank",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Tori Grigis",
+     "phone": "919-500-0985",
+     "email": "tgrigis@quonticbank.com"
+    }
+   ],
+   "website": "https://quonticwholesale.com/",
+   "guidelines": "https://quonticwholesale.com/wp-content/uploads/2025/02/QB-Product-Guidelines-02.10.2025.pdf",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": true,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "second": [
+     "heloan"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "wvoe"
+    ]
+   }
+  },
+  {
+   "id": "quorum_broker_wholesale",
+   "name": "Quorum Broker Wholesale",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Eli Shereshovech",
+     "phone": "847-489-5626",
+     "email": "eli.shereshovech@quorumfcu.org"
+    }
+   ],
+   "website": "https://partners.quorumfcu.org/",
+   "guidelines": "https://partners.quorumfcu.org/",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "second": []
+   }
+  },
+  {
+   "id": "quorum_federal_credit_union",
+   "name": "Quorum Federal Credit Union",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Eli Shereshovech",
+     "phone": "847-489-5626",
+     "email": "eli.shereshovech@quorumfcu.org"
+    }
+   ],
+   "website": "https://partners.quorumfcu.org/",
+   "guidelines": "https://partners.quorumfcu.org/#weHelpSection",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": true,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "second": [
+     "bank_statement_heloc",
+     "fixed_2nd",
+     "heloan",
+     "heloc",
+     "piggyback",
+     "st_lien_heloc"
+    ],
+    "nonqm": [
+     "bridge"
+    ],
+    "bridge": [
+     "bridge"
+    ],
+    "construction": [
+     "one_time_close"
+    ],
+    "renovation": [
+     "conventional"
+    ],
+    "other": [
+     "land_loans"
+    ]
+   }
+  },
+  {
+   "id": "ranlife",
+   "name": "Ranlife",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Cameron Bishop",
+     "phone": "801-478-4526",
+     "email": "cameronb@ranlife.com"
+    }
+   ],
+   "website": "www.ranlife.com",
+   "guidelines": "www.ranlife.com",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "conventional",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "arm",
+     "down_to_500_fico",
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "arm",
+     "down_to_500_fico",
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "tbd_underwrite",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "tbd_underwrite",
+     "usda"
+    ],
+    "dpa": [
+     "fha_dpa"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "dscr_heloc",
+     "fixed_2nd",
+     "heloan",
+     "heloc",
+     "piggyback",
+     "st_lien_heloc"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "cross_collateral_blanket",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events",
+     "tbd_underwrite"
+    ],
+    "mfh": [
+     "real_property",
+     "single_wide"
+    ],
+    "renovation": [
+     "fha_203k"
+    ],
+    "commercial": [
+     "residential_5_unit"
+    ]
+   }
+  },
+  {
+   "id": "real_tpo",
+   "name": "Real TPO",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Dario Musumeci",
+     "phone": "213-721-1003",
+     "email": "dario.musumeci@realtpo.com"
+    }
+   ],
+   "website": "https://www.realtpo.com",
+   "guidelines": "https://www.realtpo.com",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": 275,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "manual_underwrite"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "fixed_2nd"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events",
+     "wvoe"
+    ],
+    "mfh": [
+     "single_wide"
+    ]
+   }
+  },
+  {
+   "id": "redstone_funding",
+   "name": "Redstone Funding",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "John Fougerousse",
+     "phone": "312-616-5472",
+     "email": "jfougerousse@rsmtg.com"
+    }
+   ],
+   "website": "www.rsmtg.com",
+   "guidelines": "www.rsmtg.com",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "heloc"
+    ],
+    "nonqm": [
+     "bank_statement",
+     "dscr",
+     "non_warrantable_condo"
+    ]
+   }
+  },
+  {
+   "id": "remn",
+   "name": "REMN",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Julie Aceto",
+     "phone": "630-699-4116",
+     "email": "jaceto@remn.com"
+    }
+   ],
+   "website": "hub.remnwholesale.com",
+   "guidelines": "hub.remnwholesale.com",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": 275,
+   "maxComp": 16000,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "manual_underwrite",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "arm",
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "arm",
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "tbd_underwrite",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "tbd_underwrite",
+     "usda"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "bank_statement_heloc",
+     "heloc",
+     "st_lien_heloc"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "tbd_underwrite"
+    ],
+    "mfh": [
+     "real_property",
+     "single_wide"
+    ]
+   }
+  },
+  {
+   "id": "resicentral",
+   "name": "Resicentral",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Greg Sabers",
+     "phone": "415-672-6092",
+     "email": "gsabers@resicentral.com"
+    }
+   ],
+   "website": "https://wholesale.resicentral.com/#/content/home_272741",
+   "guidelines": "https://wholesale.resicentral.com/#/content/home_272741",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 1000,
+   "maxComp": 30000,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "manual_underwrite"
+    ],
+    "fha": [
+     "arm",
+     "fha",
+     "manual_underwrite",
+     "streamline"
+    ],
+    "va": [
+     "arm",
+     "irrrl",
+     "manual_underwrite",
+     "va"
+    ],
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "stated_income"
+    ],
+    "mfh": [
+     "real_property"
+    ]
+   }
+  },
+  {
+   "id": "resmac",
+   "name": "ResMac",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Bryant Figueroa",
+     "phone": "321-695-6967",
+     "email": "bryant.figueroa@resmac.com"
+    }
+   ],
+   "website": "www.resmac.com",
+   "guidelines": "www.resmac.com",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "nonqm": [
+     "dscr",
+     "foreign_national",
+     "itin"
+    ]
+   }
+  },
+  {
+   "id": "rise_tpo",
+   "name": "Rise TPO",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Sabrina Lopez",
+     "phone": "714-351-5639",
+     "email": "sabrina@risetpo.com"
+    }
+   ],
+   "website": "www.risetpo.com",
+   "guidelines": "www.risetpo.com",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": 275,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible"
+    ],
+    "fha": [
+     "arm",
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline"
+    ],
+    "va": [
+     "arm",
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "usda"
+    ],
+    "dpa": [
+     "calhfa",
+     "fha_dpa"
+    ],
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "fixed_2nd",
+     "heloan",
+     "heloc",
+     "piggyback"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events",
+     "wvoe"
+    ],
+    "mfh": [
+     "real_property"
+    ],
+    "commercial": [
+     "non_residential_commercial",
+     "residential_5_unit"
+    ]
+   }
+  },
+  {
+   "id": "roundhouse_lending",
+   "name": "RoundHouse Lending",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Lisa Scolardi Atamian",
+     "phone": "602-617-7733",
+     "email": "lscolardi@roundhouselending.com"
+    }
+   ],
+   "website": "www.roundhouselending.com",
+   "guidelines": "www.roundhouselending.com",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "conventional",
+     "home_ready_possible",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "down_to_500_fico",
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline"
+    ],
+    "va": [
+     "down_to_500_fico",
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "usda"
+    ],
+    "dpa": [
+     "chenoa",
+     "fha_dpa",
+     "state_bond_grants"
+    ],
+    "second": [
+     "heloc"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "wvoe"
+    ],
+    "mfh": [
+     "real_property",
+     "single_wide"
+    ],
+    "commercial": [
+     "residential_5_unit"
+    ]
+   }
+  },
+  {
+   "id": "sfg_of_arizona_llc",
+   "name": "SFG of Arizona, LLC",
+   "note": null,
+   "contacts": [],
+   "website": "www.seattlefundinggroup.com",
+   "guidelines": "contact investor",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "private": []
+   }
+  },
+  {
+   "id": "sierra_pacific_uhm",
+   "name": "Sierra Pacific/UHM",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Bob Yadon",
+     "phone": "949-331-0037",
+     "email": "bob.yadon@spmc.com"
+    }
+   ],
+   "website": "https://spmwholesale.com",
+   "guidelines": "https://www.sierrapacificmortgage.com/net/SPMDocumentLibrary/?cid=909119XSCOSYSVX2115840796800675720X2.909559XSCOSYSVX2115840796800675722X3x&passed.user.id=627961646F6E&ch=W",
+   "lenderPaidBps": 225,
+   "borrowerPaidOnly": false,
+   "minComp": 225,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible"
+    ],
+    "fha": [
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline"
+    ],
+    "va": [
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "usda"
+    ],
+    "dpa": [
+     "calhfa",
+     "fha_dpa",
+     "state_bond_grants"
+    ],
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "heloc"
+    ]
+   }
+  },
+  {
+   "id": "silver_arch_capital_partners",
+   "name": "Silver Arch Capital Partners",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "N/A",
+     "phone": "866-451-2936",
+     "email": "info@silverarchcp.com"
+    }
+   ],
+   "website": "www.silverarchcp.com",
+   "guidelines": "https://www.silverarchcp.com/loan-criteria/",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "bridge": [
+     "commercial_bridge"
+    ],
+    "commercial": [
+     "commercial_bridge",
+     "non_residential_commercial",
+     "residential_5_unit"
+    ],
+    "private": [],
+    "other": [
+     "land_loans"
+    ]
+   }
+  },
+  {
+   "id": "silver_hll_funding",
+   "name": "Silver Hll Funding",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Nickolaus De Young",
+     "phone": "503-987-3716",
+     "email": "ndeyoung@silverhillfunding.com"
+    }
+   ],
+   "website": "N/A",
+   "guidelines": "contact investor",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "private": []
+   }
+  },
+  {
+   "id": "simplereverse",
+   "name": "SimpleReverse",
+   "note": "(a division of Luminate Bank)",
+   "contacts": [
+    {
+     "ae": "Bob Garczewski",
+     "phone": "765-760-8931",
+     "email": "bob@goluminate.com"
+    }
+   ],
+   "website": "www.gosimplereverse.com",
+   "guidelines": "www.gosimplereverse.com",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "reverse": []
+   }
+  },
+  {
+   "id": "smartfi_home_loans",
+   "name": "Smartfi Home Loans",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Todd Lansbach",
+     "phone": "313-719-4678",
+     "email": "tlansbach@smartfihomeloans.com"
+    }
+   ],
+   "website": "https://app.smartfihomeloans.com/home",
+   "guidelines": "https://app.smartfihomeloans.com/partnerResources",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "reverse": []
+   }
+  },
+  {
+   "id": "spring_eq",
+   "name": "Spring EQ",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Dori Boxberger",
+     "phone": "480-215-5604",
+     "email": "dboxberger@springeq.com"
+    }
+   ],
+   "website": "www.wholesale.springeq.com",
+   "guidelines": "https://emma.springeq.com/login",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "second": [
+     "fixed_2nd",
+     "heloan",
+     "heloc",
+     "piggyback",
+     "st_lien_heloc"
+    ]
+   }
+  },
+  {
+   "id": "stg_mortgage",
+   "name": "STG Mortgage",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Felicia Janzen",
+     "phone": "602-421-7700",
+     "email": "felicia.janzen@stgmortgage.com"
+    }
+   ],
+   "website": "www.stgmortgage.com",
+   "guidelines": "www.stgmortgage.com",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": 30000,
+   "products": {
+    "conventional": [
+     "conventional",
+     "home_ready_possible",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "fha",
+     "manual_underwrite",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "irrrl",
+     "manual_underwrite",
+     "tbd_underwrite",
+     "va"
+    ],
+    "usda": [
+     "tbd_underwrite",
+     "usda"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "fixed_2nd",
+     "piggyback"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "tbd_underwrite",
+     "wvoe"
+    ],
+    "mfh": [
+     "real_property"
+    ]
+   }
+  },
+  {
+   "id": "stg_mortgage_atlending",
+   "name": "STG Mortgage/ Atlending",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Felicia Janzen",
+     "phone": "602-421-7700",
+     "email": "felicia.janzen@stgmortgage.com"
+    }
+   ],
+   "website": "www.stgmortgage.com",
+   "guidelines": "Contact AE",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "second": []
+   }
+  },
+  {
+   "id": "sunwest_mortgage",
+   "name": "SunWest Mortgage",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Suresh Choudhary",
+     "phone": "562-480-7733",
+     "email": "sureshc@swmc.com"
+    }
+   ],
+   "website": "https://seemyloanstatus.com",
+   "guidelines": "https://seemyloanstatus.com",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 2500,
+   "maxComp": 2500,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "manual_underwrite",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "arm",
+     "down_to_500_fico",
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "arm",
+     "down_to_500_fico",
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "tbd_underwrite",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "tbd_underwrite",
+     "usda"
+    ],
+    "dpa": [
+     "calhfa",
+     "conventional_dpa",
+     "fha_dpa",
+     "state_bond_grants"
+    ],
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "bank_statement_heloc",
+     "dscr_heloc",
+     "fixed_2nd",
+     "heloan",
+     "heloc",
+     "st_lien_heloc"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "itin",
+     "recent_credit_events"
+    ],
+    "mfh": [
+     "real_property",
+     "single_wide"
+    ],
+    "reverse": [],
+    "construction": [
+     "one_time_close"
+    ],
+    "renovation": [
+     "choicerenovation",
+     "conventional",
+     "fha_203h_disaster",
+     "fha_203k",
+     "homestyle_reno",
+     "usda"
+    ],
+    "commercial": [
+     "mix_use_properties",
+     "residential_5_unit"
+    ],
+    "other": [
+     "physician",
+     "section_184"
+    ],
+    "correspondent": [
+     "jumbo"
+    ]
+   }
+  },
+  {
+   "id": "symmetry_lending",
+   "name": "Symmetry Lending",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Stephen Wilson",
+     "phone": "720-826-4946",
+     "email": "stephen.wilson@symmetrylending.com"
+    }
+   ],
+   "website": "www.symmetrylending.com",
+   "guidelines": "https://symmetrylending.com/forms?_t=MTc2NDg3NTM4MDY2OA%3D%3D",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": true,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "second": [
+     "heloc",
+     "piggyback",
+     "st_lien_heloc"
+    ]
+   }
+  },
+  {
+   "id": "the_loan_store",
+   "name": "The Loan Store",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Jennifer Nealeigh",
+     "phone": "650-619-8404",
+     "email": "jnealeigh@theloanstore.com"
+    }
+   ],
+   "website": "https://theloanstore.encompasstpoconnect.com/",
+   "guidelines": "https://theloanstore.encompasstpoconnect.com/#/content/guidelines_428765",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 2500,
+   "maxComp": 25000,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "manual_underwrite"
+    ],
+    "fha": [
+     "arm",
+     "fha",
+     "manual_underwrite",
+     "streamline"
+    ],
+    "va": [
+     "arm",
+     "irrrl",
+     "manual_underwrite",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "usda"
+    ],
+    "dpa": [
+     "chenoa",
+     "fha_dpa"
+    ],
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "bank_statement_heloc",
+     "fixed_2nd",
+     "heloan",
+     "heloc",
+     "st_lien_heloc"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "bridge",
+     "close_in_llc",
+     "dscr",
+     "fix_n_flip",
+     "foreign_national",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "wvoe"
+    ],
+    "bridge": [
+     "bridge"
+    ],
+    "mfh": [
+     "real_property"
+    ],
+    "construction": [
+     "fix_n_flip"
+    ],
+    "renovation": [
+     "fha_203h_disaster"
+    ],
+    "private": [],
+    "correspondent": [
+     "bank_statement",
+     "dscr",
+     "jumbo"
+    ]
+   }
+  },
+  {
+   "id": "thelender",
+   "name": "TheLender",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Ryan Mercier",
+     "phone": "714-273-6637",
+     "email": "rmercier@thelender.com"
+    }
+   ],
+   "website": "www.thelender.com",
+   "guidelines": "https://wholesale.thelender.com/nonqm-products",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "conventional"
+    ],
+    "fha": [
+     "fha",
+     "manual_underwrite",
+     "streamline"
+    ],
+    "va": [
+     "irrrl",
+     "manual_underwrite",
+     "va"
+    ],
+    "usda": [
+     "usda"
+    ],
+    "dpa": [
+     "fha_dpa"
+    ],
+    "second": [
+     "bank_statement_heloc",
+     "fixed_2nd",
+     "heloan",
+     "heloc",
+     "piggyback"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "bridge",
+     "close_in_llc",
+     "cross_collateral_blanket",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "profit_and_loss",
+     "recent_credit_events"
+    ],
+    "mfh": [
+     "real_property"
+    ]
+   }
+  },
+  {
+   "id": "towne_mortgage",
+   "name": "Towne Mortgage",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Raymond LaFave",
+     "phone": "586-610-2110",
+     "email": "ray.lafave@townemortgage.com"
+    },
+    {
+     "ae": "Dawn McDonald",
+     "phone": "803-765-1337",
+     "email": "dmcdonald@townemortgage.com"
+    }
+   ],
+   "website": "https://tpo.townemortgage.com",
+   "guidelines": "https://tpo.townemortgage.com",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 2500,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "conventional",
+     "home_ready_possible",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "down_to_500_fico",
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "tbd_underwrite",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "tbd_underwrite",
+     "usda"
+    ],
+    "dpa": [
+     "fha_dpa"
+    ],
+    "mfh": [
+     "real_property",
+     "single_wide"
+    ],
+    "renovation": [
+     "choicerenovation",
+     "conventional",
+     "fha_203k",
+     "homestyle_reno"
+    ]
+   }
+  },
+  {
+   "id": "tpo_go",
+   "name": "TPO Go",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Patti White",
+     "phone": "860-690-3587",
+     "email": "Patti@tpogo.com"
+    }
+   ],
+   "website": "greenlight.tpogo.com",
+   "guidelines": "https://greenlight.tpogo.com/#/content/externalpage",
+   "lenderPaidBps": 250,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "arm",
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "arm",
+     "down_to_500_fico",
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "tbd_underwrite",
+     "va"
+    ],
+    "usda": [
+     "tbd_underwrite",
+     "usda"
+    ],
+    "dpa": [
+     "chenoa",
+     "fha_dpa",
+     "state_bond_grants"
+    ],
+    "nonqm": [
+     "bank_statement",
+     "dscr",
+     "non_warrantable_condo"
+    ],
+    "mfh": [
+     "real_property",
+     "single_wide"
+    ],
+    "reverse": [],
+    "renovation": [
+     "choicerenovation",
+     "conventional",
+     "fha_203h_disaster",
+     "fha_203k",
+     "homestyle_reno",
+     "usda",
+     "va"
+    ]
+   }
+  },
+  {
+   "id": "traditional_mortgage_acceptance_corp_tmac",
+   "name": "Traditional Mortgage Acceptance Corp (TMAC)",
+   "note": "TMAC",
+   "contacts": [
+    {
+     "ae": "Joseph Tuttle",
+     "phone": "949-229-0303",
+     "email": "joe.tuttle@traditionalmac.com"
+    }
+   ],
+   "website": "N/A",
+   "guidelines": "N/A",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "reverse": []
+   }
+  },
+  {
+   "id": "triad_financial_services",
+   "name": "Triad Financial Services",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "William Shubrick",
+     "phone": "904-927-4769",
+     "email": "wshubrick@triadfs.com"
+    },
+    {
+     "ae": "Broker Support\n(General Support)",
+     "phone": "N/A",
+     "email": "brokersupport@triadfs.com"
+    }
+   ],
+   "website": "https://www.triadfs.com/tfs_william_shubrick",
+   "guidelines": "https://www.triadfs.com/tfs_william_shubrick",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": true,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "nonqm": [
+     "itin",
+     "wvoe"
+    ],
+    "mfh": [
+     "chattel_leased_land",
+     "real_property",
+     "single_wide"
+    ]
+   }
+  },
+  {
+   "id": "truly_investor_capital",
+   "name": "Truly Investor Capital",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Casey Koelsch",
+     "phone": "224-422-8882",
+     "email": "ckoelsch@trulyinvestorcap.com"
+    }
+   ],
+   "website": "www.trulyinvestorcap.com/sales/casey-koelsch",
+   "guidelines": "www.trulyinvestorcap.com/sales/casey-koelsch",
+   "lenderPaidBps": 250,
+   "borrowerPaidOnly": false,
+   "minComp": 250,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "bridge",
+     "close_in_llc",
+     "cross_collateral_blanket",
+     "dscr",
+     "fix_n_flip",
+     "foreign_national",
+     "non_warrantable_condo"
+    ],
+    "bridge": [
+     "bridge",
+     "commercial_bridge"
+    ],
+    "construction": [
+     "fix_n_flip",
+     "ground_up",
+     "jumbo",
+     "owner_builder",
+     "spec_homes"
+    ],
+    "renovation": [
+     "fix_n_flip"
+    ],
+    "commercial": [
+     "residential_5_unit"
+    ],
+    "private": []
+   }
+  },
+  {
+   "id": "truwest_credit_union",
+   "name": "TruWest Credit Union",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Kelly Argall",
+     "phone": "602-316-6826",
+     "email": "kjargall@truwest.org"
+    }
+   ],
+   "website": "N/A",
+   "guidelines": "N/A",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "second": [
+     "heloc"
+    ]
+   }
+  },
+  {
+   "id": "umb_bank",
+   "name": "UMB Bank",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Cyeana Johnson",
+     "phone": "520-273-4997",
+     "email": "cyeana.johnson@umb.com"
+    }
+   ],
+   "website": "N/A",
+   "guidelines": "N/A",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "commercial": [
+     "residential_5_unit"
+    ]
+   }
+  },
+  {
+   "id": "unified_reliance_wholesale",
+   "name": "Unified Reliance Wholesale",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Joe Embree",
+     "phone": "619-200-8674",
+     "email": "joe.embree@urwholesale.com"
+    }
+   ],
+   "website": "www.urwtpo.com",
+   "guidelines": "Contact AE",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "second": []
+   }
+  },
+  {
+   "id": "union_home_mortgage",
+   "name": "Union Home Mortgage",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Lindsay Longbons",
+     "phone": "602-695-1144",
+     "email": "llongbons@uhm.com"
+    }
+   ],
+   "website": "www.uhmgo.com",
+   "guidelines": "www.uhmgo.com",
+   "lenderPaidBps": 225,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": 30000,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "down_to_500_fico",
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "down_to_500_fico",
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "tbd_underwrite",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "tbd_underwrite",
+     "usda"
+    ],
+    "second": [
+     "fixed_2nd",
+     "heloc"
+    ],
+    "mfh": [
+     "real_property",
+     "single_wide"
+    ]
+   }
+  },
+  {
+   "id": "unison_bank_az_only",
+   "name": "Unison Bank (AZ Only)",
+   "note": "AZ Only",
+   "contacts": [
+    {
+     "ae": "Karen Werner",
+     "phone": "480-396-1283",
+     "email": "kwerner@unisonbank.com"
+    }
+   ],
+   "website": "www.unisonbank.com",
+   "guidelines": "Contact AE",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": true,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "nonqm": [
+     "bridge",
+     "non_warrantable_condo"
+    ],
+    "bridge": [
+     "bridge"
+    ],
+    "construction": [
+     "two_time_close"
+    ],
+    "renovation": [
+     "conventional"
+    ],
+    "commercial": [
+     "residential_5_unit"
+    ],
+    "other": [
+     "land_loans"
+    ]
+   }
+  },
+  {
+   "id": "united_ag_lending_rural_and_agricultural_purpose_only",
+   "name": "United AG Lending (Rural and Agricultural Purpose Only)",
+   "note": "Rural and Agricultural Purpose Only",
+   "contacts": [
+    {
+     "ae": "Kent Hackman",
+     "phone": "913-378-2809",
+     "email": "khackman@unitedaglending.com"
+    }
+   ],
+   "website": "www.unitedaglending.com",
+   "guidelines": "www.unitedaglending.com",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": true,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "commercial": [
+     "non_residential_commercial"
+    ],
+    "other": [
+     "agricultural",
+     "land_loans"
+    ]
+   }
+  },
+  {
+   "id": "uwm",
+   "name": "UWM",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Multiple AE's",
+     "phone": "800-981-8898",
+     "email": "See UWM AE Contact List"
+    }
+   ],
+   "website": "www.uwm.com",
+   "guidelines": "www.uwm.com - start a loan - loan products",
+   "lenderPaidBps": 225,
+   "borrowerPaidOnly": false,
+   "minComp": 2750,
+   "maxComp": 30000,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible"
+    ],
+    "fha": [
+     "arm",
+     "fha",
+     "streamline"
+    ],
+    "va": [
+     "arm",
+     "irrrl",
+     "va"
+    ],
+    "usda": [
+     "usda"
+    ],
+    "dpa": [
+     "conventional_dpa",
+     "fha_dpa",
+     "state_bond_grants"
+    ],
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "heloc",
+     "piggyback"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr"
+    ],
+    "mfh": [
+     "real_property",
+     "single_wide"
+    ],
+    "construction": [
+     "construction_to_perm",
+     "one_time_close"
+    ],
+    "correspondent": [
+     "bank_statement",
+     "dscr",
+     "jumbo"
+    ]
+   }
+  },
+  {
+   "id": "valere_financial",
+   "name": "Valere Financial",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Matt Hamilton",
+     "phone": "310-350-7823",
+     "email": "matt.hamilton@valerefinancial.com"
+    }
+   ],
+   "website": "https://valerefinancial.com",
+   "guidelines": "https://valerefinancial.com",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "bank_statement_heloc",
+     "dscr_heloc",
+     "fixed_2nd"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "wvoe"
+    ],
+    "mfh": [
+     "real_property"
+    ],
+    "commercial": [
+     "mix_use_properties",
+     "residential_5_unit"
+    ]
+   }
+  },
+  {
+   "id": "velocity_mortgage_capital",
+   "name": "Velocity Mortgage Capital",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Steve Dao",
+     "phone": "818-535-7568",
+     "email": "sdao@velocitymortgage.com"
+    }
+   ],
+   "website": "www.velocitymortgage.com",
+   "guidelines": "N/A",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": true,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "nonqm": [
+     "bridge",
+     "close_in_llc",
+     "cross_collateral_blanket",
+     "dscr",
+     "fix_n_flip",
+     "foreign_national",
+     "no_ratio",
+     "non_warrantable_condo",
+     "recent_credit_events",
+     "stated_income",
+     "wvoe"
+    ],
+    "bridge": [
+     "bridge"
+    ],
+    "construction": [
+     "fix_n_flip"
+    ],
+    "renovation": [
+     "fix_n_flip"
+    ],
+    "commercial": [
+     "mix_use_properties",
+     "non_residential_commercial",
+     "residential_5_unit"
+    ],
+    "private": []
+   }
+  },
+  {
+   "id": "verus_mortgage_capital",
+   "name": "Verus Mortgage Capital",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Daniel Halpin",
+     "phone": "214-734-8865",
+     "email": "dhalpin@verusmc.com"
+    }
+   ],
+   "website": "https://verusmc.com/wholesale/login/",
+   "guidelines": "https://verusmc.com/wholesale/login/",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "nonqm": [
+     "bank_statement",
+     "dscr",
+     "non_warrantable_condo"
+    ]
+   }
+  },
+  {
+   "id": "village_capital",
+   "name": "Village Capital",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Vlada Johnson",
+     "phone": "702-725-1946",
+     "email": "vljohnson@villagecapital.com"
+    }
+   ],
+   "website": "https://3593238086.encompasstpoconnect.com/#/content/home_246927",
+   "guidelines": "https://3593238086.encompasstpoconnect.com/#/content/home_246927",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": 20000,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "arm",
+     "down_to_500_fico",
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "arm",
+     "down_to_500_fico",
+     "irrrl",
+     "manual_underwrite",
+     "no_fico",
+     "tbd_underwrite",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "tbd_underwrite",
+     "usda"
+    ],
+    "mfh": [
+     "real_property"
+    ]
+   }
+  },
+  {
+   "id": "visio_lending",
+   "name": "Visio Lending",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Dan Adams",
+     "phone": "512-334-1424",
+     "email": "dan.adams@visiolending.com"
+    }
+   ],
+   "website": "www.visiolending.com/dan-adams",
+   "guidelines": "https://visio.my.site.com/partners/s/login/",
+   "lenderPaidBps": 500,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "nonqm": [
+     "close_in_llc",
+     "dscr",
+     "no_ratio",
+     "non_warrantable_condo"
+    ],
+    "private": []
+   }
+  },
+  {
+   "id": "visionary_lenders",
+   "name": "Visionary Lenders",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Natalie Lux",
+     "phone": "843-620-7761",
+     "email": "nlux@visionarylenders.com"
+    }
+   ],
+   "website": "www.visionarywholesale.com",
+   "guidelines": "www.visionarywholesale.com",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "nonqm": []
+   }
+  },
+  {
+   "id": "wholsale_mortgage_direct_wmd",
+   "name": "Wholsale Mortgage Direct (WMD)",
+   "note": "WMD",
+   "contacts": [
+    {
+     "ae": "Solutions Team",
+     "phone": "888-943-2833",
+     "email": "solutions@wmd.mortgage"
+    },
+    {
+     "ae": "Vincent Olson",
+     "phone": "888-943-2833",
+     "email": "solutions@wmd.mortgage"
+    }
+   ],
+   "website": "www.wmd.mortgage",
+   "guidelines": "Contact AE",
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": 275,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "second": [
+     "bank_statement_heloc",
+     "dscr_heloc",
+     "fixed_2nd",
+     "heloan",
+     "heloc",
+     "piggyback",
+     "st_lien_heloc"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events",
+     "wvoe"
+    ],
+    "reverse": [],
+    "commercial": [
+     "residential_5_unit"
+    ]
+   }
+  },
+  {
+   "id": "windsor_mortgage",
+   "name": "Windsor Mortgage",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Eric Salzwedel",
+     "phone": "605-681-2363",
+     "email": "esalzwedel@windsormortgage.com"
+    },
+    {
+     "ae": "Colin Murphy",
+     "phone": "605-261-5184",
+     "email": "cmurphy@windsormortgage.com"
+    }
+   ],
+   "website": "www.windsormortgage.com",
+   "guidelines": "https://plainscommercebank.my.site.com/",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": 200,
+   "maxComp": null,
+   "products": {
+    "conventional": [
+     "arm",
+     "conventional",
+     "home_ready_possible",
+     "tbd_underwrite"
+    ],
+    "fha": [
+     "arm",
+     "fha",
+     "manual_underwrite",
+     "no_fico",
+     "streamline",
+     "tbd_underwrite"
+    ],
+    "va": [
+     "arm",
+     "down_to_500_fico",
+     "irrrl",
+     "manual_underwrite",
+     "tbd_underwrite",
+     "va"
+    ],
+    "usda": [
+     "manual_underwrite",
+     "tbd_underwrite",
+     "usda"
+    ],
+    "dpa": [
+     "calhfa",
+     "conventional_dpa",
+     "fha_dpa",
+     "state_bond_grants"
+    ],
+    "jumbo": [
+     "arm",
+     "jumbo",
+     "max_comp"
+    ],
+    "nonqm": [
+     "asset_depletion_utilization",
+     "bank_statement",
+     "bridge",
+     "dscr",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss"
+    ],
+    "bridge": [
+     "bridge"
+    ],
+    "mfh": [
+     "real_property"
+    ],
+    "other": [
+     "physician"
+    ],
+    "correspondent": [
+     "bank_statement"
+    ]
+   }
+  }
+ ]
+}
