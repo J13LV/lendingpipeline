@@ -3,6 +3,7 @@ import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, onSnapshot } from "firebase/firestore";
 import {
   stageUrgency, stageClock, daysInStage, fileAge, stampStage, today,
+  daysBetween, addDays as addDaysISO,
 } from "./pipelineCore";
 import {
   getAuth,
@@ -67,6 +68,69 @@ const REFERRAL_STATUSES = [
   "Fell Through",
   "Withdrawn by Borrower",
 ];
+
+// ─── PREPARATION BANK ───
+// Clients who are ALIVE but not buyable yet: repairing credit, saving money,
+// waiting on taxes, new job, next season. They used to sit in Pre-Qual aging
+// against a stage clock that did not apply to them, which made the whole phase
+// look old and stopped anyone from reading it. Here the clock changes jobs:
+// it no longer measures days in stage, it measures against a review date.
+const PREP_STAGE = "PREPARATION — NOT READY YET";
+
+// Credit reports expire at ~120 days. Past that the file has to be re-pulled
+// anyway, so that is the natural point to force a decision instead of letting
+// Preparation quietly become the new graveyard.
+const PREP_MAX_DAYS = 120;
+
+const PREP_REASONS = [
+  { id:"credit",   label:"Credit repair",         mode:"days", days:30,
+    why:"Credit reports on a monthly cycle. 30 days = one full cycle — earlier wastes the pull, later wastes the month." },
+  { id:"reserves", label:"Saving / reserves",     mode:"days", days:90,
+    why:"Calling a saver every 30 days only produces \"not yet\" and wears out the relationship." },
+  { id:"taxes",    label:"Taxes to be filed",     mode:"date",
+    why:"There is a real filing date on the calendar. Use it — don't guess at 30/60/90." },
+  { id:"income",   label:"New job / income",      mode:"date",
+    why:"First day of work + 30 days of pay stubs. This is a calculated date, not an estimate." },
+  { id:"docs",     label:"Missing documents",     mode:"days", days:30,
+    why:"" },
+  { id:"season",   label:"Buying next season",    mode:"date",
+    why:"Pick the month the client actually told you." },
+  { id:"other",    label:"Other",                 mode:"days", days:30,
+    why:"" },
+];
+function prepReasonById(id){ return PREP_REASONS.find(r=>r.id===id) || PREP_REASONS[PREP_REASONS.length-1]; }
+
+const ARCHIVE_REASONS = [
+  "Went with another lender",
+  "Dead / no contact",
+  "Referred out (transition)",
+  "Duplicate file",
+  "Client changed mind",
+  "Other",
+];
+
+function isPrep(f){ return f.stage === PREP_STAGE; }
+function isArchived(f){ return !!f.archived; }
+
+// Days elapsed since the file entered Preparation. This is the 120-day clock.
+function prepAge(f){ return daysBetween(f.prep?.enteredAt) ?? 0; }
+
+// Days until the review date. Negative = overdue.
+function prepDaysToReview(f){
+  const r = f.prep?.reviewOn;
+  if(!r) return 0;
+  return Math.ceil((new Date(r+"T00:00:00") - new Date(new Date().toDateString()))/86400000);
+}
+
+// A file is "due" when its review date has arrived, OR when it has been sitting
+// in Preparation past the 120-day cap regardless of what date was set.
+function prepDue(f){
+  if(!isPrep(f) || isArchived(f)) return false;
+  if(prepAge(f) >= PREP_MAX_DAYS) return true;
+  return prepDaysToReview(f) <= 0;
+}
+// Past the cap, "reschedule" is no longer an option — return it or archive it.
+function prepLocked(f){ return prepAge(f) >= PREP_MAX_DAYS; }
 
 // ─── AUDIT HELPERS ───
 function stampEdit(file, profile, action, extra={}){
@@ -361,12 +425,16 @@ const SAMPLE = [
 function getPhase(stageName) {
   if (stageName === CLOSED_STAGE) return { id:99, label:"Closed", short:"✓", color:"#06D6A0", bg:"#00281e", stages:[CLOSED_STAGE] };
   if (stageName === REFERRED_OUT_STAGE) return { id:98, label:"Referred Out", short:"REF", color:"#A78BFA", bg:"#1f1830", stages:[REFERRED_OUT_STAGE] };
+  if (stageName === PREP_STAGE) return { id:97, label:"Preparation", short:"PREP", color:"#7EC8A4", bg:"#16261f", stages:[PREP_STAGE] };
   return PHASES.find(p => p.stages.includes(stageName)) || PHASES[0];
 }
 function daysTil(d) { return d ? Math.ceil((new Date(d)-new Date())/86400000) : null; }
 function urgency(f) {
   if (f.stage===CLOSED_STAGE) return "closed";
   if (f.stage===REFERRED_OUT_STAGE) return "referred";
+  // A file in Preparation is not late — it is waiting on purpose. The only
+  // thing that can be wrong is a review date that came and went.
+  if (f.stage===PREP_STAGE) return prepDue(f) ? "critical" : "normal";
   // The contract date wins: the borrower's earnest money depends on it.
   const d=daysTil(f.closing);
   if(d!==null&&d<=3)return"critical";
@@ -391,6 +459,8 @@ export default function App() {
   const [showAdd,setShowAdd]=useState(false);
   const [showHelp,setShowHelp]=useState(false);
   const [detail,setDetail]=useState(null);
+  const [prepFor,setPrepFor]=useState(null);
+  const [archiveFor,setArchiveFor]=useState(null);
   const [loaded,setLoaded]=useState(false);
   const [saveStatus,setSaveStatus]=useState("idle");
 
@@ -580,15 +650,24 @@ export default function App() {
   // Closed = funded loans
   // ReferredOut = loans we sent to another bank
   // Inbound = loans another banker sent to us (flag, can be in any stage)
-  const active=files.filter(f=>f.stage!==CLOSED_STAGE && f.stage!==REFERRED_OUT_STAGE);
-  const closed=files.filter(f=>f.stage===CLOSED_STAGE);
-  const referredOut=files.filter(f=>f.stage===REFERRED_OUT_STAGE);
-  const inbound=files.filter(f=>f.isInbound);
+  // Archived files are out of every count. Preparation files are out of the
+  // active board but still very much alive — they have their own view.
+  const live=files.filter(f=>!isArchived(f));
+  const active=live.filter(f=>f.stage!==CLOSED_STAGE && f.stage!==REFERRED_OUT_STAGE && f.stage!==PREP_STAGE);
+  const closed=live.filter(f=>f.stage===CLOSED_STAGE);
+  const referredOut=live.filter(f=>f.stage===REFERRED_OUT_STAGE);
+  const inbound=live.filter(f=>f.isInbound && f.stage!==PREP_STAGE);
+  const prep=live.filter(isPrep).sort((a,b)=>(a.prep?.reviewOn||"")<(b.prep?.reviewOn||"")?-1:1);
+  const dueReview=prep.filter(prepDue);
+  const archived=files.filter(isArchived);
 
   const display=(
     view==="closed" ? closed :
     view==="referred" ? referredOut :
     view==="inbound" ? inbound :
+    view==="prep" ? prep :
+    view==="review" ? dueReview :
+    view==="archived" ? archived :
     active
   )
     .filter(f=>!search||f.borrower.toLowerCase().includes(search.toLowerCase()))
@@ -597,8 +676,10 @@ export default function App() {
   const advance=id=>setFiles(p=>p.map(f=>{
     if(f.id!==id)return f;
     // Don't auto-advance referred-out or closed files
-    if(f.stage===CLOSED_STAGE || f.stage===REFERRED_OUT_STAGE)return f;
+    if(f.stage===CLOSED_STAGE || f.stage===REFERRED_OUT_STAGE || f.stage===PREP_STAGE)return f;
+    if(f.archived)return f;
     const i=ALL_STAGES.findIndex(s=>s.stage===f.stage);
+    if(i===-1)return f; // unknown stage — don't silently drop it back to the start
     const n=ALL_STAGES[i+1];
     if(!n)return f;
     return stampEdit(stampStage(f, n.stage), profile, "stage_advanced", {from:f.stage, to:n.stage});
@@ -618,6 +699,46 @@ export default function App() {
       : f));
     setDetail(null);
   };
+  // ─── PREPARATION ACTIONS ───
+  // Send a live-but-not-ready file out of the active board. We remember the
+  // stage it came from so "CONTINUE" can put it back where it was.
+  const sendToPrep=(id,{reason,reviewOn,note})=>{
+    setFiles(p=>p.map(f=>{
+      if(f.id!==id)return f;
+      const prior = isPrep(f) ? (f.prep?.prevStage||"Lead Inquiry") : f.stage;
+      const reschedules = isPrep(f) ? (f.prep?.reschedules||0)+1 : 0;
+      const enteredAt = isPrep(f) ? (f.prep?.enteredAt||today()) : today();
+      return stampEdit({
+        ...f,
+        stage: PREP_STAGE,
+        prep: { reason, reviewOn, note:(note||"").trim(), prevStage:prior, enteredAt, reschedules },
+      }, profile, isPrep(f)?"prep_rescheduled":"sent_to_prep", {reason, reviewOn, from:prior});
+    }));
+    setDetail(null);
+  };
+  // Back onto the active board. The stage clock starts TODAY — this file has
+  // not been worked in months, it does not get credit for time served.
+  const continueFromPrep=id=>{
+    setFiles(p=>p.map(f=>{
+      if(f.id!==id)return f;
+      const back = f.prep?.prevStage || "Lead Inquiry";
+      return stampEdit({...stampStage(f, back), prep:null}, profile, "returned_from_prep", {to:back});
+    }));
+    setDetail(null);
+  };
+  const archiveFile=(id,reason)=>{
+    setFiles(p=>p.map(f=>f.id===id
+      ? stampEdit({...f, archived:true, archivedAt:today(), archiveReason:reason||"Other"}, profile, "archived", {reason})
+      : f));
+    setDetail(null);
+  };
+  const restoreFile=id=>{
+    setFiles(p=>p.map(f=>f.id===id
+      ? stampEdit({...f, archived:false, archivedAt:null, archiveReason:null}, profile, "unarchived")
+      : f));
+    setDetail(null);
+  };
+
   const updateFile=(id,patch)=>setFiles(p=>p.map(f=>{
     if(f.id!==id)return f;
     const cleanPatch = {};
@@ -671,6 +792,15 @@ export default function App() {
               <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px"}}>{l}</div>
             </div>
           ))}
+          {/* Always visible. A hidden list never gets opened; a number up here does. */}
+          <div className="hov" onClick={()=>{setView("review");setActivePhase(null);}}
+            title="Preparation files whose review date has arrived"
+            style={{textAlign:"center",cursor:"pointer",padding:"0 10px",borderLeft:"1px solid #30363D"}}>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:18,color:dueReview.length>0?"#E85D75":"#484F58"}}>
+              {dueReview.length}
+            </div>
+            <div style={{fontSize:9,color:dueReview.length>0?"#E85D75":"#484F58",letterSpacing:"1px"}}>DUE REVIEW</div>
+          </div>
         </div>
         <div style={{marginLeft:"auto",display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
           {saveStatus !== "idle" && (
@@ -742,6 +872,9 @@ export default function App() {
           ["CLOSED FILES",closed.length,"closed","#06D6A0"],
           ["🔀 REFERRED OUT",referredOut.length,"referred","#A78BFA"],
           ["🤝 INBOUND",inbound.length,"inbound","#FFD166"],
+          ["⏸ PREPARATION",prep.length,"prep","#7EC8A4"],
+          [`🔔 DUE REVIEW`,dueReview.length,"review",dueReview.length>0?"#E85D75":"#484F58"],
+          ["🗄 ARCHIVED",archived.length,"archived","#6E7681"],
         ].map(([l,c,v,col])=>(
           <button key={v} className="hov" onClick={()=>{setView(v);setActivePhase(null);}}
             style={{background:view===v?col:"#21262D",color:view===v?"#0D1117":col,borderRadius:6,padding:"6px 14px",fontSize:11,fontFamily:"DM Mono",fontWeight:500,whiteSpace:"nowrap"}}>
@@ -925,6 +1058,130 @@ export default function App() {
           )}
         </div>}
 
+        {/* PREPARATION + DUE REVIEW */}
+        {(view==="prep"||view==="review")&&<div className="fi">
+          <div style={{marginBottom:14,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:view==="review"?"#E85D75":"#7EC8A4"}}>
+              {view==="review" ? `🔔 DUE REVIEW — ${dueReview.length}` : `⏸ PREPARATION — ${prep.length}`}
+            </span>
+            <span style={{fontSize:11,color:"#484F58"}}>
+              {view==="review"
+                ? "The review date arrived. Decide: continue, reschedule, or archive."
+                : "Alive but not buyable yet. No stage clock — these wait against a review date."}
+            </span>
+          </div>
+          {display.length===0?(
+            <div style={{padding:40,textAlign:"center",color:"#30363D",fontSize:13}}>
+              {view==="review"
+                ? "Nothing due today. ✓"
+                : <>No files in Preparation.<br/><br/><span style={{fontSize:11}}>To send one here: open any active file → ⏸ PREP → pick a reason and a review date.</span></>}
+            </div>
+          ):(
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:12}}>
+              {display.map(f=>{
+                const p=f.prep||{};
+                const r=prepReasonById(p.reason);
+                const dtr=prepDaysToReview(f);
+                const due=prepDue(f);
+                const locked=prepLocked(f);
+                const age=prepAge(f);
+                const edge=locked?"#E85D75":due?"#F5A623":"#21262D";
+                return(
+                  <div key={f.id} className="card" onClick={()=>setDetail(f)}
+                    style={{background:"#0D1117",border:`1px solid ${edge}`,borderRadius:8,padding:"12px 14px",display:"flex",flexDirection:"column",gap:8}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:6}}>
+                      <div>
+                        <div style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#E6EDF3",lineHeight:1.2}}>{f.borrower}</div>
+                        <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>{f.type} · ${(f.loan/1000).toFixed(0)}k</div>
+                        {f.lo&&<div style={{fontSize:10,color:"#484F58",marginTop:1}}>{f.lo.split(" ")[0]}</div>}
+                      </div>
+                      {locked
+                        ? <span style={{background:"#E85D75",color:"#0D1117",borderRadius:4,padding:"2px 6px",fontSize:9,fontWeight:500,whiteSpace:"nowrap"}}>DECIDE NOW</span>
+                        : due && <span style={{background:"#F5A623",color:"#0D1117",borderRadius:4,padding:"2px 6px",fontSize:10,fontWeight:500}}>DUE</span>}
+                    </div>
+
+                    <div style={{background:"rgba(126,200,164,.07)",border:"1px solid #7EC8A433",borderRadius:6,padding:"7px 9px"}}>
+                      <div style={{fontSize:11,color:"#7EC8A4",fontWeight:500}}>{r.label}</div>
+                      <div style={{fontSize:10,color:"#8B949E",marginTop:3}}>
+                        Review {p.reviewOn||"—"}
+                        {" · "}
+                        <span style={{color:due?"#E85D75":"#484F58"}}>
+                          {dtr>0?`in ${dtr}d`:dtr===0?"today":`${Math.abs(dtr)}d overdue`}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div style={{fontSize:10,color:locked?"#E85D75":"#484F58"}}>
+                      {age}d in preparation
+                      <span style={{color:"#30363D"}}> / {PREP_MAX_DAYS} max</span>
+                      {(p.reschedules>0)&&<span style={{color:"#30363D"}}> · rescheduled {p.reschedules}×</span>}
+                    </div>
+                    <div style={{height:3,background:"#21262D",borderRadius:2,overflow:"hidden"}}>
+                      <div style={{height:"100%",width:`${Math.min(100,(age/PREP_MAX_DAYS)*100)}%`,background:locked?"#E85D75":age/PREP_MAX_DAYS>0.75?"#F5A623":"#7EC8A4"}}/>
+                    </div>
+
+                    {(p.note||f.note)&&<div style={{fontSize:10,color:"#6E7681",borderTop:"1px solid #21262D",paddingTop:6,fontStyle:"italic"}}>{p.note||f.note}</div>}
+                    {locked&&<div style={{fontSize:10,color:"#E85D75",lineHeight:1.4}}>
+                      Past {PREP_MAX_DAYS} days — the credit report has expired. Return it or archive it; it can't be rescheduled again.
+                    </div>}
+
+                    <div style={{display:"flex",gap:6,marginTop:2,flexWrap:"wrap"}}>
+                      <button className="hov" onClick={e=>{e.stopPropagation();if(confirm(`Bring ${f.borrower} back to the active pipeline?\n\nStage returns to "${p.prevStage||"Lead Inquiry"}" and the stage clock starts today.`))continueFromPrep(f.id);}}
+                        style={{flex:1,background:"rgba(74,144,217,.1)",border:"1px solid #4A90D9",borderRadius:5,color:"#4A90D9",fontSize:10,padding:"5px 8px",whiteSpace:"nowrap"}}>
+                        ✓ CONTINUE
+                      </button>
+                      <button className="hov" disabled={locked} onClick={e=>{e.stopPropagation();if(!locked)setPrepFor(f);}}
+                        title={locked?`Locked at ${PREP_MAX_DAYS} days`:"Set a new review date"}
+                        style={{flex:1,background:locked?"#161B22":"rgba(245,166,35,.1)",border:`1px solid ${locked?"#21262D":"#F5A623"}`,borderRadius:5,color:locked?"#30363D":"#F5A623",fontSize:10,padding:"5px 8px",whiteSpace:"nowrap",cursor:locked?"not-allowed":"pointer"}}>
+                        ↻ RESCHEDULE
+                      </button>
+                      <button className="hov" onClick={e=>{e.stopPropagation();setArchiveFor(f);}}
+                        style={{background:"rgba(110,118,129,.12)",border:"1px solid #30363D",borderRadius:5,color:"#8B949E",fontSize:10,padding:"5px 10px",whiteSpace:"nowrap"}}>
+                        🗄
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>}
+
+        {/* ARCHIVED */}
+        {view==="archived"&&<div className="fi">
+          <div style={{marginBottom:14,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#8B949E"}}>🗄 ARCHIVED — {archived.length}</span>
+            <span style={{fontSize:11,color:"#484F58"}}>Out of every count and every average. Nothing was deleted — restore any row.</span>
+          </div>
+          {display.length===0?<div style={{padding:40,textAlign:"center",color:"#30363D",fontSize:13}}>Nothing archived yet.</div>:(
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+              <thead>
+                <tr style={{background:"#161B22",borderBottom:"2px solid #30363D"}}>
+                  {["BORROWER","TYPE","AMOUNT","LAST STAGE","REASON","ARCHIVED",""].map((h,i)=>(
+                    <th key={i} style={{padding:"10px 14px",textAlign:"left",fontSize:10,color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {display.map((f,i)=>(
+                  <tr key={f.id} className="row" style={{borderBottom:"1px solid #21262D",cursor:"pointer"}} onClick={()=>setDetail(f)}>
+                    <td style={{padding:"11px 14px",fontFamily:"Syne",fontWeight:700,color:"#8B949E",background:i%2===0?"#0D1117":"#161B22"}}>{f.borrower}</td>
+                    <td style={{padding:"11px 14px",color:"#6E7681",background:i%2===0?"#0D1117":"#161B22"}}>{f.type}</td>
+                    <td style={{padding:"11px 14px",color:"#6E7681",background:i%2===0?"#0D1117":"#161B22"}}>${((f.loan||0)/1000).toFixed(0)}K</td>
+                    <td style={{padding:"11px 14px",color:"#6E7681",fontSize:11,background:i%2===0?"#0D1117":"#161B22"}}>{isPrep(f)?(f.prep?.prevStage||"Preparation"):f.stage}</td>
+                    <td style={{padding:"11px 14px",color:"#6E7681",fontSize:11,background:i%2===0?"#0D1117":"#161B22"}}>{f.archiveReason||"—"}</td>
+                    <td style={{padding:"11px 14px",color:"#484F58",fontSize:11,background:i%2===0?"#0D1117":"#161B22"}}>{f.archivedAt||"—"}</td>
+                    <td style={{padding:"11px 14px",background:i%2===0?"#0D1117":"#161B22"}}>
+                      <button className="hov" onClick={e=>{e.stopPropagation();restoreFile(f.id);}}
+                        style={{background:"#21262D",color:"#7EC8A4",borderRadius:5,padding:"4px 10px",fontSize:10,fontFamily:"DM Mono"}}>↩ RESTORE</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>}
+
         {/* ACTIVE PIPELINE */}
         {view==="active"&&<div style={{display:"flex",flexDirection:"column",gap:16}}>
           {PHASES.filter(p=>!activePhase||p.id===activePhase).map(phase=>{
@@ -1027,6 +1284,10 @@ export default function App() {
         onAdvance={()=>{advance(detail.id);setDetail(f=>{const i=ALL_STAGES.findIndex(s=>s.stage===f.stage);const n=ALL_STAGES[i+1];return n?{...f,stage:n.stage,daysInStage:0}:f;});}}
         onCloseFile={()=>closeFile(detail.id)}
         onReopen={()=>reopenFile(detail.id)}
+        onPrep={()=>setPrepFor(detail)}
+        onArchive={()=>setArchiveFor(detail)}
+        onRestore={()=>restoreFile(detail.id)}
+        onContinuePrep={()=>continueFromPrep(detail.id)}
         isClosed={detail.stage===CLOSED_STAGE}
       />}
       {showAdd&&<AddModal profile={profile} onClose={()=>setShowAdd(false)} onAdd={f=>{
@@ -1034,7 +1295,128 @@ export default function App() {
         setFiles(p=>[...p, {...stamped, createdBy:{uid:profile.uid,name:profile.name}, createdAt:new Date().toISOString()}]);
         setShowAdd(false);
       }}/>}
+      {prepFor&&<PrepModal file={prepFor} onClose={()=>setPrepFor(null)}
+        onConfirm={(payload)=>{sendToPrep(prepFor.id,payload);setPrepFor(null);}}/>}
+      {archiveFor&&<ArchiveModal file={archiveFor} onClose={()=>setArchiveFor(null)}
+        onConfirm={(reason)=>{archiveFile(archiveFor.id,reason);setArchiveFor(null);}}/>}
       {showHelp&&<HelpModal profile={profile} onClose={()=>setShowHelp(false)}/>}
+    </div>
+  );
+}
+
+// ─── PREP MODAL ───
+// The reason picks the default date so nobody leaves it blank; the 30/60/90
+// buttons are always there so Jose can override. Without a review date this
+// whole feature would just be moving the pile from one place to another.
+function PrepModal({file, onClose, onConfirm}){
+  const existing = file.prep || {};
+  const isReschedule = !!file.prep;
+  const [reason,setReason]=useState(existing.reason||"credit");
+  const [reviewOn,setReviewOn]=useState("");
+  const [note,setNote]=useState(existing.note||"");
+  const r = prepReasonById(reason);
+
+  // When the reason changes, propose its default. Duration reasons get a
+  // computed date; fixed-date reasons stay blank on purpose — inventing a
+  // date for a tax filing would be worse than asking for it.
+  useEffect(()=>{
+    const rr = prepReasonById(reason);
+    setReviewOn(rr.mode==="days" ? addDaysISO(today(), rr.days) : "");
+  },[reason]);
+
+  const fs={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",padding:"9px 11px",fontSize:13,fontFamily:"'DM Mono','Courier New',monospace",width:"100%"};
+  const daysOut = reviewOn ? Math.ceil((new Date(reviewOn+"T00:00:00")-new Date(new Date().toDateString()))/86400000) : null;
+
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:120,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
+      <div className="fi" onClick={e=>e.stopPropagation()}
+        style={{background:"#161B22",border:"1px solid #7EC8A455",borderRadius:12,width:"100%",maxWidth:430,maxHeight:"calc(100vh - 40px)",overflowY:"auto",padding:22,display:"flex",flexDirection:"column",gap:14}}>
+        <div>
+          <div style={{fontFamily:"Syne",fontWeight:800,fontSize:17,color:"#7EC8A4"}}>
+            {isReschedule?"↻ RESCHEDULE":"⏸ SEND TO PREPARATION"}
+          </div>
+          <div style={{fontSize:12,color:"#8B949E",marginTop:3}}>{file.borrower}</div>
+          {!isReschedule&&<div style={{fontSize:11,color:"#484F58",marginTop:6,lineHeight:1.5}}>
+            Leaves the active board and stops the stage clock. It is not closed and not archived — it comes back on the review date.
+          </div>}
+        </div>
+
+        <div>
+          <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>WHY IS THIS CLIENT WAITING?</div>
+          <select value={reason} onChange={e=>setReason(e.target.value)} style={fs}>
+            {PREP_REASONS.map(x=><option key={x.id} value={x.id}>{x.label}</option>)}
+          </select>
+          {r.why&&<div style={{fontSize:10,color:"#6E7681",marginTop:6,lineHeight:1.5,fontStyle:"italic"}}>{r.why}</div>}
+        </div>
+
+        <div>
+          <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>
+            REVIEW ON {r.mode==="date"&&<span style={{color:"#F5A623"}}>— pick the real date</span>}
+          </div>
+          <input type="date" value={reviewOn} onChange={e=>setReviewOn(e.target.value)} style={fs}/>
+          <div style={{display:"flex",gap:6,marginTop:8,flexWrap:"wrap"}}>
+            {[30,60,90].map(d=>(
+              <button key={d} className="hov" onClick={()=>setReviewOn(addDaysISO(today(),d))}
+                style={{background:"#21262D",border:"1px solid #30363D",borderRadius:5,color:"#8B949E",fontSize:11,padding:"5px 12px",fontFamily:"DM Mono"}}>
+                +{d}d
+              </button>
+            ))}
+            {daysOut!==null&&<span style={{fontSize:10,color:daysOut>PREP_MAX_DAYS?"#E85D75":"#484F58",alignSelf:"center",marginLeft:4}}>
+              {daysOut}d out{daysOut>PREP_MAX_DAYS?` — past the ${PREP_MAX_DAYS}-day cap`:""}
+            </span>}
+          </div>
+        </div>
+
+        <div>
+          <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>WHAT HAS TO HAPPEN BEFORE THEY COME BACK?</div>
+          <textarea value={note} onChange={e=>setNote(e.target.value)} rows={3}
+            placeholder="e.g. collections paid off, 2025 taxes filed, 3 months of statements"
+            style={{...fs,resize:"vertical"}}/>
+        </div>
+
+        <div style={{display:"flex",gap:8}}>
+          <button className="hov" onClick={onClose}
+            style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"none"}}>CANCEL</button>
+          <button className="hov"
+            disabled={!reviewOn}
+            onClick={()=>{ if(reviewOn) onConfirm({reason, reviewOn, note}); }}
+            style={{flex:2,background:reviewOn?"#7EC8A4":"#21262D",color:reviewOn?"#0D1117":"#484F58",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,fontWeight:500,border:"none",cursor:reviewOn?"pointer":"not-allowed"}}>
+            {reviewOn?(isReschedule?"RESCHEDULE":"SEND TO PREPARATION"):"PICK A REVIEW DATE"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── ARCHIVE MODAL ───
+function ArchiveModal({file, onClose, onConfirm}){
+  const [reason,setReason]=useState(ARCHIVE_REASONS[0]);
+  const fs={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",padding:"9px 11px",fontSize:13,fontFamily:"'DM Mono','Courier New',monospace",width:"100%"};
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:120,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
+      <div className="fi" onClick={e=>e.stopPropagation()}
+        style={{background:"#161B22",border:"1px solid #30363D",borderRadius:12,width:"100%",maxWidth:400,padding:22,display:"flex",flexDirection:"column",gap:14}}>
+        <div>
+          <div style={{fontFamily:"Syne",fontWeight:800,fontSize:17,color:"#E6EDF3"}}>🗄 ARCHIVE</div>
+          <div style={{fontSize:12,color:"#8B949E",marginTop:3}}>{file.borrower}</div>
+          <div style={{fontSize:11,color:"#484F58",marginTop:6,lineHeight:1.5}}>
+            Nothing is deleted. The file leaves every count and every average, and can be restored from the ARCHIVED tab.
+          </div>
+        </div>
+        <div>
+          <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>REASON</div>
+          <select value={reason} onChange={e=>setReason(e.target.value)} style={fs}>
+            {ARCHIVE_REASONS.map(x=><option key={x} value={x}>{x}</option>)}
+          </select>
+        </div>
+        <div style={{display:"flex",gap:8}}>
+          <button className="hov" onClick={onClose}
+            style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"none"}}>CANCEL</button>
+          <button className="hov" onClick={()=>onConfirm(reason)}
+            style={{flex:2,background:"#30363D",color:"#E6EDF3",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,fontWeight:500,border:"none"}}>ARCHIVE</button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1838,7 +2220,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
 }
 
 
-function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile,onReopen,isClosed}){
+function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile,onReopen,onPrep,onArchive,onRestore,onContinuePrep,isClosed}){
   const isAdmin = profile?.role === "admin";
   const isAssistant = profile?.role === "assistant";
   const [showHistory, setShowHistory] = useState(false);
@@ -1874,6 +2256,8 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
 
   const ph=getPhase(stage);
   const isReferredOut = stage === REFERRED_OUT_STAGE;
+  const inPrep = stage === PREP_STAGE;
+  const archivedFile = !!file.archived;
   const isInbound = !!file.isInbound;
   const fs2={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",padding:"8px 10px",fontSize:13,fontFamily:"'DM Mono','Courier New',monospace",width:"100%"};
 
@@ -2008,7 +2392,26 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
           </div>
         )}
 
-        {!isClosed&&<div>
+        {inPrep&&(()=>{
+          const p=file.prep||{}; const r=prepReasonById(p.reason);
+          const dtr=prepDaysToReview(file); const age=prepAge(file); const locked=prepLocked(file);
+          return(
+            <div style={{background:"rgba(126,200,164,.06)",border:"1px solid #7EC8A444",borderRadius:8,padding:14,display:"flex",flexDirection:"column",gap:8}}>
+              <div style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#7EC8A4",letterSpacing:"1px"}}>⏸ IN PREPARATION</div>
+              <div style={{fontSize:12,color:"#E6EDF3"}}>{r.label}</div>
+              <div style={{fontSize:11,color:"#8B949E"}}>
+                Review {p.reviewOn||"—"} · <span style={{color:dtr<=0?"#E85D75":"#484F58"}}>{dtr>0?`in ${dtr}d`:dtr===0?"today":`${Math.abs(dtr)}d overdue`}</span>
+              </div>
+              <div style={{fontSize:11,color:locked?"#E85D75":"#484F58"}}>
+                {age}d in preparation / {PREP_MAX_DAYS} max{p.reschedules>0?` · rescheduled ${p.reschedules}×`:""}
+              </div>
+              <div style={{fontSize:11,color:"#484F58"}}>Returns to: <span style={{color:"#8B949E"}}>{p.prevStage||"Lead Inquiry"}</span></div>
+              {p.note&&<div style={{fontSize:11,color:"#6E7681",fontStyle:"italic",borderTop:"1px solid #21262D",paddingTop:7}}>{p.note}</div>}
+            </div>
+          );
+        })()}
+
+        {!isClosed&&!inPrep&&<div>
           <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>STAGE</div>
           <select value={stage} onChange={e=>{setStage(e.target.value);onSave({stage:e.target.value, stageEnteredAt:today(), daysInStage:0});}}
             style={{background:"#0D1117",border:`1px solid ${ph.color}`,borderRadius:6,color:ph.color,padding:"8px 10px",fontSize:13,fontFamily:"DM Mono",width:"100%"}}>
@@ -2246,7 +2649,20 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
             onClose();
           }}
             style={{flex:2,background:"#F5A623",color:"#0D1117",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,fontWeight:500,border:"none",cursor:"pointer"}}>SAVE</button>
-          {isClosed?(
+          {archivedFile?(
+            <button className="hov" onClick={onRestore}
+              style={{flex:2,background:"#21262D",color:"#7EC8A4",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"1px solid #7EC8A4",cursor:"pointer"}}>↩ RESTORE</button>
+          ):inPrep?(
+            <>
+              <button className="hov" onClick={onContinuePrep}
+                style={{flex:1,background:"rgba(74,144,217,.1)",color:"#4A90D9",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"1px solid #4A90D9",cursor:"pointer"}}>✓ CONTINUE</button>
+              <button className="hov" disabled={prepLocked(file)} onClick={onPrep}
+                title={prepLocked(file)?`Locked at ${PREP_MAX_DAYS} days — return it or archive it`:"Set a new review date"}
+                style={{flex:1,background:prepLocked(file)?"#161B22":"rgba(245,166,35,.1)",color:prepLocked(file)?"#30363D":"#F5A623",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:`1px solid ${prepLocked(file)?"#21262D":"#F5A623"}`,cursor:prepLocked(file)?"not-allowed":"pointer"}}>↻ RESCHEDULE</button>
+              <button className="hov" onClick={onArchive}
+                style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"1px solid #30363D",cursor:"pointer"}}>🗄 ARCHIVE</button>
+            </>
+          ):isClosed?(
             <button className="hov" onClick={onReopen}
               style={{flex:2,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"none",cursor:"pointer"}}>REOPEN FILE</button>
           ):isReferredOut?(
@@ -2271,6 +2687,12 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
               }}
                 title="Refer this file out to another banker"
                 style={{flex:1,background:"rgba(167,139,250,.1)",color:"#A78BFA",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"1px solid #A78BFA",cursor:"pointer"}}>🔀 REFER</button>
+              <button className="hov" onClick={onPrep}
+                title="Client is alive but not ready to buy yet — park it with a review date"
+                style={{flex:1,background:"rgba(126,200,164,.1)",color:"#7EC8A4",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"1px solid #7EC8A4",cursor:"pointer"}}>⏸ PREP</button>
+              <button className="hov" onClick={onArchive}
+                title="File is dead — remove it from counts and averages without deleting it"
+                style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"1px solid #30363D",cursor:"pointer"}}>🗄 ARCH</button>
             </>
           )}
           {isAdmin && (
