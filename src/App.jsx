@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, onSnapshot } from "firebase/firestore";
 import {
+  stageUrgency, stageClock, daysInStage, fileAge, stampStage, today,
+} from "./pipelineCore";
+import {
   getAuth,
   signInWithEmailAndPassword,
   signOut,
@@ -364,10 +367,15 @@ function daysTil(d) { return d ? Math.ceil((new Date(d)-new Date())/86400000) : 
 function urgency(f) {
   if (f.stage===CLOSED_STAGE) return "closed";
   if (f.stage===REFERRED_OUT_STAGE) return "referred";
+  // The contract date wins: the borrower's earnest money depends on it.
   const d=daysTil(f.closing);
   if(d!==null&&d<=3)return"critical";
   if(d!==null&&d<=7)return"warning";
-  if(f.daysInStage>=5)return"stale";
+  // Otherwise the stage's own budget. Two days in Registration is late;
+  // four days in Conditions is normal. One shared threshold said neither.
+  const u=stageUrgency(f);
+  if(u.level==="late"||u.level==="critical")return"critical";
+  if(u.level==="watch"||u.level==="warn")return"stale";
   return"normal";
 }
 
@@ -593,7 +601,7 @@ export default function App() {
     const i=ALL_STAGES.findIndex(s=>s.stage===f.stage);
     const n=ALL_STAGES[i+1];
     if(!n)return f;
-    return stampEdit({...f, stage:n.stage, daysInStage:0}, profile, "stage_advanced", {from:f.stage, to:n.stage});
+    return stampEdit(stampStage(f, n.stage), profile, "stage_advanced", {from:f.stage, to:n.stage});
   }));
   const closeFile=id=>{
     setFiles(p=>p.map(f=>{
@@ -606,7 +614,7 @@ export default function App() {
   };
   const reopenFile=id=>{
     setFiles(p=>p.map(f=>f.id===id
-      ? stampEdit({...f, stage:"Welcome Sent", closedAt:null, daysInStage:0}, profile, "reopened")
+      ? stampEdit({...stampStage(f, "Welcome Sent"), closedAt:null}, profile, "reopened")
       : f));
     setDetail(null);
   };
@@ -962,7 +970,10 @@ export default function App() {
                           </div>
                           <div style={{fontSize:11,color:ph.color,fontWeight:500}}>{f.stage}</div>
                           <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#484F58"}}>
-                            <span>{f.daysInStage}d in stage</span>
+                            <span title={`File age: ${fileAge(f) ?? "—"} days`}>
+                              {daysInStage(f)===null ? "— in stage" : `${daysInStage(f)}d in stage`}
+                              {fileAge(f)!==null && <span style={{color:"#30363D"}}> · {fileAge(f)}d total</span>}
+                            </span>
                             {f.closing&&<span style={{color:cd!==null&&cd<=3?"#E85D75":cd!==null&&cd<=7?"#F5A623":"#484F58"}}>
                               {cd===0?"CLOSING TODAY":cd!==null&&cd>0?`Close in ${cd}d`:cd!==null?"PAST DUE":f.closing}
                             </span>}
@@ -1999,7 +2010,7 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
 
         {!isClosed&&<div>
           <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>STAGE</div>
-          <select value={stage} onChange={e=>{setStage(e.target.value);onSave({stage:e.target.value,daysInStage:0});}}
+          <select value={stage} onChange={e=>{setStage(e.target.value);onSave({stage:e.target.value, stageEnteredAt:today(), daysInStage:0});}}
             style={{background:"#0D1117",border:`1px solid ${ph.color}`,borderRadius:6,color:ph.color,padding:"8px 10px",fontSize:13,fontFamily:"DM Mono",width:"100%"}}>
             {ALL_STAGES.map((s,i)=><option key={i} value={s.stage} style={{color:s.phase.color,background:"#0D1117"}}>[{s.phase.short}] {s.stage}</option>)}
             <optgroup label="── Bank-to-Bank Referral ──">
@@ -2117,7 +2128,15 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
             </div>
             <div style={{background:"#0D1117",borderRadius:8,padding:12}}>
               <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>{isClosed ? "CLOSED" : "DAYS IN STAGE"}</div>
-              <div style={{fontSize:isClosed?14:24,fontFamily:"Syne",fontWeight:800,color:isClosed?"#06D6A0":(file.daysInStage>=5?"#E85D75":"#E6EDF3")}}>{isClosed ? file.closedAt : file.daysInStage}</div>
+              <div style={{fontSize:isClosed?14:24,fontFamily:"Syne",fontWeight:800,color:isClosed?"#06D6A0":(stageUrgency(file).level==="late"?"#E85D75":stageUrgency(file).level==="watch"?"#F5A623":"#E6EDF3")}}>
+                {isClosed ? file.closedAt : (daysInStage(file) ?? "—")}
+              </div>
+              {!isClosed && (()=>{ const c=stageClock(file.stage,file); return (
+                <div style={{fontSize:9,color:"#484F58",marginTop:4,letterSpacing:"0.5px"}}>
+                  {c ? `target ${c.warn}d · ceiling ${c.late}d` : ""}
+                  {fileAge(file)!==null ? ` · ${fileAge(file)}d total` : ""}
+                </div>
+              );})()}
             </div>
           </div>
         ) : null}
@@ -2233,7 +2252,7 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
           ):isReferredOut?(
             <button className="hov" onClick={()=>{
               if(confirm(`Bring ${file.borrower} back into PRMG pipeline? This will reset stage to Lead Inquiry and clear outbound banker data.`)){
-                onSave({stage:"Lead Inquiry", daysInStage:0, referredOut: null});
+                onSave({stage:"Lead Inquiry", stageEnteredAt:today(), daysInStage:0, referredOut: null});
                 onClose();
               }
             }}
@@ -2247,7 +2266,7 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
               <button className="hov" onClick={()=>{
                 if(confirm(`Refer ${file.borrower} to another bank?\n\nThe file moves to REFERRED OUT. You'll fill in the receiving banker's details next.`)){
                   setStage(REFERRED_OUT_STAGE);
-                  onSave({stage:REFERRED_OUT_STAGE, daysInStage:0});
+                  onSave({stage:REFERRED_OUT_STAGE, stageEnteredAt:today(), daysInStage:0});
                 }
               }}
                 title="Refer this file out to another banker"
@@ -2424,6 +2443,8 @@ function AddModal({profile, onClose, onAdd}){
               type,
               stage,
               daysInStage:0,
+              stageEnteredAt: today(),
+              fileOpenedAt: today(),
               closing,
               note:(note||"").trim(),
               bps:null,
