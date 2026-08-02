@@ -68,7 +68,14 @@ export function daysInStage(file) {
 // change, not on lender change. This is the number you quote to an
 // agent when they ask how long this loan has really been working.
 export function fileAge(file) {
-  const start = file?.fileOpenedAt || file?.createdAt?.split("T")[0];
+  // The EARLIEST of the two, never just the first one that exists.
+  // stampStage used to write today() into fileOpenedAt on any file that
+  // predated the feature, so the first ADVANCE made a two-month-old file
+  // read as brand new. Taking the minimum repairs those files without
+  // touching the database: createdAt was never lost, only ignored.
+  const opened  = okDate(file?.fileOpenedAt);
+  const created = okDate(file?.createdAt?.split("T")[0]);
+  const start = (opened && created) ? (opened < created ? opened : created) : (opened || created);
   return start ? daysBetween(start) : null;
 }
 
@@ -1042,7 +1049,10 @@ export function stampStage(file, newStage) {
     stage: newStage,
     stageEnteredAt: today(),
     daysInStage: 0,                                  // legacy field, kept for old views
-    fileOpenedAt: file.fileOpenedAt || today(),      // set once, never again
+    // Set once, never again — and when it was never set, fall back to the
+    // day the file was created. today() here restarted the clock on every
+    // legacy file the moment somebody advanced it.
+    fileOpenedAt: file.fileOpenedAt || file.createdAt?.split("T")[0] || today(),
   };
 }
 

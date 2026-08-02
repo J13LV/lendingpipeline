@@ -2252,6 +2252,12 @@ function atOrPastFullApp(stage){
   return i>-1 && f>-1 && i>=f;
 }
 const md = iso => iso ? `${iso.slice(5,7)}/${iso.slice(8,10)}` : "—";
+// "Aug 15" reads faster than "08/15" and cannot be mistaken for a day/month swap.
+const MONTHS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const mon = iso => iso ? `${MONTHS[Number(iso.slice(5,7))-1]} ${Number(iso.slice(8,10))}` : "—";
+// The verb that belongs to each derived stage, so the card reads as an instruction.
+const ACTION_VERB={"Appraisal Ordered":"order","Submitted to UW":"submit","Condition Clearing":"clear",
+  "Clear to Close":"CTC","CD Issued":"CD","Closing Scheduled":"schedule","Signing":"sign","Funded":"fund"};
 const LEVEL_COLOR = { critical:"#E85D75", warn:"#F5A623", normal:"#7EC8A4", done:"#484F58", missing:"#30363D" };
 
 // ─── CARD STRIP (design A) ───
@@ -2259,43 +2265,49 @@ const LEVEL_COLOR = { critical:"#E85D75", warn:"#F5A623", normal:"#7EC8A4", done
 // CD deadline on the next, and the single next thing somebody has to do.
 function ContingencyStrip({file}){
   if(!hasContingencies(file)) return null;
-  const st = {};
-  for(const s of allContingencyStatus(file)) st[s.id]=s;
-  const conflicts = contingencyConflicts(file);
-  const next = upcomingDeadlines(file,1)[0];
-  const coe = st.coe?.date;
-  const cd = coe ? cdIssueDeadline(coe) : null;
+  const st={}; for(const r of allContingencyStatus(file)) st[r.id]=r;
+  const conflicts=contingencyConflicts(file);
+  const derived=derivedStageDeadlines(file);
+  const coe=st.coe?.date, cd=coe?cdIssueDeadline(coe):null;
 
-  const chip = (s) => {
+  // Each contingency sits next to the thing it forces somebody to do.
+  // A date on its own is trivia; a date with an action is a task.
+  const row=(s,actionStage)=>{
     if(!s?.date) return null;
-    const c = LEVEL_COLOR[s.level];
-    const done = s.level==="done";
+    const c=LEVEL_COLOR[s.level], done=s.level==="done";
+    const act=actionStage?derived[actionStage]:null;
+    const late=act&&act.startBy<today();
     return (
-      <span title={`${s.en} · ${s.date}${s.contractDays!==null?` · ${s.contractDays} ${s.basis} days from contract`:""}`}
-        style={{display:"inline-flex",alignItems:"center",gap:4,background:done?"transparent":`${c}14`,
-          border:`1px solid ${c}${done?"33":"55"}`,borderRadius:4,padding:"2px 6px",fontSize:9.5,color:c,fontFamily:"DM Mono"}}>
-        <b style={{fontWeight:500,letterSpacing:".5px"}}>{s.short}</b>
-        <span style={{color:done?"#484F58":"#8B949E"}}>{md(s.date)}</span>
-        {!done && s.daysLeft!==null && <span style={{fontWeight:500}}>{s.daysLeft<0?`${Math.abs(s.daysLeft)}d late`:`${s.daysLeft}d`}</span>}
-        {done && <span style={{fontSize:8}}>{s.outcome==="met"?"✓":s.outcome==="waived"?"⚑":s.outcome==="missed"?"✕":"—"}</span>}
-      </span>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8,fontSize:10}}>
+        <span style={{fontFamily:"DM Mono",color:done?"#484F58":c,whiteSpace:"nowrap"}}>
+          <b style={{fontWeight:500,letterSpacing:".5px"}}>{s.short}</b>{" "}
+          <span style={{color:done?"#30363D":"#8B949E"}}>{mon(s.date)}</span>
+          {done&&<span style={{marginLeft:4,fontSize:8.5}}>
+            {s.outcome==="met"?"✓":s.outcome==="waived"?"⚑":s.outcome==="missed"?"✕":"—"}</span>}
+        </span>
+        {!done&&(
+          <span style={{fontFamily:"DM Mono",color:late?"#E85D75":"#6E7681",textAlign:"right",whiteSpace:"nowrap"}}>
+            {act&&<span style={{color:late?"#E85D75":"#8B949E"}}>
+              {ACTION_VERB[actionStage]||"start"} by {mon(act.startBy)} · </span>}
+            <span style={{color:c,fontWeight:500}}>
+              {s.daysLeft<0?`${Math.abs(s.daysLeft)}d late`:`${s.daysLeft}d`}</span>
+          </span>
+        )}
+      </div>
     );
   };
 
   return (
-    <div style={{borderTop:"1px solid #21262D",paddingTop:7,display:"flex",flexDirection:"column",gap:5}}>
-      <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>{chip(st.appraisal)}{chip(st.loan)}</div>
+    <div style={{borderTop:"1px solid #21262D",paddingTop:8,display:"flex",flexDirection:"column",gap:5}}>
+      {row(st.appraisal,"Appraisal Ordered")}
+      {row(st.loan,"Submitted to UW")}
       {(coe||st.ctc?.date)&&(
-        <div style={{display:"flex",gap:8,fontSize:9.5,color:"#6E7681",fontFamily:"DM Mono",flexWrap:"wrap"}}>
-          {st.ctc?.date&&<span>CTC <span style={{color:LEVEL_COLOR[st.ctc.level]}}>{md(st.ctc.date)}</span></span>}
-          {coe&&<span>COE <span style={{color:LEVEL_COLOR[st.coe.level]}}>{md(coe)}</span></span>}
-          {cd&&<span title="Last day to issue the CD — 3 business days before closing, by law">
-            CD by <span style={{color:"#BD65E8"}}>{md(cd)}</span></span>}
-        </div>
-      )}
-      {next&&(
-        <div style={{fontSize:9.5,fontFamily:"DM Mono",color:next.overdue?"#E85D75":"#484F58"}}>
-          {next.overdue?"⚠ ":"→ "}{next.stage} by {md(next.startBy)}{next.owner?` · ${next.owner}`:""}
+        <div style={{display:"flex",gap:10,fontSize:9.5,color:"#484F58",fontFamily:"DM Mono",flexWrap:"wrap",
+          borderTop:"1px solid #161B22",paddingTop:5}}>
+          {st.ctc?.date&&<span>CTC <span style={{color:LEVEL_COLOR[st.ctc.level]}}>{mon(st.ctc.date)}</span></span>}
+          {coe&&<span>COE <span style={{color:LEVEL_COLOR[st.coe.level]}}>{mon(coe)}</span></span>}
+          {cd&&<span title="Último día para emitir el CD — 3 días hábiles antes del cierre, por ley">
+            CD by <span style={{color:"#BD65E8"}}>{mon(cd)}</span></span>}
         </div>
       )}
       {conflicts.length>0&&(
