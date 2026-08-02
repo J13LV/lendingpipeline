@@ -3423,8 +3423,19 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
             </div>
             <div style={{background:"#0D1117",borderRadius:8,padding:12}}>
               <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>{isClosed ? "CLOSED" : "DAYS IN STAGE"}</div>
-              <div style={{fontSize:isClosed?14:24,fontFamily:"Syne",fontWeight:800,color:isClosed?"#06D6A0":(stageUrgency(file).level==="late"?"#E85D75":stageUrgency(file).level==="watch"?"#F5A623":"#E6EDF3")}}>
-                {isClosed ? file.closedAt : (daysInStage(file)===null ? "—" : `${daysInStage(file)}d`)}
+              {/* Syne's zero is indistinguishable from a lowercase o at this
+                  size — "0d" rendered as "od". Numbers go in DM Mono, which
+                  is what the rest of the app already uses for data. */}
+              <div style={{fontSize:isClosed?14:24,
+                fontFamily:isClosed?"Syne":"'DM Mono','Courier New',monospace",
+                fontWeight:isClosed?800:500,letterSpacing:isClosed?0:"-0.5px",
+                color:isClosed?"#06D6A0":(stageUrgency(file).level==="late"?"#E85D75":stageUrgency(file).level==="watch"?"#F5A623":"#E6EDF3")}}>
+                {isClosed ? file.closedAt : (
+                  daysInStage(file)===null ? "—" : <>
+                    {daysInStage(file)}
+                    <span style={{fontSize:13,color:"#484F58",marginLeft:1}}>d</span>
+                  </>
+                )}
               </div>
               {!isClosed && (()=>{ const c=stageClock(file.stage,file); return (
                 <div style={{fontSize:9,color:"#484F58",marginTop:4,letterSpacing:"0.5px"}}>
