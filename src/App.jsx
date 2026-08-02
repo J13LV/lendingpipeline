@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, onSnapshot } from "firebase/firestore";
 import {
@@ -2367,7 +2367,7 @@ function LenderStrip({file}){
 }
 
 // ─── LENDER PANEL ───
-function LenderPanel({file,onSave}){
+function LenderPanel({file,onDraft}){
   const [channel,setChannel]=useState(file.channel||"broker");
   const [lenderId,setLenderId]=useState(file.lenderId||"");
   const [rate,setRate]=useState(file.rate!=null?String(file.rate):"");
@@ -2394,14 +2394,19 @@ function LenderPanel({file,onSave}){
   const ls=lockStatus(draft);
   const conf=lenderConflicts(draft);
 
-  const save=()=>onSave({
+  // The panel no longer owns a save button. It publishes its patch upward on
+  // every keystroke and the modal's single SAVE writes it. Two save buttons
+  // meant the obvious one silently discarded this panel's work.
+  const patch={
     channel, lenderId:lenderId||null, rate:parseFloat(rate)||null, lockState,
     lockedAt: lockState==="locked"?(okDate(lockedAt)||today()):null,
     lockTermDays: lockState==="locked"?(parseInt(term)||null):null,
     lockExpires: lockState==="locked"?lockExpiration(okDate(lockedAt)||today(),parseInt(term)):null,
-    lenderSince: file.lenderId===lenderId?(file.lenderSince||today()):today(),
+    lenderSince: !lenderId?null:(file.lenderId===lenderId?(file.lenderSince||today()):today()),
     comp: draft.comp,
-  });
+  };
+  const sig=JSON.stringify(patch);
+  useEffect(()=>{ onDraft&&onDraft(patch); },[sig]);
 
   return (
     <div style={{background:"rgba(74,144,217,.05)",border:"1px solid #4A90D933",borderRadius:8,
@@ -2409,6 +2414,7 @@ function LenderPanel({file,onSave}){
       <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
         <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#4A90D9",letterSpacing:"1px"}}>◆ LENDER Y LOCK</span>
         <span style={{fontSize:9.5,color:"#6E7681"}}>el canal decide qué lenders existen</span>
+        <span style={{marginLeft:"auto",fontSize:9,color:"#484F58"}}>se guarda con SAVE ↓</span>
       </div>
 
       {/* CHANNEL — chosen first, everything filters from it */}
@@ -2593,9 +2599,7 @@ function LenderPanel({file,onSave}){
         </div>
       )}
 
-      <button className="hov" onClick={save}
-        style={{background:"#4A90D9",color:"#0D1117",borderRadius:6,padding:"9px 0",fontFamily:"DM Mono",
-          fontSize:11.5,fontWeight:500,border:"none",cursor:"pointer"}}>GUARDAR LENDER Y LOCK</button>
+
 
       {conf.length>0&&conf.map((c,i)=>(
         <div key={i} style={{fontSize:10.5,color:c.sev==="critical"?"#E85D75":"#F5A623",background:"#0D1117",
@@ -2607,7 +2611,7 @@ function LenderPanel({file,onSave}){
 }
 
 // ─── DETAIL PANEL ───
-function ContingencyPanel({file,profile,onSave}){
+function ContingencyPanel({file,profile,onSave,onDraft}){
   const box = file.contingencies||{};
   const [state,setState]=useState(file.state||"NV");
   const [d,setD]=useState({
@@ -2630,10 +2634,10 @@ function ContingencyPanel({file,profile,onSave}){
   const cd=d.coe?cdIssueDeadline(d.coe):null;
   const basis=CONTRACT_DAY_BASIS[state];
 
-  const save=()=>{
-    onSave({state,contingencies:{...box,...Object.fromEntries(
-      Object.entries(d).map(([k,v])=>[k,okDate(v)])),capturedAt:today()}});
-  };
+  const datePatch={state,contingencies:{...box,...Object.fromEntries(
+    Object.entries(d).map(([k,v])=>[k,okDate(v)])),capturedAt:today()}};
+  const dsig=JSON.stringify(datePatch);
+  useEffect(()=>{ onDraft&&onDraft(datePatch); },[dsig]);
   const record=(id)=>{
     const patched=recordContingencyOutcome({...file,contingencies:{...box,...d}},id,
       {outcome:oc,newDate:ocDate||null,notes:ocNote,by:profile?.name||null});
@@ -2663,6 +2667,7 @@ function ContingencyPanel({file,profile,onSave}){
         <span style={{fontSize:9.5,color:"#6E7681"}}>
           el reloj corre desde la aceptación del contrato, no desde hoy
         </span>
+        <span style={{marginLeft:"auto",fontSize:9,color:"#484F58"}}>se guarda con SAVE ↓</span>
       </div>
 
       {/* STATE — decides whether the contract counts calendar or business days */}
@@ -2718,9 +2723,7 @@ function ContingencyPanel({file,profile,onSave}){
         )}
       </div>
 
-      <button className="hov" onClick={save}
-        style={{background:"#E85D75",color:"#0D1117",borderRadius:6,padding:"9px 0",fontFamily:"DM Mono",
-          fontSize:11.5,fontWeight:500,border:"none",cursor:"pointer"}}>GUARDAR FECHAS</button>
+
 
       {/* CONFLICTS */}
       {conflicts.length>0&&(
@@ -2856,6 +2859,8 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
   const isAdmin = profile?.role === "admin";
   const isAssistant = profile?.role === "assistant";
   const [showHistory, setShowHistory] = useState(false);
+  // Whatever the sub-panels are currently showing, ready for the single SAVE.
+  const panelDrafts = useRef({});
   const [note,setNote]=useState(file.note||"");
   const [closing,setClosing]=useState(file.closing||"");
   const [stage,setStage]=useState(file.stage);
@@ -2982,12 +2987,13 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
 
         {/* LENDER — chosen at Full Application; the channel gates the list */}
         {!inPrep && !isReferredOut && (atOrPastFullApp(stage) || hasLenderData(file)) && (
-          <LenderPanel file={file} onSave={onSave}/>
+          <LenderPanel file={file} onDraft={p=>{panelDrafts.current.lender=p;}}/>
         )}
 
         {/* CONTINGENCIES — captured at Full Application, anchored to the contract */}
         {!inPrep && !isReferredOut && (atOrPastFullApp(stage) || hasContingencies(file)) && (
-          <ContingencyPanel file={file} profile={profile} onSave={onSave}/>
+          <ContingencyPanel file={file} profile={profile} onSave={onSave}
+            onDraft={p=>{panelDrafts.current.dates=p;}}/>
         )}
 
         {/* INBOUND REFERRAL SECTION — when file came from another banker */}
@@ -3287,6 +3293,9 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
                 bankerEmail: (inBankerEmail||"").trim(),
               };
             }
+            // Merge whatever the lender and contingency panels are showing.
+            // Without this the obvious gold button threw their work away.
+            Object.assign(patch, panelDrafts.current.lender||{}, panelDrafts.current.dates||{});
             onSave(patch);
             onClose();
           }}
