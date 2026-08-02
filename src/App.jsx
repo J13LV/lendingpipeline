@@ -21,6 +21,7 @@ import {
   REASON_CATEGORIES, reasonsByCategory, reasonById, isLenderFault,
   backupViability, changeCost, applyLenderChange, reregistrationCost,
   lenderChangeCount, lenderFaultChanges, LENDER_CHANGE_LANDING_STAGE,
+  noteEntries, latestNote, noteCount, addNoteEntry,
 } from "./pipelineCore";
 import {
   getAuth,
@@ -1263,7 +1264,19 @@ export default function App() {
                           </div>
                           <LenderStrip file={f}/>
                           <ContingencyStrip file={f}/>
-                          {f.note&&<div style={{fontSize:10,color:"#6E7681",borderTop:"1px solid #21262D",paddingTop:6,fontStyle:"italic"}}>{f.note}</div>}
+                          {(()=>{const n=latestNote(f); if(!n) return null; const c=noteCount(f);
+                            return (
+                              <div style={{borderTop:"1px solid #21262D",paddingTop:6}}>
+                                <div style={{fontSize:10,color:"#6E7681",fontStyle:"italic",lineHeight:1.45,
+                                  display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>
+                                  {n.text}
+                                </div>
+                                <div style={{fontSize:9,color:"#484F58",marginTop:3}}>
+                                  {n.at?timeAgo(n.at):"sin fecha"}{n.by?` · ${n.by.split(" ")[0]}`:""}
+                                  {c>1?` · ${c-1} más`:""}{n.legacy?" · nota vieja":""}
+                                </div>
+                              </div>
+                            );})()}
                           {f.lastEditedBy&&<div style={{fontSize:9,color:"#484F58",letterSpacing:"0.5px",borderTop:f.note?"none":"1px solid #21262D",paddingTop:f.note?0:6}}>
                             Edited by {f.lastEditedBy.name?.split(" ")[0]||"?"} · {timeAgo(f.lastEditedAt)}
                           </div>}
@@ -3102,7 +3115,9 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
   // Whatever the sub-panels are currently showing, ready for the single SAVE.
   const panelDrafts = useRef({});
   const [showChange,setShowChange]=useState(false);
-  const [note,setNote]=useState(file.note||"");
+  const [newNote,setNewNote]=useState("");
+  const [showAllNotes,setShowAllNotes]=useState(false);
+  const entries=noteEntries(file);
   const [closing,setClosing]=useState(file.closing||"");
   const [stage,setStage]=useState(file.stage);
   const [loanType,setLoanType]=useState(file.type);
@@ -3458,14 +3473,41 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
               fontFamily:"DM Mono",
               letterSpacing:"0.5px"
             }}>
-              {note.length}{note.length > 200 ? " · too long" : note.length > 100 ? " · keep it short" : ""}
+              {newNote.length}{newNote.length > 200 ? " · muy larga" : newNote.length > 100 ? " · sé breve" : ""}
             </div>
           </div>
-          <textarea value={note} onChange={e=>setNote(e.target.value)} rows={3}
-            placeholder={isReferredOut ? "Status update from receiving banker..." : "Subm 4/12 · UW queue · review by 4/15"}
-            style={{background:"#0D1117",border:`1px solid ${note.length > 200 ? "#E85D75" : "#30363D"}`,borderRadius:6,color:"#E6EDF3",padding:"8px 10px",fontSize:12,fontFamily:"DM Mono",width:"100%",resize:"none"}}/>
-          <div style={{fontSize:9,color:"#484F58",marginTop:4,letterSpacing:"0.5px"}}>
-            Need help? Click <span style={{color:"#8B949E"}}>❓ HELP</span> at top for the full notes guide & abbreviations.
+          <textarea value={newNote} onChange={e=>setNewNote(e.target.value)} rows={2}
+            placeholder={isReferredOut ? "Actualización del banquero receptor…" : "Qué pasó hoy · quién lo dijo · qué sigue"}
+            style={{background:"#0D1117",border:`1px solid ${newNote.length>200?"#E85D75":"#30363D"}`,borderRadius:6,color:"#E6EDF3",padding:"8px 10px",fontSize:12,fontFamily:"DM Mono",width:"100%",resize:"none"}}/>
+          <button className="hov" disabled={!newNote.trim()}
+            onClick={()=>{ onSave({noteLog:addNoteEntry(file,newNote,profile?.name||null).noteLog}); setNewNote(""); }}
+            style={{marginTop:6,width:"100%",background:newNote.trim()?"rgba(126,200,164,.1)":"#161B22",
+              color:newNote.trim()?"#7EC8A4":"#30363D",borderRadius:6,padding:"7px 0",fontFamily:"DM Mono",
+              fontSize:11,border:`1px solid ${newNote.trim()?"#7EC8A4":"#21262D"}`,
+              cursor:newNote.trim()?"pointer":"not-allowed"}}>+ AGREGAR ACTUALIZACIÓN</button>
+
+          {entries.length>0&&(
+            <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:8}}>
+              {(showAllNotes?entries:entries.slice(0,2)).map((n,i)=>(
+                <div key={i} style={{borderLeft:`2px solid ${i===0?"#7EC8A4":"#21262D"}`,paddingLeft:9}}>
+                  <div style={{fontSize:9,color:"#484F58",letterSpacing:".5px"}}>
+                    {n.at?`${String(n.at).slice(0,10)} · ${timeAgo(n.at)}`:"sin fecha"}
+                    {n.by?` · ${n.by}`:""}{n.legacy?" · anterior al historial":""}
+                  </div>
+                  <div style={{fontSize:11.5,color:i===0?"#E6EDF3":"#8B949E",lineHeight:1.5,marginTop:2,whiteSpace:"pre-wrap"}}>{n.text}</div>
+                </div>
+              ))}
+              {entries.length>2&&(
+                <button onClick={()=>setShowAllNotes(v=>!v)}
+                  style={{background:"transparent",border:"none",color:"#4A90D9",fontSize:10,
+                    fontFamily:"DM Mono",cursor:"pointer",padding:0,textAlign:"left"}}>
+                  {showAllNotes?"▾ ver solo las 2 últimas":`▸ ver las ${entries.length} entradas`}
+                </button>
+              )}
+            </div>
+          )}
+          <div style={{fontSize:9,color:"#484F58",marginTop:6,letterSpacing:"0.5px"}}>
+            Cada actualización queda con su fecha y su autor. La tarjeta siempre muestra la última.
           </div>
         </div>
 
@@ -3514,7 +3556,9 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
         <div style={{padding:"14px 24px",borderTop:"1px solid #21262D",background:"#161B22",flexShrink:0,display:"flex",gap:8,flexWrap:"wrap"}}>
           <button className="hov" onClick={()=>{
             const patch = {
-              note: (note||"").trim(),
+              // Notes are entries now. Writing the old string back on every
+              // save kept resurrecting text the team had already replaced.
+              note: file.note ?? null,
               closing,
               type: loanType,
               loan: parseInt(loanAmt) || file.loan,

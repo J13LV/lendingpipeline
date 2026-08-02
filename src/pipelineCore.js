@@ -1298,6 +1298,51 @@ export function lenderFaultChanges(file) {
   return (file?.lenderHistory || []).filter(h => h.category === "lender").length;
 }
 
+// ─── 2H. NOTES AS ENTRIES ──────────────────────────────────────────
+// A single long note field cannot tell you which end is new. Laura writes
+// at the bottom, Tina pastes at the top when she is in a hurry, and three
+// weeks later nobody knows — and neither does the system, because to it
+// the note is one block of text with one edit timestamp.
+//
+// So the note stops being a field and becomes a log. Each update is its
+// own entry with its own date and author. The card shows the LAST entry,
+// always, without anyone having to remember a convention.
+//
+// Existing notes are NOT migrated in the database. They are read as a
+// single legacy entry whose date is the file's last edit — the best
+// approximation available, and marked as such so nobody trusts it more
+// than it deserves.
+export function noteEntries(file) {
+  const log = Array.isArray(file?.noteLog) ? file.noteLog : [];
+  if (log.length) return [...log].sort((a, b) => String(b.at || "").localeCompare(String(a.at || "")));
+  const legacy = String(file?.note || "").trim();
+  if (!legacy) return [];
+  return [{
+    at: file?.lastEditedAt || null,
+    by: file?.lastEditedBy?.name || null,
+    text: legacy, legacy: true,
+  }];
+}
+export const latestNote = file => noteEntries(file)[0] || null;
+export const noteCount = file => noteEntries(file).length;
+
+export function addNoteEntry(file, text, by) {
+  const t = String(text || "").trim();
+  if (!t) return file;
+  // Seed the log with whatever was already in the old field, so the first
+  // new entry does not appear to be the only thing ever written.
+  const existing = Array.isArray(file?.noteLog) ? file.noteLog : [];
+  const seed = (!existing.length && String(file?.note || "").trim())
+    ? [{ at: file?.lastEditedAt || new Date(0).toISOString(),
+         by: file?.lastEditedBy?.name || null,
+         text: String(file.note).trim(), legacy: true }]
+    : [];
+  return {
+    ...file,
+    noteLog: [...seed, ...existing, { at: new Date().toISOString(), by: by || null, text: t }],
+  };
+}
+
 // ─── 3. HOUSE HUNT — the 60-day track ──────────────────────────────
 // APG Realty reassigns a buyer to another agent if they are not under
 // contract in 60 days. So this is not a follow-up rhythm; it is a
