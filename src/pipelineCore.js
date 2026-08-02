@@ -1196,7 +1196,18 @@ export function backupViability(file) {
     loanContingency: loanC,
     expiresBeforeContingency: !!(loanC && worstBy < loanC),
     gapDays: loanC && worstBy < loanC ? daysBetween(worstBy, loanC) : 0,
-    level: worstBy < t ? "critical" : (bestBy < t ? "warn" : "normal"),
+    // Three windows, not two. The earlier date is the safe one because the
+    // worst case takes MORE days, so it has to be decided sooner.
+    //   before decideByWorst  — works even if everything drags
+    //   between the two dates — only works if everything goes right
+    //   after decideByBest    — cannot make the closing at all
+    // The first version returned "normal" right up to the safe date and
+    // then jumped straight to critical, so five days out read as green.
+    window: t >= bestBy ? "impossible" : t >= worstBy ? "best_case_only" : "safe",
+    level: t >= bestBy ? "critical"
+         : t >= worstBy ? "warn"
+         : daysBetween(t, worstBy) <= 5 ? "warn" : "normal",
+    urgent: t < worstBy && daysBetween(t, worstBy) <= 5,
   };
 }
 

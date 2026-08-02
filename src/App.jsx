@@ -2489,11 +2489,24 @@ function BackupPanel({file,backupId,setBackupId,onChangeLender}){
       {b&&v.ready&&(
         <div style={{background:"#0D1117",border:`1px solid ${lc}44`,borderRadius:6,padding:"9px 10px"}}>
           <div style={{fontSize:11,color:lc,fontFamily:"DM Mono"}}>
-            Viable hasta el {v.decideByWorst}
-            <span style={{color:"#8B949E"}}> · {v.daysToWorst<0?`${Math.abs(v.daysToWorst)}d tarde`:`faltan ${v.daysToWorst}d`}</span>
+            {v.window==="impossible"
+              ? `Ya no llega · la fecha tope era el ${v.decideByBest}`
+              : v.window==="best_case_only"
+                ? `Solo llega si todo sale bien · imposible después del ${v.decideByBest}`
+                : `Seguro hasta el ${v.decideByWorst} · faltan ${v.daysToWorst}d`}
           </div>
-          <div style={{fontSize:9,color:"#484F58",marginTop:3,lineHeight:1.5}}>
-            Peor caso {v.worstDays}d · mejor caso {v.bestDays}d hasta el {v.decideByBest}.
+          <div style={{marginTop:6,display:"flex",flexDirection:"column",gap:2,fontSize:9.5,fontFamily:"DM Mono"}}>
+            <div style={{color:v.window==="safe"?"#7EC8A4":"#484F58"}}>
+              hasta {v.decideByWorst} · llega aunque todo se atrase ({v.worstDays}d)
+            </div>
+            <div style={{color:v.window==="best_case_only"?"#F5A623":"#484F58"}}>
+              {v.decideByWorst} a {v.decideByBest} · solo si nada falla ({v.bestDays}d)
+            </div>
+            <div style={{color:v.window==="impossible"?"#E85D75":"#484F58"}}>
+              después del {v.decideByBest} · no llega
+            </div>
+          </div>
+          <div style={{fontSize:9,color:"#484F58",marginTop:5,lineHeight:1.5}}>
             Contado hacia atrás desde el CD del {v.cdDeadline}.
           </div>
           {v.expiresBeforeContingency&&(
