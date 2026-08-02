@@ -998,22 +998,31 @@ export function compCeiling(file) {
   };
 }
 // ─── THE ONE NUMBER THE REPORTS READ ───────────────────────────────
-// Before this existed there were two: the legacy `bps` field that fed
-// every dashboard, and the new per-file comp block that fed nothing.
-// Two sources meant the branch could type 220 in one place and have the
-// month's revenue reported at 150. Everything now reads through here.
+// `bps` is it. Nothing else.
 //
-// Order: what was entered on the file → the legacy field → branch default.
-// The legacy fallback matters, because files closed before the comp block
-// existed only have `bps` and must keep reporting correctly.
-export function fileCompBps(file, branchDefault = 150) {
+// The comp block does not compete with this field, it WRITES to it: on
+// save, whatever the block resolves to is mirrored into `bps`, and every
+// dashboard keeps reading the single field it always read. The detailed
+// breakdown still lives in `comp` for correspondent files, where the
+// total is the sum of rate price and origination — but the total is what
+// gets reported, and there is only one of it.
+//
+// The earlier version had a four-step priority chain instead. It worked,
+// but nobody should have to remember which of four sources won.
+export function resolvedCompBps(file) {
   const b = compBreakdown(file);
-  if (b.totalBps !== null && b.totalBps !== undefined) return b.totalBps;
+  return (b.totalBps !== null && b.totalBps !== undefined) ? b.totalBps : null;
+}
+export function fileCompBps(file, branchDefault = 150) {
   if (Number.isFinite(Number(file?.bps)) && file?.bps) return Number(file.bps);
-  return branchDefault;
+  return resolvedCompBps(file) ?? branchDefault;
 }
 export function fileCompDollars(file, branchDefault = 150, amount = null) {
   return Math.round((amount ?? file?.loan ?? 0) * fileCompBps(file, branchDefault) / 10000);
+}
+export function fileCompSource(file) {
+  if (Number.isFinite(Number(file?.bps)) && file?.bps) return "field";
+  return resolvedCompBps(file) !== null ? "lender_plan" : "branch_default";
 }
 
 export function compCeilingDollars(file) {

@@ -16,7 +16,7 @@ import {
   lenderProductKey, compCeiling, compCeilingDollars, compDeltaBetween,
   lockStatus, lockExpiration, lockTermsCovering, lastDayToLock,
   lenderConflicts, hasLenderData,
-  COMP_MODELS, compModelFor, compBreakdown, setComp, fileCompBps, fileCompDollars,
+  COMP_MODELS, compModelFor, compBreakdown, setComp, fileCompBps, fileCompDollars, fileCompSource, resolvedCompBps,
   // ─── 2B-2b change, backup, history ───
   REASON_CATEGORIES, reasonsByCategory, reasonById, isLenderFault,
   backupViability, changeCost, applyLenderChange, reregistrationCost,
@@ -2633,6 +2633,9 @@ function LenderPanel({file,onDraft,onChangeLender}){
     lenderSince: !lenderId?null:(file.lenderId===lenderId?(file.lenderSince||today()):today()),
     comp: draft.comp,
     backupLenderId: backupId||null,
+    // Mirror the resolved total into the single field the reports read.
+    // The block does not compete with BPS COMP — it fills it in.
+    bps: resolvedCompBps(draft) ?? file.bps ?? null,
   };
   const sig=JSON.stringify(patch);
   useEffect(()=>{ onDraft&&onDraft(patch); },[sig]);
@@ -2741,6 +2744,11 @@ function LenderPanel({file,onDraft,onChangeLender}){
             </div>
           </div>
 
+          <div style={{fontSize:9,color:"#484F58"}}>
+            {comp.totalBps!=null
+              ? `Al guardar, ${comp.totalBps} bps pasan a BPS COMP arriba y eso es lo que reportan los dashboards.`
+              : "Sin dato — los reportes usan el default de la sucursal."}
+          </div>
           {comp.model==="correspondent"&&(
             <div style={{fontSize:9,color:"#6E7681"}}>
               Los 400 son combinados. Si subes uno, el otro se ajusta a lo que quede.
@@ -3187,15 +3195,16 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
           </div>
           {isAdmin && (
             <div>
-              <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>BPS COMP <span style={{color:"#484F58"}}>· respaldo</span></div>
+              <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>BPS COMP <span style={{color:"#F5A623"}}>· lo que reportan los dashboards</span></div>
               <input value={bps} onChange={e=>setBps(e.target.value)} placeholder="150" style={{...fs2,color:"#F5A623"}}/>
             </div>
           )}
           {isAdmin && (
             <div style={{gridColumn:"1/-1"}}>
               <div style={{fontSize:10,color:"#484F58",marginTop:2}}>
-                Campo viejo. Si el bloque de COMPENSACIÓN abajo tiene un número, ese manda y este se ignora.
-                Solo se usa en archivos anteriores al bloque nuevo. En blanco = {BPS_RATE} bps.
+                Este es el número que usan todos los reportes. El bloque de COMPENSACIÓN
+                de abajo lo llena solo al guardar; aquí lo puedes ajustar a mano.
+                En blanco = {BPS_RATE} bps.
               </div>
             </div>
           )}
