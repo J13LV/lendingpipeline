@@ -16,7 +16,7 @@ import {
   lenderProductKey, compCeiling, compCeilingDollars, compDeltaBetween,
   lockStatus, lockExpiration, lockTermsCovering, lastDayToLock,
   lenderConflicts, hasLenderData,
-  COMP_MODELS, compModelFor, compBreakdown, setComp,
+  COMP_MODELS, compModelFor, compBreakdown, setComp, fileCompBps, fileCompDollars,
   // ─── 2B-2b change, backup, history ───
   REASON_CATEGORIES, reasonsByCategory, reasonById, isLenderFault,
   backupViability, changeCost, applyLenderChange, reregistrationCost,
@@ -1489,7 +1489,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
       closedCount:loClosed.length, excludedCount:loClosed.filter(f=>!isEligible(f)).length};
   });
 
-  const myComp=f=>Math.round((f.loan||0)*(f.bps||BPS_RATE)/10000);
+  const myComp=f=>fileCompDollars(f,BPS_RATE);
   const myClosedFiles = closed.filter(f=>f.lo===profile.name);
   const myTotalComp = myClosedFiles.reduce((s,f)=>s+myComp(f),0);
 
@@ -1524,7 +1524,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
   const outboundWouldHaveEarned = outboundFunded.reduce((s,f)=>{
     const ro = f.referredOut||{};
     const finalAmt = parseInt(ro.finalLoanAmount)||f.loan||0;
-    return s + Math.round(finalAmt * (f.bps||BPS_RATE) / 10000);
+    return s + fileCompDollars(f,BPS_RATE,finalAmt);
   }, 0);
   const outboundLostComp = outboundWouldHaveEarned - outboundFeesEarned;
 
@@ -1535,7 +1535,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
   const inboundFundedVol = inboundClosed.reduce((s,f)=>s+(f.loan||0), 0);
   const inboundActiveVol = inboundActive.reduce((s,f)=>s+(f.loan||0), 0);
   // Comp earned on inbound closed deals (full BPS)
-  const inboundCompEarned = inboundClosed.reduce((s,f)=>s+Math.round((f.loan||0)*(f.bps||BPS_RATE)/10000), 0);
+  const inboundCompEarned = inboundClosed.reduce((s,f)=>s+fileCompDollars(f,BPS_RATE), 0);
 
   // Reciprocity by banker (combine outbound + inbound per banker name)
   const bankerMap = {};
@@ -2183,7 +2183,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                   <td style={{padding:"10px 14px",color:"#8B949E",fontSize:11}}>{f.type}</td>
                   <td style={{padding:"10px 14px",color:"#06D6A0",fontWeight:500}}>${f.loan.toLocaleString()}</td>
                   <td style={{padding:"10px 14px",color:"#484F58"}}>{f.closedAt||f.closing}</td>
-                  <td style={{padding:"10px 14px",color:"#8B949E",fontSize:11}}>{f.bps||BPS_RATE}</td>
+                  <td style={{padding:"10px 14px",color:"#8B949E",fontSize:11}}>{fileCompBps(f,BPS_RATE)}</td>
                   <td style={{padding:"10px 14px",color:"#4A90D9",fontWeight:500,fontFamily:"Syne"}}>${myComp(f).toLocaleString()}</td>
                 </tr>
               ))}
@@ -2224,7 +2224,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                   <td style={{padding:"10px 14px",color:"#8B949E",fontSize:11}}>{f.type}</td>
                   <td style={{padding:"10px 14px",color:"#06D6A0",fontWeight:500}}>${f.loan.toLocaleString()}</td>
                   <td style={{padding:"10px 14px",color:"#484F58"}}>{f.closedAt||f.closing}</td>
-                  <td style={{padding:"10px 14px",color:"#8B949E",fontSize:11}}>{f.bps||BPS_RATE}</td>
+                  <td style={{padding:"10px 14px",color:"#8B949E",fontSize:11}}>{fileCompBps(f,BPS_RATE)}</td>
                   <td style={{padding:"10px 14px",color:"#4A90D9",fontWeight:500,fontFamily:"Syne"}}>${myComp(f).toLocaleString()}</td>
                 </tr>
               ))}
@@ -3187,14 +3187,15 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
           </div>
           {isAdmin && (
             <div>
-              <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>BPS COMP <span style={{color:"#F5A623"}}>· admin</span></div>
+              <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>BPS COMP <span style={{color:"#484F58"}}>· respaldo</span></div>
               <input value={bps} onChange={e=>setBps(e.target.value)} placeholder="150" style={{...fs2,color:"#F5A623"}}/>
             </div>
           )}
           {isAdmin && (
             <div style={{gridColumn:"1/-1"}}>
               <div style={{fontSize:10,color:"#484F58",marginTop:2}}>
-                Leave BPS blank to use branch default ({BPS_RATE} bps) · FL = 175 · NHF/NV = 150 · HELOC = flat fee
+                Campo viejo. Si el bloque de COMPENSACIÓN abajo tiene un número, ese manda y este se ignora.
+                Solo se usa en archivos anteriores al bloque nuevo. En blanco = {BPS_RATE} bps.
               </div>
             </div>
           )}

@@ -997,6 +997,25 @@ export function compCeiling(file) {
     forfeited: b.forfeited,
   };
 }
+// ─── THE ONE NUMBER THE REPORTS READ ───────────────────────────────
+// Before this existed there were two: the legacy `bps` field that fed
+// every dashboard, and the new per-file comp block that fed nothing.
+// Two sources meant the branch could type 220 in one place and have the
+// month's revenue reported at 150. Everything now reads through here.
+//
+// Order: what was entered on the file → the legacy field → branch default.
+// The legacy fallback matters, because files closed before the comp block
+// existed only have `bps` and must keep reporting correctly.
+export function fileCompBps(file, branchDefault = 150) {
+  const b = compBreakdown(file);
+  if (b.totalBps !== null && b.totalBps !== undefined) return b.totalBps;
+  if (Number.isFinite(Number(file?.bps)) && file?.bps) return Number(file.bps);
+  return branchDefault;
+}
+export function fileCompDollars(file, branchDefault = 150, amount = null) {
+  return Math.round((amount ?? file?.loan ?? 0) * fileCompBps(file, branchDefault) / 10000);
+}
+
 export function compCeilingDollars(file) {
   const c = compCeiling(file);
   return c.bps === null ? null : Math.round((file?.loan || 0) * c.bps / 10000);
