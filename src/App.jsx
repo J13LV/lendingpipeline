@@ -11,6 +11,11 @@ import {
   derivedStageDeadlines, upcomingDeadlines, recordContingencyOutcome,
   contingencyExtensionCount, cdIssueDeadline, cdMailDeadline,
   federalHolidayName, contractDaysBetween, isValidISO, okDate,
+  // ─── 2B-2a lender, channel, rate, lock ───
+  CHANNELS, CHANNEL_IDS, LOCK_TERMS, LOCK_STATES, lendersFor, lenderById,
+  lenderProductKey, compCeiling, compCeilingDollars, compDeltaBetween,
+  lockStatus, lockExpiration, lockTermsCovering, lastDayToLock,
+  lenderConflicts, hasLenderData,
 } from "./pipelineCore";
 import {
   getAuth,
@@ -1251,6 +1256,7 @@ export default function App() {
                               {cd===0?"CLOSING TODAY":cd!==null&&cd>0?`Close in ${cd}d`:cd!==null?"PAST DUE":f.closing}
                             </span>}
                           </div>
+                          <LenderStrip file={f}/>
                           <ContingencyStrip file={f}/>
                           {f.note&&<div style={{fontSize:10,color:"#6E7681",borderTop:"1px solid #21262D",paddingTop:6,fontStyle:"italic"}}>{f.note}</div>}
                           {f.lastEditedBy&&<div style={{fontSize:9,color:"#484F58",letterSpacing:"0.5px",borderTop:f.note?"none":"1px solid #21262D",paddingTop:f.note?0:6}}>
@@ -2319,6 +2325,237 @@ function ContingencyStrip({file}){
   );
 }
 
+// ─── LENDER STRIP (design A) ───
+function LenderStrip({file}){
+  if(!hasLenderData(file)) return null;
+  const l=lenderById(file.lenderId);
+  const ch=CHANNELS[file.channel]||null;
+  const ls=lockStatus(file);
+  const conf=lenderConflicts(file);
+  const lc=ls.level==="critical"?"#E85D75":ls.level==="warn"?"#F5A623":ls.meta.color;
+
+  return (
+    <div style={{background:"rgba(74,144,217,.06)",border:`1px solid ${conf.some(c=>c.sev==="critical")?"#E85D7555":"#30363D"}`,
+      borderRadius:6,padding:"7px 9px",marginTop:9,display:"flex",flexDirection:"column",gap:4}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8}}>
+        <span style={{fontSize:11,color:l?"#4A90D9":"#484F58",fontFamily:"DM Mono",fontWeight:500,
+          overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+          {l?l.name:"sin lender"}
+        </span>
+        <span style={{display:"flex",gap:6,alignItems:"baseline",flexShrink:0}}>
+          {file.rate&&<span style={{fontSize:10.5,color:"#E6EDF3",fontFamily:"DM Mono"}}>{Number(file.rate).toFixed(3)}%</span>}
+          <span style={{fontSize:9,color:lc,border:`1px solid ${lc}66`,borderRadius:3,padding:"1px 5px",
+            fontFamily:"DM Mono",letterSpacing:".5px"}}>{ls.state==="locked"?"LOCKED":"FLOAT"}</span>
+        </span>
+      </div>
+      <div style={{fontSize:9.5,color:"#6E7681",fontFamily:"DM Mono",display:"flex",gap:8,flexWrap:"wrap"}}>
+        {ch&&<span style={{color:ch.color}}>{ch.es.toLowerCase()}</span>}
+        {ls.state==="float"&&ls.mustLockBy&&(
+          <span style={{color:ls.level==="critical"?"#E85D75":"#6E7681"}}>
+            lock by {mon(ls.mustLockBy)}{ls.daysLeft!==null?` · ${ls.daysLeft<0?`${Math.abs(ls.daysLeft)}d late`:`${ls.daysLeft}d`}`:""}
+          </span>
+        )}
+        {ls.state==="locked"&&ls.expires&&(
+          <span style={{color:ls.coversClose?"#6E7681":"#E85D75"}}>
+            exp {mon(ls.expires)}{ls.coversClose?` · +${ls.spare}d`:` · corto ${ls.shortBy}d`}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── LENDER PANEL ───
+function LenderPanel({file,onSave}){
+  const [channel,setChannel]=useState(file.channel||"broker");
+  const [lenderId,setLenderId]=useState(file.lenderId||"");
+  const [rate,setRate]=useState(file.rate!=null?String(file.rate):"");
+  const [lockState,setLockState]=useState(file.lockState||"float");
+  const [lockedAt,setLockedAt]=useState(file.lockedAt||"");
+  const [term,setTerm]=useState(file.lockTermDays?String(file.lockTermDays):"30");
+
+  const fs={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",
+    padding:"7px 9px",fontSize:12,fontFamily:"'DM Mono','Courier New',monospace",width:"100%"};
+
+  const draft={...file,channel,lenderId:lenderId||null,rate:parseFloat(rate)||null,
+    lockState,lockedAt:lockedAt||null,lockTermDays:parseInt(term)||null};
+  const options=lendersFor(draft,channel);
+  const l=lenderById(lenderId);
+  const cc=compCeiling(draft);
+  const ccD=compCeilingDollars(draft);
+  const ls=lockStatus(draft);
+  const conf=lenderConflicts(draft);
+
+  const save=()=>onSave({
+    channel, lenderId:lenderId||null, rate:parseFloat(rate)||null, lockState,
+    lockedAt: lockState==="locked"?(okDate(lockedAt)||today()):null,
+    lockTermDays: lockState==="locked"?(parseInt(term)||null):null,
+    lockExpires: lockState==="locked"?lockExpiration(okDate(lockedAt)||today(),parseInt(term)):null,
+    lenderSince: file.lenderId===lenderId?(file.lenderSince||today()):today(),
+  });
+
+  return (
+    <div style={{background:"rgba(74,144,217,.05)",border:"1px solid #4A90D933",borderRadius:8,
+      padding:14,display:"flex",flexDirection:"column",gap:12}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#4A90D9",letterSpacing:"1px"}}>◆ LENDER Y LOCK</span>
+        <span style={{fontSize:9.5,color:"#6E7681"}}>el canal decide qué lenders existen</span>
+      </div>
+
+      {/* CHANNEL — chosen first, everything filters from it */}
+      <div>
+        <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>CANAL</div>
+        <div style={{display:"flex",gap:8}}>
+          {CHANNEL_IDS.map(id=>{
+            const c=CHANNELS[id],on=channel===id,n=lendersFor(draft,id).length;
+            return (
+              <button key={id} className="hov" onClick={()=>{setChannel(id);
+                if(!lendersFor(draft,id).some(x=>x.id===lenderId)) setLenderId("");}}
+                style={{flex:1,background:on?`${c.color}18`:"#0D1117",border:`1px solid ${on?c.color:"#30363D"}`,
+                  borderRadius:6,padding:"8px 6px",cursor:"pointer",fontFamily:"DM Mono",textAlign:"left"}}>
+                <div style={{fontSize:11,color:on?c.color:"#8B949E",fontWeight:500}}>{c.es}</div>
+                <div style={{fontSize:9,color:"#484F58",marginTop:2}}>{n} lenders · tope {c.capBps}</div>
+              </button>
+            );
+          })}
+        </div>
+        <div style={{fontSize:9,color:"#484F58",marginTop:5}}>{CHANNELS[channel].note_es}</div>
+      </div>
+
+      {/* LENDER */}
+      <div>
+        <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>
+          LENDER <span style={{color:"#30363D"}}>· {options.length} hacen {lenderProductKey(file.type)}</span>
+        </div>
+        <select value={lenderId} onChange={e=>setLenderId(e.target.value)} style={fs}>
+          <option value="">— sin asignar —</option>
+          {options.map(o=><option key={o.id} value={o.id}>
+            {o.name}{o.lenderPaidBps?` · ${o.lenderPaidBps} bps`:""}{o.borrowerPaidOnly?" · borrower-paid":""}
+          </option>)}
+        </select>
+        {l&&(
+          <div style={{marginTop:6,display:"flex",gap:8,flexWrap:"wrap",fontSize:9.5,fontFamily:"DM Mono"}}>
+            {l.contacts?.[0]?.ae&&<span style={{color:"#6E7681"}}>AE {l.contacts[0].ae}</span>}
+            {l.contacts?.[0]?.phone&&<a href={`tel:${l.contacts[0].phone.replace(/[^\d+]/g,"")}`}
+              style={{color:"#4A90D9",textDecoration:"none"}}>{l.contacts[0].phone}</a>}
+            {l.guidelines&&<a href={l.guidelines} target="_blank" rel="noreferrer"
+              style={{color:"#BD65E8",textDecoration:"none"}}>guías ↗</a>}
+          </div>
+        )}
+      </div>
+
+      {/* CEILING — reference only. Nothing here is editable on purpose:
+          per-file compensation adjustments are a Reg Z question that
+          Barrett compliance has not answered yet. */}
+      {cc.bps!==null&&(
+        <div style={{background:"#0D1117",border:"1px solid #21262D",borderRadius:6,padding:"8px 10px"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
+            <span style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px"}}>TECHO DE COMPENSACIÓN</span>
+            <span style={{fontSize:12,color:"#F5A623",fontFamily:"DM Mono"}}>
+              {cc.bps} bps{ccD!==null?` · $${ccD.toLocaleString()}`:""}
+            </span>
+          </div>
+          <div style={{fontSize:9,color:"#484F58",marginTop:3}}>
+            {cc.source==="plan_cap"?`el lender publica ${cc.published} — el plan topa en ${cc.bps}`
+              :cc.source==="channel"?"precio de la tasa y origination combinados"
+              :"según el plan del lender"}
+            {" · referencia, no editable"}
+          </div>
+        </div>
+      )}
+
+      {/* RATE + LOCK */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+        <div>
+          <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>TASA %</div>
+          <input value={rate} onChange={e=>setRate(e.target.value)} placeholder="6.990" inputMode="decimal" style={fs}/>
+        </div>
+        <div>
+          <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>ESTADO</div>
+          <select value={lockState} onChange={e=>setLockState(e.target.value)} style={fs}>
+            <option value="float">Flotando</option>
+            <option value="locked">Lockeado</option>
+          </select>
+        </div>
+      </div>
+
+      {/* FLOATING — the deadline nobody writes on a contract */}
+      {lockState==="float"&&(
+        <div style={{background:"#0D1117",border:`1px solid ${ls.level==="critical"?"#E85D7544":"#F5A62333"}`,
+          borderRadius:6,padding:"9px 10px"}}>
+          {ls.mustLockBy?(
+            <>
+              <div style={{fontSize:11,color:ls.level==="critical"?"#E85D75":"#F5A623",fontFamily:"DM Mono"}}>
+                Último día para lockear: {ls.mustLockBy}
+                {ls.daysLeft!==null&&<span style={{color:"#8B949E"}}> · {ls.daysLeft<0?`${Math.abs(ls.daysLeft)}d tarde`:`faltan ${ls.daysLeft}d`}</span>}
+              </div>
+              <div style={{fontSize:9,color:"#484F58",marginTop:3}}>
+                El CD lleva la tasa final, así que no se puede flotar más allá de su fecha legal.
+              </div>
+            </>
+          ):(
+            <div style={{fontSize:10,color:"#484F58"}}>Sin fecha de cierre no hay tope calculable. Captura el COE primero.</div>
+          )}
+          {ls.coe&&(
+            <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:3}}>
+              <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px"}}>SI LOCKEAS HOY, ¿QUÉ TÉRMINO LLEGA AL CIERRE?</div>
+              {ls.terms.map(t=>(
+                <div key={t.term} style={{display:"flex",gap:8,fontSize:10,fontFamily:"DM Mono",
+                  color:t.covers?"#7EC8A4":"#E85D75"}}>
+                  <span style={{minWidth:34}}>{t.term}d</span>
+                  <span style={{color:"#6E7681",minWidth:82}}>{t.expires}</span>
+                  <span>{t.covers?`cubre · +${t.spare}d`:`corto por ${t.shortBy}d`}</span>
+                </div>
+              ))}
+              <div style={{fontSize:9,color:"#484F58",marginTop:2}}>
+                El precio decide el término, pero un lock que vence antes del cierre devuelve
+                lo ganado en la extensión.
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* LOCKED */}
+      {lockState==="locked"&&(
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+          <div>
+            <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>FECHA DEL LOCK</div>
+            <input type="date" value={lockedAt} onChange={e=>setLockedAt(e.target.value)} style={fs}/>
+          </div>
+          <div>
+            <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>TÉRMINO</div>
+            <select value={term} onChange={e=>setTerm(e.target.value)} style={fs}>
+              {LOCK_TERMS.map(t=><option key={t} value={t}>{t} días</option>)}
+            </select>
+          </div>
+          {ls.expires&&(
+            <div style={{gridColumn:"1/-1",background:"#0D1117",
+              border:`1px solid ${ls.coversClose?"#7EC8A433":"#E85D7544"}`,borderRadius:6,padding:"8px 10px"}}>
+              <div style={{fontSize:11,fontFamily:"DM Mono",color:ls.coversClose?"#7EC8A4":"#E85D75"}}>
+                Vence {ls.expires}
+                {ls.coe&&(ls.coversClose
+                  ? <span style={{color:"#8B949E"}}> · cubre el cierre con {ls.spare}d de sobra</span>
+                  : <span> · {ls.shortBy}d antes del cierre, habrá extensión</span>)}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      <button className="hov" onClick={save}
+        style={{background:"#4A90D9",color:"#0D1117",borderRadius:6,padding:"9px 0",fontFamily:"DM Mono",
+          fontSize:11.5,fontWeight:500,border:"none",cursor:"pointer"}}>GUARDAR LENDER Y LOCK</button>
+
+      {conf.length>0&&conf.map((c,i)=>(
+        <div key={i} style={{fontSize:10.5,color:c.sev==="critical"?"#E85D75":"#F5A623",background:"#0D1117",
+          border:`1px solid ${c.sev==="critical"?"#E85D7544":"#F5A62344"}`,borderRadius:5,
+          padding:"7px 9px",lineHeight:1.45}}>{c.es}</div>
+      ))}
+    </div>
+  );
+}
+
 // ─── DETAIL PANEL ───
 function ContingencyPanel({file,profile,onSave}){
   const box = file.contingencies||{};
@@ -2692,6 +2929,11 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
             <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="borrower@email.com" style={fs2}/>
           </div>
         </div>
+
+        {/* LENDER — chosen at Full Application; the channel gates the list */}
+        {!inPrep && !isReferredOut && (atOrPastFullApp(stage) || hasLenderData(file)) && (
+          <LenderPanel file={file} onSave={onSave}/>
+        )}
 
         {/* CONTINGENCIES — captured at Full Application, anchored to the contract */}
         {!inPrep && !isReferredOut && (atOrPastFullApp(stage) || hasContingencies(file)) && (

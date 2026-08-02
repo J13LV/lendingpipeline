@@ -810,6 +810,201 @@ export function contingencyExtensionCount(file, id) {
   return (file?.contingencyLog || []).filter(e => e.id === id && e.outcome === "extended").length;
 }
 
+// ─── 2F. CHANNEL, LENDER, RATE AND LOCK ────────────────────────────
+// The channel is not a label on the file. It decides which lenders are
+// even available and what the compensation ceiling is, so it is chosen
+// FIRST and everything else filters from it.
+//
+//   broker         — lender-paid. 183 lenders available. The plan caps
+//                    at 275 bps regardless of what the lender publishes.
+//   correspondent  — 11 lenders. Rate price and origination fees COMBINED
+//                    are capped at 400 bps. Combined, not stacked.
+export const BROKER_COMP_CAP_BPS = 275;
+export const CORRESPONDENT_COMP_CAP_BPS = 400;
+
+export const CHANNELS = {
+  broker: {
+    es: "Broker", en: "Broker", capBps: BROKER_COMP_CAP_BPS, color: "#4A90D9",
+    note_es: "Pagado por el lender · tope del plan 275 bps",
+    note_en: "Lender-paid · plan caps at 275 bps",
+  },
+  correspondent: {
+    es: "Correspondent", en: "Correspondent", capBps: CORRESPONDENT_COMP_CAP_BPS, color: "#BD65E8",
+    requiresCapability: "correspondent",
+    note_es: "Precio de la tasa y origination COMBINADOS · tope 400 bps",
+    note_en: "Rate price and origination COMBINED · 400 bps cap",
+  },
+};
+export const CHANNEL_IDS = Object.keys(CHANNELS);
+
+// The pipeline's product keys and the lender file's product keys are not
+// the same vocabulary. A streamline is still an FHA loan to the lender;
+// a HELOC is a "second"; a DSCR lives under non-QM.
+export function lenderProductKey(type = "") {
+  const t = String(type).toLowerCase();
+  if (/irrrl/.test(t)) return "va";
+  if (/fha streamline/.test(t)) return "fha";
+  if (/usda streamlined/.test(t)) return "usda";
+  if (/refinow|refi possible/.test(t)) return "conventional";
+  if (/heloc|second/.test(t)) return "second";
+  const k = productKeyForLoanType(type);
+  return ({ dscr: "nonqm", refi: "conventional", heloc: "second" })[k] || k;
+}
+
+// Which lenders can actually take this file. Channel first, then product.
+export function lendersFor(file, channel) {
+  const key = lenderProductKey(file?.type);
+  const needsCorr = CHANNELS[channel]?.requiresCapability === "correspondent";
+  return LENDERS
+    .filter(l => {
+      const p = l.products || {};
+      if (needsCorr && !p.correspondent) return false;
+      return !!p[key];
+    })
+    .sort((a, b) => (b.lenderPaidBps || 0) - (a.lenderPaidBps || 0) || a.name.localeCompare(b.name));
+}
+
+// What this file can earn, and what the lender publishing a higher number
+// does not change. Broker comp is capped by the plan, not by the lender.
+export function compCeiling(file) {
+  const ch = CHANNELS[file?.channel] || CHANNELS.broker;
+  const l = lenderById(file?.lenderId);
+  if (file?.channel === "correspondent")
+    return { bps: CORRESPONDENT_COMP_CAP_BPS, source: "channel", published: null, forfeited: 0 };
+  const published = l?.lenderPaidBps ?? null;
+  if (published === null) return { bps: null, source: "unknown", published: null, forfeited: 0 };
+  const bps = Math.min(published, ch.capBps);
+  return { bps, source: published > ch.capBps ? "plan_cap" : "lender", published, forfeited: Math.max(0, published - bps) };
+}
+export function compCeilingDollars(file) {
+  const c = compCeiling(file);
+  return c.bps === null ? null : Math.round((file?.loan || 0) * c.bps / 10000);
+}
+// What changing lenders costs, in dollars, before anyone argues about it.
+export function compDeltaBetween(file, fromId, toId) {
+  const at = id => {
+    const l = lenderById(id);
+    if (!l || l.lenderPaidBps == null) return null;
+    return file?.channel === "correspondent"
+      ? CORRESPONDENT_COMP_CAP_BPS : Math.min(l.lenderPaidBps, BROKER_COMP_CAP_BPS);
+  };
+  const a = at(fromId), b = at(toId);
+  if (a === null || b === null) return null;
+  const bps = b - a;
+  return { bps, dollars: Math.round((file?.loan || 0) * bps / 10000) };
+}
+
+// ─── LOCK ──────────────────────────────────────────────────────────
+// Two states only. There is no "requested" — the branch treats a lock as
+// done or not done, and a maybe-lock is a float with extra confidence.
+//
+// The term is chosen by PRICE, not by need: sometimes 15 prices better
+// than 30. That is exactly why the system has to check the term against
+// the closing date. A cheaper lock that expires before the COE is not
+// cheaper — the extension gives the savings back.
+export const LOCK_TERMS = [15, 30, 45, 60];
+export const LOCK_STATES = {
+  float:  { es: "Flotando", en: "Floating", color: "#F5A623" },
+  locked: { es: "Lockeado", en: "Locked",   color: "#7EC8A4" },
+};
+
+// The lender needs the lock in hand to produce the CD, and the CD has a
+// statutory date. So floating has a deadline even though nobody writes
+// one on a contract. One business day before the CD must issue.
+export function lastDayToLock(file) {
+  const coe = okDate(file?.contingencies?.coe) || okDate(file?.closing);
+  const cd = cdIssueDeadline(coe);
+  return cd ? previousBusinessDay(addDays(cd, -1), "contract") : null;
+}
+
+export function lockExpiration(lockedAt, termDays) {
+  return isValidISO(lockedAt) && Number.isFinite(termDays) ? addDays(lockedAt, termDays) : null;
+}
+
+// Of 15 / 30 / 45 / 60, which ones actually reach the closing date.
+export function lockTermsCovering(file, fromISO) {
+  const from = okDate(fromISO) || today();
+  const coe = okDate(file?.contingencies?.coe) || okDate(file?.closing);
+  return LOCK_TERMS.map(t => {
+    const exp = lockExpiration(from, t);
+    const covers = !!(coe && exp && exp >= coe);
+    return {
+      term: t, expires: exp, covers,
+      shortBy: coe && exp && exp < coe ? daysBetween(exp, coe) : 0,
+      spare:   coe && exp && exp >= coe ? daysBetween(coe, exp) : 0,
+    };
+  });
+}
+
+export function lockStatus(file) {
+  const state = file?.lockState === "locked" ? "locked" : "float";
+  const coe = okDate(file?.contingencies?.coe) || okDate(file?.closing);
+  const t = today();
+
+  if (state === "float") {
+    const by = lastDayToLock(file);
+    const daysLeft = by ? (by >= t ? daysBetween(t, by) : -daysBetween(by, t)) : null;
+    return {
+      state, meta: LOCK_STATES.float, mustLockBy: by, daysLeft, coe,
+      // No closing date means no derivable deadline. Blank, not a guess.
+      level: by === null ? "unknown" : daysLeft < 0 ? "critical" : daysLeft <= 5 ? "warn" : "normal",
+      terms: lockTermsCovering(file, t),
+    };
+  }
+
+  const lockedAt = okDate(file?.lockedAt);
+  const expires  = okDate(file?.lockExpires) || lockExpiration(lockedAt, file?.lockTermDays);
+  const daysLeft = expires ? (expires >= t ? daysBetween(t, expires) : -daysBetween(expires, t)) : null;
+  const covers   = !!(coe && expires && expires >= coe);
+  return {
+    state, meta: LOCK_STATES.locked, lockedAt, expires, daysLeft, coe,
+    termDays: file?.lockTermDays ?? (lockedAt && expires ? daysBetween(lockedAt, expires) : null),
+    coversClose: covers,
+    shortBy: coe && expires && expires < coe ? daysBetween(expires, coe) : 0,
+    spare:   covers ? daysBetween(coe, expires) : 0,
+    level: expires === null ? "unknown"
+      : daysLeft < 0 ? "critical"
+      : !covers ? "critical"          // expiring before the COE is not a warning
+      : daysLeft <= 7 ? "warn" : "normal",
+  };
+}
+
+// Problems that only appear when lender, channel and lock are read together.
+export function lenderConflicts(file) {
+  const out = [];
+  const add = (sev, es, en) => out.push({ sev, es, en });
+  const l = lenderById(file?.lenderId);
+
+  if (file?.channel === "correspondent" && l && !l.products?.correspondent)
+    add("critical", `${l.name} no opera en canal correspondent`,
+                    `${l.name} does not operate in the correspondent channel`);
+  if (l) {
+    const key = lenderProductKey(file?.type);
+    if (!l.products?.[key]) add("critical",
+      `${l.name} no hace ${key} — el archivo está registrado con el lender equivocado`,
+      `${l.name} does not do ${key} — the file is registered with the wrong lender`);
+    if (l.borrowerPaidOnly && file?.channel === "broker") add("warn",
+      `${l.name} es borrower-paid únicamente — la compensación no la paga el lender`,
+      `${l.name} is borrower-paid only — the lender does not pay compensation`);
+  }
+  const ls = lockStatus(file);
+  if (ls.state === "locked" && ls.expires && !ls.coversClose) add("critical",
+    `El lock vence el ${ls.expires}, ${ls.shortBy} días antes del cierre — habrá extensión`,
+    `The lock expires ${ls.expires}, ${ls.shortBy} days before closing — an extension is coming`);
+  if (ls.state === "float" && ls.mustLockBy && ls.daysLeft < 0) add("critical",
+    `Pasó el último día para lockear (${ls.mustLockBy}) y el archivo sigue flotando`,
+    `The last day to lock (${ls.mustLockBy}) has passed and the file is still floating`);
+  const cc = compCeiling(file);
+  if (cc.forfeited > 0) add("warn",
+    `${l?.name} paga ${cc.published} bps pero el plan topa en ${cc.bps} — no se cobran ${cc.forfeited} bps`,
+    `${l?.name} pays ${cc.published} bps but the plan caps at ${cc.bps} — ${cc.forfeited} bps are not collectable`);
+  return out;
+}
+
+export function hasLenderData(file) {
+  return !!(file?.lenderId || file?.channel || file?.rate || file?.lockState);
+}
+
 // ─── 3. HOUSE HUNT — the 60-day track ──────────────────────────────
 // APG Realty reassigns a buyer to another agent if they are not under
 // contract in 60 days. So this is not a follow-up rhythm; it is a
