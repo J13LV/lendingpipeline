@@ -29,6 +29,10 @@ const PIPELINE_DOC = doc(db, "pipeline", "main");
 
 // ─── TEAM ROSTER ───
 const TEAM = {
+  // Jose has two accounts during the PRMG → Barrett transition. Both point to
+  // the same person and the same admin rights. The PRMG one gets disabled in
+  // Firebase once the new login is confirmed working.
+  "a7gM7SK7GhUuomyL8apuw68PptA2": { name: "Jose Del Valle",     short: "Jose",     role: "admin",     nmls: "2686066", color: "#4A90D9" },
   "vllTjiE2Aba8CKIC3UWGxMdzBcM2": { name: "Jose Del Valle",     short: "Jose",     role: "admin",     nmls: "2686066", color: "#4A90D9" },
   "iXcEzyc2nTTy2CJirLUz1FJ1oye2": { name: "Ana M Plasencia",    short: "Ana",      role: "lo",        nmls: "2683283", color: "#BD65E8" },
   "0dpbvxe4RZUmCDhm03Zne6JSKE32": { name: "Marelis Pinales",    short: "Marelis",  role: "lo",        nmls: "",        color: "#06D6A0" },
