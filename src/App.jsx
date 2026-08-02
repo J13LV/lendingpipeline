@@ -565,7 +565,7 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `pipeline-backup-${new Date().toISOString().split("T")[0]}.json`;
+    a.download = `pipeline-backup-${today()}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -692,7 +692,7 @@ export default function App() {
     setFiles(p=>p.map(f=>{
       if(f.id!==id) return f;
       if(f.stage===REFERRED_OUT_STAGE) return f; // can't close a referred-out file at PRMG
-      const fundedDate = f.closing || new Date().toISOString().split("T")[0];
+      const fundedDate = f.closing || today();
       return stampEdit({...f, stage:CLOSED_STAGE, closedAt:fundedDate, daysInStage:0}, profile, "closed", {from:f.stage, closedAt:fundedDate});
     }));
     setDetail(null);
@@ -2637,7 +2637,7 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
                 status: outStatus,
                 finalLoanAmount: parseInt(outFinalLoan) || null,
                 closeDate: outCloseDate || null,
-                referredDate: ro.referredDate || new Date().toISOString().split("T")[0],
+                referredDate: ro.referredDate || today(),
               };
             }
             // Persist inbound referring banker
