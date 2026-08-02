@@ -18,8 +18,34 @@ export const LENDER_DATA_YEAR = LENDER_DATA.year;
 // (UTC-7) anything after 5pm local came back as tomorrow's date. That shifted
 // stageEnteredAt, fileOpenedAt and every review date by one day.
 function localISO(d) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  // The year MUST be padded to four digits. Without this, year 2 came back
+  // as "2-09-06", the next new Date() returned Invalid Date, and localISO
+  // then produced "NaN-NaN-NaN" forever. A date input fires an event on
+  // every keystroke, so typing "2026" hands us year 2 before year 2026 —
+  // and any loop reading that value never terminated.
+  if (!d || Number.isNaN(d.getTime())) return null;
+  return `${String(d.getFullYear()).padStart(4, "0")}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
+
+// ─── 1A. DATE GUARD ────────────────────────────────────────────────
+// Nothing downstream may consume a date this rejects. A half-typed year
+// is not a date, it is a keystroke, and it must never reach the math.
+const ISO_SHAPE = /^\d{4}-\d{2}-\d{2}$/;
+export function isValidISO(iso) {
+  if (typeof iso !== "string" || !ISO_SHAPE.test(iso)) return false;
+  const y = Number(iso.slice(0, 4));
+  if (y < 1970 || y > 2200) return false;
+  const d = new Date(iso + "T00:00:00");
+  if (Number.isNaN(d.getTime())) return false;
+  return localISO(d) === iso;          // rejects 2026-02-31 and friends
+}
+// Read a date field. Returns null for anything unusable.
+export const okDate = iso => (isValidISO(iso) ? iso : null);
+
+// Every loop that walks a calendar is capped. Roughly 27 years of steps —
+// far past any real deadline, and a guaranteed exit if a bad value ever
+// slips through the guard above.
+const MAX_DAY_STEPS = 10000;
 export function today() { return localISO(new Date()); }
 
 export function daysBetween(from, to) {
@@ -260,6 +286,7 @@ export function stageClock(stage, file) {
 // file make its contract date" — the only question the borrower's
 // earnest money depends on.
 export function addDays(iso, n) {
+  if (!isValidISO(iso) || !Number.isFinite(n)) return null;
   const d = new Date(iso + "T00:00:00");
   d.setDate(d.getDate() + n);
   return localISO(d);
@@ -368,10 +395,16 @@ export const BUSINESS_DAY_BASIS = {
 };
 
 export function addBusinessDays(iso, n, basis = "contract") {
+  if (!isValidISO(iso) || !Number.isFinite(n)) return null;
   const isBiz = BUSINESS_DAY_BASIS[basis] || BUSINESS_DAY_BASIS.contract;
-  let cur = iso, counted = 0;
+  let cur = iso, counted = 0, steps = 0;
   const step = n < 0 ? -1 : 1, target = Math.abs(n);
-  while (counted < target) { cur = addDays(cur, step); if (isBiz(cur)) counted++; }
+  while (counted < target) {
+    if (++steps > MAX_DAY_STEPS) return null;
+    cur = addDays(cur, step);
+    if (!cur) return null;
+    if (isBiz(cur)) counted++;
+  }
   return cur;
 }
 export const subBusinessDays = (iso, n, basis = "contract") => addBusinessDays(iso, -n, basis);
@@ -379,9 +412,14 @@ export const subBusinessDays = (iso, n, basis = "contract") => addBusinessDays(i
 // Closest working day at or before `iso` — where a deadline actually lands
 // when the calculated date is a Sunday or a holiday.
 export function previousBusinessDay(iso, basis = "contract") {
+  if (!isValidISO(iso)) return null;
   const isBiz = BUSINESS_DAY_BASIS[basis] || BUSINESS_DAY_BASIS.contract;
-  let cur = iso;
-  while (!isBiz(cur)) cur = addDays(cur, -1);
+  let cur = iso, steps = 0;
+  while (!isBiz(cur)) {
+    if (++steps > MAX_DAY_STEPS) return null;
+    cur = addDays(cur, -1);
+    if (!cur) return null;
+  }
   return cur;
 }
 
@@ -395,12 +433,19 @@ export function contractDeadline(state, fromISO, days) {
 // The inverse: how many days a written contingency date represents on
 // that state's own clock. This is the number the agent wrote.
 export function contractDaysBetween(state, fromISO, toISO) {
-  if (!fromISO || !toISO) return null;
-  if (CONTRACT_DAY_BASIS[state] !== "business") return daysBetween(fromISO, toISO);
+  if (!isValidISO(fromISO) || !isValidISO(toISO)) return null;
+  // Signed on purpose. A contingency dated BEFORE contract acceptance is a
+  // real data-entry error, and clamping it to 0 hid that error behind a
+  // number that looked plausible.
+  const sign = toISO < fromISO ? -1 : 1;
+  const [a, b] = sign < 0 ? [toISO, fromISO] : [fromISO, toISO];
+  const span = daysBetween(a, b);
+  if (span > MAX_DAY_STEPS) return null;
+  if (CONTRACT_DAY_BASIS[state] !== "business") return sign * span;
   const isBiz = BUSINESS_DAY_BASIS.contract;
-  let cur = fromISO, n = 0;
-  while (cur < toISO) { cur = addDays(cur, 1); if (isBiz(cur)) n++; }
-  return n;
+  let cur = a, n = 0;
+  for (let i = 0; i < span; i++) { cur = addDays(cur, 1); if (!cur) return null; if (isBiz(cur)) n++; }
+  return sign * n;
 }
 
 // ─── 2E. CONTINGENCIES ─────────────────────────────────────────────
@@ -505,7 +550,7 @@ export const CD_WAITING_BUSINESS_DAYS = 3;
 // mailed, receipt is presumed three business days after sending —
 // subtract another three.
 export function cdIssueDeadline(coeISO) {
-  return coeISO ? subBusinessDays(coeISO, CD_WAITING_BUSINESS_DAYS, "trid") : null;
+  return isValidISO(coeISO) ? subBusinessDays(coeISO, CD_WAITING_BUSINESS_DAYS, "trid") : null;
 }
 export function cdMailDeadline(coeISO) {
   const received = cdIssueDeadline(coeISO);
@@ -547,13 +592,13 @@ export function derivedStageDeadlines(file) {
     if (!prior || row.startBy < prior.startBy) map[row.stage] = row;
   };
   for (const c of CONTINGENCIES) {
-    const anchor = file?.contingencies?.[c.field];
+    const anchor = okDate(file?.contingencies?.[c.field]);
     if (!anchor) continue;
     for (const row of chainBackward(file, anchor, c.chain)) push({ ...row, from: c.id });
   }
   // The CD is not budgeted, it is legislated. Its start is the statute's
   // date and it overrides anything a stage budget would have produced.
-  const coe = file?.contingencies?.coe;
+  const coe = okDate(file?.contingencies?.coe);
   if (coe) {
     map["CD Issued"] = {
       stage: "CD Issued", startBy: cdIssueDeadline(coe), completeBy: coe,
@@ -589,12 +634,13 @@ export function contingencyStatus(file, id) {
   const def = contingencyById(id);
   if (!def) return null;
   const box = file?.contingencies || {};
-  const date = box[def.field] || null;
+  const date = okDate(box[def.field]);
   const rec = (file?.contingencyResults || {})[id] || {};
   const outcome = rec.outcome || "pending";
   const o = outcomeById(outcome);
   const t = today();
   const daysLeft = date ? (date >= t ? daysBetween(t, date) : -daysBetween(date, t)) : null;
+  const anchor = okDate(box.contractAccepted);
   const band = CONTINGENCY_BANDS[def.kind];
 
   let level = "normal";
@@ -610,8 +656,8 @@ export function contingencyStatus(file, id) {
     depositAtRisk: def.kind === "contract" && !o.terminal && daysLeft !== null && daysLeft < 0,
     recordedAt: rec.at || null, recordedBy: rec.by || null, notes: rec.notes || null,
     // How many days the contract itself gave, on that state's clock.
-    contractDays: box.contractAccepted && date
-      ? contractDaysBetween(file?.state || "NV", box.contractAccepted, date) : null,
+    contractDays: anchor && date
+      ? contractDaysBetween(file?.state || "NV", anchor, date) : null,
     basis: CONTRACT_DAY_BASIS[file?.state || "NV"],
   };
 }
@@ -631,7 +677,7 @@ export function contingencyHeadline(file) {
 
 export function hasContingencies(file) {
   const b = file?.contingencies || {};
-  return CONTINGENCIES.some(c => !!b[c.field]) || !!b.contractAccepted;
+  return CONTINGENCIES.some(c => !!okDate(b[c.field])) || !!okDate(b.contractAccepted);
 }
 
 // ─── CONFLICTS ─────────────────────────────────────────────────────
@@ -643,7 +689,12 @@ export function contingencyConflicts(file) {
   const out = [];
   const add = (sev, es, en) => out.push({ sev, es, en });
 
-  const { contractAccepted, appraisalContingency, loanContingency, ctcTarget, coe, fundingDate } = b;
+  const contractAccepted   = okDate(b.contractAccepted);
+  const appraisalContingency = okDate(b.appraisalContingency);
+  const loanContingency    = okDate(b.loanContingency);
+  const ctcTarget          = okDate(b.ctcTarget);
+  const coe                = okDate(b.coe);
+  const fundingDate        = okDate(b.fundingDate);
 
   if (contractAccepted && coe) {
     const t = targetsFor(file);
@@ -714,7 +765,7 @@ const ALL_STAGE_ORDER = [
 export function setContingencyDates(file, dates) {
   const clean = {};
   for (const k of ["contractAccepted", ...CONTINGENCIES.map(c => c.field)])
-    clean[k] = dates[k] || null;
+    clean[k] = okDate(dates[k]);
   return {
     ...file,
     contingencies: { ...(file.contingencies || {}), ...clean, capturedAt: today() },

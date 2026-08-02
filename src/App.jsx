@@ -10,7 +10,7 @@ import {
   contingencyConflicts, contingencyHeadline, hasContingencies,
   derivedStageDeadlines, upcomingDeadlines, recordContingencyOutcome,
   contingencyExtensionCount, cdIssueDeadline, cdMailDeadline,
-  federalHolidayName, contractDaysBetween,
+  federalHolidayName, contractDaysBetween, isValidISO, okDate,
 } from "./pipelineCore";
 import {
   getAuth,
@@ -2333,7 +2333,7 @@ function ContingencyPanel({file,profile,onSave}){
 
   const save=()=>{
     onSave({state,contingencies:{...box,...Object.fromEntries(
-      Object.entries(d).map(([k,v])=>[k,v||null])),capturedAt:today()}});
+      Object.entries(d).map(([k,v])=>[k,okDate(v)])),capturedAt:today()}});
   };
   const record=(id)=>{
     const patched=recordContingencyOutcome({...file,contingencies:{...box,...d}},id,
@@ -2343,13 +2343,18 @@ function ContingencyPanel({file,profile,onSave}){
     setOpenId(null); setOc("met"); setOcDate(""); setOcNote("");
   };
 
-  const field=(key,label,hint)=>(
-    <div>
-      <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>{label}</div>
-      <input type="date" value={d[key]} onChange={e=>setD({...d,[key]:e.target.value})} style={fs}/>
-      {hint&&<div style={{fontSize:9,color:"#30363D",marginTop:3}}>{hint}</div>}
-    </div>
-  );
+  const field=(key,label,hint)=>{
+    const typing = d[key] && !isValidISO(d[key]);
+    return (
+      <div>
+        <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>{label}</div>
+        <input type="date" value={d[key]} onChange={e=>setD({...d,[key]:e.target.value})}
+          style={{...fs,borderColor:typing?"#F5A623":"#30363D"}}/>
+        {typing&&<div style={{fontSize:9,color:"#F5A623",marginTop:3}}>escribiendo el año…</div>}
+        {!typing&&hint&&<div style={{fontSize:9,color:"#30363D",marginTop:3}}>{hint}</div>}
+      </div>
+    );
+  };
 
   return (
     <div style={{background:"rgba(232,93,117,.04)",border:"1px solid #E85D7533",borderRadius:8,
@@ -2443,8 +2448,9 @@ function ContingencyPanel({file,profile,onSave}){
                 <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
                   <span style={{fontSize:10,color:LEVEL_COLOR[r.level],fontWeight:500,minWidth:38}}>{r.short}</span>
                   <span style={{fontSize:10.5,color:"#8B949E"}}>{r.date}</span>
-                  {r.contractDays!==null&&<span style={{fontSize:9,color:"#30363D"}}>
-                    {r.contractDays} días {r.basis==="business"?"hábiles":"cal."} del contrato</span>}
+                  {r.contractDays!==null&&<span style={{fontSize:9,color:r.contractDays<0?"#E85D75":"#30363D"}}>
+                    {r.contractDays} días {r.basis==="business"?"hábiles":"cal."} del contrato
+                    {r.contractDays<0?" ⚠":""}</span>}
                   <span style={{fontSize:9.5,color:r.outcomeMeta.color,marginLeft:"auto"}}>
                     {r.outcomeMeta.es}{ext>0?` ·${ext}×`:""}
                   </span>
