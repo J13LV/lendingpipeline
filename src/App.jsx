@@ -3471,7 +3471,7 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
             </div>
             <div style={{
               fontSize:10,
-              color: note.length > 200 ? "#E85D75" : note.length > 100 ? "#F5A623" : "#484F58",
+              color: newNote.length > 200 ? "#E85D75" : newNote.length > 100 ? "#F5A623" : "#484F58",
               fontFamily:"DM Mono",
               letterSpacing:"0.5px"
             }}>
