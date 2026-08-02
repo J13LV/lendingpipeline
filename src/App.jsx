@@ -16,6 +16,7 @@ import {
   lenderProductKey, compCeiling, compCeilingDollars, compDeltaBetween,
   lockStatus, lockExpiration, lockTermsCovering, lastDayToLock,
   lenderConflicts, hasLenderData,
+  COMP_MODELS, compModelFor, compBreakdown, setComp,
 } from "./pipelineCore";
 import {
   getAuth,
@@ -2373,12 +2374,19 @@ function LenderPanel({file,onSave}){
   const [lockState,setLockState]=useState(file.lockState||"float");
   const [lockedAt,setLockedAt]=useState(file.lockedAt||"");
   const [term,setTerm]=useState(file.lockTermDays?String(file.lockTermDays):"30");
+  const c0=file.comp||{};
+  const [ratePriceBps,setRatePriceBps]=useState(c0.ratePriceBps!=null?String(c0.ratePriceBps):"");
+  const [originationBps,setOriginationBps]=useState(c0.originationBps!=null?String(c0.originationBps):"");
+  const [borrowerPaidBps,setBorrowerPaidBps]=useState(c0.borrowerPaidBps!=null?String(c0.borrowerPaidBps):"");
+  const [lenderPaidBps,setLenderPaidBps]=useState(c0.lenderPaidBps!=null?String(c0.lenderPaidBps):"");
 
   const fs={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",
     padding:"7px 9px",fontSize:12,fontFamily:"'DM Mono','Courier New',monospace",width:"100%"};
 
-  const draft={...file,channel,lenderId:lenderId||null,rate:parseFloat(rate)||null,
+  const draftBase={...file,channel,lenderId:lenderId||null,rate:parseFloat(rate)||null,
     lockState,lockedAt:lockedAt||null,lockTermDays:parseInt(term)||null};
+  const draft=setComp(draftBase,{ratePriceBps,originationBps,borrowerPaidBps,lenderPaidBps});
+  const comp=compBreakdown(draft);
   const options=lendersFor(draft,channel);
   const l=lenderById(lenderId);
   const cc=compCeiling(draft);
@@ -2392,6 +2400,7 @@ function LenderPanel({file,onSave}){
     lockTermDays: lockState==="locked"?(parseInt(term)||null):null,
     lockExpires: lockState==="locked"?lockExpiration(okDate(lockedAt)||today(),parseInt(term)):null,
     lenderSince: file.lenderId===lenderId?(file.lenderSince||today()):today(),
+    comp: draft.comp,
   });
 
   return (
@@ -2444,23 +2453,64 @@ function LenderPanel({file,onSave}){
         )}
       </div>
 
-      {/* CEILING — reference only. Nothing here is editable on purpose:
-          per-file compensation adjustments are a Reg Z question that
-          Barrett compliance has not answered yet. */}
-      {cc.bps!==null&&(
-        <div style={{background:"#0D1117",border:"1px solid #21262D",borderRadius:6,padding:"8px 10px"}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
-            <span style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px"}}>TECHO DE COMPENSACIÓN</span>
-            <span style={{fontSize:12,color:"#F5A623",fontFamily:"DM Mono"}}>
-              {cc.bps} bps{ccD!==null?` · $${ccD.toLocaleString()}`:""}
+      {/* COMPENSATION — editable where it legitimately varies by loan,
+          read-only where the comp plan determines it. */}
+      {lenderId&&(
+        <div style={{background:"#0D1117",border:`1px solid ${comp.overCeiling?"#E85D75":"#21262D"}`,
+          borderRadius:6,padding:"10px 11px",display:"flex",flexDirection:"column",gap:8}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8}}>
+            <span style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px"}}>COMPENSACIÓN</span>
+            <span style={{fontSize:9,color:comp.meta.editable?"#7EC8A4":"#6E7681"}}>{comp.meta.es}</span>
+          </div>
+
+          {comp.lines.map(ln=>(
+            <div key={ln.id} style={{display:"flex",alignItems:"center",gap:8}}>
+              <span style={{fontSize:10,color:"#8B949E",flex:1}}>{ln.es}</span>
+              {ln.editable?(
+                <input inputMode="numeric" placeholder={ln.planBps!=null?String(ln.planBps):"0"}
+                  value={ln.id==="ratePrice"?ratePriceBps:ln.id==="origination"?originationBps
+                    :ln.id==="lenderPaid"?lenderPaidBps:borrowerPaidBps}
+                  onChange={e=>{const v=e.target.value.replace(/[^\d]/g,"");
+                    ln.id==="ratePrice"?setRatePriceBps(v):ln.id==="origination"?setOriginationBps(v)
+                    :ln.id==="lenderPaid"?setLenderPaidBps(v):setBorrowerPaidBps(v);}}
+                  style={{...fs,width:66,textAlign:"right",padding:"5px 7px",fontSize:11.5}}/>
+              ):(
+                <span style={{fontSize:11.5,color:"#8B949E",fontFamily:"DM Mono",width:66,textAlign:"right"}}>{ln.bps??"—"}</span>
+              )}
+              <span style={{fontSize:9,color:"#484F58",width:22}}>bps</span>
+              <span style={{fontSize:10.5,color:"#E6EDF3",fontFamily:"DM Mono",width:74,textAlign:"right"}}>
+                {ln.dollars!==null?`$${ln.dollars.toLocaleString()}`:"—"}
+              </span>
+            </div>
+          ))}
+
+          <div style={{borderTop:"1px solid #21262D",paddingTop:7,display:"flex",
+            justifyContent:"space-between",alignItems:"baseline"}}>
+            <span style={{fontSize:10,color:"#8B949E"}}>Total</span>
+            <span style={{fontSize:13,color:comp.overCeiling?"#E85D75":"#F5A623",fontFamily:"DM Mono"}}>
+              {comp.totalBps??"—"} bps{comp.totalDollars!==null?` · $${comp.totalDollars.toLocaleString()}`:""}
             </span>
           </div>
-          <div style={{fontSize:9,color:"#484F58",marginTop:3}}>
-            {cc.source==="plan_cap"?`el lender publica ${cc.published} — el plan topa en ${cc.bps}`
-              :cc.source==="channel"?"precio de la tasa y origination combinados"
-              :"según el plan del lender"}
-            {" · referencia, no editable"}
+
+          {/* room left under the ceiling, shown as a bar so it reads at a glance */}
+          <div>
+            <div style={{height:4,background:"#21262D",borderRadius:2,overflow:"hidden"}}>
+              <div style={{height:"100%",width:`${Math.min(100,comp.pctOfCeiling??0)}%`,
+                background:comp.overCeiling?"#E85D75":comp.pctOfCeiling>=95?"#F5A623":"#7EC8A4"}}/>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:9,color:"#484F58",marginTop:4}}>
+              <span>{comp.meta.note_es}</span>
+              <span style={{color:comp.overCeiling?"#E85D75":"#484F58"}}>
+                techo {comp.ceilingBps} bps{comp.remainingBps!==null&&comp.remainingBps>0?` · quedan ${comp.remainingBps}`:""}
+              </span>
+            </div>
           </div>
+
+          {comp.model==="correspondent"&&(
+            <div style={{fontSize:9,color:"#6E7681"}}>
+              Los 400 son combinados. Si subes uno, el otro se ajusta a lo que quede.
+            </div>
+          )}
         </div>
       )}
 

@@ -866,15 +866,136 @@ export function lendersFor(file, channel) {
 
 // What this file can earn, and what the lender publishing a higher number
 // does not change. Broker comp is capped by the plan, not by the lender.
+// ─── COMPENSATION ──────────────────────────────────────────────────
+// Three models. All three are typed in, because all three can differ
+// from what any reference file says.
+//
+//   lender_paid    — broker channel. Defaults to the plan figure carried
+//                    in the lender record, but that record is a snapshot
+//                    of Lender_List_2026 and comp plans change. The typed
+//                    value wins; the snapshot is shown beside it so a
+//                    drift is visible instead of silent.
+//   borrower_paid  — broker channel, lenders that pay nothing. Negotiated
+//                    with the borrower.
+//   correspondent  — rate price plus origination fees, COMBINED under
+//                    400 bps.
+export const COMP_MODELS = {
+  lender_paid: {
+    es: "Lender-paid", en: "Lender-paid", editable: true, capBps: BROKER_COMP_CAP_BPS,
+    note_es: "Pagado por el lender · arranca en tu plan, lo ajustas tú",
+    note_en: "Lender-paid · starts from your plan, you adjust it",
+  },
+  borrower_paid: {
+    es: "Borrower-paid", en: "Borrower-paid", editable: true, capBps: BROKER_COMP_CAP_BPS,
+    note_es: "Lo paga el cliente · se negocia por préstamo",
+    note_en: "Paid by the borrower · negotiated per loan",
+  },
+  correspondent: {
+    es: "Correspondent", en: "Correspondent", editable: true, capBps: CORRESPONDENT_COMP_CAP_BPS,
+    note_es: "Precio de la tasa + origination, combinados bajo 400 bps",
+    note_en: "Rate price + origination, combined under 400 bps",
+  },
+};
+
+export function compModelFor(file) {
+  if (file?.channel === "correspondent") return "correspondent";
+  return lenderById(file?.lenderId)?.borrowerPaidOnly ? "borrower_paid" : "lender_paid";
+}
+
+// The lines that make up this file's revenue, what each is worth in
+// dollars, and how much room is left under the ceiling.
+export function compBreakdown(file) {
+  const model = compModelFor(file);
+  const m = COMP_MODELS[model];
+  const loan = file?.loan || 0;
+  const c = file?.comp || {};
+  const $ = bps => Math.round(loan * (bps || 0) / 10000);
+  // Number(null) and Number("") are both 0, not NaN — so an empty field
+  // came back as a real zero and overwrote the plan default with $0.
+  const num = v => (v === null || v === undefined || v === ""
+    ? null : (Number.isFinite(Number(v)) ? Number(v) : null));
+
+  let lines;
+  if (model === "correspondent") {
+    lines = [
+      { id: "ratePrice",   es: "Precio de la tasa", en: "Rate price",       bps: num(c.ratePriceBps),   editable: true },
+      { id: "origination", es: "Origination",       en: "Origination fees", bps: num(c.originationBps), editable: true },
+    ];
+  } else if (model === "borrower_paid") {
+    lines = [{ id: "borrowerPaid", es: "Pagado por el cliente", en: "Borrower-paid", bps: num(c.borrowerPaidBps), editable: true }];
+  } else {
+    const raw = lenderById(file?.lenderId)?.lenderPaidBps ?? null;
+    const planBps = raw === null ? null : Math.min(raw, BROKER_COMP_CAP_BPS);
+    // Typed value wins. Falls back to the plan snapshot when nothing typed.
+    const typed = num(c.lenderPaidBps);
+    lines = [{ id: "lenderPaid", es: "Pagado por el lender", en: "Lender-paid",
+               bps: typed !== null ? typed : planBps, editable: true,
+               published: raw, planBps, fromPlan: typed === null }];
+  }
+
+  const entered = lines.some(l => l.bps !== null);
+  const totalBps = entered ? lines.reduce((a, l) => a + (l.bps || 0), 0) : null;
+  const forfeited = model === "lender_paid"
+    ? Math.max(0, (lines[0].published ?? 0) - (lines[0].bps ?? 0)) : 0;
+  // The typed figure disagreeing with the snapshot is worth seeing, not hiding.
+  const planDrift = model === "lender_paid" && !lines[0].fromPlan
+    && lines[0].planBps !== null && lines[0].bps !== lines[0].planBps
+    ? { typed: lines[0].bps, plan: lines[0].planBps } : null;
+
+  return {
+    model, meta: m, ceilingBps: m.capBps, ceilingDollars: $(m.capBps),
+    lines: lines.map(l => ({ ...l, dollars: l.bps === null ? null : $(l.bps) })),
+    totalBps, totalDollars: totalBps === null ? null : $(totalBps),
+    remainingBps: totalBps === null ? null : m.capBps - totalBps,
+    overCeiling: totalBps !== null && totalBps > m.capBps,
+    pctOfCeiling: totalBps === null ? null : Math.round(100 * totalBps / m.capBps),
+    forfeited, planDrift,
+    entered,
+  };
+}
+
+// Enforces the ceiling on write. Nothing above the cap is ever stored,
+// so a typo cannot become a number the team quotes to a borrower.
+export function setComp(file, patch) {
+  const model = compModelFor(file);
+  const cap = COMP_MODELS[model].capBps;
+  const KEYS = { correspondent: ["ratePriceBps", "originationBps"],
+                 borrower_paid: ["borrowerPaidBps"], lender_paid: ["lenderPaidBps"] }[model];
+  const merged = { ...(file.comp || {}) };
+  for (const [k, v] of Object.entries(patch || {})) {
+    const n = Number(v);
+    merged[k] = (v === "" || v === null || !Number.isFinite(n)) ? null : Math.max(0, n);
+  }
+  // The correspondent ceiling is COMBINED, not per line. Capping each line
+  // at 400 let 300 + 250 through as 550. Each value is clamped to whatever
+  // the other lines have left, so the sum can never exceed the cap.
+  const edited = Object.keys(patch || {});
+  for (const k of KEYS) {
+    if (merged[k] === null || merged[k] === undefined) continue;
+    const others = KEYS.filter(x => x !== k).reduce((a, x) => a + (merged[x] || 0), 0);
+    const room = Math.max(0, cap - others);
+    if (merged[k] > room) merged[k] = edited.includes(k) ? room : merged[k];
+  }
+  // If a stale combination still exceeds, trim the line the user did not touch.
+  let total = KEYS.reduce((a, x) => a + (merged[x] || 0), 0);
+  if (total > cap) for (const k of KEYS.filter(x => !edited.includes(x))) {
+    if (total <= cap) break;
+    const cut = Math.min(merged[k] || 0, total - cap);
+    merged[k] = (merged[k] || 0) - cut; total -= cut;
+  }
+  return { ...file, comp: { ...merged, model, updatedAt: today() } };
+}
+
+// Kept for the card and for compDeltaBetween: the ceiling only.
 export function compCeiling(file) {
-  const ch = CHANNELS[file?.channel] || CHANNELS.broker;
-  const l = lenderById(file?.lenderId);
-  if (file?.channel === "correspondent")
-    return { bps: CORRESPONDENT_COMP_CAP_BPS, source: "channel", published: null, forfeited: 0 };
-  const published = l?.lenderPaidBps ?? null;
-  if (published === null) return { bps: null, source: "unknown", published: null, forfeited: 0 };
-  const bps = Math.min(published, ch.capBps);
-  return { bps, source: published > ch.capBps ? "plan_cap" : "lender", published, forfeited: Math.max(0, published - bps) };
+  const b = compBreakdown(file);
+  const line = b.model === "lender_paid" ? b.lines[0] : null;
+  return {
+    bps: line ? line.bps : (b.totalBps ?? b.ceilingBps),
+    source: b.model === "lender_paid" ? (line?.published > b.ceilingBps ? "plan_cap" : "lender") : "channel",
+    published: line?.published ?? null,
+    forfeited: b.forfeited,
+  };
 }
 export function compCeilingDollars(file) {
   const c = compCeiling(file);
@@ -994,10 +1115,6 @@ export function lenderConflicts(file) {
   if (ls.state === "float" && ls.mustLockBy && ls.daysLeft < 0) add("critical",
     `Pasó el último día para lockear (${ls.mustLockBy}) y el archivo sigue flotando`,
     `The last day to lock (${ls.mustLockBy}) has passed and the file is still floating`);
-  const cc = compCeiling(file);
-  if (cc.forfeited > 0) add("warn",
-    `${l?.name} paga ${cc.published} bps pero el plan topa en ${cc.bps} — no se cobran ${cc.forfeited} bps`,
-    `${l?.name} pays ${cc.published} bps but the plan caps at ${cc.bps} — ${cc.forfeited} bps are not collectable`);
   return out;
 }
 
