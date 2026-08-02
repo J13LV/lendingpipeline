@@ -4,6 +4,13 @@ import { getFirestore, doc, setDoc, onSnapshot } from "firebase/firestore";
 import {
   stageUrgency, stageClock, daysInStage, fileAge, stampStage, today,
   daysBetween, addDays as addDaysISO,
+  // ─── 2B-1 contingencies ───
+  CONTINGENCIES, CONTINGENCY_OUTCOMES, CONTRACT_DAY_BASIS,
+  contingencyById, outcomeById, allContingencyStatus, contingencyStatus,
+  contingencyConflicts, contingencyHeadline, hasContingencies,
+  derivedStageDeadlines, upcomingDeadlines, recordContingencyOutcome,
+  contingencyExtensionCount, cdIssueDeadline, cdMailDeadline,
+  federalHolidayName, contractDaysBetween,
 } from "./pipelineCore";
 import {
   getAuth,
@@ -1244,6 +1251,7 @@ export default function App() {
                               {cd===0?"CLOSING TODAY":cd!==null&&cd>0?`Close in ${cd}d`:cd!==null?"PAST DUE":f.closing}
                             </span>}
                           </div>
+                          <ContingencyStrip file={f}/>
                           {f.note&&<div style={{fontSize:10,color:"#6E7681",borderTop:"1px solid #21262D",paddingTop:6,fontStyle:"italic"}}>{f.note}</div>}
                           {f.lastEditedBy&&<div style={{fontSize:9,color:"#484F58",letterSpacing:"0.5px",borderTop:f.note?"none":"1px solid #21262D",paddingTop:f.note?0:6}}>
                             Edited by {f.lastEditedBy.name?.split(" ")[0]||"?"} · {timeAgo(f.lastEditedAt)}
@@ -2229,6 +2237,316 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
 }
 
 
+// ═══════════════════════════════════════════════════════════════════
+//  CONTINGENCIES — card strip (design A) and detail panel
+// ═══════════════════════════════════════════════════════════════════
+
+const US_STATES = ["NV","FL","TX","AZ","CO","CA","UT","ID","NM","OR","WA"];
+const FULL_APP_STAGE = "Full Application";
+// Contingencies are captured at Full Application. Before that there is no
+// contract to read them from; after it, they govern everything.
+function atOrPastFullApp(stage){
+  if(stage===CLOSED_STAGE) return true;
+  const i=ALL_STAGES.findIndex(s=>s.stage===stage);
+  const f=ALL_STAGES.findIndex(s=>s.stage===FULL_APP_STAGE);
+  return i>-1 && f>-1 && i>=f;
+}
+const md = iso => iso ? `${iso.slice(5,7)}/${iso.slice(8,10)}` : "—";
+const LEVEL_COLOR = { critical:"#E85D75", warn:"#F5A623", normal:"#7EC8A4", done:"#484F58", missing:"#30363D" };
+
+// ─── CARD STRIP (design A) ───
+// Two contract contingencies on one line, the delivery date and its legal
+// CD deadline on the next, and the single next thing somebody has to do.
+function ContingencyStrip({file}){
+  if(!hasContingencies(file)) return null;
+  const st = {};
+  for(const s of allContingencyStatus(file)) st[s.id]=s;
+  const conflicts = contingencyConflicts(file);
+  const next = upcomingDeadlines(file,1)[0];
+  const coe = st.coe?.date;
+  const cd = coe ? cdIssueDeadline(coe) : null;
+
+  const chip = (s) => {
+    if(!s?.date) return null;
+    const c = LEVEL_COLOR[s.level];
+    const done = s.level==="done";
+    return (
+      <span title={`${s.en} · ${s.date}${s.contractDays!==null?` · ${s.contractDays} ${s.basis} days from contract`:""}`}
+        style={{display:"inline-flex",alignItems:"center",gap:4,background:done?"transparent":`${c}14`,
+          border:`1px solid ${c}${done?"33":"55"}`,borderRadius:4,padding:"2px 6px",fontSize:9.5,color:c,fontFamily:"DM Mono"}}>
+        <b style={{fontWeight:500,letterSpacing:".5px"}}>{s.short}</b>
+        <span style={{color:done?"#484F58":"#8B949E"}}>{md(s.date)}</span>
+        {!done && s.daysLeft!==null && <span style={{fontWeight:500}}>{s.daysLeft<0?`${Math.abs(s.daysLeft)}d late`:`${s.daysLeft}d`}</span>}
+        {done && <span style={{fontSize:8}}>{s.outcome==="met"?"✓":s.outcome==="waived"?"⚑":s.outcome==="missed"?"✕":"—"}</span>}
+      </span>
+    );
+  };
+
+  return (
+    <div style={{borderTop:"1px solid #21262D",paddingTop:7,display:"flex",flexDirection:"column",gap:5}}>
+      <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>{chip(st.appraisal)}{chip(st.loan)}</div>
+      {(coe||st.ctc?.date)&&(
+        <div style={{display:"flex",gap:8,fontSize:9.5,color:"#6E7681",fontFamily:"DM Mono",flexWrap:"wrap"}}>
+          {st.ctc?.date&&<span>CTC <span style={{color:LEVEL_COLOR[st.ctc.level]}}>{md(st.ctc.date)}</span></span>}
+          {coe&&<span>COE <span style={{color:LEVEL_COLOR[st.coe.level]}}>{md(coe)}</span></span>}
+          {cd&&<span title="Last day to issue the CD — 3 business days before closing, by law">
+            CD by <span style={{color:"#BD65E8"}}>{md(cd)}</span></span>}
+        </div>
+      )}
+      {next&&(
+        <div style={{fontSize:9.5,fontFamily:"DM Mono",color:next.overdue?"#E85D75":"#484F58"}}>
+          {next.overdue?"⚠ ":"→ "}{next.stage} by {md(next.startBy)}{next.owner?` · ${next.owner}`:""}
+        </div>
+      )}
+      {conflicts.length>0&&(
+        <div style={{fontSize:9.5,fontFamily:"DM Mono",color:"#E85D75"}}>
+          ⚠ {conflicts.length} {conflicts.length===1?"conflicto de fechas":"conflictos de fechas"}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── DETAIL PANEL ───
+function ContingencyPanel({file,profile,onSave}){
+  const box = file.contingencies||{};
+  const [state,setState]=useState(file.state||"NV");
+  const [d,setD]=useState({
+    contractAccepted:box.contractAccepted||"", appraisalContingency:box.appraisalContingency||"",
+    loanContingency:box.loanContingency||"", ctcTarget:box.ctcTarget||"",
+    coe:box.coe||file.closing||"", fundingDate:box.fundingDate||"",
+  });
+  const [openId,setOpenId]=useState(null);
+  const [oc,setOc]=useState("met"); const [ocDate,setOcDate]=useState(""); const [ocNote,setOcNote]=useState("");
+  const [showDerived,setShowDerived]=useState(false);
+
+  const fs={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",
+    padding:"7px 9px",fontSize:12,fontFamily:"'DM Mono','Courier New',monospace",width:"100%"};
+
+  // Preview against what is being typed, not against what was last saved.
+  const draft={...file,state,contingencies:{...box,...d}};
+  const rows=allContingencyStatus(draft);
+  const conflicts=contingencyConflicts(draft);
+  const derived=Object.values(derivedStageDeadlines(draft)).sort((a,b)=>a.startBy<b.startBy?-1:1);
+  const cd=d.coe?cdIssueDeadline(d.coe):null;
+  const basis=CONTRACT_DAY_BASIS[state];
+
+  const save=()=>{
+    onSave({state,contingencies:{...box,...Object.fromEntries(
+      Object.entries(d).map(([k,v])=>[k,v||null])),capturedAt:today()}});
+  };
+  const record=(id)=>{
+    const patched=recordContingencyOutcome({...file,contingencies:{...box,...d}},id,
+      {outcome:oc,newDate:ocDate||null,notes:ocNote,by:profile?.name||null});
+    onSave({contingencies:patched.contingencies,contingencyResults:patched.contingencyResults,
+      contingencyLog:patched.contingencyLog});
+    setOpenId(null); setOc("met"); setOcDate(""); setOcNote("");
+  };
+
+  const field=(key,label,hint)=>(
+    <div>
+      <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>{label}</div>
+      <input type="date" value={d[key]} onChange={e=>setD({...d,[key]:e.target.value})} style={fs}/>
+      {hint&&<div style={{fontSize:9,color:"#30363D",marginTop:3}}>{hint}</div>}
+    </div>
+  );
+
+  return (
+    <div style={{background:"rgba(232,93,117,.04)",border:"1px solid #E85D7533",borderRadius:8,
+      padding:14,display:"flex",flexDirection:"column",gap:12}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#E85D75",letterSpacing:"1px"}}>⏱ CONTINGENCIAS</span>
+        <span style={{fontSize:9.5,color:"#6E7681"}}>
+          el reloj corre desde la aceptación del contrato, no desde hoy
+        </span>
+      </div>
+
+      {/* STATE — decides whether the contract counts calendar or business days */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 2fr",gap:10,alignItems:"end"}}>
+        <div>
+          <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>ESTADO</div>
+          <select value={state} onChange={e=>setState(e.target.value)} style={fs}>
+            {US_STATES.map(s=><option key={s}>{s}</option>)}
+          </select>
+        </div>
+        <div style={{fontSize:10,color:basis==="business"?"#F5A623":"#6E7681",paddingBottom:8}}>
+          {basis==="business"
+            ? "FL cuenta DÍAS HÁBILES en el contrato — la misma contingencia da otra fecha"
+            : `${state} cuenta días de calendario en el contrato`}
+        </div>
+      </div>
+
+      {/* THE ANCHOR */}
+      <div style={{borderLeft:"2px solid #E85D75",paddingLeft:10}}>
+        {field("contractAccepted","FECHA DE ACEPTACIÓN DEL CONTRATO",
+          "Todo se cuenta desde aquí. Si el archivo pasó días en Under Contract, ya se gastaron.")}
+      </div>
+
+      {/* CONTRACT — deposit at risk */}
+      <div>
+        <div style={{fontSize:9.5,color:"#E85D75",letterSpacing:"1px",marginBottom:6,fontWeight:500}}>
+          DEL CONTRATO · el depósito está en riesgo
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+          {field("appraisalContingency","TASACIÓN")}
+          {field("loanContingency","PRÉSTAMO")}
+        </div>
+      </div>
+
+      {/* DELIVERY CHAIN */}
+      <div>
+        <div style={{fontSize:9.5,color:"#F5A623",letterSpacing:"1px",marginBottom:6,fontWeight:500}}>
+          CADENA DE ENTREGA · credibilidad y per diem
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
+          {field("ctcTarget","CTC")}
+          {field("coe","COE")}
+          {field("fundingDate","FONDEO")}
+        </div>
+        {cd&&(
+          <div style={{marginTop:8,background:"rgba(189,101,232,.08)",border:"1px solid #BD65E844",
+            borderRadius:6,padding:"8px 10px",fontSize:10.5,color:"#BD65E8",fontFamily:"DM Mono"}}>
+            CD debe estar RECIBIDO el {cd} — 3 días hábiles antes del cierre, por ley.
+            <div style={{color:"#8B949E",fontSize:9.5,marginTop:3}}>
+              Cuenta sábados y salta domingos y feriados federales. Si se manda por correo, sale el {cdMailDeadline(d.coe)}.
+            </div>
+          </div>
+        )}
+      </div>
+
+      <button className="hov" onClick={save}
+        style={{background:"#E85D75",color:"#0D1117",borderRadius:6,padding:"9px 0",fontFamily:"DM Mono",
+          fontSize:11.5,fontWeight:500,border:"none",cursor:"pointer"}}>GUARDAR FECHAS</button>
+
+      {/* CONFLICTS */}
+      {conflicts.length>0&&(
+        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+          <div style={{fontSize:9.5,color:"#E85D75",letterSpacing:"1px",fontWeight:500}}>
+            ⚠ {conflicts.length} {conflicts.length===1?"CONFLICTO":"CONFLICTOS"}
+          </div>
+          {conflicts.map((c,i)=>(
+            <div key={i} style={{fontSize:10.5,color:c.sev==="critical"?"#E85D75":"#F5A623",
+              background:"#0D1117",border:`1px solid ${c.sev==="critical"?"#E85D7544":"#F5A62344"}`,
+              borderRadius:5,padding:"7px 9px",lineHeight:1.45}}>{c.es}</div>
+          ))}
+        </div>
+      )}
+
+      {/* RESULTS PER CONTINGENCY */}
+      {rows.some(r=>r.date)&&(
+        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+          <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px"}}>RESULTADO POR CONTINGENCIA</div>
+          {rows.filter(r=>r.date).map(r=>{
+            const ext=contingencyExtensionCount(file,r.id);
+            return (
+              <div key={r.id} style={{background:"#0D1117",border:"1px solid #21262D",borderRadius:5,padding:"8px 10px"}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                  <span style={{fontSize:10,color:LEVEL_COLOR[r.level],fontWeight:500,minWidth:38}}>{r.short}</span>
+                  <span style={{fontSize:10.5,color:"#8B949E"}}>{r.date}</span>
+                  {r.contractDays!==null&&<span style={{fontSize:9,color:"#30363D"}}>
+                    {r.contractDays} días {r.basis==="business"?"hábiles":"cal."} del contrato</span>}
+                  <span style={{fontSize:9.5,color:r.outcomeMeta.color,marginLeft:"auto"}}>
+                    {r.outcomeMeta.es}{ext>0?` ·${ext}×`:""}
+                  </span>
+                  <button className="hov" onClick={()=>setOpenId(openId===r.id?null:r.id)}
+                    style={{background:"#21262D",border:"1px solid #30363D",borderRadius:4,color:"#8B949E",
+                      fontSize:9,padding:"3px 7px",cursor:"pointer",fontFamily:"DM Mono"}}>
+                    {openId===r.id?"✕":"REGISTRAR"}
+                  </button>
+                </div>
+                {r.depositAtRisk&&(
+                  <div style={{fontSize:9.5,color:"#E85D75",marginTop:5}}>
+                    Venció sin registrar resultado. El depósito está expuesto.
+                  </div>
+                )}
+                {openId===r.id&&(
+                  <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:7}}>
+                    <select value={oc} onChange={e=>setOc(e.target.value)} style={fs}>
+                      {CONTINGENCY_OUTCOMES.filter(o=>o.id!=="pending").map(o=>
+                        <option key={o.id} value={o.id}>{o.es}</option>)}
+                    </select>
+                    {outcomeById(oc).requiresNewDate&&(
+                      <div>
+                        <div style={{fontSize:9,color:"#F5A623",marginBottom:3}}>
+                          Fecha nueva — requiere addendum firmado
+                        </div>
+                        <input type="date" value={ocDate} onChange={e=>setOcDate(e.target.value)} style={fs}/>
+                      </div>
+                    )}
+                    {outcomeById(oc).note_es&&(
+                      <div style={{fontSize:9.5,color:outcomeById(oc).color}}>{outcomeById(oc).note_es}</div>
+                    )}
+                    <input value={ocNote} onChange={e=>setOcNote(e.target.value)}
+                      placeholder="Nota — qué pasó, quién lo confirmó" style={fs}/>
+                    <button className="hov" onClick={()=>record(r.id)}
+                      disabled={outcomeById(oc).requiresNewDate&&!ocDate}
+                      style={{background:outcomeById(oc).requiresNewDate&&!ocDate?"#161B22":"#21262D",
+                        color:outcomeById(oc).requiresNewDate&&!ocDate?"#30363D":"#7EC8A4",borderRadius:5,
+                        padding:"7px 0",fontSize:10.5,fontFamily:"DM Mono",
+                        border:`1px solid ${outcomeById(oc).requiresNewDate&&!ocDate?"#21262D":"#7EC8A4"}`,
+                        cursor:outcomeById(oc).requiresNewDate&&!ocDate?"not-allowed":"pointer"}}>
+                      GUARDAR RESULTADO
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* DERIVED DEADLINES */}
+      {derived.length>0&&(
+        <div>
+          <button className="hov" onClick={()=>setShowDerived(v=>!v)}
+            style={{background:"transparent",border:"none",color:"#4A90D9",fontSize:10,
+              fontFamily:"DM Mono",cursor:"pointer",padding:0}}>
+            {showDerived?"▾":"▸"} FECHAS TOPE DERIVADAS ({derived.length} etapas)
+          </button>
+          {showDerived&&(
+            <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:3}}>
+              <div style={{fontSize:9,color:"#30363D",marginBottom:3,lineHeight:1.5}}>
+                Calculadas hacia atrás desde cada contingencia, con el techo de cada etapa —
+                el peor caso, no el promedio.
+              </div>
+              {derived.map(r=>{
+                const late=r.startBy<today();
+                return (
+                  <div key={r.stage} style={{display:"flex",gap:8,fontSize:10,fontFamily:"DM Mono",
+                    color:late?"#E85D75":"#8B949E",alignItems:"baseline"}}>
+                    <span style={{minWidth:70,color:late?"#E85D75":"#E6EDF3"}}>{r.startBy}</span>
+                    <span style={{flex:1}}>{r.stage}{r.legal?" ⚖":""}</span>
+                    <span style={{color:"#484F58",fontSize:9}}>{r.owner||""}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* LOG */}
+      {(file.contingencyLog||[]).length>0&&(
+        <div style={{borderTop:"1px solid #21262D",paddingTop:8}}>
+          <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>HISTORIAL</div>
+          {(file.contingencyLog||[]).slice().reverse().map((e,i)=>(
+            <div key={i} style={{fontSize:10,color:"#6E7681",display:"flex",gap:7,marginBottom:3}}>
+              <span style={{color:"#484F58",minWidth:70}}>{e.at}</span>
+              <span style={{color:outcomeById(e.outcome).color,minWidth:70}}>
+                {contingencyById(e.id)?.short} {outcomeById(e.outcome).es}
+              </span>
+              <span style={{flex:1}}>
+                {e.toDate?`${e.fromDate} → ${e.toDate}`:""}{e.notes?` · ${e.notes}`:""}
+                {e.by?` · ${e.by.split(" ")[0]}`:""}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile,onReopen,onPrep,onArchive,onRestore,onContinuePrep,isClosed}){
   const isAdmin = profile?.role === "admin";
   const isAssistant = profile?.role === "assistant";
@@ -2356,6 +2674,11 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
             <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="borrower@email.com" style={fs2}/>
           </div>
         </div>
+
+        {/* CONTINGENCIES — captured at Full Application, anchored to the contract */}
+        {!inPrep && !isReferredOut && (atOrPastFullApp(stage) || hasContingencies(file)) && (
+          <ContingencyPanel file={file} profile={profile} onSave={onSave}/>
+        )}
 
         {/* INBOUND REFERRAL SECTION — when file came from another banker */}
         {isInbound && (

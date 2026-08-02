@@ -292,6 +292,466 @@ export function closingOutlook(file) {
   };
 }
 
+// ─── 2D. FEDERAL HOLIDAYS ──────────────────────────────────────────
+// Computed by rule, never by table. A hard-coded list expires quietly:
+// it keeps returning answers after the last year in it, and the answers
+// are wrong. These rules are the statute (5 U.S.C. 6103) and do not age.
+//
+// Observance shift: a holiday on Saturday is observed the Friday before,
+// on Sunday the Monday after.
+function nthWeekday(y, m, wd, n) {          // m 0-based, wd 0=Sunday
+  const d = new Date(y, m, 1);
+  d.setDate(1 + ((wd - d.getDay() + 7) % 7) + (n - 1) * 7);
+  return d;
+}
+function lastWeekday(y, m, wd) {
+  const d = new Date(y, m + 1, 0);
+  d.setDate(d.getDate() - ((d.getDay() - wd + 7) % 7));
+  return d;
+}
+function observedShift(d) {
+  const x = new Date(d);
+  if (x.getDay() === 6) x.setDate(x.getDate() - 1);
+  if (x.getDay() === 0) x.setDate(x.getDate() + 1);
+  return x;
+}
+
+export const FEDERAL_HOLIDAY_NAMES = [
+  "New Year's Day", "Martin Luther King Jr. Day", "Presidents' Day",
+  "Memorial Day", "Juneteenth", "Independence Day", "Labor Day",
+  "Columbus Day", "Veterans Day", "Thanksgiving", "Christmas Day",
+];
+
+export function federalHolidays(year) {
+  const raw = [
+    new Date(year, 0, 1),        nthWeekday(year, 0, 1, 3),   nthWeekday(year, 1, 1, 3),
+    lastWeekday(year, 4, 1),     new Date(year, 5, 19),       new Date(year, 6, 4),
+    nthWeekday(year, 8, 1, 1),   nthWeekday(year, 9, 1, 2),   new Date(year, 10, 11),
+    nthWeekday(year, 10, 4, 4),  new Date(year, 11, 25),
+  ];
+  return raw.map((d, i) => ({ date: localISO(observedShift(d)), name: FEDERAL_HOLIDAY_NAMES[i] }));
+}
+
+const _holCache = new Map();
+function holidayMap(year) {
+  if (!_holCache.has(year)) {
+    const m = new Map();
+    for (const h of federalHolidays(year)) m.set(h.date, h.name);
+    _holCache.set(year, m);
+  }
+  return _holCache.get(year);
+}
+export function federalHolidayName(iso) {
+  if (!iso) return null;
+  return holidayMap(Number(iso.slice(0, 4))).get(iso) || null;
+}
+export function isFederalHoliday(iso) { return !!federalHolidayName(iso); }
+
+function weekday(iso) { return new Date(iso + "T00:00:00").getDay(); }
+export function isWeekend(iso) { const w = weekday(iso); return w === 0 || w === 6; }
+
+// ─── TWO DEFINITIONS OF "BUSINESS DAY" ─────────────────────────────
+// They are not interchangeable and using the wrong one moves a legal
+// deadline by a full day.
+//
+//   trid     — Regulation Z's precise definition, used for the CD
+//              waiting period: every calendar day EXCEPT Sundays and
+//              federal legal public holidays. SATURDAY COUNTS. Almost
+//              everyone gets this wrong and gives the borrower a day
+//              that does not exist.
+//   contract — how a purchase contract counts (FL FAR/BAR and the
+//              ordinary commercial meaning): Monday through Friday,
+//              minus federal holidays. Saturday does NOT count.
+export const BUSINESS_DAY_BASIS = {
+  trid:     iso => weekday(iso) !== 0 && !isFederalHoliday(iso),
+  contract: iso => weekday(iso) !== 0 && weekday(iso) !== 6 && !isFederalHoliday(iso),
+};
+
+export function addBusinessDays(iso, n, basis = "contract") {
+  const isBiz = BUSINESS_DAY_BASIS[basis] || BUSINESS_DAY_BASIS.contract;
+  let cur = iso, counted = 0;
+  const step = n < 0 ? -1 : 1, target = Math.abs(n);
+  while (counted < target) { cur = addDays(cur, step); if (isBiz(cur)) counted++; }
+  return cur;
+}
+export const subBusinessDays = (iso, n, basis = "contract") => addBusinessDays(iso, -n, basis);
+
+// Closest working day at or before `iso` — where a deadline actually lands
+// when the calculated date is a Sunday or a holiday.
+export function previousBusinessDay(iso, basis = "contract") {
+  const isBiz = BUSINESS_DAY_BASIS[basis] || BUSINESS_DAY_BASIS.contract;
+  let cur = iso;
+  while (!isBiz(cur)) cur = addDays(cur, -1);
+  return cur;
+}
+
+// A contract deadline of N days from acceptance, in the units that
+// state actually uses. NV and TX count calendar; FL counts business.
+export function contractDeadline(state, fromISO, days) {
+  return CONTRACT_DAY_BASIS[state] === "business"
+    ? addBusinessDays(fromISO, days, "contract")
+    : addDays(fromISO, days);
+}
+// The inverse: how many days a written contingency date represents on
+// that state's own clock. This is the number the agent wrote.
+export function contractDaysBetween(state, fromISO, toISO) {
+  if (!fromISO || !toISO) return null;
+  if (CONTRACT_DAY_BASIS[state] !== "business") return daysBetween(fromISO, toISO);
+  const isBiz = BUSINESS_DAY_BASIS.contract;
+  let cur = fromISO, n = 0;
+  while (cur < toISO) { cur = addDays(cur, 1); if (isBiz(cur)) n++; }
+  return n;
+}
+
+// ─── 2E. CONTINGENCIES ─────────────────────────────────────────────
+// Five dates plus the anchor. They are NOT the same kind of date and
+// the system must never treat them as one list.
+//
+//   contract  — appraisal and loan. These live in the purchase contract.
+//               Blowing one puts the borrower's earnest money at risk.
+//               The consequence is the client's money, not our schedule.
+//   delivery  — CTC, COE, funding. These are our chain of delivery.
+//               Blowing one costs credibility with the agent and may
+//               cost a per-diem, but the deposit is not on the line.
+//
+// Every date is CAPTURED from the contract, never averaged. Real
+// contracts are written by real agents and deviate from every average
+// we could compute. The engine derives deadlines FROM these dates —
+// it does not invent the dates.
+export const CONTINGENCY_KINDS = {
+  contract: {
+    es: "Del contrato", en: "Contract",
+    risk_es: "El depósito del cliente está en riesgo",
+    risk_en: "The client's earnest money is at risk",
+    color: "#E85D75",
+  },
+  delivery: {
+    es: "Cadena de entrega", en: "Delivery chain",
+    risk_es: "Riesgo de credibilidad y per diem, no del depósito",
+    risk_en: "Credibility and per-diem risk, not the deposit",
+    color: "#F5A623",
+  },
+};
+
+export const CONTINGENCIES = [
+  {
+    id: "appraisal", field: "appraisalContingency", kind: "contract", order: 1,
+    es: "Tasación", en: "Appraisal", short: "APR",
+    chain: ["Appraisal Ordered"],
+    note_es: "El último día para pedirla se calcula hacia atrás desde esta fecha",
+    note_en: "The last day to order it is derived backward from this date",
+  },
+  {
+    id: "loan", field: "loanContingency", kind: "contract", order: 2,
+    es: "Préstamo", en: "Loan", short: "LOAN",
+    chain: ["Submitted to UW", "UW Review", "Conditional Approval"],
+    note_es: "La aprobación condicional va dentro de esta contingencia",
+    note_en: "Conditional approval sits inside this contingency",
+  },
+  {
+    id: "ctc", field: "ctcTarget", kind: "delivery", order: 3,
+    es: "Clear to Close", en: "Clear to Close", short: "CTC",
+    chain: ["Condition Clearing", "Clear to Close"],
+    note_es: "Debe caer antes de la fecha legal del CD",
+    note_en: "Must land before the CD's legal date",
+  },
+  {
+    id: "coe", field: "coe", kind: "delivery", order: 4,
+    es: "Cierre de escrow (COE)", en: "Close of escrow (COE)", short: "COE",
+    chain: ["Closing Scheduled", "Final Verifications", "Closing Docs Drawn", "Signing"],
+    note_es: "El CD debe estar recibido 3 días hábiles antes, por ley",
+    note_en: "The CD must be received 3 business days before, by law",
+  },
+  {
+    id: "funding", field: "fundingDate", kind: "delivery", order: 5,
+    es: "Fondeo", en: "Funding", short: "FUND",
+    chain: ["Funded"],
+    note_es: "24-48 horas después de la firma",
+    note_en: "24-48 hours after signing",
+  },
+];
+export const contingencyById = id => CONTINGENCIES.find(c => c.id === id) || null;
+export const CONTINGENCY_ANCHOR_FIELD = "contractAccepted";
+
+// ─── OUTCOMES ──────────────────────────────────────────────────────
+// A contingency without a recorded result is a contingency nobody
+// closed out. `pending` is the honest default and it is not neutral —
+// a pending contingency whose date has passed is the loudest alert
+// this system can produce.
+export const CONTINGENCY_OUTCOMES = [
+  { id: "pending",  es: "Pendiente",  en: "Pending",   color: "#8B949E", terminal: false },
+  { id: "met",      es: "Cumplida",   en: "Met",       color: "#06D6A0", terminal: true  },
+  { id: "waived",   es: "Renunciada", en: "Waived",    color: "#4A90D9", terminal: true,
+    note_es: "El cliente renunció por escrito — el depósito queda expuesto",
+    note_en: "Client waived in writing — the deposit is now exposed" },
+  { id: "extended", es: "Extendida",  en: "Extended",  color: "#F5A623", terminal: false,
+    requiresNewDate: true,
+    note_es: "Requiere addendum firmado y fecha nueva",
+    note_en: "Requires a signed addendum and a new date" },
+  { id: "missed",   es: "Incumplida", en: "Missed",    color: "#E85D75", terminal: true,
+    note_es: "Pasó sin resolverse — escalar hoy",
+    note_en: "Passed unresolved — escalate today" },
+  { id: "na",       es: "No aplica",  en: "Not applicable", color: "#484F58", terminal: true },
+];
+export const outcomeById = id => CONTINGENCY_OUTCOMES.find(o => o.id === id) || CONTINGENCY_OUTCOMES[0];
+
+// The legal waiting period between the borrower RECEIVING the Closing
+// Disclosure and consummation. Counted on the TRID basis, so Saturday
+// is a business day and Sunday is not.
+export const CD_WAITING_BUSINESS_DAYS = 3;
+
+// The last day the CD can go out and still make this closing date.
+// Assumes electronic delivery with confirmed receipt. If the CD is
+// mailed, receipt is presumed three business days after sending —
+// subtract another three.
+export function cdIssueDeadline(coeISO) {
+  return coeISO ? subBusinessDays(coeISO, CD_WAITING_BUSINESS_DAYS, "trid") : null;
+}
+export function cdMailDeadline(coeISO) {
+  const received = cdIssueDeadline(coeISO);
+  return received ? subBusinessDays(received, CD_WAITING_BUSINESS_DAYS, "trid") : null;
+}
+
+// ─── BACKWARD DERIVATION ───────────────────────────────────────────
+// Working backward is the whole point. A contingency date on its own
+// tells you nothing you can act on today. "Order the appraisal by
+// Wednesday" does.
+//
+// Each stage is budgeted at its LATE ceiling, not its target. The
+// doctrine in this file is that deadlines are budgeted at the worst
+// case; a plan built on everything going right is not a plan.
+function chainBackward(file, completeByISO, stages) {
+  const out = [];
+  let deadline = completeByISO;
+  for (let i = stages.length - 1; i >= 0; i--) {
+    const b = stageBudget(stages[i], file);
+    const days = b ? b.late : 1;
+    const startBy = addDays(deadline, -days);
+    out.unshift({
+      stage: stages[i], startBy, completeBy: deadline, days,
+      owner: b?.owner || STAGE_OWNERS[stages[i]] || null,
+      atTargetStartBy: addDays(deadline, -(b ? b.warn : 1)),
+    });
+    deadline = startBy;
+  }
+  return out;
+}
+
+// Every derived stage deadline on the file, keyed by stage name.
+// A stage that appears in two chains keeps the EARLIER deadline —
+// the tighter constraint is the one that governs.
+export function derivedStageDeadlines(file) {
+  const map = {};
+  const push = row => {
+    const prior = map[row.stage];
+    if (!prior || row.startBy < prior.startBy) map[row.stage] = row;
+  };
+  for (const c of CONTINGENCIES) {
+    const anchor = file?.contingencies?.[c.field];
+    if (!anchor) continue;
+    for (const row of chainBackward(file, anchor, c.chain)) push({ ...row, from: c.id });
+  }
+  // The CD is not budgeted, it is legislated. Its start is the statute's
+  // date and it overrides anything a stage budget would have produced.
+  const coe = file?.contingencies?.coe;
+  if (coe) {
+    map["CD Issued"] = {
+      stage: "CD Issued", startBy: cdIssueDeadline(coe), completeBy: coe,
+      days: daysBetween(cdIssueDeadline(coe), coe), owner: "Tina",
+      atTargetStartBy: cdIssueDeadline(coe), from: "coe", legal: true,
+      mailBy: cdMailDeadline(coe),
+    };
+  }
+  return map;
+}
+
+// What is due next, in order. This is the list the LO works from.
+export function upcomingDeadlines(file, limit = 4) {
+  const map = derivedStageDeadlines(file);
+  const t = today();
+  return Object.values(map)
+    .filter(r => r.startBy)
+    .sort((a, b) => a.startBy < b.startBy ? -1 : 1)
+    .map(r => ({ ...r, daysOut: daysBetween(t, r.startBy), overdue: r.startBy < t }))
+    .slice(0, limit);
+}
+
+// ─── STATUS PER CONTINGENCY ────────────────────────────────────────
+// Levels are set by days remaining, but a `contract` contingency gets
+// a wider warning band than a `delivery` one. Losing the deposit and
+// annoying the agent are not the same event and must not share a color.
+const CONTINGENCY_BANDS = {
+  contract: { critical: 3, warn: 7 },
+  delivery: { critical: 2, warn: 5 },
+};
+
+export function contingencyStatus(file, id) {
+  const def = contingencyById(id);
+  if (!def) return null;
+  const box = file?.contingencies || {};
+  const date = box[def.field] || null;
+  const rec = (file?.contingencyResults || {})[id] || {};
+  const outcome = rec.outcome || "pending";
+  const o = outcomeById(outcome);
+  const t = today();
+  const daysLeft = date ? (date >= t ? daysBetween(t, date) : -daysBetween(date, t)) : null;
+  const band = CONTINGENCY_BANDS[def.kind];
+
+  let level = "normal";
+  if (!date) level = "missing";
+  else if (o.terminal) level = outcome === "missed" ? "critical" : "done";
+  else if (daysLeft < 0) level = "critical";                 // passed, unresolved
+  else if (daysLeft <= band.critical) level = "critical";
+  else if (daysLeft <= band.warn) level = "warn";
+
+  return {
+    ...def, date, daysLeft, level, outcome, outcomeMeta: o,
+    kindMeta: CONTINGENCY_KINDS[def.kind],
+    depositAtRisk: def.kind === "contract" && !o.terminal && daysLeft !== null && daysLeft < 0,
+    recordedAt: rec.at || null, recordedBy: rec.by || null, notes: rec.notes || null,
+    // How many days the contract itself gave, on that state's clock.
+    contractDays: box.contractAccepted && date
+      ? contractDaysBetween(file?.state || "NV", box.contractAccepted, date) : null,
+    basis: CONTRACT_DAY_BASIS[file?.state || "NV"],
+  };
+}
+
+export function allContingencyStatus(file) {
+  return CONTINGENCIES.map(c => contingencyStatus(file, c.id)).filter(Boolean);
+}
+
+// The single worst thing happening on this file right now.
+export function contingencyHeadline(file) {
+  const rows = allContingencyStatus(file).filter(r => r.date && r.level !== "done");
+  if (!rows.length) return null;
+  const rank = { critical: 0, warn: 1, normal: 2, missing: 3 };
+  rows.sort((a, b) => (rank[a.level] - rank[b.level]) || (a.daysLeft - b.daysLeft));
+  return rows[0];
+}
+
+export function hasContingencies(file) {
+  const b = file?.contingencies || {};
+  return CONTINGENCIES.some(c => !!b[c.field]) || !!b.contractAccepted;
+}
+
+// ─── CONFLICTS ─────────────────────────────────────────────────────
+// Dates that are each fine on their own and impossible together. This
+// is what nobody catches by reading the contract, because catching it
+// requires holding five dates in your head at once.
+export function contingencyConflicts(file) {
+  const b = file?.contingencies || {};
+  const out = [];
+  const add = (sev, es, en) => out.push({ sev, es, en });
+
+  const { contractAccepted, appraisalContingency, loanContingency, ctcTarget, coe, fundingDate } = b;
+
+  if (contractAccepted && coe) {
+    const t = targetsFor(file);
+    const need = addDays(contractAccepted, t.internal);
+    if (need > coe) add("critical",
+      `El producto necesita ${t.internal} días desde el contrato y el COE llega antes (${daysBetween(coe, need)} días corto)`,
+      `The product needs ${t.internal} days from contract and the COE arrives sooner (${daysBetween(coe, need)} days short)`);
+  }
+  if (appraisalContingency && loanContingency && appraisalContingency > loanContingency)
+    add("warn", "La contingencia de tasación vence después que la de préstamo — revisar el contrato",
+                "The appraisal contingency expires after the loan contingency — check the contract");
+
+  if (coe) {
+    const cd = cdIssueDeadline(coe);
+    if (ctcTarget && ctcTarget > cd) add("critical",
+      `El CTC (${ctcTarget}) cae después del último día para el CD (${cd}). El COE no se sostiene`,
+      `CTC (${ctcTarget}) lands after the last day to issue the CD (${cd}). The COE does not hold`);
+    if (loanContingency && loanContingency > cd) add("warn",
+      `La contingencia de préstamo (${loanContingency}) vence después del último día del CD (${cd})`,
+      `The loan contingency (${loanContingency}) expires after the CD's last day (${cd})`);
+    const hol = federalHolidayName(coe);
+    if (hol) add("critical",
+      `El COE cae en ${hol}, feriado federal. Título y registro están cerrados`,
+      `The COE falls on ${hol}, a federal holiday. Title and recording are closed`);
+    else if (isWeekend(coe)) add("warn",
+      "El COE cae en fin de semana — confirmar con título antes de prometerlo",
+      "The COE falls on a weekend — confirm with title before promising it");
+  }
+  if (fundingDate && coe && fundingDate < coe) add("critical",
+    "La fecha de fondeo es anterior al COE", "The funding date is before the COE");
+  if (ctcTarget && coe && ctcTarget > coe) add("critical",
+    "El CTC es posterior al COE", "CTC is after the COE");
+  if (contractAccepted && appraisalContingency && appraisalContingency < contractAccepted)
+    add("critical", "La contingencia de tasación es anterior a la aceptación del contrato",
+                    "The appraisal contingency predates contract acceptance");
+
+  // A derived deadline that is already behind us, for a stage the file
+  // has not reached. Sorted so the worst one reads first.
+  const map = derivedStageDeadlines(file);
+  const t = today();
+  const reached = ALL_STAGE_ORDER.indexOf(file?.stage);
+  for (const r of Object.values(map)) {
+    const idx = ALL_STAGE_ORDER.indexOf(r.stage);
+    if (idx > -1 && reached > -1 && idx <= reached) continue;   // already done
+    if (r.startBy && r.startBy < t) add("critical",
+      `${r.stage}: el último día para empezar era ${r.startBy}`,
+      `${r.stage}: the last day to start was ${r.startBy}`);
+  }
+  const rank = { critical: 0, warn: 1 };
+  return out.sort((a, b) => rank[a.sev] - rank[b.sev]);
+}
+
+// Stage order for "has this file already passed that stage" checks.
+const ALL_STAGE_ORDER = [
+  "Lead Inquiry", "Needs Assessment", "Credit Pull", "Income Verification", "Pre-Qualification",
+  "Realtor Connected", "Active Search", "Offer Submitted", "Under Contract",
+  "Full Application", "Initial Disclosures Sent", "Doc Collection", "Title Ordered",
+  "Appraisal Ordered", "Insurance Ordered",
+  "Submitted to UW", "UW Review", "Conditional Approval", "Condition Clearing", "Clear to Close",
+  "CD Issued", "Closing Scheduled", "Final Verifications", "Closing Docs Drawn",
+  "Signing", "Funded", "Recorded", "Keys Delivered",
+];
+
+// ─── WRITING ───────────────────────────────────────────────────────
+// Captured at Full Application. The anchor is contract acceptance, not
+// the day we opened the application — the clock was already running
+// while the file sat in Under Contract.
+export function setContingencyDates(file, dates) {
+  const clean = {};
+  for (const k of ["contractAccepted", ...CONTINGENCIES.map(c => c.field)])
+    clean[k] = dates[k] || null;
+  return {
+    ...file,
+    contingencies: { ...(file.contingencies || {}), ...clean, capturedAt: today() },
+  };
+}
+
+// Recording a result is a permanent entry, not an edit. `extended`
+// moves the date AND keeps the old one, because "we extended twice"
+// is the fact that matters at the post-mortem.
+export function recordContingencyOutcome(file, id, { outcome, notes, newDate, by }) {
+  const def = contingencyById(id);
+  if (!def) return file;
+  const o = outcomeById(outcome);
+  const prevDate = file?.contingencies?.[def.field] || null;
+  const entry = {
+    id, outcome, at: today(), by: by || null,
+    notes: (notes || "").trim() || null,
+    fromDate: prevDate,
+    toDate: o.requiresNewDate ? (newDate || null) : null,
+  };
+  const nextBox = { ...(file.contingencies || {}) };
+  if (o.requiresNewDate && newDate) nextBox[def.field] = newDate;
+  return {
+    ...file,
+    contingencies: nextBox,
+    contingencyResults: {
+      ...(file.contingencyResults || {}),
+      [id]: { outcome, at: today(), by: by || null, notes: entry.notes },
+    },
+    contingencyLog: [...(file.contingencyLog || []), entry],
+  };
+}
+
+export function contingencyExtensionCount(file, id) {
+  return (file?.contingencyLog || []).filter(e => e.id === id && e.outcome === "extended").length;
+}
+
 // ─── 3. HOUSE HUNT — the 60-day track ──────────────────────────────
 // APG Realty reassigns a buyer to another agent if they are not under
 // contract in 60 days. So this is not a follow-up rhythm; it is a
