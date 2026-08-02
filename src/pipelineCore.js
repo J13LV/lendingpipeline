@@ -1317,11 +1317,11 @@ export function noteEntries(file) {
   if (log.length) return [...log].sort((a, b) => String(b.at || "").localeCompare(String(a.at || "")));
   const legacy = String(file?.note || "").trim();
   if (!legacy) return [];
-  return [{
-    at: file?.lastEditedAt || null,
-    by: file?.lastEditedBy?.name || null,
-    text: legacy, legacy: true,
-  }];
+  // No date and no author. `lastEditedAt` is when somebody last touched the
+  // file, not when this text was written, and `lastEditedBy` is whoever
+  // saved last — attributing Tina's note to Jose because Jose hit save is
+  // worse than admitting we do not know.
+  return [{ at: null, by: null, text: legacy, legacy: true }];
 }
 export const latestNote = file => noteEntries(file)[0] || null;
 export const noteCount = file => noteEntries(file).length;
@@ -1333,9 +1333,7 @@ export function addNoteEntry(file, text, by) {
   // new entry does not appear to be the only thing ever written.
   const existing = Array.isArray(file?.noteLog) ? file.noteLog : [];
   const seed = (!existing.length && String(file?.note || "").trim())
-    ? [{ at: file?.lastEditedAt || new Date(0).toISOString(),
-         by: file?.lastEditedBy?.name || null,
-         text: String(file.note).trim(), legacy: true }]
+    ? [{ at: null, by: null, text: String(file.note).trim(), legacy: true }]
     : [];
   return {
     ...file,

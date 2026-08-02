@@ -1272,12 +1272,14 @@ export default function App() {
                                   {n.text}
                                 </div>
                                 <div style={{fontSize:9,color:"#484F58",marginTop:3}}>
-                                  {n.at?timeAgo(n.at):"sin fecha"}{n.by?` · ${n.by.split(" ")[0]}`:""}
-                                  {c>1?` · ${c-1} más`:""}{n.legacy?" · nota vieja":""}
+                                  {n.legacy
+                                    ? "nota anterior al historial · sin fecha ni autor"
+                                    : `${timeAgo(n.at)}${n.by?` · ${n.by.split(" ")[0]}`:""}`}
+                                  {c>1?` · ${c-1} más`:""}
                                 </div>
                               </div>
                             );})()}
-                          {f.lastEditedBy&&<div style={{fontSize:9,color:"#484F58",letterSpacing:"0.5px",borderTop:f.note?"none":"1px solid #21262D",paddingTop:f.note?0:6}}>
+                          {f.lastEditedBy&&!latestNote(f)&&<div style={{fontSize:9,color:"#484F58",letterSpacing:"0.5px",borderTop:"1px solid #21262D",paddingTop:6}}>
                             Edited by {f.lastEditedBy.name?.split(" ")[0]||"?"} · {timeAgo(f.lastEditedAt)}
                           </div>}
                           {(f.phone || f.email) && (
@@ -3491,8 +3493,9 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
               {(showAllNotes?entries:entries.slice(0,2)).map((n,i)=>(
                 <div key={i} style={{borderLeft:`2px solid ${i===0?"#7EC8A4":"#21262D"}`,paddingLeft:9}}>
                   <div style={{fontSize:9,color:"#484F58",letterSpacing:".5px"}}>
-                    {n.at?`${String(n.at).slice(0,10)} · ${timeAgo(n.at)}`:"sin fecha"}
-                    {n.by?` · ${n.by}`:""}{n.legacy?" · anterior al historial":""}
+                    {n.legacy
+                      ? "anterior al historial · sin fecha ni autor confiables"
+                      : `${String(n.at).slice(0,10)} · ${timeAgo(n.at)}${n.by?` · ${n.by}`:""}`}
                   </div>
                   <div style={{fontSize:11.5,color:i===0?"#E6EDF3":"#8B949E",lineHeight:1.5,marginTop:2,whiteSpace:"pre-wrap"}}>{n.text}</div>
                 </div>
