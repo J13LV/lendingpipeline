@@ -17,6 +17,10 @@ import {
   lockStatus, lockExpiration, lockTermsCovering, lastDayToLock,
   lenderConflicts, hasLenderData,
   COMP_MODELS, compModelFor, compBreakdown, setComp,
+  // ─── 2B-2b change, backup, history ───
+  REASON_CATEGORIES, reasonsByCategory, reasonById, isLenderFault,
+  backupViability, changeCost, applyLenderChange, reregistrationCost,
+  lenderChangeCount, lenderFaultChanges, LENDER_CHANGE_LANDING_STAGE,
 } from "./pipelineCore";
 import {
   getAuth,
@@ -2326,6 +2330,212 @@ function ContingencyStrip({file}){
   );
 }
 
+// ─── LENDER CHANGE MODAL ───
+function LenderChangeModal({file,profile,onClose,onConfirm}){
+  const [toId,setToId]=useState(file.backupLenderId||"");
+  const [reasonId,setReasonId]=useState("");
+  const [notes,setNotes]=useState("");
+  const fs={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",
+    padding:"8px 10px",fontSize:12,fontFamily:"'DM Mono','Courier New',monospace",width:"100%"};
+  const options=lendersFor(file,file.channel||"broker").filter(l=>l.id!==file.lenderId);
+  const cost=toId?changeCost(file,toId):null;
+  const from=lenderById(file.lenderId);
+  const to=lenderById(toId);
+  const ready=toId&&reasonId;
+
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.8)",zIndex:120,display:"flex",
+      alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
+      <div className="fi" onClick={e=>e.stopPropagation()} style={{background:"#161B22",border:"1px solid #30363D",
+        borderRadius:12,width:"100%",maxWidth:460,maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column"}}>
+        <div style={{padding:"18px 22px 14px",borderBottom:"1px solid #21262D"}}>
+          <div style={{fontFamily:"Syne",fontWeight:800,fontSize:16,color:"#E6EDF3"}}>Cambiar de lender</div>
+          <div style={{fontSize:11,color:"#8B949E",marginTop:3}}>{file.borrower} · {from?from.name:"sin lender"}</div>
+        </div>
+
+        <div style={{flex:1,overflowY:"auto",padding:"14px 22px",display:"flex",flexDirection:"column",gap:12}}>
+          <div>
+            <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>NUEVO LENDER</div>
+            <select value={toId} onChange={e=>setToId(e.target.value)} style={fs}>
+              <option value="">— escoge —</option>
+              {options.map(o=><option key={o.id} value={o.id}>
+                {o.name}{o.lenderPaidBps?` · ${o.lenderPaidBps} bps`:""}{o.id===file.backupLenderId?" · respaldo":""}
+              </option>)}
+            </select>
+          </div>
+
+          {cost&&(
+            <div style={{background:"#0D1117",border:`1px solid ${cost.tooLate?"#E85D75":"#21262D"}`,
+              borderRadius:6,padding:"10px 11px",display:"flex",flexDirection:"column",gap:7}}>
+              <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px"}}>LO QUE CUESTA</div>
+
+              {cost.comp&&(
+                <div>
+                  <div style={{display:"flex",justifyContent:"space-between",fontSize:11}}>
+                    <span style={{color:"#8B949E"}}>Compensación</span>
+                    <span style={{color:cost.comp.bps<0?"#E85D75":cost.comp.bps>0?"#7EC8A4":"#8B949E",fontFamily:"DM Mono"}}>
+                      {cost.comp.bps>0?"+":""}{cost.comp.bps} bps · {cost.comp.dollars<0?"−":""}${Math.abs(cost.comp.dollars).toLocaleString()}
+                    </span>
+                  </div>
+                  <div style={{fontSize:9,color:"#484F58",marginTop:3,lineHeight:1.5}}>
+                    Hoy cobras {cost.comp.current} bps. {cost.comp.cappedByNewLender
+                      ? `El techo de ${to?.name} es ${cost.comp.toCeiling}, así que ahí cobrarías ${cost.comp.after}.`
+                      : `El techo de ${to?.name} es ${cost.comp.toCeiling}, así que puedes seguir cobrando lo mismo.`}
+                  </div>
+                </div>
+              )}
+
+              {cost.lockLost&&(
+                <div style={{fontSize:10.5,color:"#F5A623",lineHeight:1.45}}>
+                  El lock no se transfiere. Sueltas {cost.lockedRate}% y vuelves a lockear
+                  al mercado del día. Si la tasa subió, la paga el cliente.
+                </div>
+              )}
+
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:11}}>
+                <span style={{color:"#8B949E"}}>Aterriza en</span>
+                <span style={{color:"#F5A623",fontFamily:"DM Mono"}}>{cost.landsAt}</span>
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:11}}>
+                <span style={{color:"#8B949E"}}>Re-suscripción</span>
+                <span style={{color:"#8B949E",fontFamily:"DM Mono"}}>{cost.days.best}–{cost.days.worst} días</span>
+              </div>
+              <div style={{fontSize:9,color:"#484F58",lineHeight:1.5}}>
+                Tasación, título, HOI y documentos viajan. Las divulgaciones son nuevas
+                y el lender nuevo suscribe desde cero.
+              </div>
+
+              {cost.tooLate&&(
+                <div style={{fontSize:10.5,color:"#E85D75",background:"rgba(232,93,117,.08)",
+                  border:"1px solid #E85D7544",borderRadius:5,padding:"7px 9px",lineHeight:1.45}}>
+                  En el peor caso este cambio ya no llega al cierre del {cost.viability.coe}.
+                  La fecha tope para decidir era el {cost.viability.decideByWorst}.
+                </div>
+              )}
+            </div>
+          )}
+
+          <div>
+            <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>MOTIVO</div>
+            <select value={reasonId} onChange={e=>setReasonId(e.target.value)} style={fs}>
+              <option value="">— escoge —</option>
+              {Object.entries(REASON_CATEGORIES).map(([cat,meta])=>(
+                <optgroup key={cat} label={meta.es}>
+                  {reasonsByCategory(cat).map(r=><option key={r.id} value={r.id}>{r.es}</option>)}
+                </optgroup>
+              ))}
+            </select>
+            {reasonId&&(
+              <div style={{fontSize:9.5,color:isLenderFault(reasonId)?"#F5A623":"#484F58",marginTop:5,lineHeight:1.45}}>
+                {REASON_CATEGORIES[reasonById(reasonId).cat].note_es}
+                {isLenderFault(reasonId)?" · cuenta contra este lender en el scorecard":""}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>NOTA</div>
+            <input value={notes} onChange={e=>setNotes(e.target.value)}
+              placeholder="qué dijo el lender, quién lo confirmó" style={fs}/>
+          </div>
+        </div>
+
+        <div style={{padding:"12px 22px",borderTop:"1px solid #21262D",display:"flex",gap:8}}>
+          <button className="hov" disabled={!ready}
+            onClick={()=>onConfirm({lenderId:toId,reasonId,notes,by:profile?.name||null})}
+            style={{flex:2,background:ready?"#F5A623":"#21262D",color:ready?"#0D1117":"#30363D",borderRadius:7,
+              padding:"10px 0",fontFamily:"DM Mono",fontSize:12,fontWeight:500,border:"none",
+              cursor:ready?"pointer":"not-allowed"}}>
+            MOVER A {to?to.name.toUpperCase().slice(0,16):"…"}
+          </button>
+          <button className="hov" onClick={onClose}
+            style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",
+              fontFamily:"DM Mono",fontSize:12,border:"none",cursor:"pointer"}}>CANCELAR</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── BACKUP + HISTORY ───
+function BackupPanel({file,backupId,setBackupId,onChangeLender}){
+  const v=backupViability(file);
+  const b=lenderById(backupId);
+  const fs={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",
+    padding:"7px 9px",fontSize:12,fontFamily:"'DM Mono','Courier New',monospace",width:"100%"};
+  const options=lendersFor(file,file.channel||"broker").filter(l=>l.id!==file.lenderId);
+  const cost=backupId?compDeltaBetween(file,file.lenderId,backupId):null;
+  const lc=v.level==="critical"?"#E85D75":v.level==="warn"?"#F5A623":"#7EC8A4";
+
+  return (
+    <div style={{borderTop:"1px solid #21262D",paddingTop:11,display:"flex",flexDirection:"column",gap:8}}>
+      <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px"}}>LENDER DE RESPALDO</div>
+      <select value={backupId} onChange={e=>setBackupId(e.target.value)} style={fs}>
+        <option value="">— ninguno —</option>
+        {options.map(o=><option key={o.id} value={o.id}>{o.name}{o.lenderPaidBps?` · ${o.lenderPaidBps} bps`:""}</option>)}
+      </select>
+
+      {b&&cost&&(
+        <div style={{fontSize:10,fontFamily:"DM Mono",color:cost.bps<0?"#E85D75":"#7EC8A4"}}>
+          {cost.bps===0
+            ? `moverlo no cuesta comp · ${b.name} llega a ${cost.toCeiling} bps`
+            : `moverlo cuesta ${cost.bps} bps · −$${Math.abs(cost.dollars).toLocaleString()}`}
+          <div style={{color:"#484F58",fontSize:9,marginTop:2}}>
+            cobras {cost.current} · techo allá {cost.toCeiling}
+          </div>
+        </div>
+      )}
+
+      {b&&v.ready&&(
+        <div style={{background:"#0D1117",border:`1px solid ${lc}44`,borderRadius:6,padding:"9px 10px"}}>
+          <div style={{fontSize:11,color:lc,fontFamily:"DM Mono"}}>
+            Viable hasta el {v.decideByWorst}
+            <span style={{color:"#8B949E"}}> · {v.daysToWorst<0?`${Math.abs(v.daysToWorst)}d tarde`:`faltan ${v.daysToWorst}d`}</span>
+          </div>
+          <div style={{fontSize:9,color:"#484F58",marginTop:3,lineHeight:1.5}}>
+            Peor caso {v.worstDays}d · mejor caso {v.bestDays}d hasta el {v.decideByBest}.
+            Contado hacia atrás desde el CD del {v.cdDeadline}.
+          </div>
+          {v.expiresBeforeContingency&&(
+            <div style={{fontSize:10,color:"#F5A623",marginTop:6,lineHeight:1.45}}>
+              El colchón vence {v.gapDays} días ANTES que la contingencia de préstamo
+              ({v.loanContingency}). Dentro de la contingencia parecerá que hay tiempo y no lo habrá.
+            </div>
+          )}
+        </div>
+      )}
+
+      <button className="hov" onClick={onChangeLender} disabled={!file.lenderId}
+        style={{background:"rgba(245,166,35,.1)",color:file.lenderId?"#F5A623":"#30363D",borderRadius:6,
+          padding:"8px 0",fontFamily:"DM Mono",fontSize:11,border:`1px solid ${file.lenderId?"#F5A623":"#21262D"}`,
+          cursor:file.lenderId?"pointer":"not-allowed"}}>⇄ CAMBIAR DE LENDER</button>
+
+      {(file.lenderHistory||[]).length>0&&(
+        <div style={{marginTop:2}}>
+          <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>
+            HISTORIAL · {lenderChangeCount(file)} cambio{lenderChangeCount(file)===1?"":"s"}
+            {lenderFaultChanges(file)>0&&<span style={{color:"#F5A623"}}> · {lenderFaultChanges(file)} por el lender</span>}
+          </div>
+          {(file.lenderHistory||[]).slice().reverse().map((h,i)=>(
+            <div key={i} style={{fontSize:10,color:"#6E7681",marginBottom:5,lineHeight:1.5}}>
+              <span style={{color:"#484F58"}}>{h.at}</span>{" · "}
+              <span style={{color:"#8B949E"}}>{h.fromName||"—"} → {h.toName}</span>
+              {h.compDeltaDollars!=null&&<span style={{color:h.compDeltaBps<0?"#E85D75":"#7EC8A4"}}>
+                {" · "}{h.compDeltaBps>0?"+":""}{h.compDeltaBps} bps</span>}
+              <div style={{color:"#484F58",fontSize:9.5}}>
+                {h.reasonId?reasonById(h.reasonId)?.es:"sin motivo"}
+                {h.daysWithPrevLender!=null?` · ${h.daysWithPrevLender}d con el anterior`:""}
+                {h.by?` · ${h.by.split(" ")[0]}`:""}
+              </div>
+              {h.notes&&<div style={{color:"#6E7681",fontSize:9.5,fontStyle:"italic"}}>{h.notes}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── LENDER STRIP (design A) ───
 function LenderStrip({file}){
   if(!hasLenderData(file)) return null;
@@ -2333,6 +2543,8 @@ function LenderStrip({file}){
   const ch=CHANNELS[file.channel]||null;
   const ls=lockStatus(file);
   const conf=lenderConflicts(file);
+  const bk=lenderById(file.backupLenderId);
+  const bv=bk?backupViability(file):{ready:false};
   const lc=ls.level==="critical"?"#E85D75":ls.level==="warn"?"#F5A623":ls.meta.color;
 
   return (
@@ -2351,6 +2563,8 @@ function LenderStrip({file}){
       </div>
       <div style={{fontSize:9.5,color:"#6E7681",fontFamily:"DM Mono",display:"flex",gap:8,flexWrap:"wrap"}}>
         {ch&&<span style={{color:ch.color}}>{ch.es.toLowerCase()}</span>}
+        {bk&&bv.ready&&<span style={{color:bv.level==="critical"?"#E85D75":bv.level==="warn"?"#F5A623":"#6E7681"}}>
+          respaldo {bk.name.split(" ")[0]} · viable to {mon(bv.decideByWorst)}</span>}
         {ls.state==="float"&&ls.mustLockBy&&(
           <span style={{color:ls.level==="critical"?"#E85D75":"#6E7681"}}>
             lock by {mon(ls.mustLockBy)}{ls.daysLeft!==null?` · ${ls.daysLeft<0?`${Math.abs(ls.daysLeft)}d late`:`${ls.daysLeft}d`}`:""}
@@ -2367,7 +2581,7 @@ function LenderStrip({file}){
 }
 
 // ─── LENDER PANEL ───
-function LenderPanel({file,onDraft}){
+function LenderPanel({file,onDraft,onChangeLender}){
   const [channel,setChannel]=useState(file.channel||"broker");
   const [lenderId,setLenderId]=useState(file.lenderId||"");
   const [rate,setRate]=useState(file.rate!=null?String(file.rate):"");
@@ -2379,6 +2593,7 @@ function LenderPanel({file,onDraft}){
   const [originationBps,setOriginationBps]=useState(c0.originationBps!=null?String(c0.originationBps):"");
   const [borrowerPaidBps,setBorrowerPaidBps]=useState(c0.borrowerPaidBps!=null?String(c0.borrowerPaidBps):"");
   const [lenderPaidBps,setLenderPaidBps]=useState(c0.lenderPaidBps!=null?String(c0.lenderPaidBps):"");
+  const [backupId,setBackupId]=useState(file.backupLenderId||"");
 
   const fs={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",
     padding:"7px 9px",fontSize:12,fontFamily:"'DM Mono','Courier New',monospace",width:"100%"};
@@ -2404,6 +2619,7 @@ function LenderPanel({file,onDraft}){
     lockExpires: lockState==="locked"?lockExpiration(okDate(lockedAt)||today(),parseInt(term)):null,
     lenderSince: !lenderId?null:(file.lenderId===lenderId?(file.lenderSince||today()):today()),
     comp: draft.comp,
+    backupLenderId: backupId||null,
   };
   const sig=JSON.stringify(patch);
   useEffect(()=>{ onDraft&&onDraft(patch); },[sig]);
@@ -2600,6 +2816,9 @@ function LenderPanel({file,onDraft}){
       )}
 
 
+
+      <BackupPanel file={draft} backupId={backupId} setBackupId={setBackupId}
+        onChangeLender={onChangeLender}/>
 
       {conf.length>0&&conf.map((c,i)=>(
         <div key={i} style={{fontSize:10.5,color:c.sev==="critical"?"#E85D75":"#F5A623",background:"#0D1117",
@@ -2861,6 +3080,7 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
   const [showHistory, setShowHistory] = useState(false);
   // Whatever the sub-panels are currently showing, ready for the single SAVE.
   const panelDrafts = useRef({});
+  const [showChange,setShowChange]=useState(false);
   const [note,setNote]=useState(file.note||"");
   const [closing,setClosing]=useState(file.closing||"");
   const [stage,setStage]=useState(file.stage);
@@ -2987,7 +3207,8 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
 
         {/* LENDER — chosen at Full Application; the channel gates the list */}
         {!inPrep && !isReferredOut && (atOrPastFullApp(stage) || hasLenderData(file)) && (
-          <LenderPanel file={file} onDraft={p=>{panelDrafts.current.lender=p;}}/>
+          <LenderPanel file={file} onDraft={p=>{panelDrafts.current.lender=p;}}
+            onChangeLender={()=>setShowChange(true)}/>
         )}
 
         {/* CONTINGENCIES — captured at Full Application, anchored to the contract */}
@@ -3353,6 +3574,17 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
           )}
         </div>
       </div>
+      {showChange&&(
+        <LenderChangeModal file={file} profile={profile} onClose={()=>setShowChange(false)}
+          onConfirm={payload=>{
+            const next=applyLenderChange(file,payload);
+            onSave({lenderId:next.lenderId,lenderSince:next.lenderSince,lenderHistory:next.lenderHistory,
+              stage:next.stage,stageEnteredAt:next.stageEnteredAt,daysInStage:0,
+              lockState:next.lockState,lockedAt:null,lockTermDays:null,lockExpires:null,
+              comp:null,backupLenderId:next.backupLenderId});
+            setShowChange(false); onClose();
+          }}/>
+      )}
     </div>
   );
 }

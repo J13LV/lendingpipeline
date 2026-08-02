@@ -1001,18 +1001,39 @@ export function compCeilingDollars(file) {
   const c = compCeiling(file);
   return c.bps === null ? null : Math.round((file?.loan || 0) * c.bps / 10000);
 }
-// What changing lenders costs, in dollars, before anyone argues about it.
+// What changing lenders costs, in dollars.
+//
+// The first version compared CEILING to CEILING, which was wrong and wrong
+// in the dangerous direction: with 275 published at one lender and 200 at
+// the other it reported a 75 bps loss even when the file only ever took
+// 220. That overstated the cost of a backup by nearly four times and would
+// have talked the branch out of a move that was fine.
+//
+// What matters is what this file actually earns today versus the most it
+// could earn at the new lender. You keep what you take unless the new
+// lender's ceiling is lower than that.
 export function compDeltaBetween(file, fromId, toId) {
-  const at = id => {
+  const ceilingAt = id => {
+    if (file?.channel === "correspondent") return CORRESPONDENT_COMP_CAP_BPS;
     const l = lenderById(id);
-    if (!l || l.lenderPaidBps == null) return null;
-    return file?.channel === "correspondent"
-      ? CORRESPONDENT_COMP_CAP_BPS : Math.min(l.lenderPaidBps, BROKER_COMP_CAP_BPS);
+    return l?.lenderPaidBps == null ? null : Math.min(l.lenderPaidBps, BROKER_COMP_CAP_BPS);
   };
-  const a = at(fromId), b = at(toId);
-  if (a === null || b === null) return null;
-  const bps = b - a;
-  return { bps, dollars: Math.round((file?.loan || 0) * bps / 10000) };
+  const toCeiling = ceilingAt(toId);
+  if (toCeiling === null) return null;
+
+  // What the file earns right now. compBreakdown already falls back to the
+  // plan figure when nothing has been typed, so this works either way.
+  const current = compBreakdown(file).totalBps ?? ceilingAt(fromId);
+  if (current === null) return null;
+
+  const after = Math.min(current, toCeiling);
+  const bps = after - current;
+  return {
+    bps, dollars: Math.round((file?.loan || 0) * bps / 10000),
+    current, after, toCeiling, fromCeiling: ceilingAt(fromId),
+    // True when the new lender simply cannot pay what this file takes today.
+    cappedByNewLender: toCeiling < current,
+  };
 }
 
 // ─── LOCK ──────────────────────────────────────────────────────────
@@ -1120,6 +1141,122 @@ export function lenderConflicts(file) {
 
 export function hasLenderData(file) {
   return !!(file?.lenderId || file?.channel || file?.rate || file?.lockState);
+}
+
+// ─── 2G. CHANGING LENDERS ──────────────────────────────────────────
+// What a lender change actually costs, measured against this file's own
+// closing date rather than a remembered average.
+//
+// The branch does NOT restart the file. Appraisal, title, HOI and docs
+// are already done and they travel. What does not travel:
+//   · Disclosures. A new creditor issues new ones, and the borrower has
+//     a statutory window to sign. That tramo cannot be compressed.
+//   · Underwriting. The new lender underwrites from zero. This is the
+//     expensive part, not the transfer.
+//   · The rate lock. It is released and re-locked at that day's market.
+//     If rates moved, the borrower pays the difference — a cost that
+//     never appears in a comparison of lender compensation.
+export const REREGISTRATION_CHAIN = [
+  "Initial Disclosures Sent", "Submitted to UW", "UW Review",
+  "Conditional Approval", "Condition Clearing", "Clear to Close",
+];
+// Transfer out plus registration in, counted at both ends.
+export const TRANSFER_DAYS = { best: 2, worst: 4 };
+export const LENDER_CHANGE_LANDING_STAGE = "Initial Disclosures Sent";
+
+export function reregistrationCost(file) {
+  let best = TRANSFER_DAYS.best, worst = TRANSFER_DAYS.worst;
+  const steps = [{ stage: "Traslado y re-registro", warn: TRANSFER_DAYS.best, late: TRANSFER_DAYS.worst }];
+  for (const s of REREGISTRATION_CHAIN) {
+    const b = stageBudget(s, file);
+    if (!b) continue;
+    best += b.warn; worst += b.late;
+    steps.push({ stage: s, warn: b.warn, late: b.late, owner: b.owner, legal: b.legal });
+  }
+  return { best, worst, steps };
+}
+
+// The date the cushion stops being a cushion. Not the contingency date —
+// the operational date, which lands earlier and is the one that governs.
+export function backupViability(file) {
+  const coe = okDate(file?.contingencies?.coe) || okDate(file?.closing);
+  const cd = cdIssueDeadline(coe);
+  if (!cd) return { ready: false };
+  const { best, worst, steps } = reregistrationCost(file);
+  const bestBy = addDays(cd, -best), worstBy = addDays(cd, -worst);
+  const t = today();
+  const loanC = okDate(file?.contingencies?.loanContingency);
+  return {
+    ready: true, coe, cdDeadline: cd, steps,
+    bestDays: best, worstDays: worst,
+    decideByBest: bestBy, decideByWorst: worstBy,
+    daysToBest: bestBy >= t ? daysBetween(t, bestBy) : -daysBetween(bestBy, t),
+    daysToWorst: worstBy >= t ? daysBetween(t, worstBy) : -daysBetween(worstBy, t),
+    // The trap: the cushion can expire while the contingency still looks alive.
+    loanContingency: loanC,
+    expiresBeforeContingency: !!(loanC && worstBy < loanC),
+    gapDays: loanC && worstBy < loanC ? daysBetween(worstBy, loanC) : 0,
+    level: worstBy < t ? "critical" : (bestBy < t ? "warn" : "normal"),
+  };
+}
+
+// Everything the change costs, priced, before anyone commits to it.
+export function changeCost(file, toLenderId) {
+  const comp = compDeltaBetween(file, file?.lenderId, toLenderId);
+  const ls = lockStatus(file);
+  const v = backupViability(file);
+  return {
+    comp,
+    lockLost: ls.state === "locked",
+    lockedRate: ls.state === "locked" ? (file?.rate ?? null) : null,
+    landsAt: LENDER_CHANGE_LANDING_STAGE,
+    days: reregistrationCost(file),
+    viability: v,
+    // Moving after this date cannot make the closing at worst-case pace.
+    tooLate: v.ready && v.decideByWorst < today(),
+  };
+}
+
+// The change itself. The file does NOT restart: fileOpenedAt is untouched,
+// so the age quoted to the agent stays honest. Only the stage clock resets,
+// because the stage genuinely began again.
+export function applyLenderChange(file, { lenderId, reasonId, notes, by, newClosingDate }) {
+  const prev = file.lenderId || null;
+  const entry = {
+    from: prev, to: lenderId,
+    fromName: lenderById(prev)?.name || null, toName: lenderById(lenderId)?.name || null,
+    reasonId: reasonId || null,
+    category: reasonById(reasonId)?.cat || null,
+    notes: (notes || "").trim() || null,
+    at: today(), by: by || null,
+    daysWithPrevLender: file.lenderSince ? daysBetween(file.lenderSince) : null,
+    stageWhenChanged: file.stage,
+    compDeltaBps: compDeltaBetween(file, prev, lenderId)?.bps ?? null,
+    compDeltaDollars: compDeltaBetween(file, prev, lenderId)?.dollars ?? null,
+    lockWasActive: file.lockState === "locked",
+    rateAtChange: file.rate ?? null,
+  };
+  return {
+    ...file,
+    lenderId,
+    lenderSince: today(),
+    lenderHistory: [...(file.lenderHistory || []), entry],
+    stage: LENDER_CHANGE_LANDING_STAGE,
+    stageEnteredAt: today(),
+    daysInStage: 0,
+    // The lock does not travel. Back to float at today's market.
+    lockState: "float", lockedAt: null, lockTermDays: null, lockExpires: null,
+    // Comp is per lender, so the previous figures no longer describe this file.
+    comp: null,
+    closing: newClosingDate || file.closing,
+    backupLenderId: file.backupLenderId === lenderId ? null : file.backupLenderId,
+    // fileOpenedAt deliberately untouched. The file did not restart.
+  };
+}
+
+export function lenderChangeCount(file) { return (file?.lenderHistory || []).length; }
+export function lenderFaultChanges(file) {
+  return (file?.lenderHistory || []).filter(h => h.category === "lender").length;
 }
 
 // ─── 3. HOUSE HUNT — the 60-day track ──────────────────────────────
