@@ -2686,7 +2686,7 @@ function BackupPanel({file,backupId,setBackupId,onChangeLender}){
 // La cascada completa a la vista: bruto, cada descuento con su nombre, el
 // neto, y lo que cobra cada quien. Nadie debería calcular sobre el bruto de
 // cabeza y descubrir la diferencia en el cheque.
-function PayoutPanel({file,profile,onDraft,allFiles}){
+function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
   const isAdmin=profile?.role==="admin";
   const mine=(file.lo||"")===(profile?.name||"");
   const cur=file.absorbedFees||[];
@@ -2702,7 +2702,9 @@ function PayoutPanel({file,profile,onDraft,allFiles}){
     .map(f=>({id:f.id,label:f.label||"",amount:Math.abs(Number(f.amount))||0,
               kind:f.kind==="credit"?"credit":"fee"})));
 
-  const draft={...file,leadOrigin:origin,absorbedFees:[
+  // Los bps sin guardar del bloque de lender mandan sobre los del archivo.
+  const effBps = Number.isFinite(Number(pendingBps)) && pendingBps!==null ? Number(pendingBps) : null;
+  const draft={...file,leadOrigin:origin,...(effBps!==null?{bps:effBps}:{}),absorbedFees:[
     ...fees.filter(f=>f.on).map(f=>({id:f.id,amount:f.amount})),
     ...extras.filter(e=>e.amount>0&&e.label.trim())
       .map(e=>({id:e.id,label:e.label.trim(),amount:e.amount,kind:e.kind})),
@@ -2765,7 +2767,8 @@ function PayoutPanel({file,profile,onDraft,allFiles}){
       </div>
 
       <div style={{display:"flex",justifyContent:"space-between",fontSize:12,borderTop:"1px solid #21262D",paddingTop:9}}>
-        <span style={{color:"#8B949E"}}>Comisión bruta{isAdmin?` · ${fileCompBps(file)} bps`:""}</span>
+        <span style={{color:"#8B949E"}}>Comisión bruta{isAdmin?` · ${fileCompBps(draft)} bps`:""}
+          {effBps!==null&&effBps!==Number(file.bps)?<span style={{color:"#F5A623"}}> · sin guardar</span>:null}</span>
         <span style={{color:"#E6EDF3",fontFamily:"DM Mono"}}>${pay.gross.toLocaleString()}</span>
       </div>
 
@@ -3446,6 +3449,10 @@ function DetailModal({file,profile,allFiles,onClose,onSave,onDelete,onAdvance,on
   const [showHistory, setShowHistory] = useState(false);
   // Whatever the sub-panels are currently showing, ready for the single SAVE.
   const panelDrafts = useRef({});
+  // Los bps que el bloque de lender tiene escritos pero aún no guardados. Con
+  // solo el ref, el bloque de compensación seguía mostrando el valor viejo —
+  // dos bloques en la misma pantalla con dos cifras de dinero distintas.
+  const [pendingBps,setPendingBps] = useState(null);
   const [showChange,setShowChange]=useState(false);
   const [newNote,setNewNote]=useState("");
   const [showAllNotes,setShowAllNotes]=useState(false);
@@ -3577,13 +3584,14 @@ function DetailModal({file,profile,allFiles,onClose,onSave,onDelete,onAdvance,on
 
         {/* LENDER — chosen at Full Application; the channel gates the list */}
         {!inPrep && !isReferredOut && (atOrPastFullApp(stage) || hasLenderData(file)) && (
-          <LenderPanel file={file} profile={profile} onDraft={p=>{panelDrafts.current.lender=p;}}
+          <LenderPanel file={file} profile={profile}
+            onDraft={p=>{panelDrafts.current.lender=p; setPendingBps(p.bps ?? null);}}
             onChangeLender={()=>setShowChange(true)}/>
         )}
 
         {/* COMPENSACIÓN — bruto, descuentos, neto y lo que cobra cada quien */}
         {!inPrep && !isReferredOut && (
-          <PayoutPanel file={file} profile={profile} allFiles={allFiles}
+          <PayoutPanel file={file} profile={profile} allFiles={allFiles} pendingBps={pendingBps}
             onDraft={p=>{panelDrafts.current.payout=p;}}/>
         )}
 
