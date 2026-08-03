@@ -1341,6 +1341,188 @@ export function addNoteEntry(file, text, by) {
   };
 }
 
+// ─── 2I. BARRETT COMPENSATION ──────────────────────────────────────
+// Replaces the PRMG model entirely. That one was 25 flat bps on eligible
+// volume, monthly, with HELOCs and seconds excluded and a "submit by the
+// 15th" process. None of it survives the move to Barrett.
+//
+// What replaces it: every party takes a PERCENTAGE of the NET, and the
+// percentage depends on who originated, what stage they are in, whether a
+// trainer is assigned, what year of the Paulo agreement we are in, and
+// what the branch's own volume can afford.
+export const LO_STAGES = {
+  newbie:       { es: "Newbie",         en: "Newbie",         split: 0.50, order: 1 },
+  intermediate: { es: "Intermediate",   en: "Intermediate",   split: 0.60, order: 2 },
+  senior:       { es: "Senior",         en: "Senior",         split: 0.70, order: 3 },
+  bm:           { es: "Branch Manager", en: "Branch Manager", split: 0.85, order: 4 },
+};
+// Three stages plus the BM. Advancement is by funded volume, never by
+// calendar, and a split never moves down.
+export const STAGE_THRESHOLDS = { intermediate: 5_000_000, senior: 15_000_000 };
+
+export function stageForVolume(fundedVolume, isBM = false) {
+  if (isBM) return "bm";
+  const v = Number(fundedVolume) || 0;
+  if (v >= STAGE_THRESHOLDS.senior) return "senior";
+  if (v >= STAGE_THRESHOLDS.intermediate) return "intermediate";
+  return "newbie";
+}
+
+// The Team Lead share sunsets over three years. Note for the record: the
+// internal structure document called this "Barrett's platform share". It
+// is not Barrett's — it is the Paulo Maria Team override.
+export const TEAM_LEAD_SCHEDULE = { 1: 0.15, 2: 0.07, 3: 0 };
+export const teamLeadShare = year => TEAM_LEAD_SCHEDULE[Math.min(3, Math.max(1, Number(year) || 1))];
+
+// Trainer earns until the trainee reaches Senior. Production-based, with
+// no calendar expiration.
+export const TRAINER_RATES = { newbie: 0.15, intermediate: 0.10, senior: 0, bm: 0 };
+
+// ─── VOLUME LADDER ─────────────────────────────────────────────────
+// The LO ceiling is not a promise, it is what the branch's volume can pay.
+// More files spread the fixed cost, which is what funds a higher split.
+export const BRANCH_COSTS = {
+  fixedMonthly: 4000 + 13.5 * 40 * 52 / 12,   // Tina + Laura full time
+  perFile: 250 + 150,                          // LP branch portion + Laura
+  targetMarginPerFile: 400,
+};
+export function branchCostPerFile(filesPerMonth, costs = BRANCH_COSTS) {
+  const n = Math.max(1, Number(filesPerMonth) || 1);
+  return costs.fixedMonthly / n + costs.perFile;
+}
+// The highest LO split the branch can fund at this volume, after the team
+// lead takes their share and the branch keeps its margin.
+export function affordableSplit(filesPerMonth, net, year, costs = BRANCH_COSTS) {
+  if (!net) return null;
+  const need = (branchCostPerFile(filesPerMonth, costs) + costs.targetMarginPerFile) / net;
+  return Math.max(0, 1 - teamLeadShare(year) - need);
+}
+// Rounded down to the nearest 2.5 points, so the published ladder is a
+// clean number rather than 82.63%.
+export function ladderCeiling(filesPerMonth, net, year, costs = BRANCH_COSTS) {
+  const raw = affordableSplit(filesPerMonth, net, year, costs);
+  return raw === null ? null : Math.floor(raw * 40) / 40;
+}
+
+// ─── THE SPLIT ON ONE FILE ─────────────────────────────────────────
+// A contractual floor is a FLOOR, not a premium: it does not stack on top
+// of ladder increases. Ana's signed 70% means she never earns less than
+// 70%, not that she earns 70% plus every future raise.
+export function loanSplit(file, ctx = {}) {
+  const {
+    year = 1, filesPerMonth = 8, leadSource = "self",
+    trainerAssigned = false, costs = BRANCH_COSTS,
+  } = ctx;
+  const net = fileNet(file);
+  const stage = file?.loStage || stageForVolume(file?.loFundedVolume, file?.isBM);
+  const isBM = stage === "bm";
+  const paulo = teamLeadShare(year);
+
+  // The ladder LIFTS the published splits, it does not cap them. The first
+  // version took min(stageBase, ceiling), which pinned Senior at 70% even
+  // in year 3 when the branch could afford 82.5% — the raise never arrived.
+  //
+  // Lift is measured against the Senior base, and the Newbie does not
+  // receive it: their split moves when they advance a stage, not when the
+  // branch grows.
+  const ceiling = ladderCeiling(filesPerMonth, net, year, costs);
+  const lift = ceiling === null ? 0 : Math.max(0, ceiling - LO_STAGES.senior.split);
+  const base = LO_STAGES[stage]?.split ?? 0.50;
+  const floor = Number(file?.loSplitFloor) || 0;
+
+  // The Branch Manager and the branch are the same pocket: whatever the
+  // team lead does not take is theirs.
+  const lo = isBM ? (1 - paulo)
+                  : Math.max(floor, base + (stage === "newbie" ? 0 : lift));
+
+  const trainer = (!isBM && trainerAssigned) ? (TRAINER_RATES[stage] || 0) : 0;
+  const branch = Math.max(0, 1 - lo - paulo - trainer);
+
+  const cost = Math.round(branchCostPerFile(filesPerMonth, costs));
+  const $ = p => Math.round(net * p);
+  return {
+    net, stage, stageMeta: LO_STAGES[stage], leadSource, isBM,
+    ceiling, lift, floor,
+    floorApplied: !isBM && floor > base + (stage === "newbie" ? 0 : lift),
+    shares: { lo, trainer, branch, paulo },
+    dollars: { lo: $(lo), trainer: $(trainer), branch: $(branch), paulo: $(paulo) },
+    costPerFile: cost,
+    // On a BM file there is no branch share to measure — the cost comes out
+    // of the BM's own split, so it is reported against that instead.
+    margin: isBM ? $(lo) - cost : $(branch) - cost,
+    marginBasis: isBM ? "propio" : "sucursal",
+    checksum: Number((lo + trainer + branch + paulo).toFixed(6)),
+  };
+}
+
+// NET is gross commission less only the fees the BRANCH absorbs. When the
+// borrower pays them — the normal case — NET equals gross.
+export function fileNet(file) {
+  const gross = Math.round((file?.loan || 0) * fileCompBps(file) / 10000);
+  const absorbed = (file?.absorbedFees || []).reduce((a, f) => a + (Number(f?.amount) || 0), 0);
+  return Math.max(0, gross - absorbed);
+}
+
+// ─── PAYROLL PERIODS ───────────────────────────────────────────────
+// Barrett closes on the 1st and the 15th. A file funded on a cut-off date
+// can be claimed in that period or held for the next — it is optional, and
+// it stops being optional once payroll has been submitted for the period.
+export function payrollPeriod(iso) {
+  if (!isValidISO(iso)) return null;
+  const y = iso.slice(0, 4), m = iso.slice(5, 7), d = Number(iso.slice(8, 10));
+  return d <= 15 ? `${y}-${m}-A` : `${y}-${m}-B`;
+}
+export function payrollPeriodLabel(id) {
+  if (!id) return "—";
+  const [y, m, h] = id.split("-");
+  return `${m}/${y} · ${h === "A" ? "corte del 15" : "corte del 1"}`;
+}
+export function currentPayrollPeriod() { return payrollPeriod(today()); }
+
+export const CLAIM_STATES = {
+  unclaimed: { es: "Sin reclamar", en: "Unclaimed", color: "#F5A623" },
+  claimed:   { es: "Reclamado",    en: "Claimed",   color: "#4A90D9" },
+  paid:      { es: "Pagado",       en: "Paid",      color: "#7EC8A4" },
+};
+
+// Funded files that have not been submitted to payroll yet. The ones from
+// earlier periods matter most: a file held back and then forgotten is
+// money nobody ever misses, because it never appeared on a list.
+export function unclaimedFiles(files, ctx = {}) {
+  const now = currentPayrollPeriod();
+  return (files || [])
+    .filter(f => okDate(f.fundedAt) && (f.claimState || "unclaimed") === "unclaimed")
+    .map(f => {
+      const per = payrollPeriod(f.fundedAt);
+      return { file: f, period: per, split: loanSplit(f, ctx), stale: per < now };
+    })
+    .sort((a, b) => String(a.file.fundedAt).localeCompare(String(b.file.fundedAt)));
+}
+
+export function payrollSummary(files, ctx = {}) {
+  const rows = unclaimedFiles(files, ctx);
+  const sum = k => rows.reduce((a, r) => a + r.split.dollars[k], 0);
+  const stale = rows.filter(r => r.stale);
+  return {
+    period: currentPayrollPeriod(), rows, count: rows.length,
+    staleCount: stale.length,
+    staleDollars: stale.reduce((a, r) => a + r.split.dollars.branch, 0),
+    branch: sum("branch"), lo: sum("lo"), trainer: sum("trainer"), paulo: sum("paulo"),
+    net: rows.reduce((a, r) => a + r.split.net, 0),
+    cost: rows.reduce((a, r) => a + r.split.costPerFile, 0),
+  };
+}
+
+export function markClaimed(file, periodId, by) {
+  return {
+    ...file, claimState: "claimed", claimedPeriod: periodId || currentPayrollPeriod(),
+    claimedAt: today(), claimedBy: by || null,
+  };
+}
+export function markPaid(file, by) {
+  return { ...file, claimState: "paid", paidAt: today(), paidBy: by || null };
+}
+
 // ─── 3. HOUSE HUNT — the 60-day track ──────────────────────────────
 // APG Realty reassigns a buyer to another agent if they are not under
 // contract in 60 days. So this is not a follow-up rhythm; it is a

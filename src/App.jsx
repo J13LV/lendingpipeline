@@ -22,6 +22,8 @@ import {
   backupViability, changeCost, applyLenderChange, reregistrationCost,
   lenderChangeCount, lenderFaultChanges, LENDER_CHANGE_LANDING_STAGE,
   noteEntries, latestNote, noteCount, addNoteEntry,
+  LO_STAGES, STAGE_THRESHOLDS, teamLeadShare, branchCostPerFile, ladderCeiling,
+  loanSplit, payrollPeriodLabel, currentPayrollPeriod, payrollSummary,
 } from "./pipelineCore";
 import {
   getAuth,
@@ -441,8 +443,6 @@ const LO_LIST = Object.entries(TEAM)
     color: p.color,
   }));
 
-const OVERRIDE_EXCLUDED = ["Lightning Equity Hybrid HELOC","Symmetry HELOC","CE Second Elite","CE Second Expanded Access (ITIN)","CE Second Classic Elite (Piggyback)"];
-const OVERRIDE_BPS = 25;
 
 const SAMPLE = [
   { id:"f1", lo:"Jose Del Valle", borrower:"Ariel Villalobos", loan:385000, type:"Conventional", stage:"Condition Clearing", daysInStage:3, closing:"2026-04-14", note:"Waiting on updated pay stubs", bps:null, closedAt:null },
@@ -944,11 +944,14 @@ export default function App() {
           inbound={inbound}
           onOpenFile={setDetail}
           onBulkUpdate={(updates)=>{
+            // Acepta cualquier campo, no solo `lo`. Antes descartaba en silencio
+            // todo lo demás, así que un cambio de estado nunca se guardaba.
             setFiles(prev=>prev.map(f=>{
               const u = updates.find(x=>x.id===f.id);
               if(!u) return f;
-              const cleanLo = typeof u.lo === "string" ? u.lo.trim() : u.lo;
-              return stampEdit({...f, lo:cleanLo}, profile, "edited", {fields:["lo"]});
+              const {id, ...fields} = u;
+              if (typeof fields.lo === "string") fields.lo = fields.lo.trim();
+              return stampEdit({...f, ...fields}, profile, "edited", {fields:Object.keys(fields)});
             }));
           }}
         />}
@@ -1468,6 +1471,9 @@ function ArchiveModal({file, onClose, onConfirm}){
 function ProductionDashboard({profile, files, closed, active, referredOut, inbound, onOpenFile, onBulkUpdate}){
   const isAdmin = profile?.role === "admin";
   const isLO = profile?.role === "lo";
+  const [compYear,setCompYear]=useState(1);
+  const [filesMo,setFilesMo]=useState(8);
+  const payroll=payrollSummary(files,{year:compYear,filesPerMonth:filesMo});
   const [prodTab,setProdTab]=useState("team");
   const [showAutoFixPreview, setShowAutoFixPreview] = useState(false);
 
@@ -1490,20 +1496,9 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
       monthVol:loMonthClosed.reduce((s,f)=>s+(f.loan||0),0)};
   });
 
-  const isEligible=f=>!OVERRIDE_EXCLUDED.includes(f.type);
-  const overrideComp=f=>isEligible(f)?Math.round((f.loan||0)*OVERRIDE_BPS/10000):0;
-  const totalOverride=closed.reduce((s,f)=>s+overrideComp(f),0);
-  const monthOverride=closedThisMonth.reduce((s,f)=>s+overrideComp(f),0);
-  const eligibleVol=closed.filter(isEligible).reduce((s,f)=>s+(f.loan||0),0);
-
-  const loOverride=LO_LIST.map(lo=>{
-    const loClosed=closed.filter(f=>f.lo===lo.name);
-    const loEligible=loClosed.filter(isEligible);
-    const loVol=loEligible.reduce((s,f)=>s+(f.loan||0),0);
-    return {...lo, eligibleVol:loVol, override:Math.round(loVol*OVERRIDE_BPS/10000),
-      closedCount:loClosed.length, excludedCount:loClosed.filter(f=>!isEligible(f)).length};
-  });
-
+  // El override de PRMG —25 bps planos, excluyendo HELOCs y segundas, ciclo
+  // mensual— desapareció con la mudanza a Barrett. Lo reemplaza loanSplit(),
+  // que reparte porcentajes del NET según etapa, trainer, año y volumen.
   const myComp=f=>fileCompDollars(f,BPS_RATE);
   const myClosedFiles = closed.filter(f=>f.lo===profile.name);
   const myTotalComp = myClosedFiles.reduce((s,f)=>s+myComp(f),0);
@@ -2121,61 +2116,122 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
 
       </div>}
 
-      {/* OVERRIDE & COMP TAB */}
+      {/* OVERRIDE & PAYROLL — modelo Barrett, reemplaza los 25 bps de PRMG */}
       {prodTab==="override"&&isAdmin&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
+        <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center",
+          background:"#161B22",border:"1px solid #30363D",borderRadius:8,padding:"10px 14px"}}>
+          <span style={{fontSize:10,color:"#484F58",letterSpacing:"1px"}}>AÑO</span>
+          <select value={compYear} onChange={e=>setCompYear(Number(e.target.value))}
+            style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,color:"#E6EDF3",
+              padding:"5px 8px",fontSize:11,fontFamily:"DM Mono"}}>
+            {[1,2,3].map(y=><option key={y} value={y}>Año {y} · Paulo {(teamLeadShare(y)*100).toFixed(0)}%</option>)}
+          </select>
+          <span style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginLeft:8}}>ARCHIVOS/MES</span>
+          <input type="number" value={filesMo} onChange={e=>setFilesMo(Math.max(1,Number(e.target.value)||1))}
+            style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,color:"#E6EDF3",
+              padding:"5px 8px",fontSize:11,fontFamily:"DM Mono",width:58}}/>
+          <span style={{fontSize:10,color:"#6E7681"}}>
+            costo/archivo ${Math.round(branchCostPerFile(filesMo)).toLocaleString()} · techo Senior {(ladderCeiling(filesMo,9174,compYear)*100).toFixed(1)}%
+          </span>
+        </div>
+
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:10}}>
           {[
-            {label:"ELIGIBLE VOLUME",value:`$${(eligibleVol/1e6).toFixed(2)}M`,color:"#F5A623",sub:"excl. HELOC, 2nd TD"},
-            {label:"TOTAL OVERRIDE",value:`$${totalOverride.toLocaleString()}`,color:"#F5A623",sub:`${OVERRIDE_BPS} bps all time`},
-            {label:"THIS MONTH",value:`$${monthOverride.toLocaleString()}`,color:"#F5A623",sub:"override due"},
-            {label:"SUBMIT BY",value:"15th",color:"#E85D75",sub:"prior month production"},
+            {label:"CORTE ACTUAL",value:payrollPeriodLabel(currentPayrollPeriod()),color:"#4A90D9",sub:"Barrett cierra el 1 y el 15",small:true},
+            {label:"SIN RECLAMAR",value:`${payroll.count}`,color:"#F5A623",sub:"archivos fondeados"},
+            {label:"TE TOCA",value:`$${payroll.branch.toLocaleString()}`,color:"#F5A623",sub:"si reclamas todo hoy"},
+            {label:"DE CORTES VIEJOS",value:`$${payroll.staleDollars.toLocaleString()}`,color:payroll.staleCount?"#E85D75":"#484F58",sub:`${payroll.staleCount} arrastrado${payroll.staleCount===1?"":"s"}`},
           ].map(s=>(
-            <div key={s.label} style={{background:"#1a1000",border:`1px solid #F5A62344`,borderTop:`3px solid #F5A623`,borderRadius:8,padding:"12px"}}>
+            <div key={s.label} style={{background:"#1a1000",border:`1px solid ${s.color}44`,borderTop:`3px solid ${s.color}`,borderRadius:8,padding:"12px"}}>
               <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>{s.label}</div>
-              <div style={{fontFamily:"Syne",fontWeight:800,fontSize:20,color:s.color}}>{s.value}</div>
+              <div style={{fontFamily:"Syne",fontWeight:800,fontSize:s.small?13:20,color:s.color}}>{s.value}</div>
               <div style={{fontSize:10,color:"#484F58",marginTop:2}}>{s.sub}</div>
             </div>
           ))}
         </div>
 
         <div style={{background:"#161B22",border:"1px solid #F5A62333",borderRadius:10,overflow:"hidden"}}>
-          <div style={{background:"#1a1000",borderBottom:"2px solid #F5A623",padding:"10px 16px"}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#F5A623",letterSpacing:"1px"}}>OVERRIDE BREAKDOWN BY LO — {OVERRIDE_BPS} BPS</span>
+          <div style={{background:"#1a1000",borderBottom:"2px solid #F5A623",padding:"10px 16px",
+            display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
+            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#F5A623",letterSpacing:"1px"}}>PARA EL PRÓXIMO REQUEST DE PAYROLL</span>
+            <span style={{fontSize:10,color:"#6E7681"}}>reclamar es opcional · lo que no metas queda para el corte siguiente</span>
           </div>
-          <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
-            <thead>
-              <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
-                {["LO","CLOSED LOANS","ELIGIBLE VOL","EXCLUDED","OVERRIDE EARNED"].map((h,i)=>(
-                  <th key={i} style={{padding:"8px 14px",textAlign:i===0?"left":"center",fontSize:10,color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {loOverride.map((lo,i)=>(
-                <tr key={lo.name} style={{borderBottom:"1px solid #21262D",background:i%2===0?"#0D1117":"#161B22"}}>
-                  <td style={{padding:"10px 14px"}}>
-                    <div style={{fontFamily:"Syne",fontWeight:700,fontSize:12,color:loColors[i]}}>{lo.name}</div>
-                    <div style={{fontSize:10,color:"#484F58"}}>{lo.role}</div>
-                  </td>
-                  <td style={{padding:"10px 14px",textAlign:"center",color:"#E6EDF3",fontWeight:500}}>{lo.closedCount}</td>
-                  <td style={{padding:"10px 14px",textAlign:"center",color:"#06D6A0",fontWeight:500}}>${(lo.eligibleVol/1000).toFixed(0)}K</td>
-                  <td style={{padding:"10px 14px",textAlign:"center",color:lo.excludedCount>0?"#E85D75":"#484F58"}}>{lo.excludedCount}</td>
-                  <td style={{padding:"10px 14px",textAlign:"center"}}>
-                    <span style={{fontFamily:"Syne",fontWeight:800,fontSize:14,color:"#F5A623"}}>${lo.override.toLocaleString()}</span>
-                  </td>
+          {payroll.rows.length===0?(
+            <div style={{padding:"22px 16px",textAlign:"center",color:"#484F58",fontSize:12}}>
+              No hay archivos fondeados sin reclamar.
+            </div>
+          ):(
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+              <thead>
+                <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
+                  {["CLIENTE","FONDEÓ","CORTE","LO","SPLIT","NET","TE TOCA",""].map((h,i)=>(
+                    <th key={i} style={{padding:"8px 12px",textAlign:i<4?"left":"center",fontSize:10,color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr style={{background:"#1a1000",borderTop:"2px solid #F5A623"}}>
-                <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"#F5A623"}}>TOTAL OVERRIDE</td>
-                <td style={{padding:"10px 14px",textAlign:"center",color:"#8B949E"}}>{closed.length}</td>
-                <td style={{padding:"10px 14px",textAlign:"center",color:"#06D6A0",fontWeight:500}}>${(eligibleVol/1000).toFixed(0)}K</td>
-                <td style={{padding:"10px 14px",textAlign:"center",color:"#484F58"}}>{closed.filter(f=>!isEligible(f)).length}</td>
-                <td style={{padding:"10px 14px",textAlign:"center",fontFamily:"Syne",fontWeight:800,fontSize:16,color:"#F5A623"}}>${totalOverride.toLocaleString()}</td>
-              </tr>
-            </tfoot>
-          </table>
+              </thead>
+              <tbody>
+                {payroll.rows.map((r,i)=>(
+                  <tr key={r.file.id||i} style={{borderBottom:"1px solid #21262D",background:r.stale?"rgba(232,93,117,.06)":(i%2===0?"#0D1117":"#161B22")}}>
+                    <td style={{padding:"9px 12px",color:"#E6EDF3"}}>{r.file.borrower}</td>
+                    <td style={{padding:"9px 12px",color:"#8B949E",fontFamily:"DM Mono",fontSize:11}}>{r.file.fundedAt}</td>
+                    <td style={{padding:"9px 12px",fontSize:10,color:r.stale?"#E85D75":"#6E7681"}}>
+                      {payrollPeriodLabel(r.period)}{r.stale?" · arrastrado":""}
+                    </td>
+                    <td style={{padding:"9px 12px",color:"#8B949E",fontSize:11}}>
+                      {r.file.lo||"—"}<span style={{color:"#484F58"}}> · {r.split.stageMeta?.es}</span>
+                    </td>
+                    <td style={{padding:"9px 12px",textAlign:"center",color:"#8B949E",fontFamily:"DM Mono",fontSize:11}}>
+                      {(r.split.shares.lo*100).toFixed(1)}%{r.split.floorApplied?" ⚑":""}
+                    </td>
+                    <td style={{padding:"9px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>${r.split.net.toLocaleString()}</td>
+                    <td style={{padding:"9px 12px",textAlign:"center"}}>
+                      <span style={{fontFamily:"Syne",fontWeight:800,fontSize:14,color:"#F5A623"}}>${r.split.dollars.branch.toLocaleString()}</span>
+                    </td>
+                    <td style={{padding:"9px 12px",textAlign:"center"}}>
+                      <button className="hov" onClick={()=>onBulkUpdate&&onBulkUpdate([{id:r.file.id,claimState:"claimed",claimedPeriod:currentPayrollPeriod(),claimedAt:today(),claimedBy:profile.name}])}
+                        style={{background:"#21262D",border:"1px solid #4A90D9",borderRadius:4,color:"#4A90D9",
+                          fontSize:9.5,padding:"4px 9px",cursor:"pointer",fontFamily:"DM Mono"}}>RECLAMAR</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr style={{background:"#1a1000",borderTop:"2px solid #F5A623"}}>
+                  <td colSpan={5} style={{padding:"10px 12px",fontFamily:"Syne",fontWeight:700,color:"#F5A623"}}>TOTAL · {payroll.count} archivos</td>
+                  <td style={{padding:"10px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>${payroll.net.toLocaleString()}</td>
+                  <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,fontSize:16,color:"#F5A623"}}>${payroll.branch.toLocaleString()}</td>
+                  <td/>
+                </tr>
+              </tfoot>
+            </table>
+          )}
+        </div>
+
+        <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,padding:"12px 16px"}}>
+          <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:8}}>
+            REPARTO DEL NET · año {compYear} · {filesMo} archivos/mes
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:8}}>
+            {Object.keys(LO_STAGES).map(k=>{
+              const demo=loanSplit({loan:417000,bps:220,loStage:k,isBM:k==="bm"},
+                {year:compYear,filesPerMonth:filesMo,trainerAssigned:k==="newbie"||k==="intermediate"});
+              return (
+                <div key={k} style={{background:"#0D1117",border:"1px solid #21262D",borderRadius:6,padding:"9px 11px"}}>
+                  <div style={{fontSize:11,color:"#E6EDF3",fontWeight:500}}>{LO_STAGES[k].es}</div>
+                  <div style={{fontSize:10,color:"#6E7681",fontFamily:"DM Mono",marginTop:4,lineHeight:1.6}}>
+                    LO {(demo.shares.lo*100).toFixed(1)}%
+                    {demo.shares.trainer>0?` · trainer ${(demo.shares.trainer*100).toFixed(1)}%`:""}
+                    <br/>sucursal {(demo.shares.branch*100).toFixed(1)}% · Paulo {(demo.shares.paulo*100).toFixed(0)}%
+                    <br/><span style={{color:demo.margin<0?"#E85D75":"#7EC8A4"}}>margen ${demo.margin.toLocaleString()}/archivo</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{fontSize:9,color:"#484F58",marginTop:8,lineHeight:1.6}}>
+            El Newbie no sube con la escalera — sube al graduar a Intermediate con ${STAGE_THRESHOLDS.intermediate/1e6}M de volumen fondeado.
+            Un piso contractual (⚑) nunca se suma a los aumentos de la escalera.
+          </div>
         </div>
 
         <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
