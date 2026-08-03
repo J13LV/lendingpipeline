@@ -861,7 +861,9 @@ export function lendersFor(file, channel) {
       if (needsCorr && !p.correspondent) return false;
       return !!p[key];
     })
-    .sort((a, b) => (b.lenderPaidBps || 0) - (a.lenderPaidBps || 0) || a.name.localeCompare(b.name));
+    // Alfabético. Ordenar por bps escondía a eLend en medio del grupo de 275
+    // entre ochenta nombres: encontrarlo dependía de la suerte.
+    .sort((a, b) => a.name.localeCompare(b.name, "es", { sensitivity: "base" }));
 }
 
 // What this file can earn, and what the lender publishing a higher number
@@ -987,6 +989,23 @@ export function setComp(file, patch) {
 }
 
 // Kept for the card and for compDeltaBetween: the ceiling only.
+// Lenders que hacen el producto pero quedan fuera por el canal elegido. Se
+// listan para que la ausencia sea una explicación y no un misterio.
+export function lendersHiddenByChannel(file, channel) {
+  if (CHANNELS[channel]?.requiresCapability !== "correspondent") return [];
+  const key = lenderProductKey(file?.type);
+  return LENDERS.filter(l => l.products?.[key] && !l.products?.correspondent)
+    .sort((a, b) => a.name.localeCompare(b.name, "es", { sensitivity: "base" }));
+}
+
+// Un lender que no está en el catálogo. Se guarda por nombre para que el
+// archivo quede completo; el catálogo se actualiza después.
+export const OTHER_LENDER_ID = "__other__";
+export const lenderNameOf = file =>
+  file?.lenderId === OTHER_LENDER_ID
+    ? (String(file?.lenderOther || "").trim() || "Otro lender")
+    : (lenderById(file?.lenderId)?.name || null);
+
 export function compCeiling(file) {
   const b = compBreakdown(file);
   const line = b.model === "lender_paid" ? b.lines[0] : null;
@@ -1570,9 +1589,21 @@ export function payoutBreakdown(file, ctx = {}) {
     { id: "branch",  who: names.branch || "Sucursal",           pct: split.shares.branch,  amount: Math.round(w.net * split.shares.branch) },
     { id: "paulo",   who: names.teamLead || "Team Lead",        pct: split.shares.paulo,   amount: Math.round(w.net * split.shares.paulo) },
   ].filter(r => r.pct > 0);
+  // Redondear cada parte por separado deja centavos sueltos: sobre un NET de
+  // $7,829 las tres partes sumaban $7,828. El resto se asigna a la sucursal,
+  // que es la que absorbe la diferencia en la vida real, para que las partes
+  // siempre sumen exactamente el todo.
+  const rounded = rows.reduce((a, r) => a + r.amount, 0);
+  const residual = w.net - rounded;
+  if (residual !== 0) {
+    const target = rows.find(r => r.id === "branch") || rows[rows.length - 1];
+    if (target) target.amount += residual;
+  }
+
   return {
     ...w, split, rows,
     total: rows.reduce((a, r) => a + r.amount, 0),
+    residual,
     // Lo que habría cobrado cada uno si el cálculo fuera sobre el bruto.
     // Se muestra para que la diferencia sea explícita y no un descubrimiento.
     onGross: rows.map(r => ({ ...r, amount: Math.round(w.gross * r.pct) })),

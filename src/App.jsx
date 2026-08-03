@@ -23,7 +23,7 @@ import {
   lenderChangeCount, lenderFaultChanges, LENDER_CHANGE_LANDING_STAGE,
   noteEntries, latestNote, noteCount, addNoteEntry,
   LO_STAGES, STAGE_THRESHOLDS, teamLeadShare, branchCostPerFile, ladderCeiling,
-  loanSplit, payrollPeriodLabel, currentPayrollPeriod, payrollSummary, fundedDate,
+  loanSplit, lendersHiddenByChannel, OTHER_LENDER_ID, lenderNameOf, payrollPeriodLabel, currentPayrollPeriod, payrollSummary, fundedDate,
   losWithoutCompRule, BARRETT_CUTOVER, referralFunded, referralBranchPct, STANDARD_FEES, payoutBreakdown, feeWaterfall,
   ADJUSTMENT_KINDS, withLoContext, LEAD_ORIGINS, leadOrigin, IN_HOUSE_REDUCTION,
 } from "./pipelineCore";
@@ -2884,7 +2884,7 @@ function LenderStrip({file}){
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8}}>
         <span style={{fontSize:11,color:l?"#4A90D9":"#484F58",fontFamily:"DM Mono",fontWeight:500,
           overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-          {l?l.name:"sin lender"}
+          {lenderNameOf(file)||"sin lender"}
         </span>
         <span style={{display:"flex",gap:6,alignItems:"baseline",flexShrink:0}}>
           {file.rate&&<span style={{fontSize:10.5,color:"#E6EDF3",fontFamily:"DM Mono"}}>{Number(file.rate).toFixed(3)}%</span>}
@@ -2929,6 +2929,7 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
   const [borrowerPaidBps,setBorrowerPaidBps]=useState(c0.borrowerPaidBps!=null?String(c0.borrowerPaidBps):"");
   const [lenderPaidBps,setLenderPaidBps]=useState(c0.lenderPaidBps!=null?String(c0.lenderPaidBps):"");
   const [backupId,setBackupId]=useState(file.backupLenderId||"");
+  const [lenderOther,setLenderOther]=useState(file.lenderOther||"");
 
   const fs={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",
     padding:"7px 9px",fontSize:12,fontFamily:"'DM Mono','Courier New',monospace",width:"100%"};
@@ -2938,6 +2939,7 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
   const draft=setComp(draftBase,{ratePriceBps,originationBps,borrowerPaidBps,lenderPaidBps});
   const comp=compBreakdown(draft);
   const options=lendersFor(draft,channel);
+  const hidden=lendersHiddenByChannel(draft,channel);
   const l=lenderById(lenderId);
   const cc=compCeiling(draft);
   const ccD=compCeilingDollars(draft);
@@ -2952,6 +2954,7 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
     lockedAt: lockState==="locked"?(okDate(lockedAt)||today()):null,
     lockTermDays: lockState==="locked"?(parseInt(term)||null):null,
     lockExpires: lockState==="locked"?lockExpiration(okDate(lockedAt)||today(),parseInt(term)):null,
+    lenderOther: lenderId===OTHER_LENDER_ID?(lenderOther.trim()||null):null,
     lenderSince: !lenderId?null:(file.lenderId===lenderId?(file.lenderSince||today()):today()),
     // La compensación solo viaja si quien edita es admin. Lender, tasa, lock y
     // respaldo son operativos y los maneja el LO en su propio archivo.
@@ -3003,7 +3006,25 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
           {options.map(o=><option key={o.id} value={o.id}>
             {o.name}{o.lenderPaidBps?` · ${o.lenderPaidBps} bps`:""}{o.borrowerPaidOnly?" · borrower-paid":""}
           </option>)}
+          <option value={OTHER_LENDER_ID}>— otro lender, escribir a mano —</option>
         </select>
+        {lenderId===OTHER_LENDER_ID&&(
+          <div style={{marginTop:6}}>
+            <input value={lenderOther} onChange={e=>setLenderOther(e.target.value)}
+              placeholder="nombre del lender" style={fs}/>
+            <div style={{fontSize:9,color:"#484F58",marginTop:3}}>
+              Sin datos de plan ni de guías. Escribe la comp a mano y avísame para
+              agregarlo al catálogo.
+            </div>
+          </div>
+        )}
+        {hidden.length>0&&(
+          <div style={{fontSize:9.5,color:"#F5A623",marginTop:5,lineHeight:1.5}}>
+            {hidden.length} lender{hidden.length===1?"":"s"} hace{hidden.length===1?"":"n"} este producto
+            pero no opera{hidden.length===1?"":"n"} en correspondent, así que no aparece{hidden.length===1?"":"n"}:
+            {" "}{hidden.slice(0,4).map(l=>l.name).join(", ")}{hidden.length>4?` y ${hidden.length-4} más`:""}.
+          </div>
+        )}
         {l&&(
           <div style={{marginTop:6,display:"flex",gap:8,flexWrap:"wrap",fontSize:9.5,fontFamily:"DM Mono"}}>
             {l.contacts?.[0]?.ae&&<span style={{color:"#6E7681"}}>AE {l.contacts[0].ae}</span>}
