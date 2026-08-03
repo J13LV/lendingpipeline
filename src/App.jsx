@@ -2912,7 +2912,11 @@ function LenderStrip({file}){
 }
 
 // ─── LENDER PANEL ───
-function LenderPanel({file,onDraft,onChangeLender}){
+function LenderPanel({file,profile,onDraft,onChangeLender}){
+  // El bloque de compensación escribía en BPS COMP sin guardia de admin,
+  // mientras el campo BPS COMP de arriba sí la tenía. La puerta estaba
+  // cerrada y la ventana abierta: un LO podía fijarse su propia comp.
+  const isAdmin=profile?.role==="admin";
   const [channel,setChannel]=useState(file.channel||"broker");
   const [lenderId,setLenderId]=useState(file.lenderId||"");
   const [rate,setRate]=useState(file.rate!=null?String(file.rate):"");
@@ -2949,11 +2953,13 @@ function LenderPanel({file,onDraft,onChangeLender}){
     lockTermDays: lockState==="locked"?(parseInt(term)||null):null,
     lockExpires: lockState==="locked"?lockExpiration(okDate(lockedAt)||today(),parseInt(term)):null,
     lenderSince: !lenderId?null:(file.lenderId===lenderId?(file.lenderSince||today()):today()),
-    comp: draft.comp,
+    // La compensación solo viaja si quien edita es admin. Lender, tasa, lock y
+    // respaldo son operativos y los maneja el LO en su propio archivo.
+    ...(isAdmin?{comp:draft.comp}:{}),
     backupLenderId: backupId||null,
     // Mirror the resolved total into the single field the reports read.
     // The block does not compete with BPS COMP — it fills it in.
-    bps: resolvedCompBps(draft) ?? file.bps ?? null,
+    ...(isAdmin?{bps: resolvedCompBps(draft) ?? file.bps ?? null}:{}),
   };
   const sig=JSON.stringify(patch);
   useEffect(()=>{ onDraft&&onDraft(patch); },[sig]);
@@ -3011,7 +3017,7 @@ function LenderPanel({file,onDraft,onChangeLender}){
 
       {/* COMPENSATION — editable where it legitimately varies by loan,
           read-only where the comp plan determines it. */}
-      {lenderId&&(
+      {isAdmin&&lenderId&&(
         <div style={{background:"#0D1117",border:`1px solid ${comp.overCeiling?"#E85D75":"#21262D"}`,
           borderRadius:6,padding:"10px 11px",display:"flex",flexDirection:"column",gap:8}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8}}>
@@ -3550,7 +3556,7 @@ function DetailModal({file,profile,allFiles,onClose,onSave,onDelete,onAdvance,on
 
         {/* LENDER — chosen at Full Application; the channel gates the list */}
         {!inPrep && !isReferredOut && (atOrPastFullApp(stage) || hasLenderData(file)) && (
-          <LenderPanel file={file} onDraft={p=>{panelDrafts.current.lender=p;}}
+          <LenderPanel file={file} profile={profile} onDraft={p=>{panelDrafts.current.lender=p;}}
             onChangeLender={()=>setShowChange(true)}/>
         )}
 
