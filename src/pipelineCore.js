@@ -1467,6 +1467,8 @@ export function fileNet(file) {
 // Barrett closes on the 1st and the 15th. A file funded on a cut-off date
 // can be claimed in that period or held for the next — it is optional, and
 // it stops being optional once payroll has been submitted for the period.
+export const fundedDate = file => okDate(file?.fundedAt) || okDate(file?.closedAt) || null;
+
 export function payrollPeriod(iso) {
   if (!isValidISO(iso)) return null;
   const y = iso.slice(0, 4), m = iso.slice(5, 7), d = Number(iso.slice(8, 10));
@@ -1491,12 +1493,43 @@ export const CLAIM_STATES = {
 export function unclaimedFiles(files, ctx = {}) {
   const now = currentPayrollPeriod();
   return (files || [])
-    .filter(f => okDate(f.fundedAt) && (f.claimState || "unclaimed") === "unclaimed")
+    // La app guarda la fecha de fondeo en closedAt desde la tanda 1 — el
+    // botón CLOSE pide "funded date" y la escribe ahí. Leer solo fundedAt
+    // dejaba la lista vacía para todos los archivos existentes.
+    .filter(f => fundedDate(f) && (f.claimState || "unclaimed") === "unclaimed")
     .map(f => {
-      const per = payrollPeriod(f.fundedAt);
-      return { file: f, period: per, split: loanSplit(f, ctx), stale: per < now };
+      const per = payrollPeriod(fundedDate(f));
+      const enriched = withLoContext(f, files, ctx.roster || {});
+      return { file: f, period: per, split: loanSplit(enriched, {
+        ...ctx, trainerAssigned: !!(ctx.roster?.[f.lo]?.trainer),
+      }), stale: per < now };
     })
-    .sort((a, b) => String(a.file.fundedAt).localeCompare(String(b.file.fundedAt)));
+    .sort((a, b) => String(fundedDate(a.file)).localeCompare(String(fundedDate(b.file))));
+}
+
+// El volumen fondeado de cada LO, calculado de sus propios archivos cerrados.
+// Sin esto todos calculaban como Newbie al 50%, porque ningún archivo trae
+// la etapa escrita encima.
+export function loVolumes(files) {
+  const v = {};
+  for (const f of files || []) {
+    if (!fundedDate(f) || !f.lo) continue;
+    v[f.lo] = (v[f.lo] || 0) + (Number(f.loan) || 0);
+  }
+  return v;
+}
+
+// Enriquece un archivo con la etapa de su LO antes de repartir.
+export function withLoContext(file, files, roster = {}) {
+  const vols = loVolumes(files);
+  const r = roster[file?.lo] || {};
+  return {
+    ...file,
+    isBM: r.isBM ?? file?.isBM ?? false,
+    loSplitFloor: r.floor ?? file?.loSplitFloor ?? 0,
+    loFundedVolume: file?.loFundedVolume ?? (r.priorVolume || 0) + (vols[file?.lo] || 0),
+    loStage: file?.loStage || r.stage || null,
+  };
 }
 
 export function payrollSummary(files, ctx = {}) {

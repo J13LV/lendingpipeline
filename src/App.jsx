@@ -23,7 +23,7 @@ import {
   lenderChangeCount, lenderFaultChanges, LENDER_CHANGE_LANDING_STAGE,
   noteEntries, latestNote, noteCount, addNoteEntry,
   LO_STAGES, STAGE_THRESHOLDS, teamLeadShare, branchCostPerFile, ladderCeiling,
-  loanSplit, payrollPeriodLabel, currentPayrollPeriod, payrollSummary,
+  loanSplit, payrollPeriodLabel, currentPayrollPeriod, payrollSummary, fundedDate,
 } from "./pipelineCore";
 import {
   getAuth,
@@ -443,6 +443,23 @@ const LO_LIST = Object.entries(TEAM)
     color: p.color,
   }));
 
+
+// Quién es quién para el reparto. El piso de Ana es contractual y firmado con
+// Barrett; nunca baja, y nunca se suma a los aumentos de la escalera.
+// La etapa de Ana va escrita porque la app solo conoce su volumen desde que
+// existe el sistema, no su carrera — derivarlo la dejaba como Newbie. La de
+// Marelis se deriva a propósito: su $5M empieza a contar en Barrett y quiere
+// avanzar sola cuando lo alcance.
+//
+//   isBM   · el BM y la sucursal son el mismo bolsillo
+//   floor  · piso contractual, nunca baja, nunca se suma a la escalera
+//   stage  · fija la etapa e ignora el volumen derivado
+//   trainer· hay un trainer asignado a los archivos de este LO
+const COMP_ROSTER = {
+  "Jose Del Valle":  { isBM:true },
+  "Ana Plasencia":   { stage:"senior", floor:0.70 },
+  "Marelis Pinales": { trainer:true },
+};
 
 const SAMPLE = [
   { id:"f1", lo:"Jose Del Valle", borrower:"Ariel Villalobos", loan:385000, type:"Conventional", stage:"Condition Clearing", daysInStage:3, closing:"2026-04-14", note:"Waiting on updated pay stubs", bps:null, closedAt:null },
@@ -1473,7 +1490,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
   const isLO = profile?.role === "lo";
   const [compYear,setCompYear]=useState(1);
   const [filesMo,setFilesMo]=useState(8);
-  const payroll=payrollSummary(files,{year:compYear,filesPerMonth:filesMo});
+  const payroll=payrollSummary(files,{year:compYear,filesPerMonth:filesMo,roster:COMP_ROSTER});
   const [prodTab,setProdTab]=useState("team");
   const [showAutoFixPreview, setShowAutoFixPreview] = useState(false);
 
@@ -2173,7 +2190,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 {payroll.rows.map((r,i)=>(
                   <tr key={r.file.id||i} style={{borderBottom:"1px solid #21262D",background:r.stale?"rgba(232,93,117,.06)":(i%2===0?"#0D1117":"#161B22")}}>
                     <td style={{padding:"9px 12px",color:"#E6EDF3"}}>{r.file.borrower}</td>
-                    <td style={{padding:"9px 12px",color:"#8B949E",fontFamily:"DM Mono",fontSize:11}}>{r.file.fundedAt}</td>
+                    <td style={{padding:"9px 12px",color:"#8B949E",fontFamily:"DM Mono",fontSize:11}}>{fundedDate(r.file)}</td>
                     <td style={{padding:"9px 12px",fontSize:10,color:r.stale?"#E85D75":"#6E7681"}}>
                       {payrollPeriodLabel(r.period)}{r.stale?" · arrastrado":""}
                     </td>
