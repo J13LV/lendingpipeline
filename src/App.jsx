@@ -24,6 +24,7 @@ import {
   noteEntries, latestNote, noteCount, addNoteEntry,
   LO_STAGES, STAGE_THRESHOLDS, teamLeadShare, branchCostPerFile, ladderCeiling,
   loanSplit, payrollPeriodLabel, currentPayrollPeriod, payrollSummary, fundedDate,
+  losWithoutCompRule,
 } from "./pipelineCore";
 import {
   getAuth,
@@ -433,8 +434,12 @@ const LOAN_TYPE_GROUPS = [
 ];
 const LOAN_TYPES = LOAN_TYPE_GROUPS.flatMap(g => g.types);
 
+// Jose tiene dos UIDs durante la transición PRMG → Barrett. Son la misma
+// persona, así que la lista se colapsa por nombre — si no, sale duplicado en
+// producción con sus cifras contadas dos veces.
 const LO_LIST = Object.entries(TEAM)
   .filter(([_,p]) => p.role === "admin" || p.role === "lo")
+  .filter(([_,p],i,arr) => arr.findIndex(([__,q]) => q.name === p.name) === i)
   .map(([uid,p]) => ({
     uid,
     name: p.name,
@@ -457,7 +462,7 @@ const LO_LIST = Object.entries(TEAM)
 //   trainer· hay un trainer asignado a los archivos de este LO
 const COMP_ROSTER = {
   "Jose Del Valle":  { isBM:true },
-  "Ana Plasencia":   { stage:"senior", floor:0.70 },
+  "Ana M Plasencia": { stage:"senior", floor:0.70 },
   "Marelis Pinales": { trainer:true },
 };
 
@@ -2152,6 +2157,14 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           </span>
         </div>
 
+        {losWithoutCompRule(files,COMP_ROSTER).length>0&&(
+          <div style={{background:"rgba(232,93,117,.08)",border:"1px solid #E85D7555",borderRadius:8,
+            padding:"10px 14px",fontSize:11,color:"#E85D75",lineHeight:1.5}}>
+            Sin regla de compensación: {losWithoutCompRule(files,COMP_ROSTER).join(", ")}.
+            Sus archivos se reparten por volumen derivado, que puede no ser su acuerdo real.
+          </div>
+        )}
+
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:10}}>
           {[
             {label:"CORTE ACTUAL",value:payrollPeriodLabel(currentPayrollPeriod()),color:"#4A90D9",sub:"Barrett cierra el 1 y el 15",small:true},
@@ -2195,7 +2208,10 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                       {payrollPeriodLabel(r.period)}{r.stale?" · arrastrado":""}
                     </td>
                     <td style={{padding:"9px 12px",color:"#8B949E",fontSize:11}}>
-                      {r.file.lo||"—"}<span style={{color:"#484F58"}}> · {r.split.stageMeta?.es}</span>
+                      {r.file.lo||"—"}
+                      <span style={{color:r.rosterMissing?"#E85D75":"#484F58"}}>
+                        {" · "}{r.rosterMissing?"sin regla de comp":r.split.stageMeta?.es}
+                      </span>
                     </td>
                     <td style={{padding:"9px 12px",textAlign:"center",color:"#8B949E",fontFamily:"DM Mono",fontSize:11}}>
                       {(r.split.shares.lo*100).toFixed(1)}%{r.split.floorApplied?" ⚑":""}

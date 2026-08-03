@@ -1500,9 +1500,10 @@ export function unclaimedFiles(files, ctx = {}) {
     .map(f => {
       const per = payrollPeriod(fundedDate(f));
       const enriched = withLoContext(f, files, ctx.roster || {});
-      return { file: f, period: per, split: loanSplit(enriched, {
-        ...ctx, trainerAssigned: !!(ctx.roster?.[f.lo]?.trainer),
-      }), stale: per < now };
+      const hit = rosterLookup(f.lo, ctx.roster || {});
+      return { file: f, period: per, rosterMissing: enriched.rosterMissing,
+        split: loanSplit(enriched, { ...ctx, trainerAssigned: !!hit?.entry?.trainer }),
+        stale: per < now };
     })
     .sort((a, b) => String(fundedDate(a.file)).localeCompare(String(fundedDate(b.file))));
 }
@@ -1520,16 +1521,52 @@ export function loVolumes(files) {
 }
 
 // Enriquece un archivo con la etapa de su LO antes de repartir.
+// La búsqueda es tolerante al nombre: "Ana Plasencia" en el roster contra
+// "Ana M Plasencia" en el sistema no encontraba nada, caía al cálculo
+// automático, y a Ana la pagaba al 60% en vez de su 70% firmado. Un fallo
+// de tecleo no puede cambiarle el cheque a nadie.
+const normName = s => String(s || "").toLowerCase().normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "").replace(/[^a-z ]/g, "").split(/\s+/).filter(Boolean);
+function rosterLookup(name, roster) {
+  if (!name) return null;
+  if (roster[name]) return { key: name, entry: roster[name] };
+  const want = normName(name);
+  for (const k of Object.keys(roster)) {
+    const have = normName(k);
+    // Coincide si el nombre y el apellido de uno están contenidos en el otro.
+    const a = new Set(want), b = new Set(have);
+    const shared = [...b].filter(x => a.has(x));
+    if (shared.length >= 2 && shared.length >= Math.min(want.length, have.length) - 1)
+      return { key: k, entry: roster[k] };
+  }
+  return null;
+}
+
 export function withLoContext(file, files, roster = {}) {
   const vols = loVolumes(files);
-  const r = roster[file?.lo] || {};
+  const hit = rosterLookup(file?.lo, roster);
+  const r = hit?.entry || {};
   return {
     ...file,
     isBM: r.isBM ?? file?.isBM ?? false,
     loSplitFloor: r.floor ?? file?.loSplitFloor ?? 0,
     loFundedVolume: file?.loFundedVolume ?? (r.priorVolume || 0) + (vols[file?.lo] || 0),
     loStage: file?.loStage || r.stage || null,
+    // Sin regla escrita, el reparto es una suposición. Se marca para que
+    // nadie mire un número de dinero sin saber de dónde salió.
+    rosterMissing: !hit,
+    rosterKey: hit?.key || null,
   };
+}
+
+// Los LOs con archivos fondeados y sin regla de compensación.
+export function losWithoutCompRule(files, roster = {}) {
+  const names = new Set();
+  for (const f of files || []) {
+    if (!fundedDate(f) || !f.lo) continue;
+    if (!rosterLookup(f.lo, roster)) names.add(f.lo);
+  }
+  return [...names];
 }
 
 export function payrollSummary(files, ctx = {}) {
