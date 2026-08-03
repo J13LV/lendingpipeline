@@ -1459,6 +1459,85 @@ export function loanSplit(file, ctx = {}) {
   };
 }
 
+// ─── DEDUCCIONES POR ARCHIVO ───────────────────────────────────────
+// El catálogo de cargos que pueden salir del bruto antes de repartir. Por
+// defecto los paga el cliente y el NET es igual al bruto; cuando el archivo
+// los absorbe, todos los participantes los comparten en proporción a su
+// split — incluido quien no tomó la decisión de absorberlos.
+export const STANDARD_FEES = [
+  { id: "broker",     es: "Broker fee (Barrett)",     en: "Broker fee (Barrett)",  amount: 695 },
+  { id: "uw",         es: "Underwriting fee (lender)", en: "Underwriting fee",     amount: 1195 },
+  { id: "processing", es: "Processing fee",            en: "Processing fee",       amount: 650 },
+];
+
+export function grossComp(file) {
+  return Math.round((file?.loan || 0) * fileCompBps(file) / 10000);
+}
+
+// Los ajustes tienen tipo explícito. Un crédito guardado como "descuento
+// negativo" se lee al revés meses después; el signo va en el dato, no en la
+// cabeza de quien lo mira.
+export const ADJUSTMENT_KINDS = {
+  fee:    { es: "Descuento", en: "Fee",    sign: -1, color: "#E85D75" },
+  credit: { es: "Crédito",   en: "Credit", sign: +1, color: "#7EC8A4" },
+};
+
+// La cascada completa: bruto, cada ajuste con nombre y signo, y el neto.
+export function feeWaterfall(file) {
+  const gross = grossComp(file);
+  const lines = (file?.absorbedFees || []).map(f => {
+    const std = STANDARD_FEES.find(s => s.id === f.id);
+    const kind = f.kind === "credit" ? "credit" : "fee";
+    return {
+      id: f.id, kind, sign: ADJUSTMENT_KINDS[kind].sign,
+      es: f.label || std?.es || f.id, en: f.label || std?.en || f.id,
+      amount: Math.abs(Number(f.amount) || 0),
+    };
+  }).filter(l => l.amount > 0);
+
+  const fees = lines.filter(l => l.kind === "fee");
+  const credits = lines.filter(l => l.kind === "credit");
+  const deducted = fees.reduce((a, l) => a + l.amount, 0);
+  const credited = credits.reduce((a, l) => a + l.amount, 0);
+  const net = Math.max(0, gross - deducted + credited);
+  return {
+    gross, lines, fees, credits, deducted, credited,
+    netChange: credited - deducted, net,
+    bpsLost: Math.round((deducted - credited) / (file?.loan || 1) * 10000),
+  };
+}
+
+export function setAbsorbedFees(file, fees) {
+  // Un descuento sin nombre no entra: en el reparto aparecería como un monto
+  // anónimo y nadie podría explicarlo tres meses después.
+  return { ...file, absorbedFees: (fees || [])
+    .filter(f => Math.abs(Number(f.amount)) > 0 &&
+      (STANDARD_FEES.some(s => s.id === f.id) || String(f.label || "").trim()))
+    .map(f => ({ ...f, kind: f.kind === "credit" ? "credit" : "fee",
+                 amount: Math.abs(Number(f.amount) || 0) })) };
+}
+
+// Quién cobra cuánto en este archivo, con nombre y en dólares. Es la tabla
+// que evita que alguien calcule sobre el bruto y se lleve una sorpresa.
+export function payoutBreakdown(file, ctx = {}) {
+  const w = feeWaterfall(file);
+  const split = loanSplit(file, ctx);
+  const names = ctx.names || {};
+  const rows = [
+    { id: "lo",      who: file?.lo || names.lo || "Originador", pct: split.shares.lo,      amount: Math.round(w.net * split.shares.lo) },
+    { id: "trainer", who: names.trainer || "Trainer",           pct: split.shares.trainer, amount: Math.round(w.net * split.shares.trainer) },
+    { id: "branch",  who: names.branch || "Sucursal",           pct: split.shares.branch,  amount: Math.round(w.net * split.shares.branch) },
+    { id: "paulo",   who: names.teamLead || "Team Lead",        pct: split.shares.paulo,   amount: Math.round(w.net * split.shares.paulo) },
+  ].filter(r => r.pct > 0);
+  return {
+    ...w, split, rows,
+    total: rows.reduce((a, r) => a + r.amount, 0),
+    // Lo que habría cobrado cada uno si el cálculo fuera sobre el bruto.
+    // Se muestra para que la diferencia sea explícita y no un descubrimiento.
+    onGross: rows.map(r => ({ ...r, amount: Math.round(w.gross * r.pct) })),
+  };
+}
+
 // NET is gross commission less only the fees the BRANCH absorbs. When the
 // borrower pays them — the normal case — NET equals gross.
 export function fileNet(file) {

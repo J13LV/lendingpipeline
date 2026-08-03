@@ -24,7 +24,8 @@ import {
   noteEntries, latestNote, noteCount, addNoteEntry,
   LO_STAGES, STAGE_THRESHOLDS, teamLeadShare, branchCostPerFile, ladderCeiling,
   loanSplit, payrollPeriodLabel, currentPayrollPeriod, payrollSummary, fundedDate,
-  losWithoutCompRule, BARRETT_CUTOVER,
+  losWithoutCompRule, BARRETT_CUTOVER, STANDARD_FEES, payoutBreakdown, feeWaterfall,
+  ADJUSTMENT_KINDS,
 } from "./pipelineCore";
 import {
   getAuth,
@@ -460,6 +461,11 @@ const LO_LIST = Object.entries(TEAM)
 //   floor  · piso contractual, nunca baja, nunca se suma a la escalera
 //   stage  · fija la etapa e ignora el volumen derivado
 //   trainer· hay un trainer asignado a los archivos de este LO
+// Contexto de reparto para las pantallas de archivo. Vive aquí para que la
+// tarjeta, el modal y el payroll usen exactamente los mismos supuestos.
+const COMP_YEAR = 1;
+const BRANCH_FILES_MO = 8;
+
 const COMP_ROSTER = {
   "Jose Del Valle":  { isBM:true },
   "Ana M Plasencia": { stage:"senior", floor:0.70 },
@@ -2666,6 +2672,158 @@ function BackupPanel({file,backupId,setBackupId,onChangeLender}){
   );
 }
 
+// ─── COMPENSACIÓN DEL ARCHIVO ───
+// La cascada completa a la vista: bruto, cada descuento con su nombre, el
+// neto, y lo que cobra cada quien. Nadie debería calcular sobre el bruto de
+// cabeza y descubrir la diferencia en el cheque.
+function PayoutPanel({file,profile,onDraft}){
+  const isAdmin=profile?.role==="admin";
+  const mine=(file.lo||"")===(profile?.name||"");
+  const cur=file.absorbedFees||[];
+  const [fees,setFees]=useState(()=>STANDARD_FEES.map(s=>{
+    const hit=cur.find(f=>f.id===s.id);
+    return {id:s.id,es:s.es,amount:hit?Number(hit.amount)||0:s.amount,on:!!hit};
+  }));
+  // Descuentos que no estaban previstos. Sin esto, el día que aparece un
+  // cargo distinto no hay dónde ponerlo y alguien lo mete a mano en otro
+  // campo — o peor, no lo mete y el reparto queda mal.
+  const [extras,setExtras]=useState(()=>cur.filter(f=>String(f.id).startsWith("custom"))
+    .map(f=>({id:f.id,label:f.label||"",amount:Math.abs(Number(f.amount))||0,
+              kind:f.kind==="credit"?"credit":"fee"})));
+
+  const draft={...file,absorbedFees:[
+    ...fees.filter(f=>f.on).map(f=>({id:f.id,amount:f.amount})),
+    ...extras.filter(e=>e.amount>0&&e.label.trim())
+      .map(e=>({id:e.id,label:e.label.trim(),amount:e.amount,kind:e.kind})),
+  ]};
+  const sig=JSON.stringify(draft.absorbedFees);
+  // Un descuento con monto pero sin nombre no se guarda — un cargo anónimo en
+  // el reparto es exactamente lo que causa la discusión del cheque.
+  const unnamed=extras.some(e=>e.amount>0&&!e.label.trim());
+  useEffect(()=>{ onDraft&&onDraft({absorbedFees:draft.absorbedFees}); },[sig]);
+
+  const pay=payoutBreakdown(draft,{year:COMP_YEAR,filesPerMonth:BRANCH_FILES_MO,
+    names:{branch:"Del Valle Lending",teamLead:"Paulo Maria",trainer:"Trainer"}});
+  if(!pay.gross) return null;
+  const rows=isAdmin?pay.rows:pay.rows.filter(r=>r.id==="lo"&&mine);
+
+  return (
+    <div style={{background:"rgba(6,214,160,.04)",border:"1px solid #06D6A033",borderRadius:8,
+      padding:14,display:"flex",flexDirection:"column",gap:10}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#06D6A0",letterSpacing:"1px"}}>$ COMPENSACIÓN DEL ARCHIVO</span>
+        <span style={{marginLeft:"auto",fontSize:9,color:"#484F58"}}>se guarda con SAVE ↓</span>
+      </div>
+
+      <div style={{display:"flex",justifyContent:"space-between",fontSize:12}}>
+        <span style={{color:"#8B949E"}}>Comisión bruta · {fileCompBps(file)} bps</span>
+        <span style={{color:"#E6EDF3",fontFamily:"DM Mono"}}>${pay.gross.toLocaleString()}</span>
+      </div>
+
+      <div style={{borderTop:"1px solid #21262D",paddingTop:8}}>
+        <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:6}}>
+          AJUSTES AL BRUTO · − descuento · + crédito
+        </div>
+        {fees.map((fee,i)=>(
+          <div key={fee.id} style={{display:"flex",alignItems:"center",gap:8,marginBottom:5}}>
+            <input type="checkbox" checked={fee.on} disabled={!isAdmin}
+              onChange={e=>setFees(fees.map((x,j)=>j===i?{...x,on:e.target.checked}:x))}
+              style={{accentColor:"#E85D75",cursor:isAdmin?"pointer":"not-allowed"}}/>
+            <span style={{fontSize:11,color:fee.on?"#E6EDF3":"#484F58",flex:1}}>{fee.es}</span>
+            <input inputMode="numeric" value={fee.amount} disabled={!isAdmin||!fee.on}
+              onChange={e=>setFees(fees.map((x,j)=>j===i?{...x,amount:Number(e.target.value.replace(/[^\d]/g,""))||0}:x))}
+              style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,
+                color:fee.on?"#E85D75":"#30363D",padding:"4px 7px",fontSize:11,
+                fontFamily:"DM Mono",width:76,textAlign:"right"}}/>
+          </div>
+        ))}
+        {extras.map((e,i)=>(
+          <div key={e.id} style={{display:"flex",alignItems:"center",gap:8,marginBottom:5}}>
+            <button className="hov" disabled={!isAdmin}
+              onClick={()=>setExtras(extras.map((x,j)=>j===i?{...x,kind:x.kind==="fee"?"credit":"fee"}:x))}
+              title={e.kind==="fee"?"descuento — clic para crédito":"crédito — clic para descuento"}
+              style={{background:"transparent",border:"none",width:15,padding:0,
+                color:ADJUSTMENT_KINDS[e.kind].color,fontSize:14,fontFamily:"DM Mono",
+                cursor:isAdmin?"pointer":"default"}}>{e.kind==="fee"?"−":"+"}</button>
+            <input value={e.label} disabled={!isAdmin} placeholder="nombre del descuento"
+              onChange={ev=>setExtras(extras.map((x,j)=>j===i?{...x,label:ev.target.value}:x))}
+              style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,color:"#E6EDF3",
+                padding:"4px 7px",fontSize:11,fontFamily:"DM Mono",flex:1}}/>
+            <input inputMode="numeric" value={e.amount} disabled={!isAdmin}
+              onChange={ev=>setExtras(extras.map((x,j)=>j===i?{...x,amount:Number(ev.target.value.replace(/[^\d]/g,""))||0}:x))}
+              style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,color:"#E85D75",
+                padding:"4px 7px",fontSize:11,fontFamily:"DM Mono",width:76,textAlign:"right"}}/>
+            {isAdmin&&(
+              <button className="hov" onClick={()=>setExtras(extras.filter((_,j)=>j!==i))}
+                style={{background:"transparent",border:"none",color:"#484F58",fontSize:13,
+                  cursor:"pointer",padding:"0 3px"}} title="quitar">×</button>
+            )}
+          </div>
+        ))}
+        {isAdmin&&(
+          <button className="hov"
+            onClick={()=>setExtras([...extras,{id:`custom_${Date.now()}`,label:"",amount:0,kind:"fee"}])}
+            style={{background:"transparent",border:"1px dashed #30363D",borderRadius:5,color:"#6E7681",
+              fontSize:10,fontFamily:"DM Mono",padding:"5px 0",width:"100%",cursor:"pointer",marginTop:2}}>
+            + otro ajuste
+          </button>
+        )}
+        {!isAdmin&&<div style={{fontSize:9,color:"#484F58",marginTop:2}}>
+          Los descuentos los fija el Branch Manager.
+        </div>}
+      </div>
+
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",
+        borderTop:"1px solid #21262D",paddingTop:8}}>
+        <span style={{fontSize:12,color:"#E6EDF3",fontWeight:500}}>NET a repartir</span>
+        <span style={{fontSize:15,color:"#06D6A0",fontFamily:"DM Mono"}}>${pay.net.toLocaleString()}</span>
+      </div>
+      {unnamed&&(
+        <div style={{fontSize:9.5,color:"#E85D75"}}>
+          Hay un ajuste sin nombre — no se va a guardar hasta que lo escribas.
+        </div>
+      )}
+      {(pay.deducted>0||pay.credited>0)&&(
+        <div style={{fontSize:9.5,color:"#F5A623",marginTop:-4}}>
+          {pay.deducted>0?`$${pay.deducted.toLocaleString()} en descuentos`:""}
+          {pay.deducted>0&&pay.credited>0?" · ":""}
+          {pay.credited>0?`$${pay.credited.toLocaleString()} en créditos`:""}
+          {" · "}{Math.abs(pay.bpsLost)} bps {pay.netChange<0?"menos":"más"} que el bruto.
+          Todos los splits se calculan sobre el NET.
+        </div>
+      )}
+
+      <div style={{borderTop:"1px solid #21262D",paddingTop:8}}>
+        <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:6}}>
+          {isAdmin?"QUIÉN COBRA QUÉ":"LO QUE TE LLEGA"}
+        </div>
+        {rows.length===0?(
+          <div style={{fontSize:10.5,color:"#484F58"}}>Este archivo no es tuyo.</div>
+        ):rows.map((r,i)=>{
+          const g=pay.onGross.find(x=>x.id===r.id);
+          const own=r.id==="lo"&&mine;
+          return (
+            <div key={r.id} style={{marginBottom:6}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8}}>
+                <span style={{fontSize:11.5,color:own?"#06D6A0":"#8B949E"}}>
+                  {r.who}<span style={{color:"#484F58"}}> · {(r.pct*100).toFixed(1)}%</span>
+                </span>
+                <span style={{fontFamily:"Syne",fontWeight:800,fontSize:own?15:13,
+                  color:own?"#06D6A0":"#E6EDF3"}}>${r.amount.toLocaleString()}</span>
+              </div>
+              {(pay.deducted>0||pay.credited>0)&&g&&(
+                <div style={{fontSize:9,color:"#484F58",textAlign:"right"}}>
+                  sobre el bruto habrían sido ${g.amount.toLocaleString()} · {r.amount>=g.amount?"+":"−"}${Math.abs(r.amount-g.amount).toLocaleString()}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── LENDER STRIP (design A) ───
 function LenderStrip({file}){
   if(!hasLenderData(file)) return null;
@@ -3353,6 +3511,12 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
             onChangeLender={()=>setShowChange(true)}/>
         )}
 
+        {/* COMPENSACIÓN — bruto, descuentos, neto y lo que cobra cada quien */}
+        {!inPrep && !isReferredOut && (
+          <PayoutPanel file={file} profile={profile}
+            onDraft={p=>{panelDrafts.current.payout=p;}}/>
+        )}
+
         {/* CONTINGENCIES — captured at Full Application, anchored to the contract */}
         {!inPrep && !isReferredOut && (atOrPastFullApp(stage) || hasContingencies(file)) && (
           <ContingencyPanel file={file} profile={profile} onSave={onSave}
@@ -3699,7 +3863,8 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
             }
             // Merge whatever the lender and contingency panels are showing.
             // Without this the obvious gold button threw their work away.
-            Object.assign(patch, panelDrafts.current.lender||{}, panelDrafts.current.dates||{});
+            Object.assign(patch, panelDrafts.current.lender||{}, panelDrafts.current.dates||{},
+              panelDrafts.current.payout||{});
             onSave(patch);
             onClose();
           }}
