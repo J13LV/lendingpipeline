@@ -25,7 +25,7 @@ import {
   LO_STAGES, STAGE_THRESHOLDS, teamLeadShare, branchCostPerFile, ladderCeiling,
   loanSplit, payrollPeriodLabel, currentPayrollPeriod, payrollSummary, fundedDate,
   losWithoutCompRule, BARRETT_CUTOVER, STANDARD_FEES, payoutBreakdown, feeWaterfall,
-  ADJUSTMENT_KINDS,
+  ADJUSTMENT_KINDS, withLoContext,
 } from "./pipelineCore";
 import {
   getAuth,
@@ -1352,7 +1352,7 @@ export default function App() {
         </div>}
       </div>
 
-      {detail&&<DetailModal file={detail} profile={profile} onClose={()=>setDetail(null)}
+      {detail&&<DetailModal file={detail} profile={profile} allFiles={files} onClose={()=>setDetail(null)}
         onSave={p=>{updateFile(detail.id,p);setDetail(f=>({...f,...p}));}}
         onDelete={()=>deleteFile(detail.id)}
         onAdvance={()=>{advance(detail.id);setDetail(f=>{const i=ALL_STAGES.findIndex(s=>s.stage===f.stage);const n=ALL_STAGES[i+1];return n?{...f,stage:n.stage,daysInStage:0}:f;});}}
@@ -2676,7 +2676,7 @@ function BackupPanel({file,backupId,setBackupId,onChangeLender}){
 // La cascada completa a la vista: bruto, cada descuento con su nombre, el
 // neto, y lo que cobra cada quien. Nadie debería calcular sobre el bruto de
 // cabeza y descubrir la diferencia en el cheque.
-function PayoutPanel({file,profile,onDraft}){
+function PayoutPanel({file,profile,onDraft,allFiles}){
   const isAdmin=profile?.role==="admin";
   const mine=(file.lo||"")===(profile?.name||"");
   const cur=file.absorbedFees||[];
@@ -2702,7 +2702,12 @@ function PayoutPanel({file,profile,onDraft}){
   const unnamed=extras.some(e=>e.amount>0&&!e.label.trim());
   useEffect(()=>{ onDraft&&onDraft({absorbedFees:draft.absorbedFees}); },[sig]);
 
-  const pay=payoutBreakdown(draft,{year:COMP_YEAR,filesPerMonth:BRANCH_FILES_MO,
+  // El roster tiene que aplicarse aquí igual que en payroll. Sin él, un archivo
+  // del BM se repartía al 50% de newbie — un número de dinero equivocado en
+  // pantalla, que es el peor tipo de error de todos.
+  const enriched=withLoContext(draft,allFiles||[],COMP_ROSTER);
+  const pay=payoutBreakdown(enriched,{year:COMP_YEAR,filesPerMonth:BRANCH_FILES_MO,
+    trainerAssigned:!!(COMP_ROSTER[file.lo]?.trainer),
     names:{branch:"Del Valle Lending",teamLead:"Paulo Maria",trainer:"Trainer"}});
   if(!pay.gross) return null;
   const rows=isAdmin?pay.rows:pay.rows.filter(r=>r.id==="lo"&&mine);
@@ -2711,18 +2716,20 @@ function PayoutPanel({file,profile,onDraft}){
     <div style={{background:"rgba(6,214,160,.04)",border:"1px solid #06D6A033",borderRadius:8,
       padding:14,display:"flex",flexDirection:"column",gap:10}}>
       <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#06D6A0",letterSpacing:"1px"}}>$ COMPENSACIÓN DEL ARCHIVO</span>
+        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#06D6A0",letterSpacing:"1px"}}>
+          {isAdmin?"$ COMPENSACIÓN DEL ARCHIVO":"$ TU COMPENSACIÓN EN ESTE ARCHIVO"}
+        </span>
         <span style={{marginLeft:"auto",fontSize:9,color:"#484F58"}}>se guarda con SAVE ↓</span>
       </div>
 
       <div style={{display:"flex",justifyContent:"space-between",fontSize:12}}>
-        <span style={{color:"#8B949E"}}>Comisión bruta · {fileCompBps(file)} bps</span>
+        <span style={{color:"#8B949E"}}>Comisión bruta{isAdmin?` · ${fileCompBps(file)} bps`:""}</span>
         <span style={{color:"#E6EDF3",fontFamily:"DM Mono"}}>${pay.gross.toLocaleString()}</span>
       </div>
 
       <div style={{borderTop:"1px solid #21262D",paddingTop:8}}>
         <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:6}}>
-          AJUSTES AL BRUTO · − descuento · + crédito
+          {isAdmin?"AJUSTES AL BRUTO · − descuento · + crédito":"AJUSTES APLICADOS A ESTE ARCHIVO"}
         </div>
         {fees.map((fee,i)=>(
           <div key={fee.id} style={{display:"flex",alignItems:"center",gap:8,marginBottom:5}}>
@@ -2745,13 +2752,15 @@ function PayoutPanel({file,profile,onDraft}){
               style={{background:"transparent",border:"none",width:15,padding:0,
                 color:ADJUSTMENT_KINDS[e.kind].color,fontSize:14,fontFamily:"DM Mono",
                 cursor:isAdmin?"pointer":"default"}}>{e.kind==="fee"?"−":"+"}</button>
-            <input value={e.label} disabled={!isAdmin} placeholder="nombre del descuento"
+            <input value={e.label} disabled={!isAdmin} placeholder={e.kind==="credit"?"nombre del crédito":"nombre del descuento"}
               onChange={ev=>setExtras(extras.map((x,j)=>j===i?{...x,label:ev.target.value}:x))}
               style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,color:"#E6EDF3",
                 padding:"4px 7px",fontSize:11,fontFamily:"DM Mono",flex:1}}/>
             <input inputMode="numeric" value={e.amount} disabled={!isAdmin}
               onChange={ev=>setExtras(extras.map((x,j)=>j===i?{...x,amount:Number(ev.target.value.replace(/[^\d]/g,""))||0}:x))}
-              style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,color:"#E85D75",
+              style={{background:"#0D1117",borderRadius:5,
+                border:`1px solid ${e.kind==="credit"?"#7EC8A455":"#30363D"}`,
+                color:ADJUSTMENT_KINDS[e.kind].color,
                 padding:"4px 7px",fontSize:11,fontFamily:"DM Mono",width:76,textAlign:"right"}}/>
             {isAdmin&&(
               <button className="hov" onClick={()=>setExtras(extras.filter((_,j)=>j!==i))}
@@ -2769,13 +2778,13 @@ function PayoutPanel({file,profile,onDraft}){
           </button>
         )}
         {!isAdmin&&<div style={{fontSize:9,color:"#484F58",marginTop:2}}>
-          Los descuentos los fija el Branch Manager.
+          Los ajustes quedan registrados con el archivo.
         </div>}
       </div>
 
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",
         borderTop:"1px solid #21262D",paddingTop:8}}>
-        <span style={{fontSize:12,color:"#E6EDF3",fontWeight:500}}>NET a repartir</span>
+        <span style={{fontSize:12,color:"#E6EDF3",fontWeight:500}}>{isAdmin?"NET a repartir":"NET de este archivo"}</span>
         <span style={{fontSize:15,color:"#06D6A0",fontFamily:"DM Mono"}}>${pay.net.toLocaleString()}</span>
       </div>
       {unnamed&&(
@@ -2789,16 +2798,17 @@ function PayoutPanel({file,profile,onDraft}){
           {pay.deducted>0&&pay.credited>0?" · ":""}
           {pay.credited>0?`$${pay.credited.toLocaleString()} en créditos`:""}
           {" · "}{Math.abs(pay.bpsLost)} bps {pay.netChange<0?"menos":"más"} que el bruto.
-          Todos los splits se calculan sobre el NET.
+          {isAdmin?" Todos los splits se calculan sobre el NET."
+                 :" Tu porcentaje se calcula sobre el NET, no sobre el bruto."}
         </div>
       )}
 
       <div style={{borderTop:"1px solid #21262D",paddingTop:8}}>
         <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:6}}>
-          {isAdmin?"QUIÉN COBRA QUÉ":"LO QUE TE LLEGA"}
+          {isAdmin?"QUIÉN COBRA QUÉ":"TU COMPENSACIÓN"}
         </div>
         {rows.length===0?(
-          <div style={{fontSize:10.5,color:"#484F58"}}>Este archivo no es tuyo.</div>
+          <div style={{fontSize:10.5,color:"#484F58"}}>Este archivo está asignado a otro originador.</div>
         ):rows.map((r,i)=>{
           const g=pay.onGross.find(x=>x.id===r.id);
           const own=r.id==="lo"&&mine;
@@ -2811,9 +2821,14 @@ function PayoutPanel({file,profile,onDraft}){
                 <span style={{fontFamily:"Syne",fontWeight:800,fontSize:own?15:13,
                   color:own?"#06D6A0":"#E6EDF3"}}>${r.amount.toLocaleString()}</span>
               </div>
-              {(pay.deducted>0||pay.credited>0)&&g&&(
+              {isAdmin&&(pay.deducted>0||pay.credited>0)&&g&&(
                 <div style={{fontSize:9,color:"#484F58",textAlign:"right"}}>
                   sobre el bruto habrían sido ${g.amount.toLocaleString()} · {r.amount>=g.amount?"+":"−"}${Math.abs(r.amount-g.amount).toLocaleString()}
+                </div>
+              )}
+              {!isAdmin&&(
+                <div style={{fontSize:9,color:"#484F58",textAlign:"right"}}>
+                  {(r.pct*100).toFixed(0)}% del NET de ${pay.net.toLocaleString()}
                 </div>
               )}
             </div>
@@ -3370,7 +3385,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
   );
 }
 
-function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile,onReopen,onPrep,onArchive,onRestore,onContinuePrep,isClosed}){
+function DetailModal({file,profile,allFiles,onClose,onSave,onDelete,onAdvance,onCloseFile,onReopen,onPrep,onArchive,onRestore,onContinuePrep,isClosed}){
   const isAdmin = profile?.role === "admin";
   const isAssistant = profile?.role === "assistant";
   const [showHistory, setShowHistory] = useState(false);
@@ -3513,7 +3528,7 @@ function DetailModal({file,profile,onClose,onSave,onDelete,onAdvance,onCloseFile
 
         {/* COMPENSACIÓN — bruto, descuentos, neto y lo que cobra cada quien */}
         {!inPrep && !isReferredOut && (
-          <PayoutPanel file={file} profile={profile}
+          <PayoutPanel file={file} profile={profile} allFiles={allFiles}
             onDraft={p=>{panelDrafts.current.payout=p;}}/>
         )}
 
