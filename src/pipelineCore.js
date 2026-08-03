@@ -1378,6 +1378,38 @@ export const teamLeadShare = year => TEAM_LEAD_SCHEDULE[Math.min(3, Math.max(1, 
 // no calendar expiration.
 export const TRAINER_RATES = { newbie: 0.15, intermediate: 0.10, senior: 0, bm: 0 };
 
+// ─── ORIGEN DEL LEAD ───────────────────────────────────────────────
+// De dónde vino el cliente decide si el LO cobra su split completo o el
+// reducido. La clasificación se GUARDA en el archivo cuando se asigna, no
+// se deriva de esta tabla al mostrarlo: si mañana APG cambia de categoría,
+// los archivos ya cerrados conservan la clasificación con la que se pagaron.
+// Reescribir cheques viejos al cambiar una regla es lo que rompe la confianza.
+export const LEAD_ORIGINS = [
+  { id: "self",      es: "Del LO",                 klass: "self",    note_es: "Relación propia del originador" },
+  { id: "smartb",    es: "SmartB",                 klass: "in_house",note_es: "Base de la práctica de taxes — de la sucursal, para todos los LO" },
+  { id: "database",  es: "Base de la sucursal",    klass: "in_house",note_es: "CRM y contactos de la sucursal" },
+  { id: "marketing", es: "Marketing / web",        klass: "in_house",note_es: "Campañas, medios, sitio web" },
+  { id: "apg",       es: "APG Realty",             klass: "pending", note_es: "Clasificación pendiente de definir" },
+  { id: "partner",   es: "Socio del LO",           klass: "self",    note_es: "Referidor que el LO trajo" },
+];
+export const leadOrigin = id => LEAD_ORIGINS.find(o => o.id === id) || null;
+
+// El descuento por lead de la casa: 10 puntos, uniforme, arriba de Newbie.
+// El Newbie no lo recibe porque el flujo de leads es parte de su desarrollo.
+export const IN_HOUSE_REDUCTION = 0.10;
+
+// La clasificación efectiva de un archivo. Un origen pendiente NO se resuelve
+// solo: se trata como del LO y se marca, para que nadie descubra después que
+// el sistema decidió por él.
+export function leadClassOf(file) {
+  if (file?.leadClass === "in_house" || file?.leadClass === "self") return file.leadClass;
+  const o = leadOrigin(file?.leadOrigin);
+  if (!o) return "self";
+  return o.klass === "pending" ? "self" : o.klass;
+}
+export const leadClassPending = file =>
+  !file?.leadClass && leadOrigin(file?.leadOrigin)?.klass === "pending";
+
 // ─── VOLUME LADDER ─────────────────────────────────────────────────
 // The LO ceiling is not a promise, it is what the branch's volume can pay.
 // More files spread the fixed cost, which is what funds a higher split.
@@ -1432,8 +1464,14 @@ export function loanSplit(file, ctx = {}) {
 
   // The Branch Manager and the branch are the same pocket: whatever the
   // team lead does not take is theirs.
-  const lo = isBM ? (1 - paulo)
-                  : Math.max(floor, base + (stage === "newbie" ? 0 : lift));
+  const earned = isBM ? (1 - paulo)
+                      : Math.max(floor, base + (stage === "newbie" ? 0 : lift));
+  // El descuento de lead de la casa se aplica DESPUÉS del piso. El piso de
+  // Ana es contractual sobre producción propia; los leads de la sucursal se
+  // rigen por su propio acuerdo. Si el piso cubriera también los in-house,
+  // el descuento nunca aplicaría a quien más leads recibe.
+  const inHouse = !isBM && stage !== "newbie" && leadClassOf(file) === "in_house";
+  const lo = inHouse ? Math.max(0, earned - IN_HOUSE_REDUCTION) : earned;
 
   const trainer = (!isBM && trainerAssigned) ? (TRAINER_RATES[stage] || 0) : 0;
   const branch = Math.max(0, 1 - lo - paulo - trainer);
@@ -1442,8 +1480,12 @@ export function loanSplit(file, ctx = {}) {
   const $ = p => Math.round(net * p);
   return {
     net, stage, stageMeta: LO_STAGES[stage], leadSource, isBM,
-    ceiling, lift, floor,
+    ceiling, lift, floor, earned,
+    leadClass: leadClassOf(file), inHouseApplied: inHouse,
+    leadPending: leadClassPending(file),
+    inHousePoints: inHouse ? IN_HOUSE_REDUCTION : 0,
     floorApplied: !isBM && floor > base + (stage === "newbie" ? 0 : lift),
+    floorOverriddenByLead: !isBM && inHouse && floor > lo,
     shares: { lo, trainer, branch, paulo },
     dollars: { lo: $(lo), trainer: $(trainer), branch: $(branch), paulo: $(paulo) },
     costPerFile: cost,
@@ -1553,7 +1595,7 @@ export function fileNet(file) {
 // Todo lo fondeado antes de esta fecha se liquidó bajo PRMG y no vuelve a
 // entrar a payroll. Sin este corte, cada archivo cerrado en la historia de la
 // sucursal aparecía como pendiente de reclamo.
-export const BARRETT_CUTOVER = "2026-07-01";
+export const BARRETT_CUTOVER = "2026-07-13";   // fecha real del NMLS
 
 export const fundedDate = file => okDate(file?.fundedAt) || okDate(file?.closedAt) || null;
 

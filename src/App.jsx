@@ -25,7 +25,7 @@ import {
   LO_STAGES, STAGE_THRESHOLDS, teamLeadShare, branchCostPerFile, ladderCeiling,
   loanSplit, payrollPeriodLabel, currentPayrollPeriod, payrollSummary, fundedDate,
   losWithoutCompRule, BARRETT_CUTOVER, STANDARD_FEES, payoutBreakdown, feeWaterfall,
-  ADJUSTMENT_KINDS, withLoContext,
+  ADJUSTMENT_KINDS, withLoContext, LEAD_ORIGINS, leadOrigin, IN_HOUSE_REDUCTION,
 } from "./pipelineCore";
 import {
   getAuth,
@@ -2687,20 +2687,26 @@ function PayoutPanel({file,profile,onDraft,allFiles}){
   // Descuentos que no estaban previstos. Sin esto, el día que aparece un
   // cargo distinto no hay dónde ponerlo y alguien lo mete a mano en otro
   // campo — o peor, no lo mete y el reparto queda mal.
+  const [origin,setOrigin]=useState(file.leadOrigin||"self");
   const [extras,setExtras]=useState(()=>cur.filter(f=>String(f.id).startsWith("custom"))
     .map(f=>({id:f.id,label:f.label||"",amount:Math.abs(Number(f.amount))||0,
               kind:f.kind==="credit"?"credit":"fee"})));
 
-  const draft={...file,absorbedFees:[
+  const draft={...file,leadOrigin:origin,absorbedFees:[
     ...fees.filter(f=>f.on).map(f=>({id:f.id,amount:f.amount})),
     ...extras.filter(e=>e.amount>0&&e.label.trim())
       .map(e=>({id:e.id,label:e.label.trim(),amount:e.amount,kind:e.kind})),
   ]};
-  const sig=JSON.stringify(draft.absorbedFees);
+  const sig=JSON.stringify(draft.absorbedFees)+origin;
   // Un descuento con monto pero sin nombre no se guarda — un cargo anónimo en
   // el reparto es exactamente lo que causa la discusión del cheque.
   const unnamed=extras.some(e=>e.amount>0&&!e.label.trim());
-  useEffect(()=>{ onDraft&&onDraft({absorbedFees:draft.absorbedFees}); },[sig]);
+  // La clasificación se congela al guardar. Si mañana APG cambia de categoría,
+  // este archivo conserva la que tenía cuando se pagó.
+  useEffect(()=>{ onDraft&&onDraft({
+    absorbedFees:draft.absorbedFees, leadOrigin:origin,
+    leadClass:leadOrigin(origin)?.klass==="pending"?(file.leadClass||null):leadOrigin(origin)?.klass,
+  }); },[sig,origin]);
 
   // El roster tiene que aplicarse aquí igual que en payroll. Sin él, un archivo
   // del BM se repartía al 50% de newbie — un número de dinero equivocado en
@@ -2722,7 +2728,33 @@ function PayoutPanel({file,profile,onDraft,allFiles}){
         <span style={{marginLeft:"auto",fontSize:9,color:"#484F58"}}>se guarda con SAVE ↓</span>
       </div>
 
-      <div style={{display:"flex",justifyContent:"space-between",fontSize:12}}>
+      <div>
+        <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>ORIGEN DEL CLIENTE</div>
+        {isAdmin?(
+          <select value={origin} onChange={e=>setOrigin(e.target.value)}
+            style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",
+              padding:"6px 9px",fontSize:11.5,fontFamily:"DM Mono",width:"100%"}}>
+            {LEAD_ORIGINS.map(o=><option key={o.id} value={o.id}>{o.es}</option>)}
+          </select>
+        ):(
+          <div style={{fontSize:11.5,color:"#8B949E"}}>{leadOrigin(origin)?.es||"—"}</div>
+        )}
+        {pay.split.inHouseApplied&&(
+          <div style={{fontSize:9.5,color:"#F5A623",marginTop:4}}>
+            Lead de la sucursal · {(IN_HOUSE_REDUCTION*100).toFixed(0)} puntos menos que producción propia
+          </div>
+        )}
+        {pay.split.leadPending&&isAdmin&&(
+          <div style={{fontSize:9.5,color:"#BD65E8",marginTop:4}}>
+            Clasificación pendiente. Se calcula como producción propia hasta que se defina.
+          </div>
+        )}
+        {isAdmin&&leadOrigin(origin)?.note_es&&!pay.split.leadPending&&(
+          <div style={{fontSize:9,color:"#484F58",marginTop:3}}>{leadOrigin(origin).note_es}</div>
+        )}
+      </div>
+
+      <div style={{display:"flex",justifyContent:"space-between",fontSize:12,borderTop:"1px solid #21262D",paddingTop:9}}>
         <span style={{color:"#8B949E"}}>Comisión bruta{isAdmin?` · ${fileCompBps(file)} bps`:""}</span>
         <span style={{color:"#E6EDF3",fontFamily:"DM Mono"}}>${pay.gross.toLocaleString()}</span>
       </div>
