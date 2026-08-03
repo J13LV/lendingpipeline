@@ -2729,7 +2729,7 @@ function PayoutPanel({file,profile,onDraft,allFiles}){
 
       <div style={{borderTop:"1px solid #21262D",paddingTop:8}}>
         <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:6}}>
-          {isAdmin?"AJUSTES AL BRUTO · − descuento · + crédito":"AJUSTES APLICADOS A ESTE ARCHIVO"}
+          AJUSTES
         </div>
         {fees.map((fee,i)=>(
           <div key={fee.id} style={{display:"flex",alignItems:"center",gap:8,marginBottom:5}}>
@@ -2778,13 +2778,13 @@ function PayoutPanel({file,profile,onDraft,allFiles}){
           </button>
         )}
         {!isAdmin&&<div style={{fontSize:9,color:"#484F58",marginTop:2}}>
-          Los ajustes quedan registrados con el archivo.
+          Registrados con el archivo.
         </div>}
       </div>
 
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",
         borderTop:"1px solid #21262D",paddingTop:8}}>
-        <span style={{fontSize:12,color:"#E6EDF3",fontWeight:500}}>{isAdmin?"NET a repartir":"NET de este archivo"}</span>
+        <span style={{fontSize:12,color:"#E6EDF3",fontWeight:500}}>NET</span>
         <span style={{fontSize:15,color:"#06D6A0",fontFamily:"DM Mono"}}>${pay.net.toLocaleString()}</span>
       </div>
       {unnamed&&(
@@ -2793,24 +2793,20 @@ function PayoutPanel({file,profile,onDraft,allFiles}){
         </div>
       )}
       {(pay.deducted>0||pay.credited>0)&&(
-        <div style={{fontSize:9.5,color:"#F5A623",marginTop:-4}}>
-          {pay.deducted>0?`$${pay.deducted.toLocaleString()} en descuentos`:""}
-          {pay.deducted>0&&pay.credited>0?" · ":""}
-          {pay.credited>0?`$${pay.credited.toLocaleString()} en créditos`:""}
-          {" · "}{Math.abs(pay.bpsLost)} bps {pay.netChange<0?"menos":"más"} que el bruto.
-          {isAdmin?" Todos los splits se calculan sobre el NET."
-                 :" Tu porcentaje se calcula sobre el NET, no sobre el bruto."}
+        <div style={{fontSize:9.5,color:"#6E7681",marginTop:-4}}>
+          {pay.deducted>0?`Ajustes −$${pay.deducted.toLocaleString()}`:""}
+          {pay.deducted>0&&pay.credited>0?"  ":""}
+          {pay.credited>0?`Créditos +$${pay.credited.toLocaleString()}`:""}
         </div>
       )}
 
       <div style={{borderTop:"1px solid #21262D",paddingTop:8}}>
         <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:6}}>
-          {isAdmin?"QUIÉN COBRA QUÉ":"TU COMPENSACIÓN"}
+          {isAdmin?"DISTRIBUCIÓN":"TU COMPENSACIÓN"}
         </div>
         {rows.length===0?(
           <div style={{fontSize:10.5,color:"#484F58"}}>Este archivo está asignado a otro originador.</div>
-        ):rows.map((r,i)=>{
-          const g=pay.onGross.find(x=>x.id===r.id);
+        ):rows.map((r)=>{
           const own=r.id==="lo"&&mine;
           return (
             <div key={r.id} style={{marginBottom:6}}>
@@ -2821,16 +2817,6 @@ function PayoutPanel({file,profile,onDraft,allFiles}){
                 <span style={{fontFamily:"Syne",fontWeight:800,fontSize:own?15:13,
                   color:own?"#06D6A0":"#E6EDF3"}}>${r.amount.toLocaleString()}</span>
               </div>
-              {isAdmin&&(pay.deducted>0||pay.credited>0)&&g&&(
-                <div style={{fontSize:9,color:"#484F58",textAlign:"right"}}>
-                  sobre el bruto habrían sido ${g.amount.toLocaleString()} · {r.amount>=g.amount?"+":"−"}${Math.abs(r.amount-g.amount).toLocaleString()}
-                </div>
-              )}
-              {!isAdmin&&(
-                <div style={{fontSize:9,color:"#484F58",textAlign:"right"}}>
-                  {(r.pct*100).toFixed(0)}% del NET de ${pay.net.toLocaleString()}
-                </div>
-              )}
             </div>
           );
         })}
