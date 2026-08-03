@@ -1447,6 +1447,10 @@ export function loanSplit(file, ctx = {}) {
     shares: { lo, trainer, branch, paulo },
     dollars: { lo: $(lo), trainer: $(trainer), branch: $(branch), paulo: $(paulo) },
     costPerFile: cost,
+    // Lo que cobra el BM en un archivo: la retención de la sucursal MÁS su
+    // propio split cuando él fue el originador. Mostrar solo la retención
+    // ponía $0 en cada archivo suyo y dejaba fuera el grueso de su ingreso.
+    toBM: $(branch) + (isBM ? $(lo) : 0),
     // On a BM file there is no branch share to measure — the cost comes out
     // of the BM's own split, so it is reported against that instead.
     margin: isBM ? $(lo) - cost : $(branch) - cost,
@@ -1467,6 +1471,11 @@ export function fileNet(file) {
 // Barrett closes on the 1st and the 15th. A file funded on a cut-off date
 // can be claimed in that period or held for the next — it is optional, and
 // it stops being optional once payroll has been submitted for the period.
+// Todo lo fondeado antes de esta fecha se liquidó bajo PRMG y no vuelve a
+// entrar a payroll. Sin este corte, cada archivo cerrado en la historia de la
+// sucursal aparecía como pendiente de reclamo.
+export const BARRETT_CUTOVER = "2026-07-01";
+
 export const fundedDate = file => okDate(file?.fundedAt) || okDate(file?.closedAt) || null;
 
 export function payrollPeriod(iso) {
@@ -1496,7 +1505,11 @@ export function unclaimedFiles(files, ctx = {}) {
     // La app guarda la fecha de fondeo en closedAt desde la tanda 1 — el
     // botón CLOSE pide "funded date" y la escribe ahí. Leer solo fundedAt
     // dejaba la lista vacía para todos los archivos existentes.
-    .filter(f => fundedDate(f) && (f.claimState || "unclaimed") === "unclaimed")
+    .filter(f => {
+      const d = fundedDate(f);
+      if (!d || d < (ctx.cutover || BARRETT_CUTOVER)) return false;
+      return (f.claimState || "unclaimed") === "unclaimed";
+    })
     .map(f => {
       const per = payrollPeriod(fundedDate(f));
       const enriched = withLoContext(f, files, ctx.roster || {});
@@ -1571,13 +1584,14 @@ export function losWithoutCompRule(files, roster = {}) {
 
 export function payrollSummary(files, ctx = {}) {
   const rows = unclaimedFiles(files, ctx);
-  const sum = k => rows.reduce((a, r) => a + r.split.dollars[k], 0);
+  const sum = k => rows.reduce((a, r) => a + (k === "toBM" ? r.split.toBM : r.split.dollars[k]), 0);
   const stale = rows.filter(r => r.stale);
   return {
     period: currentPayrollPeriod(), rows, count: rows.length,
     staleCount: stale.length,
-    staleDollars: stale.reduce((a, r) => a + r.split.dollars.branch, 0),
+    staleDollars: stale.reduce((a, r) => a + r.split.toBM, 0),
     branch: sum("branch"), lo: sum("lo"), trainer: sum("trainer"), paulo: sum("paulo"),
+    toBM: sum("toBM"),
     net: rows.reduce((a, r) => a + r.split.net, 0),
     cost: rows.reduce((a, r) => a + r.split.costPerFile, 0),
   };

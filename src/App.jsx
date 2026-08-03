@@ -24,7 +24,7 @@ import {
   noteEntries, latestNote, noteCount, addNoteEntry,
   LO_STAGES, STAGE_THRESHOLDS, teamLeadShare, branchCostPerFile, ladderCeiling,
   loanSplit, payrollPeriodLabel, currentPayrollPeriod, payrollSummary, fundedDate,
-  losWithoutCompRule,
+  losWithoutCompRule, BARRETT_CUTOVER,
 } from "./pipelineCore";
 import {
   getAuth,
@@ -1494,6 +1494,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
   const isAdmin = profile?.role === "admin";
   const isLO = profile?.role === "lo";
   const [compYear,setCompYear]=useState(1);
+  const [justClaimed,setJustClaimed]=useState(null);
   const [filesMo,setFilesMo]=useState(8);
   const payroll=payrollSummary(files,{year:compYear,filesPerMonth:filesMo,roster:COMP_ROSTER});
   const [prodTab,setProdTab]=useState("team");
@@ -2153,9 +2154,16 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
             style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,color:"#E6EDF3",
               padding:"5px 8px",fontSize:11,fontFamily:"DM Mono",width:58}}/>
           <span style={{fontSize:10,color:"#6E7681"}}>
-            costo/archivo ${Math.round(branchCostPerFile(filesMo)).toLocaleString()} · techo Senior {(ladderCeiling(filesMo,9174,compYear)*100).toFixed(1)}%
+            costo/archivo ${Math.round(branchCostPerFile(filesMo)).toLocaleString()} · techo Senior {(ladderCeiling(filesMo,9174,compYear)*100).toFixed(1)}% · desde {BARRETT_CUTOVER}
           </span>
         </div>
+
+        {justClaimed&&(
+          <div style={{background:"rgba(74,144,217,.1)",border:"1px solid #4A90D9",borderRadius:8,
+            padding:"9px 14px",fontSize:11.5,color:"#4A90D9"}}>
+            Reclamado para el corte {payrollPeriodLabel(currentPayrollPeriod())} — {justClaimed}
+          </div>
+        )}
 
         {losWithoutCompRule(files,COMP_ROSTER).length>0&&(
           <div style={{background:"rgba(232,93,117,.08)",border:"1px solid #E85D7555",borderRadius:8,
@@ -2169,7 +2177,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           {[
             {label:"CORTE ACTUAL",value:payrollPeriodLabel(currentPayrollPeriod()),color:"#4A90D9",sub:"Barrett cierra el 1 y el 15",small:true},
             {label:"SIN RECLAMAR",value:`${payroll.count}`,color:"#F5A623",sub:"archivos fondeados"},
-            {label:"TE TOCA",value:`$${payroll.branch.toLocaleString()}`,color:"#F5A623",sub:"si reclamas todo hoy"},
+            {label:"TE TOCA",value:`$${payroll.toBM.toLocaleString()}`,color:"#F5A623",sub:"tu split + retención de sucursal"},
             {label:"DE CORTES VIEJOS",value:`$${payroll.staleDollars.toLocaleString()}`,color:payroll.staleCount?"#E85D75":"#484F58",sub:`${payroll.staleCount} arrastrado${payroll.staleCount===1?"":"s"}`},
           ].map(s=>(
             <div key={s.label} style={{background:"#1a1000",border:`1px solid ${s.color}44`,borderTop:`3px solid ${s.color}`,borderRadius:8,padding:"12px"}}>
@@ -2218,10 +2226,15 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                     </td>
                     <td style={{padding:"9px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>${r.split.net.toLocaleString()}</td>
                     <td style={{padding:"9px 12px",textAlign:"center"}}>
-                      <span style={{fontFamily:"Syne",fontWeight:800,fontSize:14,color:"#F5A623"}}>${r.split.dollars.branch.toLocaleString()}</span>
+                      <span style={{fontFamily:"Syne",fontWeight:800,fontSize:14,color:"#F5A623"}}>${r.split.toBM.toLocaleString()}</span>
+                      {r.split.isBM&&<div style={{fontSize:9,color:"#484F58"}}>tu split de LO</div>}
                     </td>
                     <td style={{padding:"9px 12px",textAlign:"center"}}>
-                      <button className="hov" onClick={()=>onBulkUpdate&&onBulkUpdate([{id:r.file.id,claimState:"claimed",claimedPeriod:currentPayrollPeriod(),claimedAt:today(),claimedBy:profile.name}])}
+                      <button className="hov" onClick={()=>{
+                          onBulkUpdate&&onBulkUpdate([{id:r.file.id,claimState:"claimed",claimedPeriod:currentPayrollPeriod(),claimedAt:today(),claimedBy:profile.name}]);
+                          setJustClaimed(`${r.file.borrower} · $${r.split.toBM.toLocaleString()}`);
+                          setTimeout(()=>setJustClaimed(null),3500);
+                        }}
                         style={{background:"#21262D",border:"1px solid #4A90D9",borderRadius:4,color:"#4A90D9",
                           fontSize:9.5,padding:"4px 9px",cursor:"pointer",fontFamily:"DM Mono"}}>RECLAMAR</button>
                     </td>
@@ -2232,7 +2245,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 <tr style={{background:"#1a1000",borderTop:"2px solid #F5A623"}}>
                   <td colSpan={5} style={{padding:"10px 12px",fontFamily:"Syne",fontWeight:700,color:"#F5A623"}}>TOTAL · {payroll.count} archivos</td>
                   <td style={{padding:"10px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>${payroll.net.toLocaleString()}</td>
-                  <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,fontSize:16,color:"#F5A623"}}>${payroll.branch.toLocaleString()}</td>
+                  <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,fontSize:16,color:"#F5A623"}}>${payroll.toBM.toLocaleString()}</td>
                   <td/>
                 </tr>
               </tfoot>
