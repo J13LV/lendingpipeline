@@ -1385,12 +1385,11 @@ export const TRAINER_RATES = { newbie: 0.15, intermediate: 0.10, senior: 0, bm: 
 // los archivos ya cerrados conservan la clasificación con la que se pagaron.
 // Reescribir cheques viejos al cambiar una regla es lo que rompe la confianza.
 export const LEAD_ORIGINS = [
-  { id: "self",      es: "Del LO",                 klass: "self",    note_es: "Relación propia del originador" },
-  { id: "smartb",    es: "SmartB",                 klass: "in_house",note_es: "Base de la práctica de taxes — de la sucursal, para todos los LO" },
-  { id: "database",  es: "Base de la sucursal",    klass: "in_house",note_es: "CRM y contactos de la sucursal" },
-  { id: "marketing", es: "Marketing / web",        klass: "in_house",note_es: "Campañas, medios, sitio web" },
-  { id: "apg",       es: "APG Realty",             klass: "pending", note_es: "Clasificación pendiente de definir" },
-  { id: "partner",   es: "Socio del LO",           klass: "self",    note_es: "Referidor que el LO trajo" },
+  { id: "self",     es: "Self-Generated",   klass: "self",     note_es: "Esfera y marketing propios del originador" },
+  { id: "partner",  es: "Referral Partner", klass: "self",     note_es: "Socio referidor del originador" },
+  { id: "inhouse",  es: "In-House Lead",    klass: "in_house", note_es: "Asignado por la sucursal — sin importar de dónde venga" },
+  { id: "smartb",   es: "SmartB Client",    klass: "in_house", note_es: "Base de la práctica de taxes · misma regla para todos los LO" },
+  { id: "apg",      es: "APG Realty",       klass: "pending",  note_es: "Clasificación pendiente de definir" },
 ];
 export const leadOrigin = id => LEAD_ORIGINS.find(o => o.id === id) || null;
 
@@ -1620,6 +1619,33 @@ export const CLAIM_STATES = {
 // Funded files that have not been submitted to payroll yet. The ones from
 // earlier periods matter most: a file held back and then forgotten is
 // money nobody ever misses, because it never appeared on a list.
+// ─── REFERIDOS SALIENTES ───────────────────────────────────────────
+// Un archivo que no se puede cerrar aquí se manda a otro banco y genera un
+// fee de referido. Ese dinero se cobraba en un tablero pero nunca entraba a
+// la lista de payroll, porque su fecha vive en referredOut.closeDate y no en
+// el campo que lee el corte. Se ganaba y no se reclamaba.
+export const REFERRAL_FEE_BPS_DEFAULT = 50;
+
+// El fee de un archivo referido a otro banco es del LO. A veces se negocia
+// una parte para la sucursal, a veces no — así que por defecto la sucursal
+// no toma nada. Repartirlo con la escalera de comisiones, como hacía la
+// primera versión, le quitaba al LO un dinero que nadie había acordado.
+export const referralBranchPct = file =>
+  Math.min(1, Math.max(0, Number(file?.referralBranchPct) || 0));
+
+export const isReferredOut = file =>
+  !!(file?.referredOut && file.referredOut.status === "Closed (Funded)");
+
+export function referralFunded(file) {
+  const ro = file?.referredOut;
+  if (!ro || ro.status !== "Closed (Funded)") return null;
+  const date = okDate(ro.closeDate) || okDate(file?.closedAt);
+  if (!date) return null;
+  const amount = Number(ro.finalLoanAmount) || Number(file?.loan) || 0;
+  const bps = Number(file?.referralFeeBps) || REFERRAL_FEE_BPS_DEFAULT;
+  return { date, amount, bps, fee: Math.round(amount * bps / 10000), banker: ro.bankerCompany || ro.bankerName || null };
+}
+
 export function unclaimedFiles(files, ctx = {}) {
   const now = currentPayrollPeriod();
   return (files || [])
@@ -1635,11 +1661,33 @@ export function unclaimedFiles(files, ctx = {}) {
       const per = payrollPeriod(fundedDate(f));
       const enriched = withLoContext(f, files, ctx.roster || {});
       const hit = rosterLookup(f.lo, ctx.roster || {});
-      return { file: f, period: per, rosterMissing: enriched.rosterMissing,
+      return { file: f, period: per, kind: "loan", rosterMissing: enriched.rosterMissing,
         split: loanSplit(enriched, { ...ctx, trainerAssigned: !!hit?.entry?.trainer }),
         stale: per < now };
     })
-    .sort((a, b) => String(fundedDate(a.file)).localeCompare(String(fundedDate(b.file))));
+    .concat((files || []).filter(f => (f.claimState || "unclaimed") === "unclaimed")
+      .map(f => ({ f, r: referralFunded(f) }))
+      .filter(x => x.r && x.r.date >= (ctx.cutover || BARRETT_CUTOVER))
+      .map(({ f, r }) => {
+        const per = payrollPeriod(r.date);
+        const enriched = withLoContext(f, files, ctx.roster || {});
+        const hit = rosterLookup(f.lo, ctx.roster || {});
+        // Sin reparto automático: el fee es del LO salvo lo que se negocie.
+        const branchPct = referralBranchPct(f);
+        const isOwn = !!(hit?.entry?.isBM || enriched.isBM);
+        const toBM = Math.round(r.fee * branchPct) + (isOwn ? Math.round(r.fee * (1 - branchPct)) : 0);
+        const split = {
+          net: r.fee, isBM: isOwn, stageMeta: enriched.loStage ? LO_STAGES[enriched.loStage] : null,
+          shares: { lo: 1 - branchPct, trainer: 0, branch: branchPct, paulo: 0 },
+          dollars: { lo: Math.round(r.fee * (1 - branchPct)), trainer: 0,
+                     branch: Math.round(r.fee * branchPct), paulo: 0 },
+          toBM, floorApplied: false, margin: 0, checksum: 1,
+        };
+        return { file: f, period: per, kind: "referral", referral: r, branchPct,
+          rosterMissing: false, split, stale: per < now };
+      }))
+    .sort((a, b) => String(a.kind === "referral" ? a.referral.date : fundedDate(a.file))
+      .localeCompare(String(b.kind === "referral" ? b.referral.date : fundedDate(b.file))));
 }
 
 // El volumen fondeado de cada LO, calculado de sus propios archivos cerrados.

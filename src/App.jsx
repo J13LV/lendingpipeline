@@ -24,7 +24,7 @@ import {
   noteEntries, latestNote, noteCount, addNoteEntry,
   LO_STAGES, STAGE_THRESHOLDS, teamLeadShare, branchCostPerFile, ladderCeiling,
   loanSplit, payrollPeriodLabel, currentPayrollPeriod, payrollSummary, fundedDate,
-  losWithoutCompRule, BARRETT_CUTOVER, STANDARD_FEES, payoutBreakdown, feeWaterfall,
+  losWithoutCompRule, BARRETT_CUTOVER, referralFunded, referralBranchPct, STANDARD_FEES, payoutBreakdown, feeWaterfall,
   ADJUSTMENT_KINDS, withLoContext, LEAD_ORIGINS, leadOrigin, IN_HOUSE_REDUCTION,
 } from "./pipelineCore";
 import {
@@ -2216,19 +2216,29 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               <tbody>
                 {payroll.rows.map((r,i)=>(
                   <tr key={r.file.id||i} style={{borderBottom:"1px solid #21262D",background:r.stale?"rgba(232,93,117,.06)":(i%2===0?"#0D1117":"#161B22")}}>
-                    <td style={{padding:"9px 12px",color:"#E6EDF3"}}>{r.file.borrower}</td>
-                    <td style={{padding:"9px 12px",color:"#8B949E",fontFamily:"DM Mono",fontSize:11}}>{fundedDate(r.file)}</td>
+                    <td style={{padding:"9px 12px",color:"#E6EDF3"}}>
+                      {r.file.borrower}
+                      {r.kind==="referral"&&(
+                        <div style={{fontSize:9,color:"#A78BFA"}}>
+                          fee de referido · {r.referral.bps} bps{r.referral.banker?` · ${r.referral.banker}`:""}
+                          {r.branchPct>0?` · sucursal ${(r.branchPct*100).toFixed(0)}%`:" · del LO"}
+                        </div>
+                      )}
+                    </td>
+                    <td style={{padding:"9px 12px",color:"#8B949E",fontFamily:"DM Mono",fontSize:11}}>
+                      {r.kind==="referral"?r.referral.date:fundedDate(r.file)}
+                    </td>
                     <td style={{padding:"9px 12px",fontSize:10,color:r.stale?"#E85D75":"#6E7681"}}>
                       {payrollPeriodLabel(r.period)}{r.stale?" · arrastrado":""}
                     </td>
                     <td style={{padding:"9px 12px",color:"#8B949E",fontSize:11}}>
                       {r.file.lo||"—"}
                       <span style={{color:r.rosterMissing?"#E85D75":"#484F58"}}>
-                        {" · "}{r.rosterMissing?"sin regla de comp":r.split.stageMeta?.es}
+                        {" · "}{r.kind==="referral"?"referido":r.rosterMissing?"sin regla de comp":r.split.stageMeta?.es}
                       </span>
                     </td>
                     <td style={{padding:"9px 12px",textAlign:"center",color:"#8B949E",fontFamily:"DM Mono",fontSize:11}}>
-                      {(r.split.shares.lo*100).toFixed(1)}%{r.split.floorApplied?" ⚑":""}
+                      {r.kind==="referral"?"—":`${(r.split.shares.lo*100).toFixed(1)}%${r.split.floorApplied?" ⚑":""}`}
                     </td>
                     <td style={{padding:"9px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>${r.split.net.toLocaleString()}</td>
                     <td style={{padding:"9px 12px",textAlign:"center"}}>
