@@ -4318,8 +4318,8 @@ function HelpModal({profile, onClose}){
               {[
                 {role:"Admin", color:"#4A90D9", who:"Jose Del Valle (Branch Manager)", can:[
                   "Create, edit, advance, close, reopen, and DELETE any file",
-                  "See the OVERRIDE & COMP dashboard (25 bps branch override calc)",
-                  "Edit the BPS comp on any file (controls LO commission)",
+                  "See the OVERRIDE & COMP dashboard (reparto Barrett por % del NET, cortes del 1 y el 15)",
+                  "Set the gross bps and the per-file adjustments that produce the NET",
                   "Restore the entire pipeline from a backup file",
                   "View the My Personal LO Comp report",
                   "See all LOs' production data on the Team Production tab",
