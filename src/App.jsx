@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, onSnapshot } from "firebase/firestore";
+import { helpSections, searchHelp } from "./helpContent";
 import {
   stageUrgency, stageClock, daysInStage, fileAge, stampStage, today,
   daysBetween, addDays as addDaysISO,
@@ -4361,6 +4362,141 @@ function AddModal({profile, onClose, onAdd}){
 }
 
 function HelpModal({profile, onClose}){
+  // El contenido vive en helpContent.js. Los números que también conoce el
+  // motor se le pasan desde aquí, así la guía no puede quedar desfasada.
+  const [lang,setLang]=useState("es");
+  const [secId,setSecId]=useState("start");
+  const [q,setQ]=useState("");
+  const sections=helpSections({
+    stages:LO_STAGES, thresholds:STAGE_THRESHOLDS, inHousePoints:IN_HOUSE_REDUCTION,
+  });
+  const T=o=>typeof o==="object"&&o?(o[lang]??o.es??o.en??""):o;
+  const hits=searchHelp(sections,q,lang);
+  const sec=sections.find(x=>x.id===secId)||sections[0];
+  const shown=hits?hits.map(h=>h.article):sec.articles;
+
+  const TONE={gold:["#F5A623","rgba(245,166,35,.08)"],green:["#7EC8A4","rgba(126,200,164,.07)"],
+              red:["#E85D75","rgba(232,93,117,.08)"],blue:["#4A90D9","rgba(74,144,217,.08)"]};
+
+  const Block=({b})=>{
+    const k=b.k;
+    if(k==="lead") return <div style={{fontSize:13,color:"#E6EDF3",fontWeight:500,lineHeight:1.6,margin:"0 0 8px"}}>{T(b)}</div>;
+    if(k==="p")    return <div style={{fontSize:12.5,color:"#8B949E",lineHeight:1.7,margin:"0 0 9px"}}>{T(b)}</div>;
+    if(k==="note"){ const [c,bg]=TONE[b.tone]||TONE.gold;
+      return <div style={{background:bg,border:`1px solid ${c}44`,borderLeft:`3px solid ${c}`,borderRadius:6,
+        padding:"10px 13px",fontSize:12.5,color:"#C9D1D9",lineHeight:1.65,margin:"0 0 10px"}}>{T(b)}</div>; }
+    if(k==="list") return (
+      <div style={{margin:"0 0 10px"}}>
+        {(b[lang]||b.es).map((x,i)=>(
+          <div key={i} style={{display:"flex",gap:8,fontSize:12.5,color:"#8B949E",lineHeight:1.7,marginBottom:2}}>
+            <span style={{color:"#484F58"}}>—</span><span>{x}</span>
+          </div>))}
+      </div>);
+    if(k==="steps") return (
+      <div style={{margin:"0 0 10px"}}>
+        {(b[lang]||b.es).map((x,i)=>(
+          <div key={i} style={{display:"flex",gap:9,fontSize:12.5,color:"#8B949E",lineHeight:1.7,marginBottom:5}}>
+            <span style={{color:"#F5A623",fontFamily:"DM Mono",flexShrink:0}}>{i+1}</span><span>{x}</span>
+          </div>))}
+      </div>);
+    if(k==="table") return (
+      <table style={{width:"100%",borderCollapse:"collapse",margin:"0 0 12px",fontSize:12}}>
+        <thead><tr>{(b.head[lang]||b.head.es).map((h,i)=>(
+          <th key={i} style={{textAlign:"left",padding:"7px 10px",background:"#0D1117",color:"#484F58",
+            fontSize:10,letterSpacing:"1px",fontWeight:500,borderBottom:"1px solid #30363D"}}>{h}</th>))}</tr></thead>
+        <tbody>{b.rows.map((r,i)=>(
+          <tr key={i}>{r.map((cell,j)=>(
+            <td key={j} style={{padding:"8px 10px",borderBottom:"1px solid #21262D",
+              color:j===0?"#E6EDF3":"#8B949E"}}>{T(cell)}</td>))}</tr>))}</tbody>
+      </table>);
+    if(k==="kv") return (
+      <div style={{margin:"0 0 10px"}}>
+        {b.rows.map((r,i)=>(
+          <div key={i} style={{borderTop:"1px solid #21262D",padding:"9px 0"}}>
+            <div style={{fontSize:12.5,color:"#E6EDF3",marginBottom:2}}>{T(r[0])}</div>
+            <div style={{fontSize:12,color:"#8B949E",lineHeight:1.65}}>{T(r[1])}</div>
+          </div>))}
+      </div>);
+    return null;
+  };
+
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:200,display:"flex",
+      alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
+      <div className="fi" onClick={e=>e.stopPropagation()} style={{background:"#161B22",
+        border:"1px solid #30363D",borderRadius:12,width:"100%",maxWidth:880,
+        maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+
+        <div style={{padding:"18px 22px 14px",borderBottom:"1px solid #21262D",display:"flex",
+          justifyContent:"space-between",alignItems:"flex-start",gap:12,flexShrink:0}}>
+          <div>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:19,color:"#E6EDF3",letterSpacing:"-0.5px"}}>
+              {lang==="es"?"GUÍA DEL PIPELINE":"PIPELINE GUIDE"}
+            </div>
+            <div style={{fontSize:10.5,color:"#484F58",letterSpacing:"1px",marginTop:3}}>
+              DEL VALLE LENDING CO. · BARRETT FINANCIAL GROUP · NMLS 181106
+            </div>
+          </div>
+          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            <div style={{display:"flex",border:"1px solid #30363D",borderRadius:6,overflow:"hidden"}}>
+              {["es","en"].map(l=>(
+                <button key={l} className="hov" onClick={()=>setLang(l)}
+                  style={{background:lang===l?"#F5A623":"transparent",color:lang===l?"#0D1117":"#6E7681",
+                    border:"none",padding:"5px 11px",fontSize:10.5,fontFamily:"DM Mono",cursor:"pointer"}}>
+                  {l.toUpperCase()}
+                </button>))}
+            </div>
+            <button onClick={onClose} style={{background:"transparent",border:"none",color:"#484F58",
+              fontSize:19,cursor:"pointer",padding:"0 0 0 4px"}}>✕</button>
+          </div>
+        </div>
+
+        <div style={{padding:"11px 22px",borderBottom:"1px solid #21262D",background:"#0D1117",
+          display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",flexShrink:0}}>
+          <input value={q} onChange={e=>setQ(e.target.value)}
+            placeholder={lang==="es"?"Buscar en la guía…":"Search the guide…"}
+            style={{background:"#161B22",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",
+              padding:"6px 10px",fontSize:11.5,fontFamily:"DM Mono",flex:"1 1 200px",minWidth:150}}/>
+          {!hits&&sections.map(x=>(
+            <button key={x.id} className="hov" onClick={()=>setSecId(x.id)}
+              style={{background:secId===x.id?x.color:"#21262D",color:secId===x.id?"#0D1117":"#8B949E",
+                borderRadius:6,padding:"6px 12px",fontSize:11,fontFamily:"DM Mono",fontWeight:500,
+                border:"none",cursor:"pointer"}}>
+              {x.icon} {T(x)}
+            </button>))}
+          {hits&&(
+            <span style={{fontSize:11,color:"#6E7681",fontFamily:"DM Mono"}}>
+              {hits.length} {lang==="es"?"resultado":"result"}{hits.length===1?"":"s"}
+            </span>)}
+        </div>
+
+        <div style={{flex:1,overflowY:"auto",padding:"18px 22px 26px"}}>
+          {shown.length===0&&(
+            <div style={{color:"#484F58",fontSize:12.5,textAlign:"center",padding:"30px 0"}}>
+              {lang==="es"?"Nada coincide con esa búsqueda todavía.":"Nothing matches that search yet."}
+            </div>)}
+          {shown.map((a,i)=>(
+            <div key={a.id} style={{marginBottom:26,paddingBottom:i<shown.length-1?18:0,
+              borderBottom:i<shown.length-1?"1px solid #21262D":"none"}}>
+              <div style={{fontFamily:"Syne",fontWeight:700,fontSize:15,color:"#E6EDF3",marginBottom:10}}>
+                {T(a)}
+              </div>
+              {(a.blocks||[]).map((b,j)=><Block key={j} b={b}/>)}
+            </div>))}
+        </div>
+
+        <div style={{padding:"10px 22px",borderTop:"1px solid #21262D",background:"#0D1117",
+          fontSize:9.5,color:"#484F58",flexShrink:0}}>
+          {lang==="es"
+            ? "Los porcentajes y umbrales de esta guía los lee del sistema, no están escritos a mano. Si cambian, la guía cambia."
+            : "The percentages and thresholds here are read from the system, not typed by hand. If they change, the guide changes."}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function _HelpModalLegacy({profile, onClose}){
   const [tab, setTab] = useState("notes");
   const isAdmin = profile?.role === "admin";
   const isLO = profile?.role === "lo";
