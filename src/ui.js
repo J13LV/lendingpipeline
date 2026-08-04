@@ -255,6 +255,7 @@ export const UI = {
   ceilingLeft: { es:"techo {n} bps · quedan {r}", en:"ceiling {n} bps · {r} left" },
 
   cap:{ es:"tope", en:"cap" },
+  guidelines:{ es:"guías ↗", en:"guidelines ↗" },
 
   // ─── tiempo ───
   inStage:     { es:"d en la etapa", en:"d in stage" },
