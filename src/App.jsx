@@ -2375,23 +2375,32 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                   <button className="hov" onClick={()=>{
                       // Si algo falla aquí, falla a la vista. Un botón de dinero
                       // que no hace nada y no dice por qué es peor que un error.
+                      // Cada paso etiquetado: con el código minificado, "Y is not
+                      // a function" no dice nada. El nombre del paso sí.
+                      let step="preparar";
                       try{
-                        if(!onBulkUpdate) throw new Error("la pantalla no recibió permiso para guardar");
-                        onLogPayroll&&onLogPayroll({
+                        step="archivar el request";
+                        if(typeof onLogPayroll==="function") onLogPayroll({
                           id:`pr_${Date.now()}`, period:req.period, periodLabel:req.periodLabel,
                           sentAt:today(), by:profile.name, fileCount:req.fileCount,
                           netTotal:req.netTotal, total:req.total, text,
                           fileIds:rows.map(r=>r.file.id),
                           payees:req.payees.map(p=>({name:p.name,role:p.role,subtotal:p.subtotal})),
                         });
+
+                        step="marcar los archivos";
+                        if(typeof onBulkUpdate!=="function") throw new Error("la pantalla no puede guardar archivos");
                         onBulkUpdate(rows.map(r=>({id:r.file.id,claimState:"claimed",
                           claimedPeriod:req.period,claimedAt:today(),claimedBy:profile.name})));
+
+                        step="cerrar la ventana";
                         setReqError(null);
-                        setJustClaimed(`${req.fileCount} archivos · $${req.total.toLocaleString()} · marcados en el corte ${req.periodLabel}`);
+                        setJustClaimed(`${req.fileCount} archivos · $${req.total.toLocaleString()} · corte ${req.periodLabel}`);
                         setTimeout(()=>setJustClaimed(null),5000);
-                        setPicked(new Set()); setShowRequest(false);
+                        setPicked(new Set());
+                        setShowRequest(false);
                       }catch(err){
-                        setReqError(String(err&&err.message||err));
+                        setReqError(`al ${step} — ${String(err&&err.message||err)}`);
                       }
                     }}
                     style={{flex:2,background:"#F5A623",color:"#0D1117",borderRadius:7,padding:"10px 0",
