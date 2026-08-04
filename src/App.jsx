@@ -773,8 +773,9 @@ export default function App() {
     setFiles(p=>p.map(f=>{
       if(f.id!==id) return f;
       if(f.stage===REFERRED_OUT_STAGE) return f; // can't close a referred-out file at PRMG
-      const fundedDate = f.closing || today();
-      return stampEdit({...f, stage:CLOSED_STAGE, closedAt:fundedDate, daysInStage:0}, profile, "closed", {from:f.stage, closedAt:fundedDate});
+      // No llamarla fundedDate: ese nombre ya existe importado del motor.
+      const fundedOn = f.closing || today();
+      return stampEdit({...f, stage:CLOSED_STAGE, closedAt:fundedOn, daysInStage:0}, profile, "closed", {from:f.stage, closedAt:fundedOn});
     }));
     setDetail(null);
   };
@@ -1651,9 +1652,12 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
     monthlyMap[month].files.push(f);
   });
   const last12Months = [];
-  const today = new Date();
+  // Se llamaba `today` y tapaba la función today() importada del motor en todo
+  // el componente. Tres llamadas quedaban rotas — el botón de reclamar y el
+  // cierre de corte fallaban con "no es una función" sin decir por qué.
+  const nowDate = new Date();
   for(let i=11; i>=0; i--){
-    const d = new Date(today.getFullYear(), today.getMonth()-i, 1);
+    const d = new Date(nowDate.getFullYear(), nowDate.getMonth()-i, 1);
     const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
     last12Months.push(monthlyMap[key] || {month:key, units:0, volume:0, files:[]});
   }
