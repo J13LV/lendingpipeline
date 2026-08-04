@@ -519,6 +519,7 @@ export default function App() {
   const [payrollLog,setPayrollLog]=useState([]);
   const [docBytes,setDocBytes]=useState(0);
   const [sizeAlert,setSizeAlert]=useState(null);
+  const [idsBackfilled,setIdsBackfilled]=useState(0);
   const [view,setView]=useState("active");
   const [activePhase,setActivePhase]=useState(null);
   const [search,setSearch]=useState("");
@@ -556,7 +557,17 @@ export default function App() {
         const data = snap.data();
         if(Array.isArray(data.payrollRequests)) setPayrollLog(data.payrollRequests);
         if(data.files && data.files.length > 0){
-          setFiles(data.files);
+          // Un archivo sin id no se puede editar en masa: la búsqueda por id
+          // no lo encuentra y la operación falla sin decir nada. Se le asigna
+          // uno estable al cargar, una sola vez.
+          let missing = 0;
+          const withIds = data.files.map((f,i) => {
+            if (f && f.id) return f;
+            missing++;
+            return { ...f, id: `f_r${i}_${String(f?.borrower||"x").replace(/\W/g,"").slice(0,8)}` };
+          });
+          if (missing > 0) setIdsBackfilled(missing);
+          setFiles(withIds);
           setLoaded(true);
         } else {
           try {
@@ -991,6 +1002,14 @@ export default function App() {
         </div>
       </div>
 
+      {idsBackfilled>0&&(
+        <div style={{margin:"0 24px 10px",background:"rgba(74,144,217,.1)",border:"1px solid #4A90D9",
+          borderRadius:8,padding:"10px 14px",fontSize:11.5,color:"#4A90D9",lineHeight:1.6}}>
+          {idsBackfilled} archivo{idsBackfilled===1?"":"s"} no tenía{idsBackfilled===1?"":"n"} identificador y no se podía{idsBackfilled===1?"":"n"} editar en masa.
+          Ya {idsBackfilled===1?"tiene":"tienen"} uno. Guarda cualquier cambio para dejarlo fijo.
+        </div>
+      )}
+
       {sizeAlert&&(
         <div style={{margin:"0 24px",background:"rgba(232,93,117,.1)",border:"1px solid #E85D75",
           borderRadius:8,padding:"11px 14px",fontSize:11.5,color:"#E85D75",lineHeight:1.6}}>
@@ -1016,13 +1035,18 @@ export default function App() {
           onBulkUpdate={(updates)=>{
             // Acepta cualquier campo, no solo `lo`. Antes descartaba en silencio
             // todo lo demás, así que un cambio de estado nunca se guardaba.
+            // Devuelve cuántos encontró: cero coincidencias es un fallo, no un
+            // no-op, y quien llama tiene que poder distinguirlo.
+            let matched = 0;
             setFiles(prev=>prev.map(f=>{
-              const u = updates.find(x=>x.id===f.id);
+              const u = updates.find(x=>x.id!=null && x.id===f.id);
               if(!u) return f;
+              matched++;
               const {id, ...fields} = u;
               if (typeof fields.lo === "string") fields.lo = fields.lo.trim();
               return stampEdit({...f, ...fields}, profile, "edited", {fields:Object.keys(fields)});
             }));
+            return matched;
           }}
         />}
 
@@ -2401,8 +2425,11 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
 
                         step="marcar los archivos";
                         if(typeof onBulkUpdate!=="function") throw new Error("la pantalla no puede guardar archivos");
-                        onBulkUpdate(rows.map(r=>({id:r.file.id,claimState:"claimed",
-                          claimedPeriod:req.period,claimedAt:today(),claimedBy:profile.name})));
+                        const sinId=rows.filter(r=>!r.file||!r.file.id).length;
+                        if(sinId>0) throw new Error(`${sinId} archivo${sinId===1?"":"s"} sin identificador — refresca la página y vuelve a intentarlo`);
+                        const marcados=onBulkUpdate(rows.map(r=>({id:r.file.id,claimState:"claimed",
+                          claimedPeriod:req.period,claimedAt:sentAt,claimedBy:profile.name})));
+                        if(marcados===0) throw new Error("no se encontró ninguno de los archivos seleccionados");
 
                         step="cerrar la ventana";
                         setReqError(null);
