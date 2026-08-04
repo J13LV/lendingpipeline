@@ -378,6 +378,113 @@ export function helpSections(v = {}) {
 
   // ─────────────────────────────────────────────────────────────────
   {
+    id: "prep", icon: "⏸", color: "#7EC8A4",
+    es: "Preparación y seguimiento", en: "Preparation and follow-up",
+    articles: [
+      {
+        id: "fase1",
+        es: "Fase 1 · de la llamada a la precalificación",
+        en: "Phase 1 · from the call to pre-qualification",
+        blocks: [
+          { k:"p",
+            es:"Las cinco etapas de Pre-Qual son el embudo real: Lead Inquiry, Needs Assessment, Credit Pull, Income Verification y Pre-Qualification. Aquí es donde se decide si hay préstamo o no.",
+            en:"The five Pre-Qual stages are the real funnel: Lead Inquiry, Needs Assessment, Credit Pull, Income Verification and Pre-Qualification. This is where it is decided whether there is a loan at all." },
+          { k:"note", tone:"gold",
+            es:"Un archivo en fase 1 tiene reloj corriendo igual que uno en underwriting. Si el cliente no está listo, el reloj no lo va a poner listo — solo va a pintar el tablero de rojo y a ensuciar tus promedios.",
+            en:"A phase 1 file has a clock running just like one in underwriting. If the client is not ready, the clock will not make them ready — it will only turn the board red and dirty your averages." },
+          { k:"p",
+            es:"Para eso está Preparación.",
+            en:"That is what Preparation is for." },
+        ],
+      },
+      {
+        id: "cuando-prep",
+        es: "Cuándo mandar a Preparación", en: "When to send to Preparation",
+        blocks: [
+          { k:"lead",
+            es:"Cuando el cliente está vivo pero le falta algo que toma tiempo, y ese tiempo no depende de ti.",
+            en:"When the client is alive but needs something that takes time, and that time does not depend on you." },
+          { k:"p",
+            es:"No es archivar ni descartar. Es sacarlo del tablero activo hasta la fecha en que de verdad se puede retomar. En Preparación el archivo no cuenta en los promedios ni en los conteos de urgencia — porque medir a alguien que espera un ciclo de crédito no dice nada de tu operación.",
+            en:"It is not archiving or discarding. It is taking it off the active board until the date it can genuinely be picked up again. In Preparation the file does not count toward averages or urgency counts — because measuring someone waiting on a credit cycle says nothing about your operation." },
+          { k:"note", tone:"red",
+            es:"Lo que NO se manda a Preparación: un archivo que solo está lento. Si depende de ti o de un tercero al que puedes empujar, sigue activo. Preparación no es un lugar para esconder trabajo atrasado.",
+            en:"What does NOT go to Preparation: a file that is merely slow. If it depends on you or on a third party you can push, it stays active. Preparation is not a place to hide backlog." },
+        ],
+      },
+      {
+        id: "razones-prep",
+        es: "Las siete razones y por qué cada plazo",
+        en: "The seven reasons and why each interval",
+        blocks: [
+          { k:"p",
+            es:"Al mandar a Preparación se escoge una razón, y cada una trae su propia fecha de revisión. Los plazos no son redondos por casualidad.",
+            en:"When sending to Preparation you pick a reason, and each carries its own review date. The intervals are not round by accident." },
+          { k:"table",
+            head:{ es:["Razón","Revisión","Por qué"], en:["Reason","Review","Why"] },
+            rows:[
+              [{es:"Reparación de crédito",en:"Credit repair"},{es:"30 días",en:"30 days"},
+               {es:"El crédito se reporta en ciclo mensual. Antes desperdicias el pull, después desperdicias el mes.",
+                en:"Credit reports on a monthly cycle. Earlier wastes the pull, later wastes the month."}],
+              [{es:"Ahorro / reservas",en:"Saving / reserves"},{es:"90 días",en:"90 days"},
+               {es:"Llamar cada 30 días a alguien que está ahorrando solo produce \"todavía no\" y desgasta la relación.",
+                en:"Calling a saver every 30 days only produces \"not yet\" and wears out the relationship."}],
+              [{es:"Taxes por presentar",en:"Taxes to be filed"},{es:"fecha real",en:"real date"},
+               {es:"Hay una fecha de presentación en el calendario. Úsala, no adivines 30/60/90.",
+                en:"There is a real filing date on the calendar. Use it — don't guess at 30/60/90."}],
+              [{es:"Trabajo o ingreso nuevo",en:"New job / income"},{es:"fecha real",en:"real date"},
+               {es:"Primer día de trabajo más 30 días de talones. Es una fecha calculada, no una estimación.",
+                en:"First day of work plus 30 days of pay stubs. A calculated date, not an estimate."}],
+              [{es:"Faltan documentos",en:"Missing documents"},{es:"30 días",en:"30 days"},"—"],
+              [{es:"Compra la próxima temporada",en:"Buying next season"},{es:"fecha real",en:"real date"},
+               {es:"El mes que el cliente te dijo, no el que te conviene.",en:"The month the client actually told you, not the one that suits you."}],
+              [{es:"Otro",en:"Other"},{es:"30 días",en:"30 days"},"—"],
+            ] },
+          { k:"note", tone:"green",
+            es:"La diferencia entre 30 y 90 días no es administrativa: es la diferencia entre una llamada que aporta y una llamada que molesta. Un cliente al que llamas cuatro veces para oír lo mismo deja de contestar.",
+            en:"The difference between 30 and 90 days is not administrative: it is the difference between a call that helps and a call that annoys. A client you call four times to hear the same thing stops answering." },
+        ],
+      },
+      {
+        id: "due-review",
+        es: "El contador DUE REVIEW", en: "The DUE REVIEW counter",
+        blocks: [
+          { k:"lead",
+            es:"Es el número que te dice a quién le toca llamada hoy.",
+            en:"It is the number that tells you who is due for a call today." },
+          { k:"p",
+            es:"Cuando un archivo en Preparación llega a su fecha de revisión, entra a DUE REVIEW y el contador se pone rojo. Está siempre visible arriba, incluso si nunca abres esa vista — a propósito.",
+            en:"When a Preparation file reaches its review date, it enters DUE REVIEW and the counter turns red. It is always visible up top, even if you never open that view — on purpose." },
+          { k:"p",
+            es:"Un cliente en Preparación sin fecha de revisión no está esperando: está perdido. Ese contador existe para que no puedas olvidarte de alguien que sí quería comprar.",
+            en:"A client in Preparation with no review date is not waiting: they are lost. That counter exists so you cannot forget someone who genuinely wanted to buy." },
+        ],
+      },
+      {
+        id: "que-hacer",
+        es: "Qué hacer cuando toca revisión", en: "What to do when a review is due",
+        blocks: [
+          { k:"steps",
+            es:["Llama. La revisión es una llamada, no una mirada al tablero.",
+                "Escribe una entrada de nota con lo que te dijo el cliente, aunque sea que sigue igual.",
+                "Si ya está listo, sácalo de Preparación y ponlo en la etapa que le toca.",
+                "Si no, pon la fecha de revisión nueva con lo que él te dijo — no con lo que tú supones.",
+                "Si dejó de responder o ya compró con otro, archívalo con su razón."],
+            en:["Call. A review is a phone call, not a glance at the board.",
+                "Write a note entry with what the client said, even if it is that nothing changed.",
+                "If they are ready, take them out of Preparation and set the right stage.",
+                "If not, set the new review date from what they told you — not from what you assume.",
+                "If they stopped answering or already bought elsewhere, archive with the reason."] },
+          { k:"note", tone:"gold",
+            es:"La nota de cada revisión es lo que convierte Preparación en un activo. Seis meses después, \"esperando taxes de 2025, dijo marzo\" vale mucho más que un archivo con fecha y sin historia.",
+            en:"The note on each review is what turns Preparation into an asset. Six months later, \"waiting on 2025 taxes, said March\" is worth far more than a file with a date and no story." },
+        ],
+      },
+    ],
+  },
+
+  // ─────────────────────────────────────────────────────────────────
+  {
     id: "dates", icon: "⏱", color: "#E85D75",
     es: "Contingencias y fechas", en: "Contingencies and dates",
     articles: [
@@ -627,6 +734,7 @@ export function helpSections(v = {}) {
       },
     ],
   },
+
 
   ];
 }
