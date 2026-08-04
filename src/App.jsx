@@ -3073,7 +3073,7 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
 
       <div style={{borderTop:"1px solid #21262D",paddingTop:8}}>
         <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:6}}>
-          AJUSTES
+          {TX("adjustments")}
         </div>
         {fees.map((fee,i)=>(
           <div key={fee.id} style={{display:"flex",alignItems:"center",gap:8,marginBottom:5}}>
@@ -3118,7 +3118,7 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
             onClick={()=>setExtras([...extras,{id:`custom_${Date.now()}`,label:"",amount:0,kind:"fee"}])}
             style={{background:"transparent",border:"1px dashed #30363D",borderRadius:5,color:"#6E7681",
               fontSize:10,fontFamily:"DM Mono",padding:"5px 0",width:"100%",cursor:"pointer",marginTop:2}}>
-            + otro ajuste
+            {TX("otherAdj")}
           </button>
         )}
         {!isAdmin&&<div style={{fontSize:9,color:"#484F58",marginTop:2}}>
@@ -3333,7 +3333,7 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
             {l.contacts?.[0]?.phone&&<a href={`tel:${l.contacts[0].phone.replace(/[^\d+]/g,"")}`}
               style={{color:"#4A90D9",textDecoration:"none"}}>{l.contacts[0].phone}</a>}
             {l.guidelines&&<a href={l.guidelines} target="_blank" rel="noreferrer"
-              style={{color:"#BD65E8",textDecoration:"none"}}>guías ↗</a>}
+              style={{color:"#BD65E8",textDecoration:"none"}}>{TX("guidelines")}</a>}
           </div>
         )}
       </div>
@@ -3600,7 +3600,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
             borderRadius:6,padding:"8px 10px",fontSize:10.5,color:"#BD65E8",fontFamily:"DM Mono"}}>
             {TX("cdReceivedBy",{d:cd})}
             <div style={{color:"#8B949E",fontSize:9.5,marginTop:3}}>
-              Cuenta sábados y salta domingos y feriados federales. Si se manda por correo, sale el {cdMailDeadline(d.coe)}.
+              {TX("cdCounts",{d:cdMailDeadline(d.coe)})}
             </div>
           </div>
         )}
@@ -3642,7 +3642,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
                   <button className="hov" onClick={()=>setOpenId(openId===r.id?null:r.id)}
                     style={{background:"#21262D",border:"1px solid #30363D",borderRadius:4,color:"#8B949E",
                       fontSize:9,padding:"3px 7px",cursor:"pointer",fontFamily:"DM Mono"}}>
-                    {openId===r.id?"✕":"REGISTRAR"}
+                    {openId===r.id?"✕":TX("record")}
                   </button>
                 </div>
                 {r.depositAtRisk&&(
