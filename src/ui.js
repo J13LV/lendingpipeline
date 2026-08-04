@@ -252,7 +252,8 @@ export const UI = {
                  en:"Branch lead · {n} points less than own production" },
   planCeiling: { es:"Pagado por el lender · tope del plan {n} bps",
                  en:"Lender-paid · plan caps at {n} bps" },
-  ceilingLeft: { es:"techo {n} bps · quedan {r}", en:"ceiling {n} bps · {r} left" },
+  ceilingLeft: { es:"techo {n} bps", en:"ceiling {n} bps" },
+  ceilingLeftN:{ es:"techo {n} bps · quedan {r}", en:"ceiling {n} bps · {r} left" },
 
   cap:{ es:"tope", en:"cap" },
   guidelines:{ es:"guías ↗", en:"guidelines ↗" },
