@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, onSnapshot } from "firebase/firestore";
 import { helpSections, searchHelp } from "./helpContent";
+import { tr, defaultLang } from "./ui";
 import {
   stageUrgency, stageClock, daysInStage, fileAge, stampStage, today,
   daysBetween, addDays as addDaysISO,
@@ -520,6 +521,13 @@ export default function App() {
   const [docBytes,setDocBytes]=useState(0);
   const [sizeAlert,setSizeAlert]=useState(null);
   const [idsBackfilled,setIdsBackfilled]=useState(0);
+  // El idioma es del usuario, no de la sesión: Ana entra siempre en español
+  // aunque Jose haya usado el mismo navegador en inglés.
+  const [lang,setLang]=useState(()=>{
+    try{ return localStorage.getItem("pipe_lang") || "es"; }catch{ return "es"; }
+  });
+  const L=(k,v)=>tr(k,lang,v);
+  useEffect(()=>{ try{localStorage.setItem("pipe_lang",lang);}catch{} },[lang]);
   const [view,setView]=useState("active");
   const [activePhase,setActivePhase]=useState(null);
   const [search,setSearch]=useState("");
@@ -931,6 +939,14 @@ export default function App() {
             + NEW FILE
           </button>
 
+          <div style={{display:"flex",border:"1px solid #30363D",borderRadius:6,overflow:"hidden",marginRight:2}}>
+            {["es","en"].map(l=>(
+              <button key={l} className="hov" onClick={()=>setLang(l)}
+                style={{background:lang===l?"#F5A623":"transparent",color:lang===l?"#0D1117":"#6E7681",
+                  border:"none",padding:"6px 10px",fontSize:10.5,fontFamily:"DM Mono",cursor:"pointer"}}>
+                {l.toUpperCase()}
+              </button>))}
+          </div>
           <button className="hov" onClick={()=>setShowHelp(true)}
             title="Help & best practices"
             style={{background:"transparent",color:"#8B949E",borderRadius:6,padding:"8px 10px",fontFamily:"DM Mono",fontSize:11,border:"1px solid #30363D",cursor:"pointer"}}>
@@ -1444,7 +1460,7 @@ export default function App() {
         </div>}
       </div>
 
-      {detail&&<DetailModal file={detail} profile={profile} allFiles={files} onClose={()=>setDetail(null)}
+      {detail&&<DetailModal file={detail} profile={profile} allFiles={files} L={L} lang={lang} onClose={()=>setDetail(null)}
         onSave={p=>{updateFile(detail.id,p);setDetail(f=>({...f,...p}));}}
         onDelete={()=>deleteFile(detail.id)}
         onAdvance={()=>{advance(detail.id);setDetail(f=>{const i=ALL_STAGES.findIndex(s=>s.stage===f.stage);const n=ALL_STAGES[i+1];return n?{...f,stage:n.stage,daysInStage:0}:f;});}}
@@ -3718,7 +3734,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
   );
 }
 
-function DetailModal({file,profile,allFiles,onClose,onSave,onDelete,onAdvance,onCloseFile,onReopen,onPrep,onArchive,onRestore,onContinuePrep,isClosed}){
+function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdvance,onCloseFile,onReopen,onPrep,onArchive,onRestore,onContinuePrep,isClosed}){
   const isAdmin = profile?.role === "admin";
   const isAssistant = profile?.role === "assistant";
   const [showHistory, setShowHistory] = useState(false);
@@ -3813,13 +3829,13 @@ function DetailModal({file,profile,allFiles,onClose,onSave,onDelete,onAdvance,on
         <div style={{flex:1,overflowY:"auto",padding:"16px 24px",display:"flex",flexDirection:"column",gap:14}}>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
           <div>
-            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>LOAN TYPE</div>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L("loanType")}</div>
             <select value={loanType} onChange={e=>setLoanType(e.target.value)} style={fs2}>
               {LOAN_TYPE_GROUPS.map(g=><optgroup key={g.group} label={g.group}>{g.types.map(lt=><option key={lt}>{lt}</option>)}</optgroup>)}
             </select>
           </div>
           <div>
-            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>LOAN AMOUNT</div>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L("loanAmount")}</div>
             <input value={loanAmt} onChange={e=>setLoanAmt(e.target.value)} placeholder="350000" style={fs2}/>
           </div>
           {isAdmin && (
@@ -3838,14 +3854,14 @@ function DetailModal({file,profile,allFiles,onClose,onSave,onDelete,onAdvance,on
             </div>
           )}
           <div style={{gridColumn:"1/-1"}}>
-            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>LOAN OFFICER</div>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L("loanOfficer")}</div>
             <select value={loAssigned} onChange={e=>setLoAssigned(e.target.value)} style={fs2}>
               {LO_LIST.map(lo=><option key={lo.name} value={lo.name}>{lo.name} · {lo.role}</option>)}
             </select>
           </div>
           <div style={{gridColumn:"1/-1"}}>
-            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>REFERRAL PARTNER</div>
-            <input value={referralPartner} onChange={e=>setReferralPartner(e.target.value)} placeholder="Agent name, CPA, SmartBee, walk-in..." style={fs2}/>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L("referralPartner")}</div>
+            <input value={referralPartner} onChange={e=>setReferralPartner(e.target.value)} placeholder="Agent name, CPA, Smart Bee, walk-in..." style={fs2}/>
           </div>
           <div>
             <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>📱 PHONE</div>
@@ -3940,7 +3956,7 @@ function DetailModal({file,profile,allFiles,onClose,onSave,onDelete,onAdvance,on
         })()}
 
         {!isClosed&&!inPrep&&<div>
-          <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>STAGE</div>
+          <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L("stage")}</div>
           <select value={stage} onChange={e=>{setStage(e.target.value);onSave({stage:e.target.value, stageEnteredAt:today(), daysInStage:0});}}
             style={{background:"#0D1117",border:`1px solid ${ph.color}`,borderRadius:6,color:ph.color,padding:"8px 10px",fontSize:13,fontFamily:"DM Mono",width:"100%"}}>
             {ALL_STAGES.map((s,i)=><option key={i} value={s.stage} style={{color:s.phase.color,background:"#0D1117"}}>[{s.phase.short}] {s.stage}</option>)}
@@ -4053,7 +4069,7 @@ function DetailModal({file,profile,allFiles,onClose,onSave,onDelete,onAdvance,on
         ) : !isReferredOut ? (
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
             <div style={{background:"#0D1117",borderRadius:8,padding:12}}>
-              <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>CLOSING DATE</div>
+              <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L("closingDate")}</div>
               <input type="date" value={closing} onChange={e=>setClosing(e.target.value)}
                 style={{background:"transparent",border:"none",color:"#E6EDF3",fontSize:13,fontFamily:"DM Mono",width:"100%"}}/>
             </div>
@@ -4094,18 +4110,18 @@ function DetailModal({file,profile,allFiles,onClose,onSave,onDelete,onAdvance,on
               fontFamily:"DM Mono",
               letterSpacing:"0.5px"
             }}>
-              {newNote.length}{newNote.length > 200 ? " · muy larga" : newNote.length > 100 ? " · sé breve" : ""}
+              {newNote.length}{newNote.length > 200 ? " · "+L("tooLong") : newNote.length > 100 ? " · "+L("keepShort") : ""}
             </div>
           </div>
           <textarea value={newNote} onChange={e=>setNewNote(e.target.value)} rows={2}
-            placeholder={isReferredOut ? "Actualización del banquero receptor…" : "Qué pasó hoy · quién lo dijo · qué sigue"}
+            placeholder={isReferredOut ? L("noteFromBanker") : L("notePlaceholder")}
             style={{background:"#0D1117",border:`1px solid ${newNote.length>200?"#E85D75":"#30363D"}`,borderRadius:6,color:"#E6EDF3",padding:"8px 10px",fontSize:12,fontFamily:"DM Mono",width:"100%",resize:"none"}}/>
           <button className="hov" disabled={!newNote.trim()}
             onClick={()=>{ onSave({noteLog:addNoteEntry(file,newNote,profile?.name||null).noteLog}); setNewNote(""); }}
             style={{marginTop:6,width:"100%",background:newNote.trim()?"rgba(126,200,164,.1)":"#161B22",
               color:newNote.trim()?"#7EC8A4":"#30363D",borderRadius:6,padding:"7px 0",fontFamily:"DM Mono",
               fontSize:11,border:`1px solid ${newNote.trim()?"#7EC8A4":"#21262D"}`,
-              cursor:newNote.trim()?"pointer":"not-allowed"}}>+ AGREGAR ACTUALIZACIÓN</button>
+              cursor:newNote.trim()?"pointer":"not-allowed"}}>{L("addUpdate")}</button>
 
           {entries.length>0&&(
             <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:8}}>
@@ -4113,7 +4129,7 @@ function DetailModal({file,profile,allFiles,onClose,onSave,onDelete,onAdvance,on
                 <div key={i} style={{borderLeft:`2px solid ${i===0?"#7EC8A4":"#21262D"}`,paddingLeft:9}}>
                   <div style={{fontSize:9,color:"#484F58",letterSpacing:".5px"}}>
                     {n.legacy
-                      ? "anterior al historial · sin fecha ni autor confiables"
+                      ? L("noteLegacy")
                       : `${String(n.at).slice(0,10)} · ${timeAgo(n.at)}${n.by?` · ${n.by}`:""}`}
                   </div>
                   <div style={{fontSize:11.5,color:i===0?"#E6EDF3":"#8B949E",lineHeight:1.5,marginTop:2,whiteSpace:"pre-wrap"}}>{n.text}</div>
@@ -4123,23 +4139,23 @@ function DetailModal({file,profile,allFiles,onClose,onSave,onDelete,onAdvance,on
                 <button onClick={()=>setShowAllNotes(v=>!v)}
                   style={{background:"transparent",border:"none",color:"#4A90D9",fontSize:10,
                     fontFamily:"DM Mono",cursor:"pointer",padding:0,textAlign:"left"}}>
-                  {showAllNotes?"▾ ver solo las 2 últimas":`▸ ver las ${entries.length} entradas`}
+                  {showAllNotes?L("seeLast2"):L("seeAll",{n:entries.length})}
                 </button>
               )}
             </div>
           )}
           <div style={{fontSize:9,color:"#484F58",marginTop:6,letterSpacing:"0.5px"}}>
-            Cada actualización queda con su fecha y su autor. La tarjeta siempre muestra la última.
+            {L("noteHint")}
           </div>
         </div>
 
         {(file.lastEditedBy || (file.history && file.history.length > 0)) && (
           <div style={{background:"#0D1117",borderRadius:8,padding:12,border:"1px solid #21262D"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px"}}>ACTIVITY</div>
+              <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px"}}>{L("activity")}</div>
               <button onClick={()=>setShowHistory(s=>!s)}
                 style={{background:"transparent",border:"none",color:"#8B949E",fontSize:10,fontFamily:"DM Mono",cursor:"pointer",letterSpacing:"1px"}}>
-                {showHistory ? "HIDE ↑" : "SHOW ALL ↓"}
+                {showHistory ? (lang==="es"?"OCULTAR ↑":"HIDE ↑") : L("showAll")+" ↓"}
               </button>
             </div>
             {file.lastEditedBy && (
@@ -4221,7 +4237,7 @@ function DetailModal({file,profile,allFiles,onClose,onSave,onDelete,onAdvance,on
             onSave(patch);
             onClose();
           }}
-            style={{flex:2,background:"#F5A623",color:"#0D1117",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,fontWeight:500,border:"none",cursor:"pointer"}}>SAVE</button>
+            style={{flex:2,background:"#F5A623",color:"#0D1117",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,fontWeight:500,border:"none",cursor:"pointer"}}>{L("save")}</button>
           {archivedFile?(
             <button className="hov" onClick={onRestore}
               style={{flex:2,background:"#21262D",color:"#7EC8A4",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"1px solid #7EC8A4",cursor:"pointer"}}>↩ RESTORE</button>
@@ -4249,9 +4265,9 @@ function DetailModal({file,profile,allFiles,onClose,onSave,onDelete,onAdvance,on
           ):(
             <>
               <button className="hov" onClick={onAdvance}
-                style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"none",cursor:"pointer"}}>ADVANCE →</button>
+                style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"none",cursor:"pointer"}}>{L("advance")} →</button>
               <button className="hov" onClick={()=>{if(confirm(`Close ${file.borrower}?`))onCloseFile();}}
-                style={{flex:1,background:"rgba(6,214,160,.1)",color:"#06D6A0",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"1px solid #06D6A0",cursor:"pointer"}}>CLOSE ✓</button>
+                style={{flex:1,background:"rgba(6,214,160,.1)",color:"#06D6A0",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"1px solid #06D6A0",cursor:"pointer"}}>{L("closeFile")} ✓</button>
               <button className="hov" onClick={()=>{
                 if(confirm(`Refer ${file.borrower} to another bank?\n\nThe file moves to REFERRED OUT. You'll fill in the receiving banker's details next.`)){
                   setStage(REFERRED_OUT_STAGE);
