@@ -3060,7 +3060,7 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
             {TX("leadPending")}
           </div>
         )}
-        {isAdmin&&leadOrigin(origin)?.note_es&&!pay.split.leadPending&&(
+        {isAdmin&&PN(leadOrigin(origin))&&!pay.split.leadPending&&(
           <div style={{fontSize:9,color:"#484F58",marginTop:3}}>{PN(leadOrigin(origin))}</div>
         )}
       </div>
@@ -3384,9 +3384,9 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
                 background:comp.overCeiling?"#E85D75":comp.pctOfCeiling>=95?"#F5A623":"#7EC8A4"}}/>
             </div>
             <div style={{display:"flex",justifyContent:"space-between",fontSize:9,color:"#484F58",marginTop:4}}>
-              <span>{comp.meta.note_es}</span>
+              <span>{PN(comp.meta)}</span>
               <span style={{color:comp.overCeiling?"#E85D75":"#484F58"}}>
-                techo {comp.ceilingBps} bps{comp.remainingBps!==null&&comp.remainingBps>0?` · quedan ${comp.remainingBps}`:""}
+                {comp.remainingBps>0?TX("ceilingLeftN",{n:comp.ceilingBps,r:comp.remainingBps}):TX("ceilingLeft",{n:comp.ceilingBps})}
               </span>
             </div>
           </div>
@@ -3664,7 +3664,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
                         <input type="date" value={ocDate} onChange={e=>setOcDate(e.target.value)} style={fs}/>
                       </div>
                     )}
-                    {outcomeById(oc).note_es&&(
+                    {PN(outcomeById(oc))&&(
                       <div style={{fontSize:9.5,color:outcomeById(oc).color}}>{PN(outcomeById(oc))}</div>
                     )}
                     <input value={ocNote} onChange={e=>setOcNote(e.target.value)}
