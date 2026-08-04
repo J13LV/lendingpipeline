@@ -1797,6 +1797,71 @@ export function payrollSummary(files, ctx = {}) {
   };
 }
 
+// ─── REQUEST DE PAYROLL ────────────────────────────────────────────
+// La lista en pantalla no es un request. Barrett necesita saber a quién se
+// le paga cuánto, así que el documento se agrupa por persona y no por
+// archivo — y queda copia de lo que se mandó, porque dentro de dos meses
+// nadie va a recordar qué entró en qué corte.
+export function buildPayrollRequest(rows, { period, by, branch = {} } = {}) {
+  const payees = new Map();
+  const add = (name, role, file, amount, detail) => {
+    if (!amount) return;
+    const key = `${name}||${role}`;
+    if (!payees.has(key)) payees.set(key, { name, role, lines: [], subtotal: 0 });
+    const p = payees.get(key);
+    p.lines.push({ ...detail, borrower: file.borrower, amount });
+    p.subtotal += amount;
+  };
+
+  for (const r of rows) {
+    const f = r.file, s = r.split;
+    const detail = r.kind === "referral"
+      ? { kind: "referral", loan: r.referral.amount, bps: r.referral.bps,
+          net: r.referral.fee, date: r.referral.date, note: `referido · ${r.referral.banker || "banco externo"}` }
+      : { kind: "loan", loan: f.loan, bps: fileCompBps(f), net: s.net, date: fundedDate(f),
+          note: leadOrigin(f.leadOrigin)?.es || null };
+    add(f.lo || "Sin asignar", "Originador", f, s.dollars.lo, { ...detail, pct: s.shares.lo });
+    if (s.dollars.trainer) add(branch.trainer || "Trainer", "Trainer", f, s.dollars.trainer, { ...detail, pct: s.shares.trainer });
+    if (s.dollars.branch)  add(branch.name || "Del Valle Lending", "Sucursal", f, s.dollars.branch, { ...detail, pct: s.shares.branch });
+    if (s.dollars.paulo)   add(branch.teamLead || "Paulo Maria", "Team Lead", f, s.dollars.paulo, { ...detail, pct: s.shares.paulo });
+  }
+
+  const list = [...payees.values()].sort((a, b) => b.subtotal - a.subtotal);
+  return {
+    period: period || currentPayrollPeriod(),
+    periodLabel: payrollPeriodLabel(period || currentPayrollPeriod()),
+    generatedAt: today(), by: by || null,
+    fileCount: rows.length,
+    netTotal: rows.reduce((a, r) => a + (r.kind === "referral" ? r.referral.fee : r.split.net), 0),
+    payees: list,
+    total: list.reduce((a, p) => a + p.subtotal, 0),
+  };
+}
+
+// Texto plano listo para pegar en un correo a payroll.
+export function payrollRequestText(req, branchLine = "Del Valle Lending Co. · Barrett Financial Group · NMLS 181106") {
+  const $ = n => "$" + n.toLocaleString();
+  const L = [];
+  L.push(`REQUEST DE PAYROLL — ${req.periodLabel}`);
+  L.push(branchLine);
+  L.push(`Generado ${req.generatedAt}${req.by ? " por " + req.by : ""}`);
+  L.push("");
+  L.push(`${req.fileCount} archivo${req.fileCount === 1 ? "" : "s"} · NET total ${$(req.netTotal)}`);
+  L.push("");
+  for (const p of req.payees) {
+    L.push(`${p.name.toUpperCase()} — ${p.role}`);
+    for (const ln of p.lines) {
+      L.push(`  ${ln.date}  ${ln.borrower.padEnd(28).slice(0, 28)}  ${$(ln.net).padStart(9)}  ` +
+             `${(ln.pct * 100).toFixed(1).padStart(5)}%  ${$(ln.amount).padStart(9)}` +
+             (ln.kind === "referral" ? "  (fee de referido)" : ""));
+    }
+    L.push(`  ${"Subtotal".padEnd(30)}${" ".repeat(19)}${$(p.subtotal).padStart(9)}`);
+    L.push("");
+  }
+  L.push(`TOTAL A DISTRIBUIR   ${$(req.total)}`);
+  return L.join(String.fromCharCode(10));
+}
+
 export function markClaimed(file, periodId, by) {
   return {
     ...file, claimState: "claimed", claimedPeriod: periodId || currentPayrollPeriod(),
