@@ -3,6 +3,14 @@ import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, onSnapshot } from "firebase/firestore";
 import { helpSections, searchHelp } from "./helpContent";
 import { tr, defaultLang } from "./ui";
+
+// Idioma vigente, a nivel de módulo. El motor devuelve {es, en} en 84 lugares
+// y la interfaz leía siempre `.es`. Pasar `lang` por props a los seis paneles
+// anidados sería más frágil que un valor de sesión: hay un usuario por pestaña.
+let CURRENT_LANG = "es";
+const P = o => (o && typeof o === "object" && !Array.isArray(o))
+  ? (o[CURRENT_LANG] ?? o.es ?? o.en ?? "") : o;
+const TX = (k, v) => tr(k, CURRENT_LANG, v);
 import {
   stageUrgency, stageClock, daysInStage, fileAge, stampStage, today,
   daysBetween, addDays as addDaysISO,
@@ -527,6 +535,7 @@ export default function App() {
     try{ return localStorage.getItem("pipe_lang") || "es"; }catch{ return "es"; }
   });
   const L=(k,v)=>tr(k,lang,v);
+  CURRENT_LANG = lang;
   useEffect(()=>{ try{localStorage.setItem("pipe_lang",lang);}catch{} },[lang]);
   const [view,setView]=useState("active");
   const [activePhase,setActivePhase]=useState(null);
@@ -2369,7 +2378,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                     <td style={{padding:"9px 12px",color:"#8B949E",fontSize:11}}>
                       {r.file.lo||"—"}
                       <span style={{color:r.rosterMissing?"#E85D75":"#484F58"}}>
-                        {" · "}{r.kind==="referral"?"referido":r.rosterMissing?"sin regla de comp":r.split.stageMeta?.es}
+                        {" · "}{r.kind==="referral"?"referido":r.rosterMissing?"sin regla de comp":P(r.split.stageMeta)}
                       </span>
                     </td>
                     <td style={{padding:"9px 12px",textAlign:"center",color:"#8B949E",fontFamily:"DM Mono",fontSize:11}}>
@@ -2570,7 +2579,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 {year:compYear,filesPerMonth:filesMo,trainerAssigned:k==="newbie"||k==="intermediate"});
               return (
                 <div key={k} style={{background:"#0D1117",border:"1px solid #21262D",borderRadius:6,padding:"9px 11px"}}>
-                  <div style={{fontSize:11,color:"#E6EDF3",fontWeight:500}}>{LO_STAGES[k].es}</div>
+                  <div style={{fontSize:11,color:"#E6EDF3",fontWeight:500}}>{P(LO_STAGES[k])}</div>
                   <div style={{fontSize:10,color:"#6E7681",fontFamily:"DM Mono",marginTop:4,lineHeight:1.6}}>
                     LO {(demo.shares.lo*100).toFixed(1)}%
                     {demo.shares.trainer>0?` · trainer ${(demo.shares.trainer*100).toFixed(1)}%`:""}
@@ -2747,7 +2756,7 @@ function ContingencyStrip({file}){
       )}
       {conflicts.length>0&&(
         <div style={{fontSize:9.5,fontFamily:"DM Mono",color:"#E85D75"}}>
-          ⚠ {conflicts.length} {conflicts.length===1?"conflicto de fechas":"conflictos de fechas"}
+          ⚠ {conflicts.length} {(conflicts.length===1?TX("conflicts"):TX("conflictsPl")).toLowerCase()}
         </div>
       )}
     </div>
@@ -2844,8 +2853,8 @@ function LenderChangeModal({file,profile,onClose,onConfirm}){
             <select value={reasonId} onChange={e=>setReasonId(e.target.value)} style={fs}>
               <option value="">— escoge —</option>
               {Object.entries(REASON_CATEGORIES).map(([cat,meta])=>(
-                <optgroup key={cat} label={meta.es}>
-                  {reasonsByCategory(cat).map(r=><option key={r.id} value={r.id}>{r.es}</option>)}
+                <optgroup key={cat} label={P(meta)}>
+                  {reasonsByCategory(cat).map(r=><option key={r.id} value={r.id}>{P(r)}</option>)}
                 </optgroup>
               ))}
             </select>
@@ -2893,7 +2902,7 @@ function BackupPanel({file,backupId,setBackupId,onChangeLender}){
 
   return (
     <div style={{borderTop:"1px solid #21262D",paddingTop:11,display:"flex",flexDirection:"column",gap:8}}>
-      <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px"}}>LENDER DE RESPALDO</div>
+      <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px"}}>{TX("backupLender")}</div>
       <select value={backupId} onChange={e=>setBackupId(e.target.value)} style={fs}>
         <option value="">— ninguno —</option>
         {options.map(o=><option key={o.id} value={o.id}>{o.name}{o.lenderPaidBps?` · ${o.lenderPaidBps} bps`:""}</option>)}
@@ -2945,7 +2954,7 @@ function BackupPanel({file,backupId,setBackupId,onChangeLender}){
       <button className="hov" onClick={onChangeLender} disabled={!file.lenderId}
         style={{background:"rgba(245,166,35,.1)",color:file.lenderId?"#F5A623":"#30363D",borderRadius:6,
           padding:"8px 0",fontFamily:"DM Mono",fontSize:11,border:`1px solid ${file.lenderId?"#F5A623":"#21262D"}`,
-          cursor:file.lenderId?"pointer":"not-allowed"}}>⇄ CAMBIAR DE LENDER</button>
+          cursor:file.lenderId?"pointer":"not-allowed"}}>{TX("changeLender")}</button>
 
       {(file.lenderHistory||[]).length>0&&(
         <div style={{marginTop:2}}>
@@ -2960,7 +2969,7 @@ function BackupPanel({file,backupId,setBackupId,onChangeLender}){
               {h.compDeltaDollars!=null&&<span style={{color:h.compDeltaBps<0?"#E85D75":"#7EC8A4"}}>
                 {" · "}{h.compDeltaBps>0?"+":""}{h.compDeltaBps} bps</span>}
               <div style={{color:"#484F58",fontSize:9.5}}>
-                {h.reasonId?reasonById(h.reasonId)?.es:"sin motivo"}
+                {h.reasonId?P(reasonById(h.reasonId)):"sin motivo"}
                 {h.daysWithPrevLender!=null?` · ${h.daysWithPrevLender}d con el anterior`:""}
                 {h.by?` · ${h.by.split(" ")[0]}`:""}
               </div>
@@ -2983,7 +2992,7 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
   const cur=file.absorbedFees||[];
   const [fees,setFees]=useState(()=>STANDARD_FEES.map(s=>{
     const hit=cur.find(f=>f.id===s.id);
-    return {id:s.id,es:s.es,amount:hit?Number(hit.amount)||0:s.amount,on:!!hit};
+    return {id:s.id,es:P(s),amount:hit?Number(hit.amount)||0:s.amount,on:!!hit};
   }));
   // Descuentos que no estaban previstos. Sin esto, el día que aparece un
   // cargo distinto no hay dónde ponerlo y alguien lo mete a mano en otro
@@ -3026,21 +3035,21 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
       padding:14,display:"flex",flexDirection:"column",gap:10}}>
       <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
         <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#06D6A0",letterSpacing:"1px"}}>
-          {isAdmin?"$ COMPENSACIÓN DEL ARCHIVO":"$ TU COMPENSACIÓN EN ESTE ARCHIVO"}
+          {isAdmin?TX("fileComp"):TX("yourComp")}
         </span>
         <span style={{marginLeft:"auto",fontSize:9,color:"#484F58"}}>se guarda con SAVE ↓</span>
       </div>
 
       <div>
-        <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>ORIGEN DEL CLIENTE</div>
+        <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>{TX("clientOrigin")}</div>
         {isAdmin?(
           <select value={origin} onChange={e=>setOrigin(e.target.value)}
             style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",
               padding:"6px 9px",fontSize:11.5,fontFamily:"DM Mono",width:"100%"}}>
-            {LEAD_ORIGINS.map(o=><option key={o.id} value={o.id}>{o.es}</option>)}
+            {LEAD_ORIGINS.map(o=><option key={o.id} value={o.id}>{P(o)}</option>)}
           </select>
         ):(
-          <div style={{fontSize:11.5,color:"#8B949E"}}>{leadOrigin(origin)?.es||"—"}</div>
+          <div style={{fontSize:11.5,color:"#8B949E"}}>{P(leadOrigin(origin))||"—"}</div>
         )}
         {pay.split.inHouseApplied&&(
           <div style={{fontSize:9.5,color:"#F5A623",marginTop:4}}>
@@ -3072,7 +3081,7 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
             <input type="checkbox" checked={fee.on} disabled={!isAdmin}
               onChange={e=>setFees(fees.map((x,j)=>j===i?{...x,on:e.target.checked}:x))}
               style={{accentColor:"#E85D75",cursor:isAdmin?"pointer":"not-allowed"}}/>
-            <span style={{fontSize:11,color:fee.on?"#E6EDF3":"#484F58",flex:1}}>{fee.es}</span>
+            <span style={{fontSize:11,color:fee.on?"#E6EDF3":"#484F58",flex:1}}>{P(fee)}</span>
             <input inputMode="numeric" value={fee.amount} disabled={!isAdmin||!fee.on}
               onChange={e=>setFees(fees.map((x,j)=>j===i?{...x,amount:Number(e.target.value.replace(/[^\d]/g,""))||0}:x))}
               style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,
@@ -3138,10 +3147,10 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
 
       <div style={{borderTop:"1px solid #21262D",paddingTop:8}}>
         <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:6}}>
-          {isAdmin?"DISTRIBUCIÓN":"TU COMPENSACIÓN"}
+          {isAdmin?TX("distribution"):TX("yourCompShort")}
         </div>
         {rows.length===0?(
-          <div style={{fontSize:10.5,color:"#484F58"}}>Este archivo está asignado a otro originador.</div>
+          <div style={{fontSize:10.5,color:"#484F58"}}>{TX("notYourFile")}</div>
         ):rows.map((r)=>{
           const own=r.id==="lo"&&mine;
           return (
@@ -3187,7 +3196,7 @@ function LenderStrip({file}){
         </span>
       </div>
       <div style={{fontSize:9.5,color:"#6E7681",fontFamily:"DM Mono",display:"flex",gap:8,flexWrap:"wrap"}}>
-        {ch&&<span style={{color:ch.color}}>{ch.es.toLowerCase()}</span>}
+        {ch&&<span style={{color:ch.color}}>{P(ch).toLowerCase()}</span>}
         {bk&&bv.ready&&<span style={{color:bv.level==="critical"?"#E85D75":bv.level==="warn"?"#F5A623":"#6E7681"}}>
           respaldo {bk.name.split(" ")[0]} · viable to {mon(bv.decideByWorst)}</span>}
         {ls.state==="float"&&ls.mustLockBy&&(
@@ -3265,14 +3274,14 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
     <div style={{background:"rgba(74,144,217,.05)",border:"1px solid #4A90D933",borderRadius:8,
       padding:14,display:"flex",flexDirection:"column",gap:12}}>
       <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#4A90D9",letterSpacing:"1px"}}>◆ LENDER Y LOCK</span>
-        <span style={{fontSize:9.5,color:"#6E7681"}}>el canal decide qué lenders existen</span>
+        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#4A90D9",letterSpacing:"1px"}}>{TX("lenderLock")}</span>
+        <span style={{fontSize:9.5,color:"#6E7681"}}>{TX("channelDecides")}</span>
         <span style={{marginLeft:"auto",fontSize:9,color:"#484F58"}}>se guarda con SAVE ↓</span>
       </div>
 
       {/* CHANNEL — chosen first, everything filters from it */}
       <div>
-        <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>CANAL</div>
+        <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{TX("channel")}</div>
         <div style={{display:"flex",gap:8}}>
           {CHANNEL_IDS.map(id=>{
             const c=CHANNELS[id],on=channel===id,n=lendersFor(draft,id).length;
@@ -3281,7 +3290,7 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
                 if(!lendersFor(draft,id).some(x=>x.id===lenderId)) setLenderId("");}}
                 style={{flex:1,background:on?`${c.color}18`:"#0D1117",border:`1px solid ${on?c.color:"#30363D"}`,
                   borderRadius:6,padding:"8px 6px",cursor:"pointer",fontFamily:"DM Mono",textAlign:"left"}}>
-                <div style={{fontSize:11,color:on?c.color:"#8B949E",fontWeight:500}}>{c.es}</div>
+                <div style={{fontSize:11,color:on?c.color:"#8B949E",fontWeight:500}}>{P(c)}</div>
                 <div style={{fontSize:9,color:"#484F58",marginTop:2}}>{n} lenders · tope {c.capBps}</div>
               </button>
             );
@@ -3336,13 +3345,13 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
         <div style={{background:"#0D1117",border:`1px solid ${comp.overCeiling?"#E85D75":"#21262D"}`,
           borderRadius:6,padding:"10px 11px",display:"flex",flexDirection:"column",gap:8}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8}}>
-            <span style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px"}}>COMPENSACIÓN</span>
-            <span style={{fontSize:9,color:comp.meta.editable?"#7EC8A4":"#6E7681"}}>{comp.meta.es}</span>
+            <span style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px"}}>{TX("compensation")}</span>
+            <span style={{fontSize:9,color:comp.meta.editable?"#7EC8A4":"#6E7681"}}>{P(comp.meta)}</span>
           </div>
 
           {comp.lines.map(ln=>(
             <div key={ln.id} style={{display:"flex",alignItems:"center",gap:8}}>
-              <span style={{fontSize:10,color:"#8B949E",flex:1}}>{ln.es}</span>
+              <span style={{fontSize:10,color:"#8B949E",flex:1}}>{P(ln)}</span>
               {ln.editable?(
                 <input inputMode="numeric" placeholder={ln.planBps!=null?String(ln.planBps):"0"}
                   value={ln.id==="ratePrice"?ratePriceBps:ln.id==="origination"?originationBps
@@ -3399,14 +3408,14 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
       {/* RATE + LOCK */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
         <div>
-          <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>TASA %</div>
+          <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>{TX("rate")}</div>
           <input value={rate} onChange={e=>setRate(e.target.value)} placeholder="6.990" inputMode="decimal" style={fs}/>
         </div>
         <div>
           <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>ESTADO</div>
           <select value={lockState} onChange={e=>setLockState(e.target.value)} style={fs}>
-            <option value="float">Flotando</option>
-            <option value="locked">Lockeado</option>
+            <option value="float">{TX("floating")}</option>
+            <option value="locked">{TX("locked")}</option>
           </select>
         </div>
       </div>
@@ -3452,11 +3461,11 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
       {lockState==="locked"&&(
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
           <div>
-            <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>FECHA DEL LOCK</div>
+            <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>{TX("lockDate")}</div>
             <input type="date" value={lockedAt} onChange={e=>setLockedAt(e.target.value)} style={fs}/>
           </div>
           <div>
-            <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>TÉRMINO</div>
+            <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>{TX("lockTerm")}</div>
             <select value={term} onChange={e=>setTerm(e.target.value)} style={fs}>
               {LOCK_TERMS.map(t=><option key={t} value={t}>{t} días</option>)}
             </select>
@@ -3483,7 +3492,7 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
       {conf.length>0&&conf.map((c,i)=>(
         <div key={i} style={{fontSize:10.5,color:c.sev==="critical"?"#E85D75":"#F5A623",background:"#0D1117",
           border:`1px solid ${c.sev==="critical"?"#E85D7544":"#F5A62344"}`,borderRadius:5,
-          padding:"7px 9px",lineHeight:1.45}}>{c.es}</div>
+          padding:"7px 9px",lineHeight:1.45}}>{P(c)}</div>
       ))}
     </div>
   );
@@ -3542,9 +3551,9 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
     <div style={{background:"rgba(232,93,117,.04)",border:"1px solid #E85D7533",borderRadius:8,
       padding:14,display:"flex",flexDirection:"column",gap:12}}>
       <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#E85D75",letterSpacing:"1px"}}>⏱ CONTINGENCIAS</span>
+        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#E85D75",letterSpacing:"1px"}}>{TX("contingencies")}</span>
         <span style={{fontSize:9.5,color:"#6E7681"}}>
-          el reloj corre desde la aceptación del contrato, no desde hoy
+          {TX("contClock")}
         </span>
         <span style={{marginLeft:"auto",fontSize:9,color:"#484F58"}}>se guarda con SAVE ↓</span>
       </div>
@@ -3566,30 +3575,30 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
 
       {/* THE ANCHOR */}
       <div style={{borderLeft:"2px solid #E85D75",paddingLeft:10}}>
-        {field("contractAccepted","FECHA DE ACEPTACIÓN DEL CONTRATO",
+        {field("contractAccepted",TX("contractAccepted"),
           "Todo se cuenta desde aquí. Si el archivo pasó días en Under Contract, ya se gastaron.")}
       </div>
 
       {/* CONTRACT — deposit at risk */}
       <div>
         <div style={{fontSize:9.5,color:"#E85D75",letterSpacing:"1px",marginBottom:6,fontWeight:500}}>
-          DEL CONTRATO · el depósito está en riesgo
+          {TX("fromContract")}
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-          {field("appraisalContingency","TASACIÓN")}
-          {field("loanContingency","PRÉSTAMO")}
+          {field("appraisalContingency",TX("appraisal"))}
+          {field("loanContingency",TX("loanCont"))}
         </div>
       </div>
 
       {/* DELIVERY CHAIN */}
       <div>
         <div style={{fontSize:9.5,color:"#F5A623",letterSpacing:"1px",marginBottom:6,fontWeight:500}}>
-          CADENA DE ENTREGA · credibilidad y per diem
+          {TX("deliveryChain")}
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
           {field("ctcTarget","CTC")}
           {field("coe","COE")}
-          {field("fundingDate","FONDEO")}
+          {field("fundingDate",TX("funding"))}
         </div>
         {cd&&(
           <div style={{marginTop:8,background:"rgba(189,101,232,.08)",border:"1px solid #BD65E844",
@@ -3608,12 +3617,12 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
       {conflicts.length>0&&(
         <div style={{display:"flex",flexDirection:"column",gap:6}}>
           <div style={{fontSize:9.5,color:"#E85D75",letterSpacing:"1px",fontWeight:500}}>
-            ⚠ {conflicts.length} {conflicts.length===1?"CONFLICTO":"CONFLICTOS"}
+            ⚠ {conflicts.length} {conflicts.length===1?TX("conflicts"):TX("conflictsPl")}
           </div>
           {conflicts.map((c,i)=>(
             <div key={i} style={{fontSize:10.5,color:c.sev==="critical"?"#E85D75":"#F5A623",
               background:"#0D1117",border:`1px solid ${c.sev==="critical"?"#E85D7544":"#F5A62344"}`,
-              borderRadius:5,padding:"7px 9px",lineHeight:1.45}}>{c.es}</div>
+              borderRadius:5,padding:"7px 9px",lineHeight:1.45}}>{P(c)}</div>
           ))}
         </div>
       )}
@@ -3621,7 +3630,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
       {/* RESULTS PER CONTINGENCY */}
       {rows.some(r=>r.date)&&(
         <div style={{display:"flex",flexDirection:"column",gap:6}}>
-          <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px"}}>RESULTADO POR CONTINGENCIA</div>
+          <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px"}}>{TX("resultPerCont")}</div>
           {rows.filter(r=>r.date).map(r=>{
             const ext=contingencyExtensionCount(file,r.id);
             return (
@@ -3633,7 +3642,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
                     {r.contractDays} días {r.basis==="business"?"hábiles":"cal."} del contrato
                     {r.contractDays<0?" ⚠":""}</span>}
                   <span style={{fontSize:9.5,color:r.outcomeMeta.color,marginLeft:"auto"}}>
-                    {r.outcomeMeta.es}{ext>0?` ·${ext}×`:""}
+                    {P(r.outcomeMeta)}{ext>0?` ·${ext}×`:""}
                   </span>
                   <button className="hov" onClick={()=>setOpenId(openId===r.id?null:r.id)}
                     style={{background:"#21262D",border:"1px solid #30363D",borderRadius:4,color:"#8B949E",
@@ -3650,7 +3659,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
                   <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:7}}>
                     <select value={oc} onChange={e=>setOc(e.target.value)} style={fs}>
                       {CONTINGENCY_OUTCOMES.filter(o=>o.id!=="pending").map(o=>
-                        <option key={o.id} value={o.id}>{o.es}</option>)}
+                        <option key={o.id} value={o.id}>{P(o)}</option>)}
                     </select>
                     {outcomeById(oc).requiresNewDate&&(
                       <div>
@@ -3715,12 +3724,12 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
       {/* LOG */}
       {(file.contingencyLog||[]).length>0&&(
         <div style={{borderTop:"1px solid #21262D",paddingTop:8}}>
-          <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>HISTORIAL</div>
+          <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{TX("history")}</div>
           {(file.contingencyLog||[]).slice().reverse().map((e,i)=>(
             <div key={i} style={{fontSize:10,color:"#6E7681",display:"flex",gap:7,marginBottom:3}}>
               <span style={{color:"#484F58",minWidth:70}}>{e.at}</span>
               <span style={{color:outcomeById(e.outcome).color,minWidth:70}}>
-                {contingencyById(e.id)?.short} {outcomeById(e.outcome).es}
+                {contingencyById(e.id)?.short} {P(outcomeById(e.outcome))}
               </span>
               <span style={{flex:1}}>
                 {e.toDate?`${e.fromDate} → ${e.toDate}`:""}{e.notes?` · ${e.notes}`:""}
@@ -4522,14 +4531,14 @@ function HelpModal({profile, onClose}){
         padding:"10px 13px",fontSize:12.5,color:"#C9D1D9",lineHeight:1.65,margin:"0 0 10px"}}>{T(b)}</div>; }
     if(k==="list") return (
       <div style={{margin:"0 0 10px"}}>
-        {(b[lang]||b.es).map((x,i)=>(
+        {(b[lang]||P(b)).map((x,i)=>(
           <div key={i} style={{display:"flex",gap:8,fontSize:12.5,color:"#8B949E",lineHeight:1.7,marginBottom:2}}>
             <span style={{color:"#484F58"}}>—</span><span>{x}</span>
           </div>))}
       </div>);
     if(k==="steps") return (
       <div style={{margin:"0 0 10px"}}>
-        {(b[lang]||b.es).map((x,i)=>(
+        {(b[lang]||P(b)).map((x,i)=>(
           <div key={i} style={{display:"flex",gap:9,fontSize:12.5,color:"#8B949E",lineHeight:1.7,marginBottom:5}}>
             <span style={{color:"#F5A623",fontFamily:"DM Mono",flexShrink:0}}>{i+1}</span><span>{x}</span>
           </div>))}
