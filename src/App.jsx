@@ -4586,7 +4586,8 @@ function HelpModal({profile, onClose}){
         </div>
 
         <div style={{padding:"11px 22px",borderBottom:"1px solid #21262D",background:"#0D1117",
-          display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",flexShrink:0}}>
+          display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",flexShrink:0,
+          maxHeight:120,overflowY:"auto"}}>
           <input value={q} onChange={e=>setQ(e.target.value)}
             placeholder={lang==="es"?"Buscar en la guía…":"Search the guide…"}
             style={{background:"#161B22",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",
@@ -4594,8 +4595,8 @@ function HelpModal({profile, onClose}){
           {!hits&&sections.map(x=>(
             <button key={x.id} className="hov" onClick={()=>setSecId(x.id)}
               style={{background:secId===x.id?x.color:"#21262D",color:secId===x.id?"#0D1117":"#8B949E",
-                borderRadius:6,padding:"6px 12px",fontSize:11,fontFamily:"DM Mono",fontWeight:500,
-                border:"none",cursor:"pointer"}}>
+                borderRadius:6,padding:"5px 10px",fontSize:10.5,fontFamily:"DM Mono",fontWeight:500,
+                border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>
               {x.icon} {T(x)}
             </button>))}
           {hits&&(
