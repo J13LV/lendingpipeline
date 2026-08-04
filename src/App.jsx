@@ -1037,11 +1037,15 @@ export default function App() {
             // todo lo demás, así que un cambio de estado nunca se guardaba.
             // Devuelve cuántos encontró: cero coincidencias es un fallo, no un
             // no-op, y quien llama tiene que poder distinguirlo.
-            let matched = 0;
+            //
+            // El conteo va ANTES y contra `files`. Hacerlo dentro del
+            // actualizador de setFiles devolvía siempre cero, porque React no
+            // ejecuta esa función en el momento sino al renderizar.
+            const wanted = new Set(updates.map(u=>u.id).filter(x=>x!=null));
+            const matched = files.filter(f=>wanted.has(f.id)).length;
             setFiles(prev=>prev.map(f=>{
               const u = updates.find(x=>x.id!=null && x.id===f.id);
               if(!u) return f;
-              matched++;
               const {id, ...fields} = u;
               if (typeof fields.lo === "string") fields.lo = fields.lo.trim();
               return stampEdit({...f, ...fields}, profile, "edited", {fields:Object.keys(fields)});
