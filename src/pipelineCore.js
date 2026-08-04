@@ -1407,7 +1407,7 @@ export const LEAD_ORIGINS = [
   { id: "self",     es: "Self-Generated",   klass: "self",     note_es: "Esfera y marketing propios del originador" },
   { id: "partner",  es: "Referral Partner", klass: "self",     note_es: "Socio referidor del originador" },
   { id: "inhouse",  es: "In-House Lead",    klass: "in_house", note_es: "Asignado por la sucursal — sin importar de dónde venga" },
-  { id: "smartb",   es: "SmartB Client",    klass: "in_house", note_es: "Base de la práctica de taxes · misma regla para todos los LO" },
+  { id: "smartb",   es: "Smart Bee Client",    klass: "in_house", note_es: "Base de la práctica de taxes · misma regla para todos los LO" },
   { id: "apg",      es: "APG Realty",       klass: "pending",  note_es: "Clasificación pendiente de definir" },
 ];
 export const leadOrigin = id => LEAD_ORIGINS.find(o => o.id === id) || null;
@@ -2072,7 +2072,7 @@ export const BPS_ADJUST_REASONS = [
   { id: "competition",      cat: "relationship", es: "Igualar a la competencia",         en: "Match competition" },
   { id: "long_term_client", cat: "relationship", es: "Cliente de largo plazo",           en: "Long-term client" },
   { id: "partner_referral", cat: "relationship", es: "Referido de socio",                en: "Partner referral" },
-  { id: "smartbee",         cat: "relationship", es: "Referido de SmartBee",             en: "SmartBee referral" },
+  { id: "smartbee",         cat: "relationship", es: "Referido de Smart Bee",             en: "Smart Bee referral" },
   { id: "other_courtesy",   cat: "relationship", es: "Otra cortesía al cliente",         en: "Other client courtesy" },
 ];
 

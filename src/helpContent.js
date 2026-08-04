@@ -191,7 +191,7 @@ export function helpSections(v = {}) {
               [{es:"Self-Generated",en:"Self-Generated"},{es:"Tu esfera, tu marketing, tu relación · split completo",en:"Your sphere, your marketing, your relationship · full split"}],
               [{es:"Referral Partner",en:"Referral Partner"},{es:"Un socio referidor tuyo · split completo",en:"A referral partner of yours · full split"}],
               [{es:"In-House Lead",en:"In-House Lead"},{es:"La sucursal te lo asignó · "+pts+" puntos menos",en:"The branch assigned it to you · "+pts+" points less"}],
-              [{es:"SmartB Client",en:"SmartB Client"},{es:"Cliente de la práctica de taxes · "+pts+" puntos menos",en:"Client from the tax practice · "+pts+" points less"}],
+              [{es:"Smart Bee Client",en:"Smart Bee Client"},{es:"Cliente de la práctica de taxes · "+pts+" puntos menos",en:"Client from the tax practice · "+pts+" points less"}],
             ] },
           { k:"p",
             es:"Cuando la sucursal trae al cliente, aportó la parte más costosa de la transacción. Esos "+pts+" puntos financian la máquina que produjo ese cliente: la base de datos, las campañas, la marca.",
