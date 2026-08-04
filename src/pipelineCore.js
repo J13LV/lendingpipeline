@@ -1496,6 +1496,15 @@ export function loanSplit(file, ctx = {}) {
 
   const cost = Math.round(branchCostPerFile(filesPerMonth, costs));
   const $ = p => Math.round(net * p);
+  // Cada parte redondeada por separado no suma el todo: 85% y 15% de $4,950
+  // dan $4,208 y $743, que son $4,951. El sobrante se asigna a la parte más
+  // grande para que el request de payroll cuadre siempre con el NET.
+  const cents = { lo: $(lo), trainer: $(trainer), branch: $(branch), paulo: $(paulo) };
+  const residual = net - (cents.lo + cents.trainer + cents.branch + cents.paulo);
+  if (residual !== 0) {
+    const biggest = Object.keys(cents).reduce((a, k) => cents[k] > cents[a] ? k : a, "lo");
+    cents[biggest] += residual;
+  }
   return {
     net, stage, stageMeta: LO_STAGES[stage], leadSource, isBM,
     ceiling, lift, floor, earned,
@@ -1505,15 +1514,15 @@ export function loanSplit(file, ctx = {}) {
     floorApplied: !isBM && floor > base + (stage === "newbie" ? 0 : lift),
     floorOverriddenByLead: !isBM && inHouse && floor > lo,
     shares: { lo, trainer, branch, paulo },
-    dollars: { lo: $(lo), trainer: $(trainer), branch: $(branch), paulo: $(paulo) },
+    dollars: cents, roundingResidual: residual,
     costPerFile: cost,
     // Lo que cobra el BM en un archivo: la retención de la sucursal MÁS su
     // propio split cuando él fue el originador. Mostrar solo la retención
     // ponía $0 en cada archivo suyo y dejaba fuera el grueso de su ingreso.
-    toBM: $(branch) + (isBM ? $(lo) : 0),
+    toBM: cents.branch + (isBM ? cents.lo : 0),
     // On a BM file there is no branch share to measure — the cost comes out
     // of the BM's own split, so it is reported against that instead.
-    margin: isBM ? $(lo) - cost : $(branch) - cost,
+    margin: isBM ? cents.lo - cost : cents.branch - cost,
     marginBasis: isBM ? "propio" : "sucursal",
     checksum: Number((lo + trainer + branch + paulo).toFixed(6)),
   };

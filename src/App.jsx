@@ -24,7 +24,8 @@ import {
   noteEntries, latestNote, noteCount, addNoteEntry,
   LO_STAGES, STAGE_THRESHOLDS, teamLeadShare, branchCostPerFile, ladderCeiling,
   loanSplit, lendersHiddenByChannel, OTHER_LENDER_ID, lenderNameOf, payrollPeriodLabel, currentPayrollPeriod, payrollSummary, fundedDate,
-  losWithoutCompRule, BARRETT_CUTOVER, referralFunded, referralBranchPct, STANDARD_FEES, payoutBreakdown, feeWaterfall,
+  losWithoutCompRule, BARRETT_CUTOVER, referralFunded, referralBranchPct,
+  buildPayrollRequest, payrollRequestText, STANDARD_FEES, payoutBreakdown, feeWaterfall,
   ADJUSTMENT_KINDS, withLoContext, LEAD_ORIGINS, leadOrigin, IN_HOUSE_REDUCTION,
 } from "./pipelineCore";
 import {
@@ -511,6 +512,10 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
   const [files,setFiles]=useState([]);
+  // Historial de requests enviados. Vive en el mismo documento que los
+  // archivos, pero aparte: un request es lo que se mandó ese día, y no
+  // debe cambiar aunque después se edite un archivo.
+  const [payrollLog,setPayrollLog]=useState([]);
   const [view,setView]=useState("active");
   const [activePhase,setActivePhase]=useState(null);
   const [search,setSearch]=useState("");
@@ -546,6 +551,7 @@ export default function App() {
     const unsub = onSnapshot(PIPELINE_DOC, (snap) => {
       if(snap.exists()){
         const data = snap.data();
+        if(Array.isArray(data.payrollRequests)) setPayrollLog(data.payrollRequests);
         if(data.files && data.files.length > 0){
           setFiles(data.files);
           setLoaded(true);
@@ -593,6 +599,11 @@ export default function App() {
     });
     return ()=>unsub();
   },[currentUser]);
+
+  useEffect(()=>{
+    if(!loaded || !currentUser) return;
+    setDoc(PIPELINE_DOC, {payrollRequests: payrollLog}, {merge:true}).catch(()=>{});
+  },[payrollLog,loaded,currentUser]);
 
   useEffect(()=>{
     if(!loaded || !currentUser)return;
@@ -974,6 +985,8 @@ export default function App() {
           referredOut={referredOut}
           inbound={inbound}
           onOpenFile={setDetail}
+          payrollLog={payrollLog}
+          onLogPayroll={(entry)=>setPayrollLog(prev=>[...prev,entry])}
           onBulkUpdate={(updates)=>{
             // Acepta cualquier campo, no solo `lo`. Antes descartaba en silencio
             // todo lo demás, así que un cambio de estado nunca se guardaba.
@@ -1499,11 +1512,15 @@ function ArchiveModal({file, onClose, onConfirm}){
 }
 
 
-function ProductionDashboard({profile, files, closed, active, referredOut, inbound, onOpenFile, onBulkUpdate}){
+function ProductionDashboard({profile, files, closed, active, referredOut, inbound, onOpenFile, onBulkUpdate, payrollLog, onLogPayroll}){
   const isAdmin = profile?.role === "admin";
   const isLO = profile?.role === "lo";
   const [compYear,setCompYear]=useState(1);
   const [justClaimed,setJustClaimed]=useState(null);
+  const [picked,setPicked]=useState(()=>new Set());
+  const [showRequest,setShowRequest]=useState(false);
+  const [copied,setCopied]=useState(false);
+  const [openLog,setOpenLog]=useState(null);
   const [filesMo,setFilesMo]=useState(8);
   const payroll=payrollSummary(files,{year:compYear,filesPerMonth:filesMo,roster:COMP_ROSTER});
   const [prodTab,setProdTab]=useState("team");
@@ -2201,7 +2218,15 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           <div style={{background:"#1a1000",borderBottom:"2px solid #F5A623",padding:"10px 16px",
             display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
             <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#F5A623",letterSpacing:"1px"}}>PARA EL PRÓXIMO REQUEST DE PAYROLL</span>
-            <span style={{fontSize:10,color:"#6E7681"}}>reclamar es opcional · lo que no metas queda para el corte siguiente</span>
+            <span style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
+              <span style={{fontSize:10,color:"#6E7681"}}>reclamar es opcional · lo que no metas queda para el corte siguiente</span>
+              <button className="hov" disabled={picked.size===0} onClick={()=>setShowRequest(true)}
+                style={{background:picked.size?"#F5A623":"#21262D",color:picked.size?"#0D1117":"#484F58",
+                  border:"none",borderRadius:6,padding:"7px 14px",fontFamily:"DM Mono",fontSize:11,
+                  fontWeight:500,cursor:picked.size?"pointer":"not-allowed"}}>
+                GENERAR REQUEST · {picked.size}
+              </button>
+            </span>
           </div>
           {payroll.rows.length===0?(
             <div style={{padding:"22px 16px",textAlign:"center",color:"#484F58",fontSize:12}}>
@@ -2211,6 +2236,12 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
               <thead>
                 <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
+                  <th style={{padding:"8px 6px 8px 12px",width:24}}>
+                    <input type="checkbox"
+                      checked={payroll.rows.length>0&&picked.size===payroll.rows.length}
+                      onChange={e=>setPicked(e.target.checked?new Set(payroll.rows.map(r=>r.file.id)):new Set())}
+                      style={{accentColor:"#F5A623",cursor:"pointer"}}/>
+                  </th>
                   {["CLIENTE","FONDEÓ","CORTE","LO","SPLIT","NET","TE TOCA",""].map((h,i)=>(
                     <th key={i} style={{padding:"8px 12px",textAlign:i<4?"left":"center",fontSize:10,color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                   ))}
@@ -2219,6 +2250,11 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               <tbody>
                 {payroll.rows.map((r,i)=>(
                   <tr key={r.file.id||i} style={{borderBottom:"1px solid #21262D",background:r.stale?"rgba(232,93,117,.06)":(i%2===0?"#0D1117":"#161B22")}}>
+                    <td style={{padding:"9px 6px 9px 12px"}}>
+                      <input type="checkbox" checked={picked.has(r.file.id)}
+                        onChange={()=>{const n=new Set(picked); n.has(r.file.id)?n.delete(r.file.id):n.add(r.file.id); setPicked(n);}}
+                        style={{accentColor:"#F5A623",cursor:"pointer"}}/>
+                    </td>
                     <td style={{padding:"9px 12px",color:"#E6EDF3"}}>
                       {r.file.borrower}
                       {r.kind==="referral"&&(
@@ -2262,7 +2298,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               </tbody>
               <tfoot>
                 <tr style={{background:"#1a1000",borderTop:"2px solid #F5A623"}}>
-                  <td colSpan={5} style={{padding:"10px 12px",fontFamily:"Syne",fontWeight:700,color:"#F5A623"}}>TOTAL · {payroll.count} archivos</td>
+                  <td colSpan={6} style={{padding:"10px 12px",fontFamily:"Syne",fontWeight:700,color:"#F5A623"}}>TOTAL · {payroll.count} archivos</td>
                   <td style={{padding:"10px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>${payroll.net.toLocaleString()}</td>
                   <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,fontSize:16,color:"#F5A623"}}>${payroll.toBM.toLocaleString()}</td>
                   <td/>
@@ -2271,6 +2307,122 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
             </table>
           )}
         </div>
+
+
+        {showRequest&&(()=>{
+          const rows=payroll.rows.filter(r=>picked.has(r.file.id));
+          const req=buildPayrollRequest(rows,{by:profile.name,
+            branch:{name:"Del Valle Lending",teamLead:"Paulo Maria",trainer:"Ana M Plasencia"}});
+          const text=payrollRequestText(req);
+          return (
+            <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.82)",zIndex:130,display:"flex",
+              alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setShowRequest(false)}>
+              <div className="fi" onClick={e=>e.stopPropagation()} style={{background:"#161B22",
+                border:"1px solid #F5A62355",borderRadius:12,width:"100%",maxWidth:700,
+                maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column"}}>
+                <div style={{padding:"16px 22px 12px",borderBottom:"1px solid #21262D"}}>
+                  <div style={{fontFamily:"Syne",fontWeight:800,fontSize:16,color:"#F5A623"}}>Request de payroll</div>
+                  <div style={{fontSize:11,color:"#8B949E",marginTop:3}}>
+                    {req.periodLabel} · {req.fileCount} archivo{req.fileCount===1?"":"s"} · total ${req.total.toLocaleString()}
+                  </div>
+                </div>
+                <div style={{flex:1,overflow:"auto",padding:"14px 22px"}}>
+                  <pre style={{margin:0,fontFamily:"'DM Mono','Courier New',monospace",fontSize:11,
+                    color:"#E6EDF3",whiteSpace:"pre",lineHeight:1.65}}>{text}</pre>
+                </div>
+                <div style={{padding:"12px 22px",borderTop:"1px solid #21262D",display:"flex",gap:8,flexWrap:"wrap"}}>
+                  <button className="hov" onClick={()=>{
+                      navigator.clipboard?.writeText(text);
+                      setCopied(true); setTimeout(()=>setCopied(false),2200);
+                    }}
+                    style={{flex:1,background:"#21262D",color:copied?"#7EC8A4":"#8B949E",borderRadius:7,
+                      padding:"10px 0",fontFamily:"DM Mono",fontSize:11.5,
+                      border:`1px solid ${copied?"#7EC8A4":"#30363D"}`,cursor:"pointer"}}>
+                    {copied?"COPIADO":"COPIAR TEXTO"}
+                  </button>
+                  <button className="hov" onClick={()=>{
+                      onLogPayroll&&onLogPayroll({
+                        id:`pr_${Date.now()}`, period:req.period, periodLabel:req.periodLabel,
+                        sentAt:today(), by:profile.name, fileCount:req.fileCount,
+                        netTotal:req.netTotal, total:req.total, text,
+                        fileIds:rows.map(r=>r.file.id),
+                        payees:req.payees.map(p=>({name:p.name,role:p.role,subtotal:p.subtotal})),
+                      });
+                      onBulkUpdate&&onBulkUpdate(rows.map(r=>({id:r.file.id,claimState:"claimed",
+                        claimedPeriod:req.period,claimedAt:today(),claimedBy:profile.name})));
+                      setJustClaimed(`${req.fileCount} archivos · $${req.total.toLocaleString()}`);
+                      setTimeout(()=>setJustClaimed(null),4000);
+                      setPicked(new Set()); setShowRequest(false);
+                    }}
+                    style={{flex:2,background:"#F5A623",color:"#0D1117",borderRadius:7,padding:"10px 0",
+                      fontFamily:"DM Mono",fontSize:11.5,fontWeight:500,border:"none",cursor:"pointer"}}>
+                    MARCAR COMO ENVIADOS
+                  </button>
+                  <button className="hov" onClick={()=>setShowRequest(false)}
+                    style={{flex:1,background:"transparent",color:"#6E7681",borderRadius:7,padding:"10px 0",
+                      fontFamily:"DM Mono",fontSize:11.5,border:"1px solid #30363D",cursor:"pointer"}}>CERRAR</button>
+                </div>
+                <div style={{padding:"0 22px 14px",fontSize:9,color:"#484F58"}}>
+                  Copia el texto primero. "Marcar como enviados" los saca de la lista del próximo corte.
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+
+        {(payrollLog||[]).length>0&&(
+          <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
+            <div style={{background:"#0D1117",borderBottom:"1px solid #30363D",padding:"10px 16px",
+              display:"flex",justifyContent:"space-between",alignItems:"baseline",flexWrap:"wrap",gap:8}}>
+              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#8B949E",letterSpacing:"1px"}}>
+                REQUESTS ENVIADOS
+              </span>
+              <span style={{fontSize:10,color:"#484F58"}}>
+                {payrollLog.length} · ${payrollLog.reduce((a,x)=>a+(x.total||0),0).toLocaleString()} en total
+              </span>
+            </div>
+            {[...payrollLog].reverse().map(entry=>(
+              <div key={entry.id} style={{borderBottom:"1px solid #21262D",padding:"10px 16px"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8,flexWrap:"wrap"}}>
+                  <span style={{fontSize:11.5,color:"#E6EDF3"}}>
+                    {entry.periodLabel}
+                    <span style={{color:"#484F58"}}> · enviado {entry.sentAt} por {String(entry.by||"").split(" ")[0]}</span>
+                  </span>
+                  <span style={{display:"flex",gap:8,alignItems:"baseline"}}>
+                    <span style={{fontSize:10,color:"#6E7681"}}>{entry.fileCount} archivos</span>
+                    <span style={{fontFamily:"Syne",fontWeight:800,fontSize:13,color:"#F5A623"}}>
+                      ${(entry.total||0).toLocaleString()}
+                    </span>
+                    <button className="hov" onClick={()=>setOpenLog(openLog===entry.id?null:entry.id)}
+                      style={{background:"#21262D",border:"1px solid #30363D",borderRadius:4,color:"#8B949E",
+                        fontSize:9,padding:"3px 8px",cursor:"pointer",fontFamily:"DM Mono"}}>
+                      {openLog===entry.id?"CERRAR":"VER"}
+                    </button>
+                  </span>
+                </div>
+                <div style={{fontSize:9.5,color:"#484F58",marginTop:3}}>
+                  {(entry.payees||[]).map(p=>`${String(p.name).split(" ")[0]} $${p.subtotal.toLocaleString()}`).join(" · ")}
+                </div>
+                {openLog===entry.id&&(
+                  <div style={{marginTop:9}}>
+                    <pre style={{margin:0,background:"#0D1117",border:"1px solid #21262D",borderRadius:6,
+                      padding:"11px 13px",fontFamily:"'DM Mono','Courier New',monospace",fontSize:10.5,
+                      color:"#8B949E",whiteSpace:"pre",overflowX:"auto",lineHeight:1.6}}>{entry.text}</pre>
+                    <button className="hov" onClick={()=>{navigator.clipboard?.writeText(entry.text);}}
+                      style={{marginTop:6,background:"#21262D",border:"1px solid #30363D",borderRadius:5,
+                        color:"#8B949E",fontSize:10,padding:"5px 12px",cursor:"pointer",fontFamily:"DM Mono"}}>
+                      COPIAR DE NUEVO
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+            <div style={{padding:"9px 16px",fontSize:9,color:"#484F58"}}>
+              Copia exacta de lo que se envió. No cambia aunque después se edite un archivo.
+            </div>
+          </div>
+        )}
 
         <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,padding:"12px 16px"}}>
           <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:8}}>
