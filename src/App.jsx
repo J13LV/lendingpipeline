@@ -2417,7 +2417,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
         {showRequest&&(()=>{
           const rows=payroll.rows.filter(r=>picked.has(r.file.id));
           const req=buildPayrollRequest(rows,{by:profile.name,
-            branch:{name:"Del Valle Lending",teamLead:"Paulo Maria",trainer:"Ana M Plasencia"}});
+            branch:{name:TX("branchLending"),teamLead:"Paulo Maria",trainer:"Ana M Plasencia"}});
           const text=payrollRequestText(req);
           return (
             <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.82)",zIndex:130,display:"flex",
@@ -2782,13 +2782,13 @@ function LenderChangeModal({file,profile,onClose,onConfirm}){
       <div className="fi" onClick={e=>e.stopPropagation()} style={{background:"#161B22",border:"1px solid #30363D",
         borderRadius:12,width:"100%",maxWidth:460,maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column"}}>
         <div style={{padding:"18px 22px 14px",borderBottom:"1px solid #21262D"}}>
-          <div style={{fontFamily:"Syne",fontWeight:800,fontSize:16,color:"#E6EDF3"}}>Cambiar de lender</div>
+          <div style={{fontFamily:"Syne",fontWeight:800,fontSize:16,color:"#E6EDF3"}}>{TX("changeLenderTitle")}</div>
           <div style={{fontSize:11,color:"#8B949E",marginTop:3}}>{file.borrower} · {from?from.name:"sin lender"}</div>
         </div>
 
         <div style={{flex:1,overflowY:"auto",padding:"14px 22px",display:"flex",flexDirection:"column",gap:12}}>
           <div>
-            <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>NUEVO LENDER</div>
+            <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{TX("newLender")}</div>
             <select value={toId} onChange={e=>setToId(e.target.value)} style={fs}>
               <option value="">— escoge —</option>
               {options.map(o=><option key={o.id} value={o.id}>
@@ -2800,12 +2800,12 @@ function LenderChangeModal({file,profile,onClose,onConfirm}){
           {cost&&(
             <div style={{background:"#0D1117",border:`1px solid ${cost.tooLate?"#E85D75":"#21262D"}`,
               borderRadius:6,padding:"10px 11px",display:"flex",flexDirection:"column",gap:7}}>
-              <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px"}}>LO QUE CUESTA</div>
+              <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px"}}>{TX("whatItCosts")}</div>
 
               {cost.comp&&(
                 <div>
                   <div style={{display:"flex",justifyContent:"space-between",fontSize:11}}>
-                    <span style={{color:"#8B949E"}}>Compensación</span>
+                    <span style={{color:"#8B949E"}}>{TX("compensation")}</span>
                     <span style={{color:cost.comp.bps<0?"#E85D75":cost.comp.bps>0?"#7EC8A4":"#8B949E",fontFamily:"DM Mono"}}>
                       {cost.comp.bps>0?"+":""}{cost.comp.bps} bps · {cost.comp.dollars<0?"−":""}${Math.abs(cost.comp.dollars).toLocaleString()}
                     </span>
@@ -2826,17 +2826,15 @@ function LenderChangeModal({file,profile,onClose,onConfirm}){
               )}
 
               <div style={{display:"flex",justifyContent:"space-between",fontSize:11}}>
-                <span style={{color:"#8B949E"}}>Aterriza en</span>
+                <span style={{color:"#8B949E"}}>{TX("landsAt")}</span>
                 <span style={{color:"#F5A623",fontFamily:"DM Mono"}}>{cost.landsAt}</span>
               </div>
               <div style={{display:"flex",justifyContent:"space-between",fontSize:11}}>
-                <span style={{color:"#8B949E"}}>Re-suscripción</span>
-                <span style={{color:"#8B949E",fontFamily:"DM Mono"}}>{cost.days.best}–{cost.days.worst} días</span>
+                <span style={{color:"#8B949E"}}>{TX("reunderwrite")}</span>
+                <span style={{color:"#8B949E",fontFamily:"DM Mono"}}>{TX("daysN",{n:cost.days.best+"–"+cost.days.worst})}</span>
               </div>
               <div style={{fontSize:9,color:"#484F58",lineHeight:1.5}}>
-                Tasación, título, HOI y documentos viajan. Las divulgaciones son nuevas
-                y el lender nuevo suscribe desde cero.
-              </div>
+                {TX("travelsHint")}</div>
 
               {cost.tooLate&&(
                 <div style={{fontSize:10.5,color:"#E85D75",background:"rgba(232,93,117,.08)",
@@ -2849,7 +2847,7 @@ function LenderChangeModal({file,profile,onClose,onConfirm}){
           )}
 
           <div>
-            <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>MOTIVO</div>
+            <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{TX("reason")}</div>
             <select value={reasonId} onChange={e=>setReasonId(e.target.value)} style={fs}>
               <option value="">— escoge —</option>
               {Object.entries(REASON_CATEGORIES).map(([cat,meta])=>(
@@ -2867,9 +2865,9 @@ function LenderChangeModal({file,profile,onClose,onConfirm}){
           </div>
 
           <div>
-            <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>NOTA</div>
+            <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{TX("note")}</div>
             <input value={notes} onChange={e=>setNotes(e.target.value)}
-              placeholder="qué dijo el lender, quién lo confirmó" style={fs}/>
+              placeholder={TX("reasonNote")} style={fs}/>
           </div>
         </div>
 
@@ -2879,7 +2877,7 @@ function LenderChangeModal({file,profile,onClose,onConfirm}){
             style={{flex:2,background:ready?"#F5A623":"#21262D",color:ready?"#0D1117":"#30363D",borderRadius:7,
               padding:"10px 0",fontFamily:"DM Mono",fontSize:12,fontWeight:500,border:"none",
               cursor:ready?"pointer":"not-allowed"}}>
-            MOVER A {to?to.name.toUpperCase().slice(0,16):"…"}
+            {TX("moveTo")} {to?to.name.toUpperCase().slice(0,16):"…"}
           </button>
           <button className="hov" onClick={onClose}
             style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",
@@ -2911,10 +2909,10 @@ function BackupPanel({file,backupId,setBackupId,onChangeLender}){
       {b&&cost&&(
         <div style={{fontSize:10,fontFamily:"DM Mono",color:cost.bps<0?"#E85D75":"#7EC8A4"}}>
           {cost.bps===0
-            ? `moverlo no cuesta comp · ${b.name} llega a ${cost.toCeiling} bps`
-            : `moverlo cuesta ${cost.bps} bps · −$${Math.abs(cost.dollars).toLocaleString()}`}
+            ? TX("movingFree",{name:b.name,n:cost.toCeiling})
+            : TX("movingCosts",{b:cost.bps,d:Math.abs(cost.dollars).toLocaleString()})}
           <div style={{color:"#484F58",fontSize:9,marginTop:2}}>
-            cobras {cost.current} · techo allá {cost.toCeiling}
+            {TX("youChargeCap",{a:cost.current,b:cost.toCeiling})}
           </div>
         </div>
       )}
@@ -2923,24 +2921,24 @@ function BackupPanel({file,backupId,setBackupId,onChangeLender}){
         <div style={{background:"#0D1117",border:`1px solid ${lc}44`,borderRadius:6,padding:"9px 10px"}}>
           <div style={{fontSize:11,color:lc,fontFamily:"DM Mono"}}>
             {v.window==="impossible"
-              ? `Ya no llega · la fecha tope era el ${v.decideByBest}`
+              ? TX("noLongerMakesIt",{d:v.decideByBest})
               : v.window==="best_case_only"
-                ? `Solo llega si todo sale bien · imposible después del ${v.decideByBest}`
-                : `Seguro hasta el ${v.decideByWorst} · faltan ${v.daysToWorst}d`}
+                ? TX("onlyIfNothingFails",{d:v.decideByBest})
+                : TX("safeUntil",{d:v.decideByWorst,n:v.daysToWorst})}
           </div>
           <div style={{marginTop:6,display:"flex",flexDirection:"column",gap:2,fontSize:9.5,fontFamily:"DM Mono"}}>
             <div style={{color:v.window==="safe"?"#7EC8A4":"#484F58"}}>
-              hasta {v.decideByWorst} · llega aunque todo se atrase ({v.worstDays}d)
+              {TX("untilArrivesAnyway",{d:v.decideByWorst,n:v.worstDays})}
             </div>
             <div style={{color:v.window==="best_case_only"?"#F5A623":"#484F58"}}>
-              {v.decideByWorst} a {v.decideByBest} · solo si nada falla ({v.bestDays}d)
+              {TX("betweenOnlyIfClean",{a:v.decideByWorst,b:v.decideByBest,n:v.bestDays})}
             </div>
             <div style={{color:v.window==="impossible"?"#E85D75":"#484F58"}}>
-              después del {v.decideByBest} · no llega
+              {TX("afterNoMakes",{d:v.decideByBest})}
             </div>
           </div>
           <div style={{fontSize:9,color:"#484F58",marginTop:5,lineHeight:1.5}}>
-            Contado hacia atrás desde el CD del {v.cdDeadline}.
+            {TX("countedBackFromCd",{d:v.cdDeadline})}
           </div>
           {v.expiresBeforeContingency&&(
             <div style={{fontSize:10,color:"#F5A623",marginTop:6,lineHeight:1.45}}>
@@ -3037,7 +3035,7 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
         <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#06D6A0",letterSpacing:"1px"}}>
           {isAdmin?TX("fileComp"):TX("yourComp")}
         </span>
-        <span style={{marginLeft:"auto",fontSize:9,color:"#484F58"}}>se guarda con SAVE ↓</span>
+        <span style={{marginLeft:"auto",fontSize:9,color:"#484F58"}}>{TX("savesWithSave")}</span>
       </div>
 
       <div>
@@ -3067,7 +3065,7 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
       </div>
 
       <div style={{display:"flex",justifyContent:"space-between",fontSize:12,borderTop:"1px solid #21262D",paddingTop:9}}>
-        <span style={{color:"#8B949E"}}>Comisión bruta{isAdmin?` · ${fileCompBps(draft)} bps`:""}
+        <span style={{color:"#8B949E"}}>{TX("grossComm")}{isAdmin?` · ${fileCompBps(draft)} bps`:""}
           {effBps!==null&&effBps!==Number(file.bps)?<span style={{color:"#F5A623"}}> · sin guardar</span>:null}</span>
         <span style={{color:"#E6EDF3",fontFamily:"DM Mono"}}>${pay.gross.toLocaleString()}</span>
       </div>
@@ -3093,11 +3091,11 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
           <div key={e.id} style={{display:"flex",alignItems:"center",gap:8,marginBottom:5}}>
             <button className="hov" disabled={!isAdmin}
               onClick={()=>setExtras(extras.map((x,j)=>j===i?{...x,kind:x.kind==="fee"?"credit":"fee"}:x))}
-              title={e.kind==="fee"?"descuento — clic para crédito":"crédito — clic para descuento"}
+              title={e.kind==="fee"?TX("toCredit"):TX("toFee")}
               style={{background:"transparent",border:"none",width:15,padding:0,
                 color:ADJUSTMENT_KINDS[e.kind].color,fontSize:14,fontFamily:"DM Mono",
                 cursor:isAdmin?"pointer":"default"}}>{e.kind==="fee"?"−":"+"}</button>
-            <input value={e.label} disabled={!isAdmin} placeholder={e.kind==="credit"?"nombre del crédito":"nombre del descuento"}
+            <input value={e.label} disabled={!isAdmin} placeholder={e.kind==="credit"?TX("creditName"):TX("adjName")}
               onChange={ev=>setExtras(extras.map((x,j)=>j===i?{...x,label:ev.target.value}:x))}
               style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,color:"#E6EDF3",
                 padding:"4px 7px",fontSize:11,fontFamily:"DM Mono",flex:1}}/>
@@ -3134,14 +3132,14 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
       </div>
       {unnamed&&(
         <div style={{fontSize:9.5,color:"#E85D75"}}>
-          Hay un ajuste sin nombre — no se va a guardar hasta que lo escribas.
+          {TX("unnamedAdj")}
         </div>
       )}
       {(pay.deducted>0||pay.credited>0)&&(
         <div style={{fontSize:9.5,color:"#6E7681",marginTop:-4}}>
-          {pay.deducted>0?`Ajustes −$${pay.deducted.toLocaleString()}`:""}
+          {pay.deducted>0?TX("adjTotals",{d:pay.deducted.toLocaleString()}):""}
           {pay.deducted>0&&pay.credited>0?"  ":""}
-          {pay.credited>0?`Créditos +$${pay.credited.toLocaleString()}`:""}
+          {pay.credited>0?TX("credTotals",{d:pay.credited.toLocaleString()}):""}
         </div>
       )}
 
@@ -3276,7 +3274,7 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
       <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
         <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#4A90D9",letterSpacing:"1px"}}>{TX("lenderLock")}</span>
         <span style={{fontSize:9.5,color:"#6E7681"}}>{TX("channelDecides")}</span>
-        <span style={{marginLeft:"auto",fontSize:9,color:"#484F58"}}>se guarda con SAVE ↓</span>
+        <span style={{marginLeft:"auto",fontSize:9,color:"#484F58"}}>{TX("savesWithSave")}</span>
       </div>
 
       {/* CHANNEL — chosen first, everything filters from it */}
@@ -3305,7 +3303,7 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
           LENDER <span style={{color:"#30363D"}}>· {options.length} hacen {lenderProductKey(file.type)}</span>
         </div>
         <select value={lenderId} onChange={e=>setLenderId(e.target.value)} style={fs}>
-          <option value="">— sin asignar —</option>
+          <option value="">{TX("unassigned")}</option>
           {options.map(o=><option key={o.id} value={o.id}>
             {o.name}{o.lenderPaidBps?` · ${o.lenderPaidBps} bps`:""}{o.borrowerPaidOnly?" · borrower-paid":""}
           </option>)}
@@ -3314,11 +3312,9 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
         {lenderId===OTHER_LENDER_ID&&(
           <div style={{marginTop:6}}>
             <input value={lenderOther} onChange={e=>setLenderOther(e.target.value)}
-              placeholder="nombre del lender" style={fs}/>
+              placeholder={TX("lenderName")} style={fs}/>
             <div style={{fontSize:9,color:"#484F58",marginTop:3}}>
-              Sin datos de plan ni de guías. Escribe la comp a mano y avísame para
-              agregarlo al catálogo.
-            </div>
+              {TX("otherLenderHint")}</div>
           </div>
         )}
         {hidden.length>0&&(
@@ -3399,7 +3395,7 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
           </div>
           {comp.model==="correspondent"&&(
             <div style={{fontSize:9,color:"#6E7681"}}>
-              Los 400 son combinados. Si subes uno, el otro se ajusta a lo que quede.
+              {TX("combinedCap")}
             </div>
           )}
         </div>
@@ -3427,31 +3423,28 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
           {ls.mustLockBy?(
             <>
               <div style={{fontSize:11,color:ls.level==="critical"?"#E85D75":"#F5A623",fontFamily:"DM Mono"}}>
-                Último día para lockear: {ls.mustLockBy}
+                {TX("lastDayToLock",{d:ls.mustLockBy})}
                 {ls.daysLeft!==null&&<span style={{color:"#8B949E"}}> · {ls.daysLeft<0?`${Math.abs(ls.daysLeft)}d tarde`:`faltan ${ls.daysLeft}d`}</span>}
               </div>
               <div style={{fontSize:9,color:"#484F58",marginTop:3}}>
-                El CD lleva la tasa final, así que no se puede flotar más allá de su fecha legal.
-              </div>
+                {TX("cdCarriesRate")}</div>
             </>
           ):(
-            <div style={{fontSize:10,color:"#484F58"}}>Sin fecha de cierre no hay tope calculable. Captura el COE primero.</div>
+            <div style={{fontSize:10,color:"#484F58"}}>{TX("noCloseNoCap")}</div>
           )}
           {ls.coe&&(
             <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:3}}>
-              <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px"}}>SI LOCKEAS HOY, ¿QUÉ TÉRMINO LLEGA AL CIERRE?</div>
+              <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px"}}>{TX("whichTermQ")}</div>
               {ls.terms.map(t=>(
                 <div key={t.term} style={{display:"flex",gap:8,fontSize:10,fontFamily:"DM Mono",
                   color:t.covers?"#7EC8A4":"#E85D75"}}>
                   <span style={{minWidth:34}}>{t.term}d</span>
                   <span style={{color:"#6E7681",minWidth:82}}>{t.expires}</span>
-                  <span>{t.covers?`cubre · +${t.spare}d`:`corto por ${t.shortBy}d`}</span>
+                  <span>{t.covers?TX("coversBy",{n:t.spare}):TX("shortByN",{n:t.shortBy})}</span>
                 </div>
               ))}
               <div style={{fontSize:9,color:"#484F58",marginTop:2}}>
-                El precio decide el término, pero un lock que vence antes del cierre devuelve
-                lo ganado en la extensión.
-              </div>
+                {TX("priceDecides")}</div>
             </div>
           )}
         </div>
@@ -3541,7 +3534,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
         <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>{label}</div>
         <input type="date" value={d[key]} onChange={e=>setD({...d,[key]:e.target.value})}
           style={{...fs,borderColor:typing?"#F5A623":"#30363D"}}/>
-        {typing&&<div style={{fontSize:9,color:"#F5A623",marginTop:3}}>escribiendo el año…</div>}
+        {typing&&<div style={{fontSize:9,color:"#F5A623",marginTop:3}}>{TX("typingYear")}</div>}
         {!typing&&hint&&<div style={{fontSize:9,color:"#30363D",marginTop:3}}>{hint}</div>}
       </div>
     );
@@ -3555,7 +3548,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
         <span style={{fontSize:9.5,color:"#6E7681"}}>
           {TX("contClock")}
         </span>
-        <span style={{marginLeft:"auto",fontSize:9,color:"#484F58"}}>se guarda con SAVE ↓</span>
+        <span style={{marginLeft:"auto",fontSize:9,color:"#484F58"}}>{TX("savesWithSave")}</span>
       </div>
 
       {/* STATE — decides whether the contract counts calendar or business days */}
@@ -3575,8 +3568,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
 
       {/* THE ANCHOR */}
       <div style={{borderLeft:"2px solid #E85D75",paddingLeft:10}}>
-        {field("contractAccepted",TX("contractAccepted"),
-          "Todo se cuenta desde aquí. Si el archivo pasó días en Under Contract, ya se gastaron.")}
+        {field("contractAccepted",TX("contractAccepted"),TX("anchorHint"))}
       </div>
 
       {/* CONTRACT — deposit at risk */}
@@ -3603,7 +3595,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
         {cd&&(
           <div style={{marginTop:8,background:"rgba(189,101,232,.08)",border:"1px solid #BD65E844",
             borderRadius:6,padding:"8px 10px",fontSize:10.5,color:"#BD65E8",fontFamily:"DM Mono"}}>
-            CD debe estar RECIBIDO el {cd} — 3 días hábiles antes del cierre, por ley.
+            {TX("cdReceivedBy",{d:cd})}
             <div style={{color:"#8B949E",fontSize:9.5,marginTop:3}}>
               Cuenta sábados y salta domingos y feriados federales. Si se manda por correo, sale el {cdMailDeadline(d.coe)}.
             </div>
@@ -3639,7 +3631,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
                   <span style={{fontSize:10,color:LEVEL_COLOR[r.level],fontWeight:500,minWidth:38}}>{r.short}</span>
                   <span style={{fontSize:10.5,color:"#8B949E"}}>{r.date}</span>
                   {r.contractDays!==null&&<span style={{fontSize:9,color:r.contractDays<0?"#E85D75":"#30363D"}}>
-                    {r.contractDays} días {r.basis==="business"?"hábiles":"cal."} del contrato
+                    {r.contractDays} {TX("contractDaysOf",{b:r.basis==="business"?TX("bizShort"):TX("calShort")})}
                     {r.contractDays<0?" ⚠":""}</span>}
                   <span style={{fontSize:9.5,color:r.outcomeMeta.color,marginLeft:"auto"}}>
                     {P(r.outcomeMeta)}{ext>0?` ·${ext}×`:""}
@@ -3652,7 +3644,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
                 </div>
                 {r.depositAtRisk&&(
                   <div style={{fontSize:9.5,color:"#E85D75",marginTop:5}}>
-                    Venció sin registrar resultado. El depósito está expuesto.
+                    {TX("depositExposed")}
                   </div>
                 )}
                 {openId===r.id&&(
@@ -3664,7 +3656,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
                     {outcomeById(oc).requiresNewDate&&(
                       <div>
                         <div style={{fontSize:9,color:"#F5A623",marginBottom:3}}>
-                          Fecha nueva — requiere addendum firmado
+                          {TX("newDateAddendum")}
                         </div>
                         <input type="date" value={ocDate} onChange={e=>setOcDate(e.target.value)} style={fs}/>
                       </div>
@@ -3673,7 +3665,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
                       <div style={{fontSize:9.5,color:outcomeById(oc).color}}>{outcomeById(oc).note_es}</div>
                     )}
                     <input value={ocNote} onChange={e=>setOcNote(e.target.value)}
-                      placeholder="Nota — qué pasó, quién lo confirmó" style={fs}/>
+                      placeholder={TX("outcomeNote")} style={fs}/>
                     <button className="hov" onClick={()=>record(r.id)}
                       disabled={outcomeById(oc).requiresNewDate&&!ocDate}
                       style={{background:outcomeById(oc).requiresNewDate&&!ocDate?"#161B22":"#21262D",
@@ -3702,9 +3694,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
           {showDerived&&(
             <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:3}}>
               <div style={{fontSize:9,color:"#30363D",marginBottom:3,lineHeight:1.5}}>
-                Calculadas hacia atrás desde cada contingencia, con el techo de cada etapa —
-                el peor caso, no el promedio.
-              </div>
+                {TX("derivedHint")}</div>
               {derived.map(r=>{
                 const late=r.startBy<today();
                 return (
@@ -3849,7 +3839,7 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
           </div>
           {isAdmin && (
             <div>
-              <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>BPS COMP <span style={{color:"#F5A623"}}>· lo que reportan los dashboards</span></div>
+              <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>BPS COMP <span style={{color:"#F5A623"}}>{TX("reportedByDash")}</span></div>
               <input value={bps} onChange={e=>setBps(e.target.value)} placeholder="150" style={{...fs2,color:"#F5A623"}}/>
             </div>
           )}
