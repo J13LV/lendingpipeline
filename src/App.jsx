@@ -1032,6 +1032,28 @@ export default function App() {
           onOpenFile={setDetail}
           payrollLog={payrollLog}
           onLogPayroll={(entry)=>setPayrollLog(prev=>[...prev,entry])}
+          onDeletePayrollLog={(id)=>setPayrollLog(prev=>prev.filter(x=>x.id!==id))}
+          onClosePeriod={(entry, updates)=>{
+            // Archivar el request y marcar los archivos son dos cosas que
+            // TIENEN que viajar juntas. Como escrituras separadas, la primera
+            // dispara el listener con la copia vieja del servidor y revierte
+            // la segunda antes de que llegue.
+            const wanted = new Set(updates.map(u=>u.id).filter(x=>x!=null));
+            const matched = files.filter(f=>wanted.has(f.id)).length;
+            if(matched===0) return 0;
+            const nextFiles = files.map(f=>{
+              const u = updates.find(x=>x.id!=null && x.id===f.id);
+              if(!u) return f;
+              const {id, ...fields} = u;
+              return stampEdit({...f, ...fields}, profile, "edited", {fields:Object.keys(fields)});
+            });
+            const nextLog = [...payrollLog, entry];
+            setFiles(nextFiles);
+            setPayrollLog(nextLog);
+            setDoc(PIPELINE_DOC, {files:nextFiles, payrollRequests:nextLog}, {merge:true})
+              .catch(()=>setSaveStatus("error"));
+            return matched;
+          }}
           onBulkUpdate={(updates)=>{
             // Acepta cualquier campo, no solo `lo`. Antes descartaba en silencio
             // todo lo demás, así que un cambio de estado nunca se guardaba.
@@ -1566,7 +1588,7 @@ function ArchiveModal({file, onClose, onConfirm}){
 }
 
 
-function ProductionDashboard({profile, files, closed, active, referredOut, inbound, onOpenFile, onBulkUpdate, payrollLog, onLogPayroll}){
+function ProductionDashboard({profile, files, closed, active, referredOut, inbound, onOpenFile, onBulkUpdate, payrollLog, onLogPayroll, onClosePeriod, onDeletePayrollLog}){
   const isAdmin = profile?.role === "admin";
   const isLO = profile?.role === "lo";
   const [compYear,setCompYear]=useState(1);
@@ -2420,19 +2442,17 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                         step="fechar el request";
                         const sentAt=today();
 
-                        step="guardar en el historial";
-                        if(typeof onLogPayroll==="function") onLogPayroll({
-                          id:`pr_${Date.now()}`, period:req.period, periodLabel:req.periodLabel,
-                          sentAt, by:profile&&profile.name, fileCount:req.fileCount,
-                          netTotal:req.netTotal, total:req.total, text, fileIds, payees,
-                        });
-
-                        step="marcar los archivos";
-                        if(typeof onBulkUpdate!=="function") throw new Error("la pantalla no puede guardar archivos");
+                        step="cerrar el corte";
+                        if(typeof onClosePeriod!=="function") throw new Error("la pantalla no puede cerrar cortes");
                         const sinId=rows.filter(r=>!r.file||!r.file.id).length;
                         if(sinId>0) throw new Error(`${sinId} archivo${sinId===1?"":"s"} sin identificador — refresca la página y vuelve a intentarlo`);
-                        const marcados=onBulkUpdate(rows.map(r=>({id:r.file.id,claimState:"claimed",
-                          claimedPeriod:req.period,claimedAt:sentAt,claimedBy:profile.name})));
+                        const marcados=onClosePeriod(
+                          { id:`pr_${Date.now()}`, period:req.period, periodLabel:req.periodLabel,
+                            sentAt, by:profile&&profile.name, fileCount:req.fileCount,
+                            netTotal:req.netTotal, total:req.total, text, fileIds, payees },
+                          rows.map(r=>({id:r.file.id,claimState:"claimed",
+                            claimedPeriod:req.period,claimedAt:sentAt,claimedBy:profile.name}))
+                        );
                         if(marcados===0) throw new Error("no se encontró ninguno de los archivos seleccionados");
 
                         step="cerrar la ventana";
@@ -2487,6 +2507,13 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                     <span style={{fontFamily:"Syne",fontWeight:800,fontSize:13,color:"#F5A623"}}>
                       ${(entry.total||0).toLocaleString()}
                     </span>
+                    {onDeletePayrollLog&&(
+                      <button className="hov" onClick={()=>{
+                          if(window.confirm("¿Borrar esta entrada del historial? Los archivos no cambian.")) onDeletePayrollLog(entry.id);
+                        }}
+                        style={{background:"transparent",border:"1px solid #30363D",borderRadius:4,color:"#484F58",
+                          fontSize:9,padding:"3px 7px",cursor:"pointer",fontFamily:"DM Mono"}}>✕</button>
+                    )}
                     <button className="hov" onClick={()=>setOpenLog(openLog===entry.id?null:entry.id)}
                       style={{background:"#21262D",border:"1px solid #30363D",borderRadius:4,color:"#8B949E",
                         fontSize:9,padding:"3px 8px",cursor:"pointer",fontFamily:"DM Mono"}}>
