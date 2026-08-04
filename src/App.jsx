@@ -2379,13 +2379,20 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                       // a function" no dice nada. El nombre del paso sí.
                       let step="preparar";
                       try{
-                        step="archivar el request";
+                        step="leer las filas";
+                        const fileIds=(rows||[]).map(r=>r&&r.file&&r.file.id).filter(Boolean);
+
+                        step="leer los beneficiarios";
+                        const payees=(req.payees||[]).map(p=>({name:p.name,role:p.role,subtotal:p.subtotal}));
+
+                        step="fechar el request";
+                        const sentAt=today();
+
+                        step="guardar en el historial";
                         if(typeof onLogPayroll==="function") onLogPayroll({
                           id:`pr_${Date.now()}`, period:req.period, periodLabel:req.periodLabel,
-                          sentAt:today(), by:profile.name, fileCount:req.fileCount,
-                          netTotal:req.netTotal, total:req.total, text,
-                          fileIds:rows.map(r=>r.file.id),
-                          payees:req.payees.map(p=>({name:p.name,role:p.role,subtotal:p.subtotal})),
+                          sentAt, by:profile&&profile.name, fileCount:req.fileCount,
+                          netTotal:req.netTotal, total:req.total, text, fileIds, payees,
                         });
 
                         step="marcar los archivos";
@@ -2400,7 +2407,8 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                         setPicked(new Set());
                         setShowRequest(false);
                       }catch(err){
-                        setReqError(`al ${step} — ${String(err&&err.message||err)}`);
+                        const where=String((err&&err.stack||"").split(String.fromCharCode(10))[1]||"").trim().slice(0,90);
+                        setReqError(`al ${step} — ${String(err&&err.message||err)}${where?" · "+where:""}`);
                       }
                     }}
                     style={{flex:2,background:"#F5A623",color:"#0D1117",borderRadius:7,padding:"10px 0",
