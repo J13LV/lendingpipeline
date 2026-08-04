@@ -517,6 +517,8 @@ export default function App() {
   // archivos, pero aparte: un request es lo que se mandó ese día, y no
   // debe cambiar aunque después se edite un archivo.
   const [payrollLog,setPayrollLog]=useState([]);
+  const [docBytes,setDocBytes]=useState(0);
+  const [sizeAlert,setSizeAlert]=useState(null);
   const [view,setView]=useState("active");
   const [activePhase,setActivePhase]=useState(null);
   const [search,setSearch]=useState("");
@@ -609,6 +611,19 @@ export default function App() {
   useEffect(()=>{
     if(!loaded || !currentUser)return;
     setSaveStatus("saving");
+    // Firestore rechaza documentos de más de 1 MB. Cuando eso pasa la
+    // escritura falla, el estado local cambia un instante y el listener lo
+    // revierte — se ve exactamente como "hice clic y no pasó nada".
+    try{
+      const bytes = new Blob([JSON.stringify({files})]).size;
+      setDocBytes(bytes);
+      if(bytes > 1000000){
+        setSaveStatus("error");
+        setSizeAlert(bytes);
+        return;
+      }
+      setSizeAlert(bytes > 850000 ? bytes : null);
+    }catch{}
     setDoc(PIPELINE_DOC, {files}, {merge:true}).then(()=>{
       try{localStorage.setItem("pipe_v3",JSON.stringify(files));}catch{}
       setSaveStatus("saved");
@@ -974,6 +989,15 @@ export default function App() {
           <span style={{color:"#484F58"}}>● STALE 5d+</span>
         </div>
       </div>
+
+      {sizeAlert&&(
+        <div style={{margin:"0 24px",background:"rgba(232,93,117,.1)",border:"1px solid #E85D75",
+          borderRadius:8,padding:"11px 14px",fontSize:11.5,color:"#E85D75",lineHeight:1.6}}>
+          {sizeAlert > 1000000
+            ? `El pipeline pesa ${(sizeAlert/1048576).toFixed(2)} MB y Firestore no acepta más de 1 MB. Los cambios NO se están guardando. Archiva o exporta archivos viejos.`
+            : `El pipeline pesa ${(sizeAlert/1048576).toFixed(2)} MB. El tope de Firestore es 1 MB — conviene archivar archivos cerrados antes de llegar.`}
+        </div>
+      )}
 
       {/* CONTENT */}
       <div style={{padding:"20px 24px"}}>
@@ -1522,6 +1546,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
   const [showRequest,setShowRequest]=useState(false);
   const [copied,setCopied]=useState(false);
   const [openLog,setOpenLog]=useState(null);
+  const [reqError,setReqError]=useState(null);
   const [filesMo,setFilesMo]=useState(8);
   const payroll=payrollSummary(files,{year:compYear,filesPerMonth:filesMo,roster:COMP_ROSTER});
   const [prodTab,setProdTab]=useState("team");
@@ -2331,9 +2356,15 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                   <pre style={{margin:0,fontFamily:"'DM Mono','Courier New',monospace",fontSize:11,
                     color:"#E6EDF3",whiteSpace:"pre",lineHeight:1.65}}>{text}</pre>
                 </div>
+                {reqError&&(
+                  <div style={{margin:"0 22px",background:"rgba(232,93,117,.1)",border:"1px solid #E85D75",
+                    borderRadius:6,padding:"9px 12px",fontSize:11,color:"#E85D75"}}>
+                    No se pudo cerrar el corte: {reqError}. Nada se marcó — copia el texto y avísame.
+                  </div>
+                )}
                 <div style={{padding:"12px 22px",borderTop:"1px solid #21262D",display:"flex",gap:8,flexWrap:"wrap"}}>
                   <button className="hov" onClick={()=>{
-                      navigator.clipboard?.writeText(text);
+                      try{ navigator.clipboard?.writeText(text); }catch(err){ setReqError("el navegador bloqueó el portapapeles"); }
                       setCopied(true); setTimeout(()=>setCopied(false),2200);
                     }}
                     style={{flex:1,background:"#21262D",color:copied?"#7EC8A4":"#8B949E",borderRadius:7,
@@ -2342,29 +2373,38 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                     {copied?"COPIADO":"COPIAR TEXTO"}
                   </button>
                   <button className="hov" onClick={()=>{
-                      onLogPayroll&&onLogPayroll({
-                        id:`pr_${Date.now()}`, period:req.period, periodLabel:req.periodLabel,
-                        sentAt:today(), by:profile.name, fileCount:req.fileCount,
-                        netTotal:req.netTotal, total:req.total, text,
-                        fileIds:rows.map(r=>r.file.id),
-                        payees:req.payees.map(p=>({name:p.name,role:p.role,subtotal:p.subtotal})),
-                      });
-                      onBulkUpdate&&onBulkUpdate(rows.map(r=>({id:r.file.id,claimState:"claimed",
-                        claimedPeriod:req.period,claimedAt:today(),claimedBy:profile.name})));
-                      setJustClaimed(`${req.fileCount} archivos · $${req.total.toLocaleString()}`);
-                      setTimeout(()=>setJustClaimed(null),4000);
-                      setPicked(new Set()); setShowRequest(false);
+                      // Si algo falla aquí, falla a la vista. Un botón de dinero
+                      // que no hace nada y no dice por qué es peor que un error.
+                      try{
+                        if(!onBulkUpdate) throw new Error("la pantalla no recibió permiso para guardar");
+                        onLogPayroll&&onLogPayroll({
+                          id:`pr_${Date.now()}`, period:req.period, periodLabel:req.periodLabel,
+                          sentAt:today(), by:profile.name, fileCount:req.fileCount,
+                          netTotal:req.netTotal, total:req.total, text,
+                          fileIds:rows.map(r=>r.file.id),
+                          payees:req.payees.map(p=>({name:p.name,role:p.role,subtotal:p.subtotal})),
+                        });
+                        onBulkUpdate(rows.map(r=>({id:r.file.id,claimState:"claimed",
+                          claimedPeriod:req.period,claimedAt:today(),claimedBy:profile.name})));
+                        setReqError(null);
+                        setJustClaimed(`${req.fileCount} archivos · $${req.total.toLocaleString()} · marcados en el corte ${req.periodLabel}`);
+                        setTimeout(()=>setJustClaimed(null),5000);
+                        setPicked(new Set()); setShowRequest(false);
+                      }catch(err){
+                        setReqError(String(err&&err.message||err));
+                      }
                     }}
                     style={{flex:2,background:"#F5A623",color:"#0D1117",borderRadius:7,padding:"10px 0",
                       fontFamily:"DM Mono",fontSize:11.5,fontWeight:500,border:"none",cursor:"pointer"}}>
-                    MARCAR COMO ENVIADOS
+                    YA LO ENVIÉ · CERRAR CORTE
                   </button>
                   <button className="hov" onClick={()=>setShowRequest(false)}
                     style={{flex:1,background:"transparent",color:"#6E7681",borderRadius:7,padding:"10px 0",
                       fontFamily:"DM Mono",fontSize:11.5,border:"1px solid #30363D",cursor:"pointer"}}>CERRAR</button>
                 </div>
                 <div style={{padding:"0 22px 14px",fontSize:9,color:"#484F58"}}>
-                  Copia el texto primero. "Marcar como enviados" los saca de la lista del próximo corte.
+                  Este botón no manda nada: copia el texto y pégalo en tu correo a payroll.
+                  Después ciérralo aquí para sacarlos de la lista del próximo corte y guardar la copia.
                 </div>
               </div>
             </div>
