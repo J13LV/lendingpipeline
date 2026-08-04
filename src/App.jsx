@@ -1731,7 +1731,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
   const last12Months = [];
   // Se llamaba `today` y tapaba la función today() importada del motor en todo
   // el componente. Tres llamadas quedaban rotas — el botón de reclamar y el
-  // cierre de corte fallaban con "no es una función" sin decir por qué.
+  // cierre de corte fallaban con TX("notAFunction") sin decir por qué.
   const nowDate = new Date();
   for(let i=11; i>=0; i--){
     const d = new Date(nowDate.getFullYear(), nowDate.getMonth()-i, 1);
@@ -2276,18 +2276,18 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
       {prodTab==="override"&&isAdmin&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
         <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center",
           background:"#161B22",border:"1px solid #30363D",borderRadius:8,padding:"10px 14px"}}>
-          <span style={{fontSize:10,color:"#484F58",letterSpacing:"1px"}}>AÑO</span>
+          <span style={{fontSize:10,color:"#484F58",letterSpacing:"1px"}}>{TX("year")}</span>
           <select value={compYear} onChange={e=>setCompYear(Number(e.target.value))}
             style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,color:"#E6EDF3",
               padding:"5px 8px",fontSize:11,fontFamily:"DM Mono"}}>
             {[1,2,3].map(y=><option key={y} value={y}>Año {y} · Paulo {(teamLeadShare(y)*100).toFixed(0)}%</option>)}
           </select>
-          <span style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginLeft:8}}>ARCHIVOS/MES</span>
+          <span style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginLeft:8}}>{TX("filesPerMo")}</span>
           <input type="number" value={filesMo} onChange={e=>setFilesMo(Math.max(1,Number(e.target.value)||1))}
             style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,color:"#E6EDF3",
               padding:"5px 8px",fontSize:11,fontFamily:"DM Mono",width:58}}/>
           <span style={{fontSize:10,color:"#6E7681"}}>
-            costo/archivo ${Math.round(branchCostPerFile(filesMo)).toLocaleString()} · techo Senior {(ladderCeiling(filesMo,9174,compYear)*100).toFixed(1)}% · desde {BARRETT_CUTOVER}
+            {TX("costPerFile")} ${Math.round(branchCostPerFile(filesMo)).toLocaleString()} · {TX("seniorCap")} {(ladderCeiling(filesMo,9174,compYear)*100).toFixed(1)}% · {TX("since")} {BARRETT_CUTOVER}
           </span>
         </div>
 
@@ -2308,10 +2308,10 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
 
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:10}}>
           {[
-            {label:"CORTE ACTUAL",value:payrollPeriodLabel(currentPayrollPeriod()),color:"#4A90D9",sub:"Barrett cierra el 1 y el 15",small:true},
-            {label:"SIN RECLAMAR",value:`${payroll.count}`,color:"#F5A623",sub:"archivos fondeados"},
-            {label:"TE TOCA",value:`$${payroll.toBM.toLocaleString()}`,color:"#F5A623",sub:"tu split + retención de sucursal"},
-            {label:"DE CORTES VIEJOS",value:`$${payroll.staleDollars.toLocaleString()}`,color:payroll.staleCount?"#E85D75":"#484F58",sub:`${payroll.staleCount} arrastrado${payroll.staleCount===1?"":"s"}`},
+            {label:TX("currentCut"),value:payrollPeriodLabel(currentPayrollPeriod()),color:"#4A90D9",sub:TX("barrettCloses"),small:true},
+            {label:TX("unclaimed"),value:`${payroll.count}`,color:"#F5A623",sub:TX("fundedFiles")},
+            {label:TX("yourShare"),value:`$${payroll.toBM.toLocaleString()}`,color:"#F5A623",sub:TX("yourSplitPlusBranch")},
+            {label:TX("fromOldCuts"),value:`$${payroll.staleDollars.toLocaleString()}`,color:payroll.staleCount?"#E85D75":"#484F58",sub:TX("carriedN",{n:payroll.staleCount})},
           ].map(s=>(
             <div key={s.label} style={{background:"#1a1000",border:`1px solid ${s.color}44`,borderTop:`3px solid ${s.color}`,borderRadius:8,padding:"12px"}}>
               <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>{s.label}</div>
@@ -2324,14 +2324,14 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
         <div style={{background:"#161B22",border:"1px solid #F5A62333",borderRadius:10,overflow:"hidden"}}>
           <div style={{background:"#1a1000",borderBottom:"2px solid #F5A623",padding:"10px 16px",
             display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#F5A623",letterSpacing:"1px"}}>PARA EL PRÓXIMO REQUEST DE PAYROLL</span>
+            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#F5A623",letterSpacing:"1px"}}>{TX("nextRequest")}</span>
             <span style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
-              <span style={{fontSize:10,color:"#6E7681"}}>reclamar es opcional · lo que no metas queda para el corte siguiente</span>
+              <span style={{fontSize:10,color:"#6E7681"}}>{TX("claimOptional")}</span>
               <button className="hov" disabled={picked.size===0} onClick={()=>setShowRequest(true)}
                 style={{background:picked.size?"#F5A623":"#21262D",color:picked.size?"#0D1117":"#484F58",
                   border:"none",borderRadius:6,padding:"7px 14px",fontFamily:"DM Mono",fontSize:11,
                   fontWeight:500,cursor:picked.size?"pointer":"not-allowed"}}>
-                GENERAR REQUEST · {picked.size}
+                {TX("generateRequest")} · {picked.size}
               </button>
             </span>
           </div>
@@ -2349,7 +2349,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                       onChange={e=>setPicked(e.target.checked?new Set(payroll.rows.map(r=>r.file.id)):new Set())}
                       style={{accentColor:"#F5A623",cursor:"pointer"}}/>
                   </th>
-                  {["CLIENTE","FONDEÓ","CORTE","LO","SPLIT","NET","TE TOCA",""].map((h,i)=>(
+                  {[TX("client"),TX("fundedOn"),TX("cut"),"LO",TX("split"),"NET",TX("yourShare"),""].map((h,i)=>(
                     <th key={i} style={{padding:"8px 12px",textAlign:i<4?"left":"center",fontSize:10,color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                   ))}
                 </tr>
@@ -2366,8 +2366,8 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                       {r.file.borrower}
                       {r.kind==="referral"&&(
                         <div style={{fontSize:9,color:"#A78BFA"}}>
-                          fee de referido · {r.referral.bps} bps{r.referral.banker?` · ${r.referral.banker}`:""}
-                          {r.branchPct>0?` · sucursal ${(r.branchPct*100).toFixed(0)}%`:" · del LO"}
+                          {TX("referralFeeOf",{b:r.referral.bps})}{r.referral.banker?` · ${r.referral.banker}`:""}
+                          {r.branchPct>0? + " · " + TX("branchPctOf",{n:(r.branchPct*100).toFixed(0)}):" · "+TX("ofTheLo")}
                         </div>
                       )}
                     </td>
@@ -2375,12 +2375,12 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                       {r.kind==="referral"?r.referral.date:fundedDate(r.file)}
                     </td>
                     <td style={{padding:"9px 12px",fontSize:10,color:r.stale?"#E85D75":"#6E7681"}}>
-                      {payrollPeriodLabel(r.period)}{r.stale?" · arrastrado":""}
+                      {payrollPeriodLabel(r.period)}{r.stale?" · "+TX("carried"):""}
                     </td>
                     <td style={{padding:"9px 12px",color:"#8B949E",fontSize:11}}>
                       {r.file.lo||"—"}
                       <span style={{color:r.rosterMissing?"#E85D75":"#484F58"}}>
-                        {" · "}{r.kind==="referral"?"referido":r.rosterMissing?"sin regla de comp":P(r.split.stageMeta)}
+                        {" · "}{r.kind==="referral"?TX("referredShort"):r.rosterMissing?TX("noCompRule"):P(r.split.stageMeta)}
                       </span>
                     </td>
                     <td style={{padding:"9px 12px",textAlign:"center",color:"#8B949E",fontFamily:"DM Mono",fontSize:11}}>
@@ -2389,7 +2389,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                     <td style={{padding:"9px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>${r.split.net.toLocaleString()}</td>
                     <td style={{padding:"9px 12px",textAlign:"center"}}>
                       <span style={{fontFamily:"Syne",fontWeight:800,fontSize:14,color:"#F5A623"}}>${r.split.toBM.toLocaleString()}</span>
-                      {r.split.isBM&&<div style={{fontSize:9,color:"#484F58"}}>tu split de LO</div>}
+                      {r.split.isBM&&<div style={{fontSize:9,color:"#484F58"}}>{TX("yourLoSplit")}</div>}
                     </td>
                     <td style={{padding:"9px 12px",textAlign:"center"}}>
                       <button className="hov" onClick={()=>{
@@ -2398,14 +2398,14 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                           setTimeout(()=>setJustClaimed(null),3500);
                         }}
                         style={{background:"#21262D",border:"1px solid #4A90D9",borderRadius:4,color:"#4A90D9",
-                          fontSize:9.5,padding:"4px 9px",cursor:"pointer",fontFamily:"DM Mono"}}>RECLAMAR</button>
+                          fontSize:9.5,padding:"4px 9px",cursor:"pointer",fontFamily:"DM Mono"}}>{TX("claim")}</button>
                     </td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
                 <tr style={{background:"#1a1000",borderTop:"2px solid #F5A623"}}>
-                  <td colSpan={6} style={{padding:"10px 12px",fontFamily:"Syne",fontWeight:700,color:"#F5A623"}}>TOTAL · {payroll.count} archivos</td>
+                  <td colSpan={6} style={{padding:"10px 12px",fontFamily:"Syne",fontWeight:700,color:"#F5A623"}}>{TX("totalFiles",{n:payroll.count})}</td>
                   <td style={{padding:"10px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>${payroll.net.toLocaleString()}</td>
                   <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,fontSize:16,color:"#F5A623"}}>${payroll.toBM.toLocaleString()}</td>
                   <td/>
@@ -2428,9 +2428,9 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 border:"1px solid #F5A62355",borderRadius:12,width:"100%",maxWidth:700,
                 maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column"}}>
                 <div style={{padding:"16px 22px 12px",borderBottom:"1px solid #21262D"}}>
-                  <div style={{fontFamily:"Syne",fontWeight:800,fontSize:16,color:"#F5A623"}}>Request de payroll</div>
+                  <div style={{fontFamily:"Syne",fontWeight:800,fontSize:16,color:"#F5A623"}}>{TX("payrollRequest")}</div>
                   <div style={{fontSize:11,color:"#8B949E",marginTop:3}}>
-                    {req.periodLabel} · {req.fileCount} archivo{req.fileCount===1?"":"s"} · total ${req.total.toLocaleString()}
+                    {req.periodLabel} · {TX("filesTotal",{n:req.fileCount,d:req.total.toLocaleString()})}
                   </div>
                 </div>
                 <div style={{flex:1,overflow:"auto",padding:"14px 22px"}}>
@@ -2440,39 +2440,39 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 {reqError&&(
                   <div style={{margin:"0 22px",background:"rgba(232,93,117,.1)",border:"1px solid #E85D75",
                     borderRadius:6,padding:"9px 12px",fontSize:11,color:"#E85D75"}}>
-                    No se pudo cerrar el corte: {reqError}. Nada se marcó — copia el texto y avísame.
+                    {TX("couldNotClose",{e:reqError})}
                   </div>
                 )}
                 <div style={{padding:"12px 22px",borderTop:"1px solid #21262D",display:"flex",gap:8,flexWrap:"wrap"}}>
                   <button className="hov" onClick={()=>{
-                      try{ navigator.clipboard?.writeText(text); }catch(err){ setReqError("el navegador bloqueó el portapapeles"); }
+                      try{ navigator.clipboard?.writeText(text); }catch(err){ setReqError(TX("errClipboard")); }
                       setCopied(true); setTimeout(()=>setCopied(false),2200);
                     }}
                     style={{flex:1,background:"#21262D",color:copied?"#7EC8A4":"#8B949E",borderRadius:7,
                       padding:"10px 0",fontFamily:"DM Mono",fontSize:11.5,
                       border:`1px solid ${copied?"#7EC8A4":"#30363D"}`,cursor:"pointer"}}>
-                    {copied?"COPIADO":"COPIAR TEXTO"}
+                    {copied?TX("copied"):TX("copyText")}
                   </button>
                   <button className="hov" onClick={()=>{
                       // Si algo falla aquí, falla a la vista. Un botón de dinero
                       // que no hace nada y no dice por qué es peor que un error.
                       // Cada paso etiquetado: con el código minificado, "Y is not
                       // a function" no dice nada. El nombre del paso sí.
-                      let step="preparar";
+                      let step=TX("stepPrepare");
                       try{
-                        step="leer las filas";
+                        step=TX("stepRows");
                         const fileIds=(rows||[]).map(r=>r&&r.file&&r.file.id).filter(Boolean);
 
-                        step="leer los beneficiarios";
+                        step=TX("stepPayees");
                         const payees=(req.payees||[]).map(p=>({name:p.name,role:p.role,subtotal:p.subtotal}));
 
-                        step="fechar el request";
+                        step=TX("stepDate");
                         const sentAt=today();
 
-                        step="cerrar el corte";
-                        if(typeof onClosePeriod!=="function") throw new Error("la pantalla no puede cerrar cortes");
+                        step=TX("stepClose");
+                        if(typeof onClosePeriod!=="function") throw new Error(TX("errNoClose"));
                         const sinId=rows.filter(r=>!r.file||!r.file.id).length;
-                        if(sinId>0) throw new Error(`${sinId} archivo${sinId===1?"":"s"} sin identificador — refresca la página y vuelve a intentarlo`);
+                        if(sinId>0) throw new Error(TX("errNoIds",{n:sinId}));
                         const marcados=onClosePeriod(
                           { id:`pr_${Date.now()}`, period:req.period, periodLabel:req.periodLabel,
                             sentAt, by:profile&&profile.name, fileCount:req.fileCount,
@@ -2480,11 +2480,11 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                           rows.map(r=>({id:r.file.id,claimState:"claimed",
                             claimedPeriod:req.period,claimedAt:sentAt,claimedBy:profile.name}))
                         );
-                        if(marcados===0) throw new Error("no se encontró ninguno de los archivos seleccionados");
+                        if(marcados===0) throw new Error(TX("errNoneFound"));
 
                         step="cerrar la ventana";
                         setReqError(null);
-                        setJustClaimed(`${req.fileCount} archivos · $${req.total.toLocaleString()} · corte ${req.periodLabel}`);
+                        setJustClaimed(TX("filesCutTotal",{n:req.fileCount,d:req.total.toLocaleString(),p:req.periodLabel}));
                         setTimeout(()=>setJustClaimed(null),5000);
                         setPicked(new Set());
                         setShowRequest(false);
@@ -2495,15 +2495,14 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                     }}
                     style={{flex:2,background:"#F5A623",color:"#0D1117",borderRadius:7,padding:"10px 0",
                       fontFamily:"DM Mono",fontSize:11.5,fontWeight:500,border:"none",cursor:"pointer"}}>
-                    YA LO ENVIÉ · CERRAR CORTE
+                    {TX("alreadySent")}
                   </button>
                   <button className="hov" onClick={()=>setShowRequest(false)}
                     style={{flex:1,background:"transparent",color:"#6E7681",borderRadius:7,padding:"10px 0",
                       fontFamily:"DM Mono",fontSize:11.5,border:"1px solid #30363D",cursor:"pointer"}}>CERRAR</button>
                 </div>
                 <div style={{padding:"0 22px 14px",fontSize:9,color:"#484F58"}}>
-                  Este botón no manda nada: copia el texto y pégalo en tu correo a payroll.
-                  Después ciérralo aquí para sacarlos de la lista del próximo corte y guardar la copia.
+                  {TX("sendYourself")}
                 </div>
               </div>
             </div>
@@ -2519,7 +2518,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 REQUESTS ENVIADOS
               </span>
               <span style={{fontSize:10,color:"#484F58"}}>
-                {payrollLog.length} · ${payrollLog.reduce((a,x)=>a+(x.total||0),0).toLocaleString()} en total
+                {TX("inTotal",{n:payrollLog.length,d:payrollLog.reduce((a,x)=>a+(x.total||0),0).toLocaleString()})}
               </span>
             </div>
             {[...payrollLog].reverse().map(entry=>(
@@ -2527,16 +2526,16 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8,flexWrap:"wrap"}}>
                   <span style={{fontSize:11.5,color:"#E6EDF3"}}>
                     {entry.periodLabel}
-                    <span style={{color:"#484F58"}}> · enviado {entry.sentAt} por {String(entry.by||"").split(" ")[0]}</span>
+                    <span style={{color:"#484F58"}}> · {TX("sentBy",{d:entry.sentAt,who:String(entry.by||"").split(" ")[0]})}</span>
                   </span>
                   <span style={{display:"flex",gap:8,alignItems:"baseline"}}>
-                    <span style={{fontSize:10,color:"#6E7681"}}>{entry.fileCount} archivos</span>
+                    <span style={{fontSize:10,color:"#6E7681"}}>{TX("nFiles",{n:entry.fileCount})}</span>
                     <span style={{fontFamily:"Syne",fontWeight:800,fontSize:13,color:"#F5A623"}}>
                       ${(entry.total||0).toLocaleString()}
                     </span>
                     {onDeletePayrollLog&&(
                       <button className="hov" onClick={()=>{
-                          if(window.confirm("¿Borrar esta entrada del historial? Los archivos no cambian.")) onDeletePayrollLog(entry.id);
+                          if(window.confirm(TX("deleteLogEntry"))) onDeletePayrollLog(entry.id);
                         }}
                         style={{background:"transparent",border:"1px solid #30363D",borderRadius:4,color:"#484F58",
                           fontSize:9,padding:"3px 7px",cursor:"pointer",fontFamily:"DM Mono"}}>✕</button>
@@ -2544,7 +2543,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                     <button className="hov" onClick={()=>setOpenLog(openLog===entry.id?null:entry.id)}
                       style={{background:"#21262D",border:"1px solid #30363D",borderRadius:4,color:"#8B949E",
                         fontSize:9,padding:"3px 8px",cursor:"pointer",fontFamily:"DM Mono"}}>
-                      {openLog===entry.id?"CERRAR":"VER"}
+                      {openLog===entry.id?TX("close"):TX("view")}
                     </button>
                   </span>
                 </div>
@@ -2566,14 +2565,14 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               </div>
             ))}
             <div style={{padding:"9px 16px",fontSize:9,color:"#484F58"}}>
-              Copia exacta de lo que se envió. No cambia aunque después se edite un archivo.
+              {TX("exactCopy")}
             </div>
           </div>
         )}
 
         <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,padding:"12px 16px"}}>
           <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:8}}>
-            REPARTO DEL NET · año {compYear} · {filesMo} archivos/mes
+            {TX("netSplitYear",{y:compYear,n:filesMo})}
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:8}}>
             {Object.keys(LO_STAGES).map(k=>{
@@ -2586,7 +2585,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                     LO {(demo.shares.lo*100).toFixed(1)}%
                     {demo.shares.trainer>0?` · trainer ${(demo.shares.trainer*100).toFixed(1)}%`:""}
                     <br/>sucursal {(demo.shares.branch*100).toFixed(1)}% · Paulo {(demo.shares.paulo*100).toFixed(0)}%
-                    <br/><span style={{color:demo.margin<0?"#E85D75":"#7EC8A4"}}>margen ${demo.margin.toLocaleString()}/archivo</span>
+                    <br/><span style={{color:demo.margin<0?"#E85D75":"#7EC8A4"}}>{TX("marginPerFile",{d:demo.margin.toLocaleString()})}</span>
                   </div>
                 </div>
               );
@@ -2752,7 +2751,7 @@ function ContingencyStrip({file}){
           borderTop:"1px solid #161B22",paddingTop:5}}>
           {st.ctc?.date&&<span>CTC <span style={{color:LEVEL_COLOR[st.ctc.level]}}>{mon(st.ctc.date)}</span></span>}
           {coe&&<span>COE <span style={{color:LEVEL_COLOR[st.coe.level]}}>{mon(coe)}</span></span>}
-          {cd&&<span title="Último día para emitir el CD — 3 días hábiles antes del cierre, por ley">
+          {cd&&<span title={TX("cdIssueTitle")}>
             CD by <span style={{color:"#BD65E8"}}>{mon(cd)}</span></span>}
         </div>
       )}
