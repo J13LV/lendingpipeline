@@ -254,6 +254,8 @@ export const UI = {
                  en:"Lender-paid · plan caps at {n} bps" },
   ceilingLeft: { es:"techo {n} bps · quedan {r}", en:"ceiling {n} bps · {r} left" },
 
+  cap:{ es:"tope", en:"cap" },
+
   // ─── tiempo ───
   inStage:     { es:"d en la etapa", en:"d in stage" },
   total:       { es:"d total",       en:"d total" },
