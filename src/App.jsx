@@ -11,6 +11,8 @@ let CURRENT_LANG = "es";
 const P = o => (o && typeof o === "object" && !Array.isArray(o))
   ? (o[CURRENT_LANG] ?? o.es ?? o.en ?? "") : o;
 const TX = (k, v) => tr(k, CURRENT_LANG, v);
+// Las notas del motor viven como note_es / note_en.
+const PN = o => o ? (o["note_" + CURRENT_LANG] ?? o.note_es ?? o.note_en ?? "") : "";
 import {
   stageUrgency, stageClock, daysInStage, fileAge, stampStage, today,
   daysBetween, addDays as addDaysISO,
@@ -2858,7 +2860,7 @@ function LenderChangeModal({file,profile,onClose,onConfirm}){
             </select>
             {reasonId&&(
               <div style={{fontSize:9.5,color:isLenderFault(reasonId)?"#F5A623":"#484F58",marginTop:5,lineHeight:1.45}}>
-                {REASON_CATEGORIES[reasonById(reasonId).cat].note_es}
+                {PN(REASON_CATEGORIES[reasonById(reasonId).cat])}
                 {isLenderFault(reasonId)?" · cuenta contra este lender en el scorecard":""}
               </div>
             )}
@@ -2942,8 +2944,7 @@ function BackupPanel({file,backupId,setBackupId,onChangeLender}){
           </div>
           {v.expiresBeforeContingency&&(
             <div style={{fontSize:10,color:"#F5A623",marginTop:6,lineHeight:1.45}}>
-              El colchón vence {v.gapDays} días ANTES que la contingencia de préstamo
-              ({v.loanContingency}). Dentro de la contingencia parecerá que hay tiempo y no lo habrá.
+              {TX("cushionBefore",{n:v.gapDays,d:v.loanContingency})}
             </div>
           )}
         </div>
@@ -3056,11 +3057,11 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
         )}
         {pay.split.leadPending&&isAdmin&&(
           <div style={{fontSize:9.5,color:"#BD65E8",marginTop:4}}>
-            Clasificación pendiente. Se calcula como producción propia hasta que se defina.
+            {TX("leadPending")}
           </div>
         )}
         {isAdmin&&leadOrigin(origin)?.note_es&&!pay.split.leadPending&&(
-          <div style={{fontSize:9,color:"#484F58",marginTop:3}}>{leadOrigin(origin).note_es}</div>
+          <div style={{fontSize:9,color:"#484F58",marginTop:3}}>{PN(leadOrigin(origin))}</div>
         )}
       </div>
 
@@ -3289,18 +3290,18 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
                 style={{flex:1,background:on?`${c.color}18`:"#0D1117",border:`1px solid ${on?c.color:"#30363D"}`,
                   borderRadius:6,padding:"8px 6px",cursor:"pointer",fontFamily:"DM Mono",textAlign:"left"}}>
                 <div style={{fontSize:11,color:on?c.color:"#8B949E",fontWeight:500}}>{P(c)}</div>
-                <div style={{fontSize:9,color:"#484F58",marginTop:2}}>{n} lenders · tope {c.capBps}</div>
+                <div style={{fontSize:9,color:"#484F58",marginTop:2}}>{n} lenders · {TX("cap")} {c.capBps}</div>
               </button>
             );
           })}
         </div>
-        <div style={{fontSize:9,color:"#484F58",marginTop:5}}>{CHANNELS[channel].note_es}</div>
+        <div style={{fontSize:9,color:"#484F58",marginTop:5}}>{PN(CHANNELS[channel])}</div>
       </div>
 
       {/* LENDER */}
       <div>
         <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>
-          LENDER <span style={{color:"#30363D"}}>· {options.length} hacen {lenderProductKey(file.type)}</span>
+          LENDER <span style={{color:"#30363D"}}>· {options.length} {TX("makesProduct",{p:lenderProductKey(file.type)})}</span>
         </div>
         <select value={lenderId} onChange={e=>setLenderId(e.target.value)} style={fs}>
           <option value="">{TX("unassigned")}</option>
@@ -3319,9 +3320,11 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
         )}
         {hidden.length>0&&(
           <div style={{fontSize:9.5,color:"#F5A623",marginTop:5,lineHeight:1.5}}>
-            {hidden.length} lender{hidden.length===1?"":"s"} hace{hidden.length===1?"":"n"} este producto
-            pero no opera{hidden.length===1?"":"n"} en correspondent, así que no aparece{hidden.length===1?"":"n"}:
-            {" "}{hidden.slice(0,4).map(l=>l.name).join(", ")}{hidden.length>4?` y ${hidden.length-4} más`:""}.
+            {TX("hiddenByChannel",{
+              n:hidden.length,
+              list:hidden.slice(0,4).map(l=>l.name).join(", ")
+                   + (hidden.length>4?TX("andNMore",{n:hidden.length-4}):"")
+            })}
           </div>
         )}
         {l&&(
@@ -3390,7 +3393,7 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
 
           <div style={{fontSize:9,color:"#484F58"}}>
             {comp.totalBps!=null
-              ? `Al guardar, ${comp.totalBps} bps pasan a BPS COMP arriba y eso es lo que reportan los dashboards.`
+              ? TX("willWriteBps",{n:comp.totalBps})
               : "Sin dato — los reportes usan el default de la sucursal."}
           </div>
           {comp.model==="correspondent"&&(
@@ -3561,8 +3564,8 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
         </div>
         <div style={{fontSize:10,color:basis==="business"?"#F5A623":"#6E7681",paddingBottom:8}}>
           {basis==="business"
-            ? "FL cuenta DÍAS HÁBILES en el contrato — la misma contingencia da otra fecha"
-            : `${state} cuenta días de calendario en el contrato`}
+            ? TX("businessDays")
+            : TX("calendarDays",{s:state})}
         </div>
       </div>
 
@@ -3662,7 +3665,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
                       </div>
                     )}
                     {outcomeById(oc).note_es&&(
-                      <div style={{fontSize:9.5,color:outcomeById(oc).color}}>{outcomeById(oc).note_es}</div>
+                      <div style={{fontSize:9.5,color:outcomeById(oc).color}}>{PN(outcomeById(oc))}</div>
                     )}
                     <input value={ocNote} onChange={e=>setOcNote(e.target.value)}
                       placeholder={TX("outcomeNote")} style={fs}/>
@@ -3689,7 +3692,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
           <button className="hov" onClick={()=>setShowDerived(v=>!v)}
             style={{background:"transparent",border:"none",color:"#4A90D9",fontSize:10,
               fontFamily:"DM Mono",cursor:"pointer",padding:0}}>
-            {showDerived?"▾":"▸"} FECHAS TOPE DERIVADAS ({derived.length} etapas)
+            {showDerived?"▾":"▸"} {TX("derivedDates")} ({derived.length})
           </button>
           {showDerived&&(
             <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:3}}>
@@ -3846,9 +3849,7 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
           {isAdmin && (
             <div style={{gridColumn:"1/-1"}}>
               <div style={{fontSize:10,color:"#484F58",marginTop:2}}>
-                Este es el número que usan todos los reportes. El bloque de COMPENSACIÓN
-                de abajo lo llena solo al guardar; aquí lo puedes ajustar a mano.
-                En blanco = {BPS_RATE} bps.
+                {TX("bpsFieldHint",{n:BPS_RATE})}
               </div>
             </div>
           )}
