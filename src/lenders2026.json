@@ -160,8 +160,8 @@
     "label": "Piggyback"
    },
    {
-    "id": "st_lien_heloc",
-    "label": "st Lien HELOC"
+    "id": "1st_lien_heloc",
+    "label": "1st Lien HELOC"
    },
    {
     "id": "bank_statement_heloc",
@@ -176,6 +176,10 @@
    {
     "id": "bank_statement",
     "label": "Bank Statement"
+   },
+   {
+    "id": "1_1099",
+    "label": "1   1099"
    },
    {
     "id": "profit_and_loss",
@@ -266,7 +270,6 @@
     "label": "Single Wide"
    }
   ],
-  "reverse": [],
   "construction": [
    {
     "id": "one_time_close",
@@ -361,7 +364,6 @@
     "label": "Mix Use Properties"
    }
   ],
-  "private": [],
   "other": [
    {
     "id": "section_184",
@@ -415,7 +417,7 @@
    "guidelines": "https://elevenmortgage.encompasstpoconnect.com/#/home/tpo-documents",
    "lenderPaidBps": 275,
    "borrowerPaidOnly": false,
-   "minComp": 275,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -452,10 +454,10 @@
     ],
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
+     "1_1099",
      "bank_statement",
      "dscr",
      "non_warrantable_condo",
@@ -479,15 +481,9 @@
    "id": "1st_tribal_lending",
    "name": "1st Tribal Lending",
    "note": null,
-   "contacts": [
-    {
-     "ae": "Angela Casas",
-     "phone": "415-209-3287",
-     "email": "angela.casas@1tribal.com"
-    }
-   ],
-   "website": "https://www.1tribal.com/",
-   "guidelines": "https://www.1tribal.com/",
+   "contacts": [],
+   "website": null,
+   "guidelines": null,
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
    "minComp": null,
@@ -501,7 +497,7 @@
   {
    "id": "1st_tribal_lending_all_programs_subject_to_hud_184_only",
    "name": "1st Tribal Lending (all programs subject to HUD 184 Only)",
-   "note": "all programs subject to HUD 184 Only",
+   "note": null,
    "contacts": [
     {
      "ae": "Angela Casas",
@@ -541,7 +537,7 @@
    "guidelines": "https://www.5thstcap.com/guidelines",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -552,14 +548,14 @@
     ],
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "fixed_2nd",
      "heloan"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -600,13 +596,13 @@
    "maxComp": null,
    "products": {
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "fixed_2nd"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -632,7 +628,47 @@
      "ae": "Scott Bashaar",
      "phone": "480-440-1198",
      "email": "teambfg@acralending.com"
-    },
+    }
+   ],
+   "website": "www.acralending.com",
+   "guidelines": "https://acralending.com/broker-resources/",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "arm",
+     "jumbo"
+    ],
+    "nonqm": [
+     "1_1099",
+     "asset_depletion_utilization",
+     "bank_statement",
+     "close_in_llc",
+     "dscr",
+     "foreign_national",
+     "itin",
+     "no_ratio",
+     "non_warrantable_condo",
+     "profit_and_loss",
+     "recent_credit_events",
+     "wvoe"
+    ],
+    "mfh": [
+     "real_property"
+    ],
+    "commercial": [
+     "mix_use_properties",
+     "residential_5_unit"
+    ]
+   }
+  },
+  {
+   "id": "acra_lending_ca_and_wa_only",
+   "name": "Acra Lending\n(CA and WA only)",
+   "note": null,
+   "contacts": [
     {
      "ae": "Chris Murphree",
      "phone": "415-992-1166",
@@ -643,15 +679,15 @@
    "guidelines": "https://acralending.com/broker-resources/",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -692,18 +728,13 @@
      "ae": "Alex Russu",
      "phone": "786-982-7230",
      "email": "alex.russu@admortgage.com"
-    },
-    {
-     "ae": "Alex Russo",
-     "phone": "786-982-7230",
-     "email": "alex.russo@admortgage.com"
     }
    ],
    "website": "www.admortgage.com",
    "guidelines": "https://admortgage.com/ad-learning-center/documents-forms/",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -722,8 +753,7 @@
      "va"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "bank_statement_heloc",
@@ -733,6 +763,7 @@
      "piggyback"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -763,7 +794,7 @@
    "contacts": [
     {
      "ae": "Doug Andel",
-     "phone": "Direct: 972-201-1626 Mobile: 602-295-8170",
+     "phone": "Direct: 972-201-1626\nMobile: 602-295-8170",
      "email": "dandel@advancial.org"
     }
    ],
@@ -797,7 +828,7 @@
    "contacts": [
     {
      "ae": "Reece Carroll",
-     "phone": "Direct: 714-477-7989 Mobile: 714-794-4425",
+     "phone": "Direct: 714-477-7989\nMobile: 714-794-4425",
      "email": "reece.carroll@AHLFunding.com"
     }
    ],
@@ -809,13 +840,13 @@
    "maxComp": null,
    "products": {
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "fixed_2nd"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -839,7 +870,7 @@
    "contacts": [
     {
      "ae": "Evan Kaplan",
-     "phone": "Direct: 313-221-8566 Mobile: 248-703-4121",
+     "phone": "Direct: 313-221-8566\nMobile: 248-703-4121",
      "email": "evan.kaplan@ahlend.com"
     }
    ],
@@ -851,6 +882,7 @@
    "maxComp": 90000,
    "products": {
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "bridge",
@@ -906,8 +938,7 @@
      "conventional"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "bank_statement_heloc",
@@ -916,6 +947,7 @@
      "heloc"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -942,9 +974,9 @@
    }
   },
   {
-   "id": "american_senior_living",
-   "name": "American Senior Living",
-   "note": "(High Tech)",
+   "id": "american_senior_lending_high_tech",
+   "name": "American Senior Lending\n(High Tech)",
+   "note": null,
    "contacts": [
     {
      "ae": "Iona Osment",
@@ -954,6 +986,19 @@
    ],
    "website": "www.htlwholesale.com",
    "guidelines": "www.htlwholesale.com",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {}
+  },
+  {
+   "id": "american_senior_living_high_tech",
+   "name": "American Senior Living\n(High Tech)",
+   "note": null,
+   "contacts": [],
+   "website": null,
+   "guidelines": null,
    "lenderPaidBps": null,
    "borrowerPaidOnly": false,
    "minComp": null,
@@ -973,11 +1018,11 @@
      "email": "JD.Meadows@amerisbank.com"
     }
    ],
-   "website": "N/A",
-   "guidelines": "N/A",
+   "website": "https://www.amerisbankwholesale.com",
+   "guidelines": "Contact AE",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -990,8 +1035,7 @@
      "va"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "heloc"
@@ -1057,6 +1101,7 @@
      "fixed_2nd"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -1092,7 +1137,7 @@
    "guidelines": "www.welovetpo.com",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -1127,8 +1172,7 @@
     ],
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "fixed_2nd",
@@ -1164,7 +1208,7 @@
    "contacts": [
     {
      "ae": "Annie Chang",
-     "phone": "Mobile: 678-650-0465 Office: 470-369-7718",
+     "phone": "Mobile: 678-650-0465\nOffice: 470-369-7718",
      "email": "annie.chang@amwestfunding.com"
     }
    ],
@@ -1172,7 +1216,7 @@
    "guidelines": "https://amwestwholesale.com/",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -1182,8 +1226,7 @@
      "fha"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "heloc"
@@ -1226,10 +1269,10 @@
      "owner_builder",
      "spec_homes"
     ],
-    "private": [],
     "other": [
      "land_loans"
-    ]
+    ],
+    "private": []
    }
   },
   {
@@ -1247,22 +1290,22 @@
    "guidelines": "https://angeloakms.com/programs/",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
+     "1st_lien_heloc",
      "bank_statement_heloc",
      "fixed_2nd",
      "heloan",
-     "heloc",
-     "st_lien_heloc"
+     "heloc"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -1325,7 +1368,7 @@
     }
    ],
    "website": "N/A",
-   "guidelines": "contact investor",
+   "guidelines": "Contact AE",
    "lenderPaidBps": null,
    "borrowerPaidOnly": false,
    "minComp": null,
@@ -1349,7 +1392,7 @@
    "guidelines": "https://wholesale.archomellc.com/uploads/sites/17046/public/Arc_Underwriting_Guide_10_30_2025_n.pdf",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -1359,13 +1402,13 @@
      "fha"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "heloc"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -1392,15 +1435,15 @@
    "guidelines": "https://ardri.ai/loan-programs/",
    "lenderPaidBps": 300,
    "borrowerPaidOnly": false,
-   "minComp": 300,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "bridge",
@@ -1425,12 +1468,12 @@
   {
    "id": "asset_based_lending_abl",
    "name": "Asset Based Lending (ABL)",
-   "note": "ABL",
+   "note": null,
    "contacts": [
     {
      "ae": "Marc Himmel",
      "phone": "818-296-0936",
-     "email": "marc.himmel@ablfunding.com"
+     "email": "Marc.himmel@ablfunding.com"
     },
     {
      "ae": "Seth Blumenthal",
@@ -1481,18 +1524,18 @@
    "guidelines": "https://www.axosbank.com/partners/wholesale-correspondent-portfolio-lending/support",
    "lenderPaidBps": 125,
    "borrowerPaidOnly": false,
-   "minComp": 125,
+   "minComp": null,
    "maxComp": 50000,
    "products": {
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "fixed_2nd"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "bridge",
@@ -1532,8 +1575,8 @@
      "email": "jonathan@barrettcg.com"
     }
    ],
-   "website": "www.barrettcg.com",
-   "guidelines": "contact investor",
+   "website": "barrettcg.com",
+   "guidelines": "Contact AE",
    "lenderPaidBps": null,
    "borrowerPaidOnly": false,
    "minComp": null,
@@ -1546,9 +1589,15 @@
    "id": "bluebell_international_llc",
    "name": "Bluebell International, LLC",
    "note": null,
-   "contacts": [],
-   "website": "www.bluebellfunding.com",
-   "guidelines": "contact investor",
+   "contacts": [
+    {
+     "ae": "N/A",
+     "phone": "480-415-3889",
+     "email": "info@bluebellfunding.com"
+    }
+   ],
+   "website": "https://bluebellfunding.com",
+   "guidelines": "Contact AE",
    "lenderPaidBps": null,
    "borrowerPaidOnly": false,
    "minComp": null,
@@ -1572,7 +1621,7 @@
    "guidelines": "https://bluepointmtg.com",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -1588,8 +1637,7 @@
      "fha_dpa"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
      "bank_statement",
@@ -1627,6 +1675,7 @@
      "heloan"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -1655,7 +1704,7 @@
    "guidelines": "https://bffws.com/respirce-center/",
    "lenderPaidBps": 275,
    "borrowerPaidOnly": false,
-   "minComp": 275,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -1688,13 +1737,13 @@
      "fha_dpa"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "heloan"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -1729,12 +1778,12 @@
    "maxComp": null,
    "products": {
     "second": [
+     "1st_lien_heloc",
      "bank_statement_heloc",
      "fixed_2nd",
      "heloan",
      "heloc",
-     "piggyback",
-     "st_lien_heloc"
+     "piggyback"
     ]
    }
   },
@@ -1747,18 +1796,13 @@
      "ae": "Team Barrett",
      "phone": "833-717-0401",
      "email": "teambarrett@cakehome.com"
-    },
-    {
-     "ae": "AE Team",
-     "phone": "877-274-2610",
-     "email": "teambarrett@cakehome.com"
     }
    ],
    "website": "www.caketpo.com",
    "guidelines": "www.caketpo.com",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -1771,13 +1815,13 @@
      "va"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "heloc"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "dscr",
@@ -1809,8 +1853,8 @@
      "email": "gabrial@capitalfund1.com"
     }
    ],
-   "website": "www.capitalfund1.com",
-   "guidelines": "contact investor",
+   "website": "https://capitalfund1.com",
+   "guidelines": "contact AE",
    "lenderPaidBps": null,
    "borrowerPaidOnly": false,
    "minComp": null,
@@ -1834,7 +1878,7 @@
    "guidelines": "https://octane.cardinalfinancial.com/#/a/toolbox/myWorkspace/loanHome/library",
    "lenderPaidBps": 275,
    "borrowerPaidOnly": false,
-   "minComp": 275,
+   "minComp": null,
    "maxComp": 20000,
    "products": {
     "conventional": [
@@ -1862,10 +1906,10 @@
     ],
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -1899,9 +1943,9 @@
    ],
    "website": "www.carringtonwholesale.com",
    "guidelines": "www.carringtonwholesale.com",
-   "lenderPaidBps": 275,
+   "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -1926,10 +1970,10 @@
      "usda"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -1967,6 +2011,7 @@
      "fixed_2nd"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -1994,7 +2039,7 @@
    "guidelines": "https://changewholesale.com",
    "lenderPaidBps": 275,
    "borrowerPaidOnly": false,
-   "minComp": 275,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -2009,8 +2054,7 @@
      "va"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "bank_statement_heloc",
@@ -2033,15 +2077,9 @@
    "id": "civic_financial_services_llc",
    "name": "Civic Financial Services, LLC",
    "note": null,
-   "contacts": [
-    {
-     "ae": "Jack Robinson",
-     "phone": "310-947-4017",
-     "email": "jack.robinson@civicfs.com"
-    }
-   ],
-   "website": "N/A",
-   "guidelines": "contact investor",
+   "contacts": [],
+   "website": null,
+   "guidelines": null,
    "lenderPaidBps": null,
    "borrowerPaidOnly": false,
    "minComp": null,
@@ -2063,9 +2101,9 @@
    ],
    "website": "https://clearedgelending.com/",
    "guidelines": "https://clearedgelending.com/",
-   "lenderPaidBps": 275,
+   "lenderPaidBps": 225,
    "borrowerPaidOnly": false,
-   "minComp": 275,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -2074,13 +2112,13 @@
     ],
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "fixed_2nd"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -2171,7 +2209,7 @@
    "guidelines": "https://www.cmgclear.com/wholesale/",
    "lenderPaidBps": 275,
    "borrowerPaidOnly": false,
-   "minComp": 275,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -2199,8 +2237,7 @@
      "usda"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "mfh": [
      "real_property"
@@ -2217,7 +2254,7 @@
    "contacts": [
     {
      "ae": "Paul Trapani",
-     "phone": "Mobile: 408-502-2278 Office: 213-583-5922",
+     "phone": "Mobile: 408-502-2278\nOffice: 213-583-5922",
      "email": "paul.trapani@cvest.com"
     }
    ],
@@ -2229,8 +2266,7 @@
    "maxComp": null,
    "products": {
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
      "bridge",
@@ -2269,12 +2305,11 @@
    "guidelines": "https://cv3financial.com/",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
      "bank_statement",
@@ -2298,49 +2333,9 @@
    }
   },
   {
-   "id": "deephaven_north_co_il_mi_mn_mo_ne_nj_nv_oh_wi",
-   "name": "Deephaven (North) CO, IL, MI, MN, MO, NE, NJ, NV, OH, WI",
-   "note": "North",
-   "contacts": [
-    {
-     "ae": "Brad Salin",
-     "phone": "704-930-9737",
-     "email": "bsalin@deephavenmortgage.com"
-    }
-   ],
-   "website": "www.deephavenmortgage.com",
-   "guidelines": "www.deephavenmortgage.com",
-   "lenderPaidBps": 200,
-   "borrowerPaidOnly": false,
-   "minComp": 200,
-   "maxComp": null,
-   "products": {
-    "jumbo": [
-     "jumbo",
-     "max_comp"
-    ],
-    "nonqm": [
-     "bank_statement",
-     "bridge",
-     "dscr",
-     "fix_n_flip",
-     "non_warrantable_condo"
-    ],
-    "bridge": [
-     "bridge"
-    ],
-    "construction": [
-     "fix_n_flip"
-    ],
-    "renovation": [
-     "fix_n_flip"
-    ]
-   }
-  },
-  {
    "id": "deephaven_southeast_al_fl_ga_ms_nc_sc",
-   "name": "Deephaven (Southeast) AL, FL, GA, MS, NC, SC",
-   "note": "Southeast",
+   "name": "Deephaven                               (Southeast) AL, FL, GA, MS, NC, SC",
+   "note": null,
    "contacts": [
     {
      "ae": "Mark Latsko",
@@ -2352,12 +2347,11 @@
    "guidelines": "www.deephavenmortgage.com",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
      "bank_statement",
@@ -2379,8 +2373,8 @@
   },
   {
    "id": "deephaven_west_az_ca_hi_or_ut_wa_tx",
-   "name": "Deephaven (West) AZ, CA, HI, OR, UT, WA, TX)",
-   "note": "West",
+   "name": "Deephaven                          (West) AZ, CA, HI, OR, UT, WA, TX)",
+   "note": null,
    "contacts": [
     {
      "ae": "Jamie Pierce",
@@ -2392,12 +2386,50 @@
    "guidelines": "www.deephavenmortgage.com",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
+    ],
+    "nonqm": [
+     "bank_statement",
+     "bridge",
+     "dscr",
+     "fix_n_flip",
+     "non_warrantable_condo"
+    ],
+    "bridge": [
+     "bridge"
+    ],
+    "construction": [
+     "fix_n_flip"
+    ],
+    "renovation": [
+     "fix_n_flip"
+    ]
+   }
+  },
+  {
+   "id": "deephaven_north_co_il_mi_mn_mo_ne_nj_nv_oh_wi",
+   "name": "Deephaven                         (North) CO, IL, MI, MN, MO, NE, NJ, NV, OH, WI",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Brad Salin",
+     "phone": "704-930-9737",
+     "email": "bsalin@deephavenmortgage.com"
+    }
+   ],
+   "website": "www.deephavenmortgage.com",
+   "guidelines": "www.deephavenmortgage.com",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "jumbo": [
+     "jumbo"
     ],
     "nonqm": [
      "bank_statement",
@@ -2491,14 +2523,14 @@
    "guidelines": "https://emporiumtpo.com/product-matrix.html",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -2514,7 +2546,7 @@
   {
    "id": "equity_prime_epm",
    "name": "Equity Prime (EPM)",
-   "note": "EPM",
+   "note": null,
    "contacts": [
     {
      "ae": "Christian Santa Cruz",
@@ -2531,7 +2563,7 @@
    "guidelines": "www.epmwholesale.com",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -2563,10 +2595,10 @@
      "fha_dpa"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
+     "1_1099",
      "bank_statement",
      "dscr"
     ],
@@ -2588,15 +2620,9 @@
    "id": "equity_wave",
    "name": "Equity Wave",
    "note": null,
-   "contacts": [
-    {
-     "ae": "Debbie Suddarth",
-     "phone": "949-584-1622",
-     "email": "debbi@equitywavelending.com"
-    }
-   ],
-   "website": "www.equitywavelending.com",
-   "guidelines": "contact investor",
+   "contacts": [],
+   "website": null,
+   "guidelines": null,
    "lenderPaidBps": null,
    "borrowerPaidOnly": false,
    "minComp": null,
@@ -2621,7 +2647,7 @@
    "lenderPaidBps": null,
    "borrowerPaidOnly": true,
    "minComp": 3995,
-   "maxComp": 3995,
+   "maxComp": null,
    "products": {
     "second": [
      "fixed_2nd"
@@ -2657,7 +2683,7 @@
    "guidelines": "https://exponentialmortgagetpo.encompasstpoconnect.com/#/content/home_460493",
    "lenderPaidBps": 275,
    "borrowerPaidOnly": false,
-   "minComp": 275,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -2675,8 +2701,7 @@
     ],
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "bank_statement_heloc",
@@ -2686,6 +2711,7 @@
      "piggyback"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -2703,11 +2729,11 @@
     "bridge": [
      "bridge"
     ],
-    "reverse": [],
     "commercial": [
      "mix_use_properties",
      "residential_5_unit"
     ],
+    "reverse": [],
     "private": []
    }
   },
@@ -2759,8 +2785,7 @@
     ],
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
      "bridge"
@@ -2781,9 +2806,9 @@
    }
   },
   {
-   "id": "fcm_tpo",
-   "name": "FCM TPO",
-   "note": "First Colony Wholesale",
+   "id": "fcm_tpo_first_colony_wholesale",
+   "name": "FCM TPO\nFirst Colony Wholesale",
+   "note": null,
    "contacts": [
     {
      "ae": "Robb Fordham",
@@ -2826,10 +2851,10 @@
     ],
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -2844,8 +2869,8 @@
   },
   {
    "id": "fembi_florida_only",
-   "name": "FEMBI (Florida ONLY)",
-   "note": "Florida ONLY",
+   "name": "FEMBI                               (Florida ONLY)",
+   "note": null,
    "contacts": [
     {
      "ae": "Charles Richardson",
@@ -2866,9 +2891,9 @@
    }
   },
   {
-   "id": "finance_of_america",
-   "name": "Finance of America",
-   "note": "COMMERCIAL",
+   "id": "finance_of_america_commercial",
+   "name": "Finance of America\nCOMMERCIAL",
+   "note": null,
    "contacts": [
     {
      "ae": "Micheal Tehensky",
@@ -2906,8 +2931,8 @@
    }
   },
   {
-   "id": "finance_of_american_mortgage_reverse",
-   "name": "Finance of American Mortgage Reverse",
+   "id": "finance_of_america_reverse",
+   "name": "Finance of America\nREVERSE",
    "note": null,
    "contacts": [
     {
@@ -2917,7 +2942,20 @@
     }
    ],
    "website": "https://www.farwholesale.com/xcelerate/",
-   "guidelines": "contact AE",
+   "guidelines": "Contact AE",
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {}
+  },
+  {
+   "id": "finance_of_american_mortgage_reverse",
+   "name": "Finance of American Mortgage Reverse",
+   "note": null,
+   "contacts": [],
+   "website": null,
+   "guidelines": null,
    "lenderPaidBps": null,
    "borrowerPaidOnly": false,
    "minComp": null,
@@ -2949,10 +2987,10 @@
      "manual_underwrite"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -2992,9 +3030,9 @@
    "maxComp": null,
    "products": {
     "second": [
+     "1st_lien_heloc",
      "heloc",
-     "piggyback",
-     "st_lien_heloc"
+     "piggyback"
     ],
     "nonqm": [
      "asset_depletion_utilization",
@@ -3007,7 +3045,7 @@
   {
    "id": "florida_capital_bank_flcb",
    "name": "Florida Capital Bank (FLCB)",
-   "note": "FLCB",
+   "note": null,
    "contacts": [
     {
      "ae": "Christina Bianco",
@@ -3043,14 +3081,13 @@
     ],
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
+     "1st_lien_heloc",
      "fixed_2nd",
      "heloc",
-     "piggyback",
-     "st_lien_heloc"
+     "piggyback"
     ],
     "bridge": [
      "bridge"
@@ -3098,7 +3135,7 @@
    "guidelines": "forwardlendingmtg.com - programs section",
    "lenderPaidBps": 275,
    "borrowerPaidOnly": false,
-   "minComp": 275,
+   "minComp": null,
    "maxComp": 99999,
    "products": {
     "conventional": [
@@ -3135,8 +3172,7 @@
      "fha_dpa"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "bank_statement_heloc",
@@ -3146,6 +3182,7 @@
      "heloc"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -3178,19 +3215,19 @@
    "guidelines": "Contact AE",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
-   "maxComp": 200,
+   "minComp": null,
+   "maxComp": null,
    "products": {
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "fixed_2nd",
      "heloan"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -3226,8 +3263,7 @@
    "maxComp": null,
    "products": {
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
      "bridge",
@@ -3308,8 +3344,7 @@
      "usda"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "mfh": [
      "real_property"
@@ -3320,9 +3355,9 @@
    }
   },
   {
-   "id": "fsb",
-   "name": "FSB",
-   "note": "(SBA Loans)",
+   "id": "fsb_sba_loans",
+   "name": "FSB\n(SBA Loans)",
+   "note": null,
    "contacts": [
     {
      "ae": "Hunter Myers",
@@ -3360,13 +3395,12 @@
    "guidelines": "https://www.fundloans.com/guidelines",
    "lenderPaidBps": 250,
    "borrowerPaidOnly": false,
-   "minComp": 250,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "bank_statement_heloc",
@@ -3376,6 +3410,7 @@
      "piggyback"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -3412,8 +3447,7 @@
    "maxComp": null,
    "products": {
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
      "bridge",
@@ -3461,22 +3495,22 @@
    "guidelines": "www.g1wins.com",
    "lenderPaidBps": 275,
    "borrowerPaidOnly": false,
-   "minComp": 275,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
+     "1st_lien_heloc",
      "bank_statement_heloc",
      "fixed_2nd",
      "heloan",
      "heloc",
-     "piggyback",
-     "st_lien_heloc"
+     "piggyback"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "bridge",
@@ -3492,8 +3526,7 @@
     ],
     "bridge": [
      "bridge"
-    ],
-    "renovation": []
+    ]
    }
   },
   {
@@ -3567,10 +3600,10 @@
      "fha_dpa"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -3599,7 +3632,7 @@
    "guidelines": "www.thegiantlending.com",
    "lenderPaidBps": 275,
    "borrowerPaidOnly": false,
-   "minComp": 275,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -3629,8 +3662,7 @@
      "fha_dpa"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "bank_statement_heloc",
@@ -3640,6 +3672,7 @@
      "piggyback"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -3723,15 +3756,9 @@
    "id": "greenbox_loans",
    "name": "Greenbox Loans",
    "note": null,
-   "contacts": [
-    {
-     "ae": "Marc Noddle",
-     "phone": "Mobile: 818-259-1259 Office: 213-235-4331",
-     "email": "mnoddle@greenboxloans.com"
-    }
-   ],
-   "website": "https://greenboxloans.com",
-   "guidelines": "Contact AE",
+   "contacts": [],
+   "website": null,
+   "guidelines": null,
    "lenderPaidBps": 150,
    "borrowerPaidOnly": false,
    "minComp": null,
@@ -3742,6 +3769,7 @@
      "heloan"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -3757,12 +3785,37 @@
    }
   },
   {
+   "id": "greenbox_loans_inc",
+   "name": "Greenbox Loans Inc",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "Marc Noddle",
+     "phone": "Mobile: 818-259-1259\nOffice: 213-235-4331",
+     "email": "mnoddle@greenboxloans.com"
+    }
+   ],
+   "website": "https://greenboxloans.com",
+   "guidelines": "Contact AE",
+   "lenderPaidBps": 150,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {}
+  },
+  {
    "id": "griffin_capital_funding_church_loans",
-   "name": "Griffin Capital Funding (Church Loans)",
-   "note": "Church Loans",
-   "contacts": [],
-   "website": "www.churchloans.net",
-   "guidelines": "contact investor",
+   "name": "Griffin Capital Funding\n(church loans)",
+   "note": null,
+   "contacts": [
+    {
+     "ae": "N/A",
+     "phone": "800-710-6762",
+     "email": "info@churchloans.net"
+    }
+   ],
+   "website": "churchloans.net",
+   "guidelines": "Contact AE",
    "lenderPaidBps": null,
    "borrowerPaidOnly": false,
    "minComp": null,
@@ -3775,15 +3828,9 @@
    "id": "hd_lending",
    "name": "HD Lending",
    "note": null,
-   "contacts": [
-    {
-     "ae": "Geoff Ball",
-     "phone": "480-688-8686",
-     "email": "geoff@hd-lending.com"
-    }
-   ],
-   "website": "www.hd-lending.com",
-   "guidelines": "contact investor",
+   "contacts": [],
+   "website": null,
+   "guidelines": null,
    "lenderPaidBps": null,
    "borrowerPaidOnly": false,
    "minComp": null,
@@ -3795,7 +3842,7 @@
   {
    "id": "hd_lending_az_only",
    "name": "HD Lending (AZ Only)",
-   "note": "AZ Only",
+   "note": null,
    "contacts": [
     {
      "ae": "Geoff Ball",
@@ -3804,7 +3851,7 @@
     }
    ],
    "website": "www.hd-lending.com",
-   "guidelines": "N/A",
+   "guidelines": "Contact AE",
    "lenderPaidBps": null,
    "borrowerPaidOnly": true,
    "minComp": null,
@@ -3814,6 +3861,7 @@
      "fixed_2nd"
     ],
     "nonqm": [
+     "1_1099",
      "bank_statement",
      "bridge",
      "close_in_llc",
@@ -3863,7 +3911,7 @@
    "contacts": [
     {
      "ae": "Jack Hilton Sr.",
-     "phone": "602-375-8951",
+     "phone": "Mobile: 602-549-2841\nOffice: 602-375-8951",
      "email": "jack@hiltoncorp.com"
     }
    ],
@@ -3898,7 +3946,6 @@
      "spec_homes",
      "two_time_close"
     ],
-    "renovation": [],
     "commercial": [
      "mix_use_properties",
      "residential_5_unit"
@@ -3923,7 +3970,7 @@
    "guidelines": "https://www.homebridgewholesale.com/products-and-guidelines/",
    "lenderPaidBps": 275,
    "borrowerPaidOnly": false,
-   "minComp": 275,
+   "minComp": null,
    "maxComp": 20000,
    "products": {
     "conventional": [
@@ -3951,17 +3998,10 @@
      "usda"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
-    ],
-    "second": [
-     "bank_statement_heloc",
-     "dscr_heloc",
-     "heloc",
-     "piggyback",
-     "st_lien_heloc"
+     "jumbo"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -3976,6 +4016,27 @@
     ],
     "mfh": [
      "real_property"
+    ]
+   }
+  },
+  {
+   "id": "homebridge_wholesale_heloc_through_nftydoor",
+   "name": "Homebridge Wholesale\n(HELOC through NFTYDoor)",
+   "note": null,
+   "contacts": [],
+   "website": null,
+   "guidelines": null,
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "second": [
+     "1st_lien_heloc",
+     "bank_statement_heloc",
+     "dscr_heloc",
+     "heloc",
+     "piggyback"
     ]
    }
   },
@@ -4008,8 +4069,7 @@
     ],
     "usda": [
      "usda"
-    ],
-    "nonqm": []
+    ]
    }
   },
   {
@@ -4032,7 +4092,7 @@
    "guidelines": "www.homexmortgage.com",
    "lenderPaidBps": 275,
    "borrowerPaidOnly": false,
-   "minComp": 275,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -4047,10 +4107,10 @@
      "va"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -4066,13 +4126,13 @@
    }
   },
   {
-   "id": "icecap",
-   "name": "IceCap",
-   "note": "(Bluefin Group)",
+   "id": "icecap_bluefin_group",
+   "name": "IceCap\n(Bluefin Group)",
+   "note": null,
    "contacts": [
     {
      "ae": "Mordi Lati",
-     "phone": "Mobile: 917-294-1180 Office: 718-532-4695",
+     "phone": "Mobile: 917-294-1180\nOffice: 718-532-4695",
      "email": "mlati@icecapgroup.com"
     }
    ],
@@ -4115,15 +4175,9 @@
    "id": "iron_bridge",
    "name": "Iron Bridge",
    "note": null,
-   "contacts": [
-    {
-     "ae": "Richard Kaimie",
-     "phone": "971-803-7803",
-     "email": "richard@ironbridgelending.com"
-    }
-   ],
-   "website": "www.ironbridgelending.com",
-   "guidelines": "contact investor",
+   "contacts": [],
+   "website": null,
+   "guidelines": null,
    "lenderPaidBps": null,
    "borrowerPaidOnly": false,
    "minComp": null,
@@ -4176,7 +4230,7 @@
    "guidelines": "https://jetmortgage.com/loan-product/",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -4195,8 +4249,7 @@
      "fha_dpa"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "bank_statement_heloc",
@@ -4205,6 +4258,7 @@
      "heloan"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -4234,7 +4288,7 @@
    "guidelines": "https://help.jmaclending.com/hc/en-us/articles/16291475609875-Program-Guidelines-Checklists",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -4266,8 +4320,7 @@
     ],
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "bank_statement_heloc",
@@ -4275,6 +4328,7 @@
      "heloan"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -4300,15 +4354,9 @@
    "id": "kenwood_mortgage_investments",
    "name": "Kenwood Mortgage Investments",
    "note": null,
-   "contacts": [
-    {
-     "ae": "Randy Persson",
-     "phone": "602-369-3894",
-     "email": "randy@kenwoodmortgage.com"
-    }
-   ],
-   "website": "www.kenwoodmortgage.com",
-   "guidelines": "contact investor",
+   "contacts": [],
+   "website": null,
+   "guidelines": null,
    "lenderPaidBps": null,
    "borrowerPaidOnly": false,
    "minComp": null,
@@ -4320,7 +4368,7 @@
   {
    "id": "kenwood_mortgage_investments_az_only",
    "name": "Kenwood Mortgage Investments (AZ Only)",
-   "note": "AZ Only",
+   "note": null,
    "contacts": [
     {
      "ae": "Randy Persson",
@@ -4329,7 +4377,7 @@
     }
    ],
    "website": "www.kenwoodmortgage.com",
-   "guidelines": "www.kenwoodmortgage.com",
+   "guidelines": "Contact AE",
    "lenderPaidBps": null,
    "borrowerPaidOnly": false,
    "minComp": null,
@@ -4472,7 +4520,7 @@
    "guidelines": "https://kwikie.kindlending.com/forms",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": 99000,
    "products": {
     "conventional": [
@@ -4502,17 +4550,17 @@
     ],
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
+     "1st_lien_heloc",
      "fixed_2nd",
      "heloan",
      "heloc",
-     "piggyback",
-     "st_lien_heloc"
+     "piggyback"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -4564,6 +4612,7 @@
      "va"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "dscr",
@@ -4616,8 +4665,7 @@
      "state_bond_grants"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
      "bank_statement",
@@ -4628,33 +4676,26 @@
     "mfh": [
      "real_property"
     ],
-    "reverse": [],
     "other": [
      "cannabis"
-    ]
+    ],
+    "reverse": []
    }
   },
   {
    "id": "lead_plus_wholesale",
    "name": "Lead Plus Wholesale",
    "note": null,
-   "contacts": [
-    {
-     "ae": "Jordan Threatt",
-     "phone": "980-395-5939",
-     "email": "Jordan.threatt@leadpluswholesale.com"
-    }
-   ],
-   "website": "https://leadpluswholesale.com",
-   "guidelines": "https://leadpluswholesale.com/products",
+   "contacts": [],
+   "website": null,
+   "guidelines": null,
    "lenderPaidBps": null,
    "borrowerPaidOnly": true,
    "minComp": null,
    "maxComp": null,
    "products": {
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "fixed_2nd",
@@ -4679,7 +4720,7 @@
     }
    ],
    "website": "N/A",
-   "guidelines": "N/A",
+   "guidelines": "Contact AE",
    "lenderPaidBps": null,
    "borrowerPaidOnly": true,
    "minComp": null,
@@ -4708,9 +4749,9 @@
    }
   },
   {
-   "id": "lemarr_lending_group_llc",
-   "name": "LeMarr Lending Group, LLC",
-   "note": "(AZ Only)",
+   "id": "lemarr_lending_group_llc_az_only",
+   "name": "LeMarr Lending Group, LLC\n(AZ Only)",
+   "note": null,
    "contacts": [
     {
      "ae": "Gellaine Faith Alipar",
@@ -4745,10 +4786,10 @@
      "non_residential_commercial",
      "residential_5_unit"
     ],
-    "private": [],
     "other": [
      "land_loans"
-    ]
+    ],
+    "private": []
    }
   },
   {
@@ -4760,18 +4801,13 @@
      "ae": "Vincent Dempsey (Olson)",
      "phone": "760-713-0005",
      "email": "vincent@golendingpros.com"
-    },
-    {
-     "ae": "Vincent Olson",
-     "phone": "760-713-0005",
-     "email": "vincent@golendingpros.com"
     }
    ],
    "website": "https://golendingpros.com/",
    "guidelines": "https://golendingpros.com - programs tab",
    "lenderPaidBps": 275,
    "borrowerPaidOnly": false,
-   "minComp": 275,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -4802,18 +4838,18 @@
     ],
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
+     "1st_lien_heloc",
      "bank_statement_heloc",
      "dscr_heloc",
      "fixed_2nd",
      "heloan",
-     "heloc",
-     "st_lien_heloc"
+     "heloc"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -4853,14 +4889,14 @@
    "guidelines": "https://lendsure.com",
    "lenderPaidBps": 275,
    "borrowerPaidOnly": false,
-   "minComp": 275,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "bridge",
@@ -4904,12 +4940,11 @@
    "guidelines": "https://lendzfinancial.com/wholesale",
    "lenderPaidBps": 275,
    "borrowerPaidOnly": true,
-   "minComp": 275,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "fixed_2nd",
@@ -4917,6 +4952,7 @@
      "piggyback"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -4986,15 +5022,16 @@
      "fha_dpa"
     ],
     "second": [
+     "1st_lien_heloc",
      "bank_statement_heloc",
      "dscr_heloc",
      "fixed_2nd",
      "heloan",
      "heloc",
-     "piggyback",
-     "st_lien_heloc"
+     "piggyback"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -5074,7 +5111,7 @@
    "guidelines": "www.luwholesale.com",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -5095,8 +5132,7 @@
      "va"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "mfh": [
      "real_property"
@@ -5168,7 +5204,7 @@
    "guidelines": "https://loanstreamwholesale.com/programs/",
    "lenderPaidBps": 275,
    "borrowerPaidOnly": false,
-   "minComp": 275,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -5201,18 +5237,18 @@
      "fha_dpa"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
+     "1st_lien_heloc",
      "bank_statement_heloc",
      "dscr_heloc",
      "fixed_2nd",
      "heloan",
-     "heloc",
-     "st_lien_heloc"
+     "heloc"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -5244,15 +5280,15 @@
    "guidelines": "www.loganwholesale.com/experience-by-logan/",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -5270,9 +5306,15 @@
    "id": "logan_investments",
    "name": "Logan Investments",
    "note": null,
-   "contacts": [],
+   "contacts": [
+    {
+     "ae": "N/A",
+     "phone": "818-755-0880",
+     "email": "ron@loganinvestments.com"
+    }
+   ],
    "website": "www.loganinvestments.com",
-   "guidelines": "contact investor",
+   "guidelines": "www.loganinvestments.com",
    "lenderPaidBps": null,
    "borrowerPaidOnly": false,
    "minComp": null,
@@ -5293,7 +5335,7 @@
     }
    ],
    "website": "contact AE",
-   "guidelines": "N/A",
+   "guidelines": "contact AE",
    "lenderPaidBps": null,
    "borrowerPaidOnly": false,
    "minComp": null,
@@ -5309,7 +5351,7 @@
    "contacts": [
     {
      "ae": "Michael J. Nuzzo",
-     "phone": "Mobile: 203-273-4389 Office: 203-569-4242",
+     "phone": "Mobile: 203-273-4389\nOffice: 203-569-4242",
      "email": "mnuzzo@luxurymortgage.com"
     }
    ],
@@ -5317,12 +5359,11 @@
    "guidelines": "https://luxurymortgagewholesale.com/",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
      "bank_statement",
@@ -5352,7 +5393,7 @@
    "guidelines": "https://mcfunding.com/products/",
    "lenderPaidBps": 275,
    "borrowerPaidOnly": false,
-   "minComp": 275,
+   "minComp": null,
    "maxComp": 30000,
    "products": {
     "conventional": [
@@ -5376,8 +5417,7 @@
     ],
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "bank_statement_heloc",
@@ -5386,6 +5426,7 @@
      "piggyback"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "dscr",
@@ -5405,12 +5446,12 @@
    "contacts": [
     {
      "ae": "Mark Steinbeck",
-     "phone": "office: 480-889-7569 cell:602-410-0845",
+     "phone": "Mobile: 480-889-7569\nOffice: 602-410-0845",
      "email": "msteinbeck@merchantsmtg.com"
     }
    ],
    "website": "www.merchantsmtg.com",
-   "guidelines": "contact investor",
+   "guidelines": "www.merchantsmtg.com",
    "lenderPaidBps": null,
    "borrowerPaidOnly": false,
    "minComp": null,
@@ -5501,6 +5542,7 @@
      "fha_dpa"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "bridge",
@@ -5548,7 +5590,7 @@
   {
    "id": "mortgage_financial_services_only_texas",
    "name": "Mortgage Financial Services (only TEXAS)",
-   "note": "only TEXAS",
+   "note": null,
    "contacts": [
     {
      "ae": "Brad Parlin",
@@ -5661,7 +5703,7 @@
    "guidelines": "https://m1tpo.encompasstpoconnect.com/#/tpo-documents",
    "lenderPaidBps": 225,
    "borrowerPaidOnly": false,
-   "minComp": 225,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -5685,8 +5727,7 @@
      "fha_dpa"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "fixed_2nd",
@@ -5694,6 +5735,7 @@
      "piggyback"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -5711,18 +5753,12 @@
    }
   },
   {
-   "id": "mutual_of_omaha",
-   "name": "Mutual of Omaha",
-   "note": "(SUSPENDED)",
-   "contacts": [
-    {
-     "ae": "Sam Golub",
-     "phone": "847-450-0663",
-     "email": "sgolub@mutualmortgage.com"
-    }
-   ],
-   "website": "https://moomwholesale.com/",
-   "guidelines": "https://mybarrettfinancial.com/correspondent.html",
+   "id": "mutual_of_omaha_suspended",
+   "name": "Mutual of Omaha\n(SUSPENDED)",
+   "note": null,
+   "contacts": [],
+   "website": null,
+   "guidelines": null,
    "lenderPaidBps": null,
    "borrowerPaidOnly": false,
    "minComp": null,
@@ -5736,7 +5772,7 @@
   {
    "id": "mutual_of_omaha_forward_fha_only_all_other_products_must_go_correspondent",
    "name": "Mutual of Omaha (Forward) - FHA only, all other products must go Correspondent",
-   "note": "Forward",
+   "note": null,
    "contacts": [
     {
      "ae": "Sam Golub",
@@ -5772,7 +5808,7 @@
   {
    "id": "mutual_of_omaha_reverse",
    "name": "Mutual of Omaha (Reverse)",
-   "note": "Reverse",
+   "note": null,
    "contacts": [
     {
      "ae": "James Raymond",
@@ -5825,8 +5861,7 @@
      "fha_dpa"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "bank_statement_heloc",
@@ -5836,6 +5871,7 @@
      "piggyback"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -5857,7 +5893,7 @@
    ],
    "website": "https://newdaycommercial.com",
    "guidelines": "https://newdaycommercial.com",
-   "lenderPaidBps": null,
+   "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
    "minComp": null,
    "maxComp": null,
@@ -5884,19 +5920,19 @@
    "guidelines": "www.newfiwholesale.com",
    "lenderPaidBps": 225,
    "borrowerPaidOnly": false,
-   "minComp": 225,
+   "minComp": 2500,
    "maxComp": null,
    "products": {
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "fixed_2nd",
      "heloan"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -5927,8 +5963,7 @@
    "maxComp": null,
    "products": {
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "bank_statement_heloc",
@@ -5938,6 +5973,7 @@
      "piggyback"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "bridge",
@@ -5970,8 +6006,7 @@
      "non_residential_commercial",
      "residential_5_unit"
     ],
-    "private": [],
-    "other": []
+    "private": []
    }
   },
   {
@@ -6017,13 +6052,13 @@
      "usda"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "fixed_2nd"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -6061,7 +6096,7 @@
    "guidelines": "https://www.newwavelending.com/resources",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -6079,14 +6114,14 @@
     ],
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "fixed_2nd",
      "heloan"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -6113,7 +6148,7 @@
    "guidelines": "https://mortgage.nexbank.com/index",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": 20000,
    "products": {
     "conventional": [
@@ -6129,8 +6164,7 @@
      "va"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
      "asset_depletion_utilization",
@@ -6202,7 +6236,7 @@
    "guidelines": "www.nmsigroup.com",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -6217,8 +6251,7 @@
     ],
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "bank_statement_heloc",
@@ -6248,14 +6281,14 @@
    "guidelines": "https://nqmf.com",
    "lenderPaidBps": 225,
    "borrowerPaidOnly": false,
-   "minComp": 225,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -6284,7 +6317,7 @@
    "guidelines": "https://www.nonqmexpert.com/oaktree-advantage-products/",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": 100000,
    "products": {
     "conventional": [
@@ -6299,18 +6332,18 @@
     ],
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
+     "1st_lien_heloc",
      "bank_statement_heloc",
      "fixed_2nd",
      "heloan",
      "heloc",
-     "piggyback",
-     "st_lien_heloc"
+     "piggyback"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "bridge",
@@ -6361,7 +6394,7 @@
    "guidelines": "www.openwholesale.com",
    "lenderPaidBps": 275,
    "borrowerPaidOnly": false,
-   "minComp": 275,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -6390,10 +6423,10 @@
      "fha_dpa"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -6435,7 +6468,7 @@
    "guidelines": "https://star.orionlending.com/STAR/Rates",
    "lenderPaidBps": 275,
    "borrowerPaidOnly": false,
-   "minComp": 275,
+   "minComp": null,
    "maxComp": 20000,
    "products": {
     "conventional": [
@@ -6468,10 +6501,10 @@
     ],
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -6535,11 +6568,6 @@
      "ae": "Dylan Redmond",
      "phone": "512-605-1362",
      "email": "dredmond@parkplaceus.com"
-    },
-    {
-     "ae": "Max Wettstein",
-     "phone": "512-631-7827",
-     "email": "maxw@parkplaceus.com"
     }
    ],
    "website": "https://parkplacefinance.com",
@@ -6574,9 +6602,15 @@
    "id": "parkview_financial",
    "name": "Parkview Financial",
    "note": null,
-   "contacts": [],
+   "contacts": [
+    {
+     "ae": "N/A",
+     "phone": "310-996-8999",
+     "email": "lending@parkviewloan.com"
+    }
+   ],
    "website": "www.parkviewloan.com",
-   "guidelines": "contact investor",
+   "guidelines": "www.parkviewloan.com",
    "lenderPaidBps": null,
    "borrowerPaidOnly": false,
    "minComp": null,
@@ -6586,9 +6620,9 @@
    }
   },
   {
-   "id": "pb_financial_group_corp",
-   "name": "PB Financial Group Corp.",
-   "note": "(Hard Money)",
+   "id": "pb_financial_group_corp_hard_money",
+   "name": "PB Financial Group Corp.\n(Hard Money)",
+   "note": null,
    "contacts": [
     {
      "ae": "Francis V. Estipona",
@@ -6604,13 +6638,13 @@
    "maxComp": null,
    "products": {
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "fixed_2nd"
     ],
     "nonqm": [
+     "1_1099",
      "bank_statement",
      "bridge",
      "close_in_llc",
@@ -6646,10 +6680,10 @@
      "non_residential_commercial",
      "residential_5_unit"
     ],
-    "private": [],
     "other": [
      "land_loans"
-    ]
+    ],
+    "private": []
    }
   },
   {
@@ -6659,12 +6693,7 @@
    "contacts": [
     {
      "ae": "Please see Pennymac\ncontact sheet",
-     "phone": "Please see Pennymac contact sheet",
-     "email": "TeamBarrett@Pennymac.com"
-    },
-    {
-     "ae": "Multiple AEs",
-     "phone": "408-210-0583",
+     "phone": "Please see Pennymac\ncontact sheet",
      "email": "TeamBarrett@Pennymac.com"
     }
    ],
@@ -6698,13 +6727,13 @@
     ],
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "heloan"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "dscr",
@@ -6767,13 +6796,13 @@
     ],
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "fixed_2nd"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -6786,7 +6815,6 @@
      "real_property",
      "single_wide"
     ],
-    "reverse": [],
     "renovation": [
      "conventional",
      "fha_203h_disaster",
@@ -6794,7 +6822,8 @@
      "homestyle_reno",
      "usda",
      "va"
-    ]
+    ],
+    "reverse": []
    }
   },
   {
@@ -6812,7 +6841,7 @@
    "guidelines": "https://portal.powertpo.com/#content/products_376627",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -6842,8 +6871,7 @@
      "fha_dpa"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
      "bank_statement",
@@ -6890,7 +6918,7 @@
    "guidelines": "https://tpo.prmg.net",
    "lenderPaidBps": 275,
    "borrowerPaidOnly": false,
-   "minComp": 275,
+   "minComp": null,
    "maxComp": 20000,
    "products": {
     "conventional": [
@@ -6928,14 +6956,14 @@
     ],
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "fixed_2nd",
      "piggyback"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -6999,22 +7027,14 @@
    "id": "quorum_broker_wholesale",
    "name": "Quorum Broker Wholesale",
    "note": null,
-   "contacts": [
-    {
-     "ae": "Eli Shereshovech",
-     "phone": "847-489-5626",
-     "email": "eli.shereshovech@quorumfcu.org"
-    }
-   ],
-   "website": "https://partners.quorumfcu.org/",
-   "guidelines": "https://partners.quorumfcu.org/",
+   "contacts": [],
+   "website": null,
+   "guidelines": null,
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
    "minComp": null,
    "maxComp": null,
-   "products": {
-    "second": []
-   }
+   "products": {}
   },
   {
    "id": "quorum_federal_credit_union",
@@ -7035,12 +7055,12 @@
    "maxComp": null,
    "products": {
     "second": [
+     "1st_lien_heloc",
      "bank_statement_heloc",
      "fixed_2nd",
      "heloan",
      "heloc",
-     "piggyback",
-     "st_lien_heloc"
+     "piggyback"
     ],
     "nonqm": [
      "bridge"
@@ -7066,15 +7086,15 @@
    "contacts": [
     {
      "ae": "Cameron Bishop",
-     "phone": "801-478-4526",
+     "phone": "801-915-0159",
      "email": "cameronb@ranlife.com"
     }
    ],
-   "website": "www.ranlife.com",
-   "guidelines": "www.ranlife.com",
+   "website": "fundingpool.com",
+   "guidelines": "contact AE",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -7108,16 +7128,15 @@
      "fha_dpa"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
+     "1st_lien_heloc",
      "dscr_heloc",
      "fixed_2nd",
      "heloan",
      "heloc",
-     "piggyback",
-     "st_lien_heloc"
+     "piggyback"
     ],
     "nonqm": [
      "asset_depletion_utilization",
@@ -7159,7 +7178,7 @@
    "guidelines": "https://www.realtpo.com",
    "lenderPaidBps": 275,
    "borrowerPaidOnly": false,
-   "minComp": 275,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -7168,13 +7187,13 @@
      "manual_underwrite"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "fixed_2nd"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -7210,8 +7229,7 @@
    "maxComp": null,
    "products": {
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "heloc"
@@ -7238,7 +7256,7 @@
    "guidelines": "hub.remnwholesale.com",
    "lenderPaidBps": 275,
    "borrowerPaidOnly": false,
-   "minComp": 275,
+   "minComp": null,
    "maxComp": 16000,
    "products": {
     "conventional": [
@@ -7270,15 +7288,10 @@
      "usda"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
-    ],
-    "second": [
-     "bank_statement_heloc",
-     "heloc",
-     "st_lien_heloc"
+     "jumbo"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -7292,6 +7305,25 @@
     "mfh": [
      "real_property",
      "single_wide"
+    ]
+   }
+  },
+  {
+   "id": "remn_heloc_through_nftydoor",
+   "name": "REMN\n(HELOC through NFTYDoor)",
+   "note": null,
+   "contacts": [],
+   "website": null,
+   "guidelines": null,
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "second": [
+     "1st_lien_heloc",
+     "bank_statement_heloc",
+     "heloc"
     ]
    }
   },
@@ -7333,10 +7365,10 @@
     ],
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -7393,7 +7425,7 @@
    "guidelines": "www.risetpo.com",
    "lenderPaidBps": 275,
    "borrowerPaidOnly": false,
-   "minComp": 275,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -7425,16 +7457,10 @@
     ],
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
-    ],
-    "second": [
-     "fixed_2nd",
-     "heloan",
-     "heloc",
-     "piggyback"
+     "jumbo"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -7452,6 +7478,26 @@
     "commercial": [
      "non_residential_commercial",
      "residential_5_unit"
+    ]
+   }
+  },
+  {
+   "id": "rise_tpo_heloc_through_figure",
+   "name": "Rise TPO\n(HELOC through FIGURE)",
+   "note": null,
+   "contacts": [],
+   "website": null,
+   "guidelines": null,
+   "lenderPaidBps": 275,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "second": [
+     "fixed_2nd",
+     "heloan",
+     "heloc",
+     "piggyback"
     ]
    }
   },
@@ -7505,6 +7551,7 @@
      "heloc"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -7529,9 +7576,15 @@
    "id": "sfg_of_arizona_llc",
    "name": "SFG of Arizona, LLC",
    "note": null,
-   "contacts": [],
+   "contacts": [
+    {
+     "ae": "N/A",
+     "phone": "480-450-3980",
+     "email": "N/A"
+    }
+   ],
    "website": "www.seattlefundinggroup.com",
-   "guidelines": "contact investor",
+   "guidelines": "www.seattlefundinggroup.com",
    "lenderPaidBps": null,
    "borrowerPaidOnly": false,
    "minComp": null,
@@ -7555,7 +7608,7 @@
    "guidelines": "https://www.sierrapacificmortgage.com/net/SPMDocumentLibrary/?cid=909119XSCOSYSVX2115840796800675720X2.909559XSCOSYSVX2115840796800675722X3x&passed.user.id=627961646F6E&ch=W",
    "lenderPaidBps": 225,
    "borrowerPaidOnly": false,
-   "minComp": 225,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -7586,9 +7639,22 @@
     ],
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
-    ],
+     "jumbo"
+    ]
+   }
+  },
+  {
+   "id": "sierra_pacific_uhm_heloc_through_figure",
+   "name": "Sierra Pacific/UHM\n(HELOC through FIGURE)",
+   "note": null,
+   "contacts": [],
+   "website": null,
+   "guidelines": null,
+   "lenderPaidBps": 225,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
     "second": [
      "heloc"
     ]
@@ -7620,15 +7686,15 @@
      "non_residential_commercial",
      "residential_5_unit"
     ],
-    "private": [],
     "other": [
      "land_loans"
-    ]
+    ],
+    "private": []
    }
   },
   {
-   "id": "silver_hll_funding",
-   "name": "Silver Hll Funding",
+   "id": "silver_hill_funding",
+   "name": "Silver Hill Funding",
    "note": null,
    "contacts": [
     {
@@ -7638,7 +7704,20 @@
     }
    ],
    "website": "N/A",
-   "guidelines": "contact investor",
+   "guidelines": "Contact AE",
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {}
+  },
+  {
+   "id": "silver_hll_funding",
+   "name": "Silver Hll Funding",
+   "note": null,
+   "contacts": [],
+   "website": null,
+   "guidelines": null,
    "lenderPaidBps": null,
    "borrowerPaidOnly": false,
    "minComp": null,
@@ -7648,9 +7727,9 @@
    }
   },
   {
-   "id": "simplereverse",
-   "name": "SimpleReverse",
-   "note": "(a division of Luminate Bank)",
+   "id": "simplereverse_a_division_of_luminate_bank",
+   "name": "SimpleReverse\n(a division of Luminate Bank)",
+   "note": null,
    "contacts": [
     {
      "ae": "Bob Garczewski",
@@ -7708,11 +7787,11 @@
    "maxComp": null,
    "products": {
     "second": [
+     "1st_lien_heloc",
      "fixed_2nd",
      "heloan",
      "heloc",
-     "piggyback",
-     "st_lien_heloc"
+     "piggyback"
     ]
    }
   },
@@ -7731,7 +7810,7 @@
    "guidelines": "www.stgmortgage.com",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": 30000,
    "products": {
     "conventional": [
@@ -7756,14 +7835,14 @@
      "usda"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "fixed_2nd",
      "piggyback"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -7782,22 +7861,14 @@
    "id": "stg_mortgage_atlending",
    "name": "STG Mortgage/ Atlending",
    "note": null,
-   "contacts": [
-    {
-     "ae": "Felicia Janzen",
-     "phone": "602-421-7700",
-     "email": "felicia.janzen@stgmortgage.com"
-    }
-   ],
-   "website": "www.stgmortgage.com",
-   "guidelines": "Contact AE",
+   "contacts": [],
+   "website": null,
+   "guidelines": null,
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
    "minComp": null,
    "maxComp": null,
-   "products": {
-    "second": []
-   }
+   "products": {}
   },
   {
    "id": "sunwest_mortgage",
@@ -7815,7 +7886,7 @@
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
    "minComp": 2500,
-   "maxComp": 2500,
+   "maxComp": null,
    "products": {
     "conventional": [
      "arm",
@@ -7855,18 +7926,18 @@
     ],
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
+     "1st_lien_heloc",
      "bank_statement_heloc",
      "dscr_heloc",
      "fixed_2nd",
      "heloan",
-     "heloc",
-     "st_lien_heloc"
+     "heloc"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -7878,7 +7949,6 @@
      "real_property",
      "single_wide"
     ],
-    "reverse": [],
     "construction": [
      "one_time_close"
     ],
@@ -7898,6 +7968,21 @@
      "physician",
      "section_184"
     ],
+    "reverse": []
+   }
+  },
+  {
+   "id": "sunwest_mortgage_in_trial_period",
+   "name": "SunWest Mortgage\n(in trial period)",
+   "note": null,
+   "contacts": [],
+   "website": null,
+   "guidelines": null,
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
     "correspondent": [
      "jumbo"
     ]
@@ -7922,9 +8007,9 @@
    "maxComp": null,
    "products": {
     "second": [
+     "1st_lien_heloc",
      "heloc",
-     "piggyback",
-     "st_lien_heloc"
+     "piggyback"
     ]
    }
   },
@@ -7973,17 +8058,10 @@
      "fha_dpa"
     ],
     "jumbo": [
-     "jumbo",
-     "max_comp"
-    ],
-    "second": [
-     "bank_statement_heloc",
-     "fixed_2nd",
-     "heloan",
-     "heloc",
-     "st_lien_heloc"
+     "jumbo"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "bridge",
@@ -8008,11 +8086,32 @@
     "renovation": [
      "fha_203h_disaster"
     ],
-    "private": [],
     "correspondent": [
      "bank_statement",
      "dscr",
      "jumbo"
+    ],
+    "private": []
+   }
+  },
+  {
+   "id": "the_loan_store_heloc_through_figure",
+   "name": "The Loan Store\n(HELOC through FIGURE)",
+   "note": null,
+   "contacts": [],
+   "website": null,
+   "guidelines": null,
+   "lenderPaidBps": 200,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {
+    "second": [
+     "1st_lien_heloc",
+     "bank_statement_heloc",
+     "fixed_2nd",
+     "heloan",
+     "heloc"
     ]
    }
   },
@@ -8061,6 +8160,7 @@
      "piggyback"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "bridge",
@@ -8200,7 +8300,6 @@
      "real_property",
      "single_wide"
     ],
-    "reverse": [],
     "renovation": [
      "choicerenovation",
      "conventional",
@@ -8209,22 +8308,23 @@
      "homestyle_reno",
      "usda",
      "va"
-    ]
+    ],
+    "reverse": []
    }
   },
   {
    "id": "traditional_mortgage_acceptance_corp_tmac",
    "name": "Traditional Mortgage Acceptance Corp (TMAC)",
-   "note": "TMAC",
+   "note": null,
    "contacts": [
     {
-     "ae": "Joseph Tuttle",
-     "phone": "949-229-0303",
+     "ae": "Joe Tuttle",
+     "phone": "949-229-0300",
      "email": "joe.tuttle@traditionalmac.com"
     }
    ],
-   "website": "N/A",
-   "guidelines": "N/A",
+   "website": "https://www.traditionalmac.com/",
+   "guidelines": "Contact AE",
    "lenderPaidBps": null,
    "borrowerPaidOnly": false,
    "minComp": null,
@@ -8257,6 +8357,7 @@
    "maxComp": null,
    "products": {
     "nonqm": [
+     "1_1099",
      "itin",
      "wvoe"
     ],
@@ -8282,12 +8383,11 @@
    "guidelines": "www.trulyinvestorcap.com/sales/casey-koelsch",
    "lenderPaidBps": 250,
    "borrowerPaidOnly": false,
-   "minComp": 250,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
      "bridge",
@@ -8330,7 +8430,7 @@
     }
    ],
    "website": "N/A",
-   "guidelines": "N/A",
+   "guidelines": "Contact AE",
    "lenderPaidBps": null,
    "borrowerPaidOnly": false,
    "minComp": null,
@@ -8353,7 +8453,7 @@
     }
    ],
    "website": "N/A",
-   "guidelines": "N/A",
+   "guidelines": "Contact AE",
    "lenderPaidBps": null,
    "borrowerPaidOnly": false,
    "minComp": null,
@@ -8368,22 +8468,14 @@
    "id": "unified_reliance_wholesale",
    "name": "Unified Reliance Wholesale",
    "note": null,
-   "contacts": [
-    {
-     "ae": "Joe Embree",
-     "phone": "619-200-8674",
-     "email": "joe.embree@urwholesale.com"
-    }
-   ],
-   "website": "www.urwtpo.com",
-   "guidelines": "Contact AE",
+   "contacts": [],
+   "website": null,
+   "guidelines": null,
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
    "minComp": null,
    "maxComp": null,
-   "products": {
-    "second": []
-   }
+   "products": {}
   },
   {
    "id": "union_home_mortgage",
@@ -8443,7 +8535,7 @@
   {
    "id": "unison_bank_az_only",
    "name": "Unison Bank (AZ Only)",
-   "note": "AZ Only",
+   "note": null,
    "contacts": [
     {
      "ae": "Karen Werner",
@@ -8482,7 +8574,7 @@
   {
    "id": "united_ag_lending_rural_and_agricultural_purpose_only",
    "name": "United AG Lending (Rural and Agricultural Purpose Only)",
-   "note": "Rural and Agricultural Purpose Only",
+   "note": null,
    "contacts": [
     {
      "ae": "Kent Hackman",
@@ -8505,6 +8597,19 @@
      "land_loans"
     ]
    }
+  },
+  {
+   "id": "updated_5_26_2026",
+   "name": "Updated - 5/26/2026",
+   "note": null,
+   "contacts": [],
+   "website": null,
+   "guidelines": null,
+   "lenderPaidBps": null,
+   "borrowerPaidOnly": false,
+   "minComp": null,
+   "maxComp": null,
+   "products": {}
   },
   {
    "id": "uwm",
@@ -8549,8 +8654,7 @@
     ],
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "heloc",
@@ -8592,12 +8696,11 @@
    "guidelines": "https://valerefinancial.com",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "jumbo": [
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
      "bank_statement_heloc",
@@ -8605,6 +8708,7 @@
      "fixed_2nd"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -8636,7 +8740,7 @@
     }
    ],
    "website": "www.velocitymortgage.com",
-   "guidelines": "N/A",
+   "guidelines": "Contact AE",
    "lenderPaidBps": null,
    "borrowerPaidOnly": true,
    "minComp": null,
@@ -8793,22 +8897,15 @@
    "borrowerPaidOnly": false,
    "minComp": null,
    "maxComp": null,
-   "products": {
-    "nonqm": []
-   }
+   "products": {}
   },
   {
    "id": "wholsale_mortgage_direct_wmd",
    "name": "Wholsale Mortgage Direct (WMD)",
-   "note": "WMD",
+   "note": null,
    "contacts": [
     {
      "ae": "Solutions Team",
-     "phone": "888-943-2833",
-     "email": "solutions@wmd.mortgage"
-    },
-    {
-     "ae": "Vincent Olson",
      "phone": "888-943-2833",
      "email": "solutions@wmd.mortgage"
     }
@@ -8817,24 +8914,24 @@
    "guidelines": "Contact AE",
    "lenderPaidBps": 275,
    "borrowerPaidOnly": false,
-   "minComp": 275,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "second": [
+     "1st_lien_heloc",
      "bank_statement_heloc",
      "dscr_heloc",
      "fixed_2nd",
      "heloan",
      "heloc",
-     "piggyback",
-     "st_lien_heloc"
+     "piggyback"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "close_in_llc",
@@ -8847,10 +8944,10 @@
      "recent_credit_events",
      "wvoe"
     ],
-    "reverse": [],
     "commercial": [
      "residential_5_unit"
-    ]
+    ],
+    "reverse": []
    }
   },
   {
@@ -8873,7 +8970,7 @@
    "guidelines": "https://plainscommercebank.my.site.com/",
    "lenderPaidBps": 200,
    "borrowerPaidOnly": false,
-   "minComp": 200,
+   "minComp": null,
    "maxComp": null,
    "products": {
     "conventional": [
@@ -8911,10 +9008,10 @@
     ],
     "jumbo": [
      "arm",
-     "jumbo",
-     "max_comp"
+     "jumbo"
     ],
     "nonqm": [
+     "1_1099",
      "asset_depletion_utilization",
      "bank_statement",
      "bridge",

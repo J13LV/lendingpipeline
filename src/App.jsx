@@ -34,7 +34,9 @@ import {
   backupViability, changeCost, applyLenderChange, reregistrationCost,
   lenderChangeCount, lenderFaultChanges, LENDER_CHANGE_LANDING_STAGE,
   lenderScorecard, lenderVerdict, lenderProductBreakdown, productScorecard, productsWorked,
-  DPA_PROGRAMS, dpaProgram, lendersByDpaProgram, dpaProgramCoverage,
+  specialtyCatalog, lendersBySpecialty, specialtyLabel, categoryLabel,
+  DPA_STRUCTURES, dpaStructure, dpaDetail, setDpaDetail, dpaDetailCoverage,
+  dpaDetailSummary, emptyDpaDetail,
   noteEntries, latestNote, noteCount, addNoteEntry,
   LO_STAGES, STAGE_THRESHOLDS, teamLeadShare, branchCostPerFile, ladderCeiling,
   loanSplit, lendersHiddenByChannel, OTHER_LENDER_ID, lenderNameOf, payrollPeriodLabel, currentPayrollPeriod, payrollSummary, fundedDate,
@@ -533,6 +535,10 @@ export default function App() {
   const [docBytes,setDocBytes]=useState(0);
   const [sizeAlert,setSizeAlert]=useState(null);
   const [idsBackfilled,setIdsBackfilled]=useState(0);
+  // Detalle de DPA capturado a mano. Vive junto al pipeline, NO en
+  // lenders2026.json: ese archivo se regenera desde el Excel de Barrett y
+  // borraría todo lo escrito.
+  const [dpaDetails,setDpaDetails]=useState({});
   // El idioma es del usuario, no de la sesión: Ana entra siempre en español
   // aunque Jose haya usado el mismo navegador en inglés.
   const [lang,setLang]=useState(()=>{
@@ -577,6 +583,7 @@ export default function App() {
       if(snap.exists()){
         const data = snap.data();
         if(Array.isArray(data.payrollRequests)) setPayrollLog(data.payrollRequests);
+        if(data.dpaDetails && typeof data.dpaDetails==="object") setDpaDetails(data.dpaDetails);
         if(data.files && data.files.length > 0){
           // Un archivo sin id no se puede editar en masa: la búsqueda por id
           // no lo encuentra y la operación falla sin decir nada. Se le asigna
@@ -1060,6 +1067,11 @@ export default function App() {
           inbound={inbound}
           onOpenFile={setDetail}
           payrollLog={payrollLog}
+          dpaDetails={dpaDetails}
+          onSaveDpa={(next)=>{
+            setDpaDetails(next);
+            setDoc(PIPELINE_DOC,{dpaDetails:next},{merge:true}).catch(()=>setSaveStatus("error"));
+          }}
           onLogPayroll={(entry)=>setPayrollLog(prev=>[...prev,entry])}
           onDeletePayrollLog={(id)=>setPayrollLog(prev=>prev.filter(x=>x.id!==id))}
           onClosePeriod={(entry, updates)=>{
@@ -1617,7 +1629,7 @@ function ArchiveModal({file, onClose, onConfirm}){
 }
 
 
-function ProductionDashboard({profile, files, closed, active, referredOut, inbound, onOpenFile, onBulkUpdate, payrollLog, onLogPayroll, onClosePeriod, onDeletePayrollLog}){
+function ProductionDashboard({profile, files, closed, active, referredOut, inbound, onOpenFile, onBulkUpdate, payrollLog, onLogPayroll, onClosePeriod, onDeletePayrollLog, dpaDetails, onSaveDpa}){
   const isAdmin = profile?.role === "admin";
   const isLO = profile?.role === "lo";
   const [compYear,setCompYear]=useState(1);
@@ -1629,7 +1641,10 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
   const [reqError,setReqError]=useState(null);
   const [scView,setScView]=useState("lender");
   const [scProduct,setScProduct]=useState(null);
-  const [scDpa,setScDpa]=useState("fha_dpa");
+  const [scCat,setScCat]=useState("nonqm");
+  const [scSpec,setScSpec]=useState(null);
+  const [dpaOpen,setDpaOpen]=useState(null);
+  const [dpaDraft,setDpaDraft]=useState(null);
   const [filesMo,setFilesMo]=useState(8);
   const payroll=payrollSummary(files,{year:compYear,filesPerMonth:filesMo,roster:COMP_ROSTER});
   const [prodTab,setProdTab]=useState("team");
@@ -2287,23 +2302,23 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           <div style={{display:"flex",flexDirection:"column",gap:14}}>
             <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:8,padding:"12px 16px",
               fontSize:11.5,color:"#8B949E",lineHeight:1.6}}>
-              {scView==="lender"?TX("scorecardLead"):scView==="product"?TX("productStrength"):TX("dpaLead")}
+              {scView==="lender"?TX("scorecardLead"):scView==="product"?TX("productStrength"):TX("specLead")}
             </div>
 
             <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
-              {["lender","product","dpa"].map(v=>(
+              {["lender","product","spec"].map(v=>(
                 <button key={v} className="hov" onClick={()=>setScView(v)}
                   style={{background:scView===v?"#F5A623":"#21262D",color:scView===v?"#0D1117":"#8B949E",
                     border:"none",borderRadius:6,padding:"6px 14px",fontSize:11,fontFamily:"DM Mono",
                     fontWeight:500,cursor:"pointer"}}>
-                  {v==="lender"?TX("byLender"):v==="product"?TX("byProduct"):TX("byDpa")}
+                  {v==="lender"?TX("byLender"):v==="product"?TX("byProduct"):TX("bySpecialty")}
                 </button>
               ))}
-              {scView==="dpa"&&dpaProgramCoverage().map(p=>(
-                <button key={p.id} className="hov" onClick={()=>setScDpa(p.id)}
-                  style={{background:scDpa===p.id?"#7EC8A4":"#21262D",color:scDpa===p.id?"#0D1117":"#8B949E",
+              {scView==="spec"&&specialtyCatalog().map(c=>(
+                <button key={c.category} className="hov" onClick={()=>{setScCat(c.category);setScSpec(null);}}
+                  style={{background:scCat===c.category?"#4A90D9":"#21262D",color:scCat===c.category?"#0D1117":"#8B949E",
                     border:"none",borderRadius:6,padding:"5px 11px",fontSize:10.5,fontFamily:"DM Mono",cursor:"pointer"}}>
-                  {P(p)} · {p.lenders}
+                  {P(c.label)} · {c.lenders}
                 </button>
               ))}
               {scView==="product"&&productsWorked(files,{cutover:BARRETT_CUTOVER}).map(pw=>(
@@ -2428,64 +2443,154 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
             })()}
 
 
-            {scView==="dpa"&&(()=>{
-              const list=lendersByDpaProgram(files,scDpa,{cutover:BARRETT_CUTOVER});
-              const prog=dpaProgram(scDpa);
+            {scView==="spec"&&(()=>{
+              const cat=specialtyCatalog().find(c=>c.category===scCat)||specialtyCatalog()[0];
+              const spec=scSpec||cat.specialties[0]?.id;
+              const list=lendersBySpecialty(files,cat.category,spec,{cutover:BARRETT_CUTOVER});
+              const thin=list.length<=12;
+              const isDpa=cat.category==="dpa";
+              const cov=isDpa?dpaDetailCoverage(dpaDetails):null;
               const tried=list.filter(x=>x.tried), rest=list.filter(x=>!x.tried);
+              const Field=({k,label,type,opts,w})=>{
+                const d=dpaDraft||{};
+                const set=v=>setDpaDraft({...d,[k]:v});
+                return (
+                  <div style={{minWidth:w||96}}>
+                    <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>{label}</div>
+                    {opts?(
+                      <select value={d[k]??""} onChange={e=>set(e.target.value||null)}
+                        style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,color:"#E6EDF3",
+                          padding:"5px 7px",fontSize:11,fontFamily:"DM Mono",width:"100%"}}>
+                        <option value="">—</option>
+                        {opts.map(o=><option key={o.v} value={o.v}>{o.l}</option>)}
+                      </select>
+                    ):(
+                      <input value={d[k]??""} inputMode={type==="num"?"decimal":undefined}
+                        onChange={e=>set(e.target.value)}
+                        style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,color:"#E6EDF3",
+                          padding:"5px 7px",fontSize:11,fontFamily:"DM Mono",width:"100%"}}/>
+                    )}
+                  </div>
+                );
+              };
+              const Row=({l})=>{
+                const key=l.lenderId+"::"+spec;
+                const det=isDpa?dpaDetail(dpaDetails,l.lenderId,spec):null;
+                const sum=det?dpaDetailSummary(det,CURRENT_LANG):null;
+                const open=dpaOpen===key;
+                return (
+                  <div style={{borderBottom:"1px solid #21262D"}}>
+                    <div style={{display:"flex",alignItems:"baseline",gap:10,padding:"9px 14px",fontSize:11.5}}>
+                      <span style={{flex:1,color:l.tried?"#E6EDF3":"#8B949E"}}>
+                        {l.name}
+                        {l.siblings.length>0&&(
+                          <span style={{color:"#484F58",fontSize:9.5}}>
+                            {"  "}{TX("alsoDoes")} {l.siblings.slice(0,3).map(x=>P(specialtyLabel(x))).join(", ")}
+                          </span>
+                        )}
+                        {sum&&<div style={{fontSize:10,color:"#7EC8A4",marginTop:2}}>{sum}</div>}
+                      </span>
+                      {l.tried&&(
+                        <>
+                          <span style={{color:"#8B949E",fontFamily:"DM Mono",fontSize:10.5}}>
+                            {TX("closedOf",{a:l.funded,b:l.touched})}
+                          </span>
+                          <span style={{fontFamily:"Syne",fontWeight:800,fontSize:13,minWidth:44,textAlign:"right",
+                            color:l.pullThrough>=80?"#7EC8A4":l.pullThrough>=50?"#F5A623":"#E85D75"}}>
+                            {l.pullThrough}%
+                          </span>
+                        </>
+                      )}
+                      <span style={{color:"#484F58",fontFamily:"DM Mono",fontSize:10.5,minWidth:54,textAlign:"right"}}>
+                        {l.bps?l.bps+" bps":"—"}
+                      </span>
+                      {isDpa&&isAdmin&&(
+                        <button className="hov" onClick={()=>{
+                            setDpaOpen(open?null:key);
+                            setDpaDraft(open?null:{...emptyDpaDetail(),...(det||{}),
+                              states:(det?.states||[]).join(",")});
+                          }}
+                          style={{background:"#21262D",border:`1px solid ${sum?"#7EC8A4":"#30363D"}`,
+                            borderRadius:4,color:sum?"#7EC8A4":"#6E7681",fontSize:9,padding:"3px 8px",
+                            cursor:"pointer",fontFamily:"DM Mono"}}>
+                          {open?"✕":(sum?TX("dpaEdit"):TX("dpaEmpty"))}
+                        </button>
+                      )}
+                    </div>
+                    {open&&(
+                      <div style={{padding:"11px 14px 14px",background:"#0D1117",borderTop:"1px solid #21262D"}}>
+                        <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:8}}>
+                          {TX("dpaDetailTitle")}
+                        </div>
+                        <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:9}}>
+                          <Field k="pct" label={TX("dpaPct")} type="num" w={86}/>
+                          <Field k="pctOf" label={TX("dpaPctOf")} w={150} opts={[
+                            {v:"purchase",l:TX("purchase")},{v:"loan",l:TX("loanAmt")},{v:"down_payment",l:TX("downPay")}]}/>
+                          <Field k="structure" label={TX("dpaStructure")} w={180} opts={
+                            Object.keys(DPA_STRUCTURES).map(k=>({v:k,l:P(DPA_STRUCTURES[k])}))}/>
+                          <Field k="forgivenessMonths" label={TX("dpaForgive")} type="num" w={110}/>
+                          <Field k="fixesRate" label={TX("dpaFixesRate")} w={90} opts={[
+                            {v:"true",l:TX("yesShort")},{v:"false",l:TX("noShort")}]}/>
+                          <Field k="minFico" label={TX("dpaMinFico")} type="num" w={80}/>
+                          <Field k="maxDti" label={TX("dpaMaxDti")} type="num" w={80}/>
+                          <Field k="states" label={TX("dpaStates")} w={120}/>
+                        </div>
+                        <input value={dpaDraft?.note??""} onChange={e=>setDpaDraft({...dpaDraft,note:e.target.value})}
+                          placeholder={TX("dpaNote")}
+                          style={{background:"#161B22",border:"1px solid #30363D",borderRadius:5,color:"#E6EDF3",
+                            padding:"6px 9px",fontSize:11,fontFamily:"DM Mono",width:"100%",marginBottom:9}}/>
+                        <button className="hov" onClick={()=>{
+                            const d={...dpaDraft};
+                            d.fixesRate = d.fixesRate==="true"?true:d.fixesRate==="false"?false:null;
+                            d.states = String(d.states||"").split(",").map(x=>x.trim().toUpperCase()).filter(Boolean);
+                            onSaveDpa&&onSaveDpa(setDpaDetail(dpaDetails,l.lenderId,spec,d,profile.name));
+                            setDpaOpen(null); setDpaDraft(null);
+                          }}
+                          style={{background:"#7EC8A4",color:"#0D1117",border:"none",borderRadius:6,
+                            padding:"7px 16px",fontSize:11,fontFamily:"DM Mono",fontWeight:500,cursor:"pointer"}}>
+                          {TX("dpaSave")}
+                        </button>
+                        <div style={{fontSize:9,color:"#484F58",marginTop:7,lineHeight:1.5}}>{TX("dpaDetailHint")}</div>
+                      </div>
+                    )}
+                  </div>
+                );
+              };
               return (
                 <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                  <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                    {cat.specialties.map(sp=>(
+                      <button key={sp.id} className="hov" onClick={()=>setScSpec(sp.id)}
+                        style={{background:spec===sp.id?"#7EC8A4":"transparent",
+                          border:`1px solid ${spec===sp.id?"#7EC8A4":sp.lenders<=12?"#F5A62366":"#30363D"}`,
+                          color:spec===sp.id?"#0D1117":sp.lenders<=12?"#F5A623":"#8B949E",
+                          borderRadius:5,padding:"4px 9px",fontSize:10,fontFamily:"DM Mono",cursor:"pointer"}}>
+                        {P(specialtyLabel(sp.id))} <span style={{opacity:.6}}>{sp.lenders}</span>
+                      </button>
+                    ))}
+                  </div>
                   <div style={{display:"flex",alignItems:"baseline",gap:10,flexWrap:"wrap"}}>
                     <span style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#7EC8A4"}}>
-                      {TX("dpaQ",{p:P(prog)})}
+                      {TX("specQ",{p:P(specialtyLabel(spec))})}
                     </span>
-                    <span style={{fontSize:11,color:"#484F58"}}>{TX("dpaCoverage",{n:list.length})}</span>
+                    <span style={{fontSize:11,color:"#484F58"}}>{list.length} lenders</span>
+                    {cov&&<span style={{fontSize:10,color:"#484F58",marginLeft:"auto"}}>
+                      {TX("dpaCoverage",{f:cov.filled,t:cov.total,p:cov.pct})}</span>}
                   </div>
-                  {list.length<=8&&(
+                  {thin&&(
                     <div style={{background:"rgba(245,166,35,.08)",border:"1px solid #F5A62344",borderRadius:8,
-                      padding:"10px 14px",fontSize:11,color:"#F5A623",lineHeight:1.55}}>{TX("dpaThin")}</div>
-                  )}
-                  {scDpa==="calhfa"&&(
-                    <div style={{background:"rgba(74,144,217,.08)",border:"1px solid #4A90D944",borderRadius:8,
-                      padding:"10px 14px",fontSize:11,color:"#4A90D9",lineHeight:1.55}}>{TX("notLicensed")}</div>
+                      padding:"10px 14px",fontSize:11,color:"#F5A623",lineHeight:1.55}}>{TX("specThin")}</div>
                   )}
                   <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
-                    {tried.length>0&&(
-                      <div style={{background:"#0D1117",padding:"8px 14px",fontSize:9.5,color:"#7EC8A4",
-                        letterSpacing:"1px",borderBottom:"1px solid #30363D"}}>{TX("proven")}</div>
-                    )}
-                    {[...tried,...rest].map((l,i)=>(
-                      <div key={l.lenderId}>
-                        {i===tried.length&&tried.length>0&&(
-                          <div style={{background:"#0D1117",padding:"8px 14px",fontSize:9.5,color:"#484F58",
-                            letterSpacing:"1px",borderTop:"1px solid #30363D",borderBottom:"1px solid #21262D"}}>
-                            {TX("untried")}
-                          </div>
-                        )}
-                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:10,
-                          padding:"9px 14px",borderBottom:"1px solid #21262D",fontSize:11.5}}>
-                          <span style={{color:l.tried?"#E6EDF3":"#8B949E",flex:1}}>
-                            {l.name}
-                            <span style={{color:"#484F58",fontSize:9.5}}>
-                              {"  "}{TX("dpaPrograms",{n:l.programs.length})}
-                            </span>
-                          </span>
-                          {l.tried&&(
-                            <>
-                              <span style={{color:"#8B949E",fontFamily:"DM Mono",fontSize:10.5}}>
-                                {TX("closedOf",{a:l.funded,b:l.touched})}
-                              </span>
-                              <span style={{fontFamily:"Syne",fontWeight:800,fontSize:13,minWidth:46,textAlign:"right",
-                                color:l.pullThrough>=80?"#7EC8A4":l.pullThrough>=50?"#F5A623":"#E85D75"}}>
-                                {l.pullThrough}%
-                              </span>
-                            </>
-                          )}
-                          <span style={{color:"#484F58",fontFamily:"DM Mono",fontSize:10.5,minWidth:56,textAlign:"right"}}>
-                            {l.bps?l.bps+" bps":"—"}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+                    {tried.length>0&&<div style={{background:"#0D1117",padding:"8px 14px",fontSize:9.5,
+                      color:"#7EC8A4",letterSpacing:"1px",borderBottom:"1px solid #30363D"}}>{TX("proven")}</div>}
+                    {tried.map(l=><Row key={l.lenderId} l={l}/>)}
+                    {rest.length>0&&<div style={{background:"#0D1117",padding:"8px 14px",fontSize:9.5,
+                      color:"#484F58",letterSpacing:"1px",borderTop:tried.length?"1px solid #30363D":"none",
+                      borderBottom:"1px solid #21262D"}}>{TX("untried")}</div>}
+                    {rest.slice(0,30).map(l=><Row key={l.lenderId} l={l}/>)}
+                    {rest.length>30&&<div style={{padding:"9px 14px",fontSize:9.5,color:"#484F58"}}>
+                      +{rest.length-30}</div>}
                   </div>
                 </div>
               );
@@ -3548,7 +3653,7 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
           <div style={{fontSize:9.5,color:"#F5A623",marginTop:5,lineHeight:1.5}}>
             {TX("hiddenByChannel",{
               n:hidden.length,
-              list:hidden.slice(0,4).map(l=>l.name).join(", ")
+              list:hidden.slice(0,4).map(x=>x.name).join(", ")
                    + (hidden.length>4?TX("andNMore",{n:hidden.length-4}):"")
             })}
           </div>

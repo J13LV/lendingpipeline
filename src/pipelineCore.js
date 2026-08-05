@@ -2070,57 +2070,198 @@ export function productsWorked(files, { cutover = null } = {}) {
 }
 
 
-// ─── PROGRAMAS DE DPA ──────────────────────────────────────────────
-// El catálogo guarda, por lender, qué programas de asistencia maneja.
-// Con DPA en la mitad de la producción, "¿quién hace Chenoa?" es una
-// pregunta diaria — y la respuesta ya estaba en el archivo sin usarse.
-export const DPA_PROGRAMS = [
-  { id: "fha_dpa",           es: "FHA DPA",            en: "FHA DPA" },
-  { id: "conventional_dpa",  es: "Conventional DPA",   en: "Conventional DPA" },
-  { id: "chenoa",            es: "Chenoa",             en: "Chenoa" },
-  { id: "calhfa",            es: "CalHFA",             en: "CalHFA" },
-  { id: "state_bond_grants", es: "Bonos y grants estatales", en: "State bonds & grants" },
-];
-export const dpaProgram = id => DPA_PROGRAMS.find(p => p.id === id) || null;
+// ─── ESPECIALIDADES DEL CATÁLOGO ───────────────────────────────────
+// El archivo de lenders guarda 17 categorías y cada una trae su sublista:
+// no solo "hace non-QM" sino ITIN, DSCR, bank statement, P&L, foreign
+// national. No solo "hace FHA" sino FICO 500, sin FICO, manual underwrite.
+//
+// La primera versión solo leía la lista de DPA e ignoraba las otras
+// dieciséis. Aquí vale cualquier especialidad, que es lo que convierte el
+// catálogo en una respuesta a "¿a quién le mando ESTE archivo?".
+export const SPECIALTY_LABELS = {
+  // DPA
+  fha_dpa:{es:"FHA DPA",en:"FHA DPA"}, conventional_dpa:{es:"Conventional DPA",en:"Conventional DPA"},
+  chenoa:{es:"Chenoa",en:"Chenoa"}, calhfa:{es:"CalHFA",en:"CalHFA"},
+  state_bond_grants:{es:"Bonos y grants estatales",en:"State bonds & grants"},
+  // Non-QM
+  itin:{es:"ITIN",en:"ITIN"}, dscr:{es:"DSCR",en:"DSCR"},
+  bank_statement:{es:"Bank statement",en:"Bank statement"},
+  profit_and_loss:{es:"P&L",en:"P&L"}, foreign_national:{es:"Extranjero",en:"Foreign national"},
+  wvoe:{es:"WVOE",en:"WVOE"}, stated_income:{es:"Ingreso declarado",en:"Stated income"},
+  no_ratio:{es:"Sin ratio",en:"No ratio"},
+  asset_depletion_utilization:{es:"Uso de activos",en:"Asset depletion"},
+  recent_credit_events:{es:"Crédito reciente afectado",en:"Recent credit events"},
+  non_warrantable_condo:{es:"Condo no warrantable",en:"Non-warrantable condo"},
+  close_in_llc:{es:"Cierra en LLC",en:"Close in LLC"},
+  cross_collateral_blanket:{es:"Garantía cruzada",en:"Cross collateral"},
+  // FHA / VA
+  down_to_500_fico:{es:"FICO desde 500",en:"FICO down to 500"},
+  no_fico:{es:"Sin FICO",en:"No FICO"},
+  manual_underwrite:{es:"Manual underwrite",en:"Manual underwrite"},
+  tbd_underwrite:{es:"TBD underwrite",en:"TBD underwrite"},
+  streamline:{es:"Streamline",en:"Streamline"}, irrrl:{es:"IRRRL",en:"IRRRL"},
+  arm:{es:"ARM",en:"ARM"},
+  // Convencional
+  home_ready_possible:{es:"HomeReady / Home Possible",en:"HomeReady / Home Possible"},
+  // Segundas
+  heloc:{es:"HELOC",en:"HELOC"}, heloan:{es:"HELOAN",en:"HELOAN"},
+  piggyback:{es:"Piggyback",en:"Piggyback"}, fixed_2nd:{es:"Segunda fija",en:"Fixed 2nd"},
+  dscr_heloc:{es:"HELOC DSCR",en:"DSCR HELOC"},
+  bank_statement_heloc:{es:"HELOC bank statement",en:"Bank statement HELOC"},
+  st_lien_heloc:{es:"HELOC primera",en:"1st lien HELOC"},
+  // Otros
+  fix_n_flip:{es:"Fix & flip",en:"Fix & flip"}, ground_up:{es:"Construcción desde cero",en:"Ground up"},
+  one_time_close:{es:"One-time close",en:"One-time close"},
+  construction_to_perm:{es:"Construcción a permanente",en:"Construction to perm"},
+  fha_203k:{es:"FHA 203k",en:"FHA 203k"}, homestyle_reno:{es:"HomeStyle Reno",en:"HomeStyle Reno"},
+  physician:{es:"Médicos",en:"Physician"}, section_184:{es:"Section 184",en:"Section 184"},
+  land_loans:{es:"Terrenos",en:"Land loans"},
+  real_property:{es:"Propiedad real",en:"Real property"}, single_wide:{es:"Single wide",en:"Single wide"},
+};
+export const CATEGORY_LABELS = {
+  dpa:{es:"DPA",en:"DPA"}, nonqm:{es:"Non-QM",en:"Non-QM"},
+  fha:{es:"FHA",en:"FHA"}, va:{es:"VA",en:"VA"}, usda:{es:"USDA",en:"USDA"},
+  conventional:{es:"Conventional",en:"Conventional"}, jumbo:{es:"Jumbo",en:"Jumbo"},
+  second:{es:"Segundas y HELOC",en:"Seconds & HELOC"},
+  construction:{es:"Construcción",en:"Construction"}, renovation:{es:"Renovación",en:"Renovation"},
+  mfh:{es:"Manufacturada",en:"Manufactured"}, commercial:{es:"Comercial",en:"Commercial"},
+  bridge:{es:"Bridge",en:"Bridge"}, other:{es:"Otros",en:"Other"},
+  correspondent:{es:"Correspondent",en:"Correspondent"},
+  reverse:{es:"Reverse",en:"Reverse"}, private:{es:"Privado",en:"Private"},
+};
+export const specialtyLabel = id => SPECIALTY_LABELS[id] ||
+  { es: String(id).replace(/_/g," "), en: String(id).replace(/_/g," ") };
+export const categoryLabel = id => CATEGORY_LABELS[id] ||
+  { es: String(id), en: String(id) };
 
-export function lenderDpaPrograms(lenderId) {
-  const d = lenderById(lenderId)?.products?.dpa;
-  return Array.isArray(d) ? d : [];
+// Todas las especialidades que existen en el catálogo, con cuántos lenders
+// las manejan. Ordenadas de más escasa a más común dentro de su categoría —
+// las escasas son las que limitan tus opciones.
+export function specialtyCatalog() {
+  const cats = new Map();
+  for (const l of LENDERS) {
+    for (const [cat, list] of Object.entries(l.products || {})) {
+      if (!Array.isArray(list)) continue;
+      if (!cats.has(cat)) cats.set(cat, new Map());
+      const m = cats.get(cat);
+      for (const sp of list) m.set(sp, (m.get(sp) || 0) + 1);
+    }
+  }
+  return [...cats.entries()].map(([cat, m]) => ({
+    category: cat, label: categoryLabel(cat),
+    lenders: LENDERS.filter(l => Array.isArray(l.products?.[cat]) && l.products[cat].length).length,
+    specialties: [...m.entries()]
+      .map(([id, n]) => ({ id, label: specialtyLabel(id), lenders: n }))
+      .sort((a, b) => a.lenders - b.lenders),
+  })).filter(c => c.specialties.length).sort((a, b) => b.lenders - a.lenders);
 }
 
-// Quién maneja un programa, con el historial que tengas con cada uno.
-export function lendersByDpaProgram(files, programId, { cutover = null } = {}) {
+// Quién maneja una especialidad, con el historial que tengas en su categoría.
+export function lendersBySpecialty(files, category, specialty, { cutover = null } = {}) {
   const perf = new Map();
   for (const r of lenderProductBreakdown(files, { cutover })) {
-    if (r.product !== "dpa") continue;
-    perf.set(r.lenderId, r);
+    if (r.product === category) perf.set(r.lenderId, r);
   }
   return LENDERS
-    .filter(l => (Array.isArray(l.products?.dpa) ? l.products.dpa : []).includes(programId))
+    .filter(l => Array.isArray(l.products?.[category]) && l.products[category].includes(specialty))
     .map(l => {
       const p = perf.get(l.id);
       return {
         lenderId: l.id, name: l.name, bps: l.lenderPaidBps ?? null,
-        programs: Array.isArray(l.products?.dpa) ? l.products.dpa : [],
+        borrowerPaidOnly: !!l.borrowerPaidOnly,
+        correspondent: !!l.products?.correspondent,
+        siblings: (l.products?.[category] || []).filter(x => x !== specialty),
         tried: !!p, funded: p?.funded ?? 0, touched: p?.touched ?? 0,
         pullThrough: p?.pullThrough ?? null, exitsLender: p?.exitsLender ?? 0,
         avgDays: p?.avgDays ?? null,
       };
     })
-    .sort((a, b) =>
-      (b.tried - a.tried) ||
-      ((b.pullThrough ?? -1) - (a.pullThrough ?? -1)) ||
-      ((b.bps ?? 0) - (a.bps ?? 0)));
+    .sort((a, b) => (b.tried - a.tried) ||
+      ((b.pullThrough ?? -1) - (a.pullThrough ?? -1)) || ((b.bps ?? 0) - (a.bps ?? 0)));
 }
 
-// Cuántos lenders manejan cada programa, para ver dónde tienes opciones
-// y dónde dependes de uno solo.
-export function dpaProgramCoverage() {
-  return DPA_PROGRAMS.map(p => ({
-    ...p,
-    lenders: LENDERS.filter(l =>
-      (Array.isArray(l.products?.dpa) ? l.products.dpa : []).includes(p.id)).length,
-  })).sort((a, b) => b.lenders - a.lenders);
+
+// ─── DETALLE DE DPA ────────────────────────────────────────────────
+// El catálogo de Barrett dice QUÉ programas maneja cada lender, pero no
+// cómo son: ni el porcentaje, ni si se perdona, ni si es grant o segunda,
+// ni si fija la tasa. Eso vive en las guías de cada lender.
+//
+// Este detalle se captura a mano y NO puede vivir en lenders2026.json:
+// ese archivo se regenera desde el Excel de Barrett y borraría lo escrito.
+// Se guarda aparte, junto al pipeline, con clave lenderId::programa.
+export const DPA_STRUCTURES = {
+  grant:             { es: "Grant",                  en: "Grant",
+                       note_es: "No se devuelve nunca", note_en: "Never repaid" },
+  forgivable_second: { es: "Segunda perdonable",     en: "Forgivable second",
+                       note_es: "Se perdona al cumplir el plazo", note_en: "Forgiven after the term" },
+  repayable_second:  { es: "Segunda pagadera",       en: "Repayable second",
+                       note_es: "El cliente la devuelve", note_en: "The borrower repays it" },
+  deferred_second:   { es: "Segunda diferida",       en: "Deferred second",
+                       note_es: "Sin pagos hasta venta o refinanciamiento", en_note: "No payments until sale or refi",
+                       note_en: "No payments until sale or refinance" },
+};
+export const dpaStructure = id => DPA_STRUCTURES[id] || null;
+
+export const dpaKey = (lenderId, program) => `${lenderId}::${program}`;
+
+// Un registro vacío, listo para llenar.
+export const emptyDpaDetail = () => ({
+  pct: null,              // 3.5, 5, 100 (del enganche) — como lo diga la guía
+  pctOf: "purchase",      // purchase | loan | down_payment
+  structure: null,        // grant | forgivable_second | repayable_second | deferred_second
+  forgivenessMonths: null,// si aplica
+  fixesRate: null,        // true si el programa amarra la tasa
+  minFico: null,
+  maxDti: null,
+  states: [],             // dónde aplica: NV, FL, TX…
+  note: "",
+  updatedAt: null, updatedBy: null,
+});
+
+export function dpaDetail(details, lenderId, program) {
+  return (details || {})[dpaKey(lenderId, program)] || null;
+}
+
+export function setDpaDetail(details, lenderId, program, patch, by) {
+  const k = dpaKey(lenderId, program);
+  const cur = (details || {})[k] || emptyDpaDetail();
+  const num = v => (v === "" || v === null || v === undefined || !Number.isFinite(Number(v)))
+    ? null : Number(v);
+  return {
+    ...(details || {}),
+    [k]: {
+      ...cur, ...patch,
+      pct: patch.pct !== undefined ? num(patch.pct) : cur.pct,
+      forgivenessMonths: patch.forgivenessMonths !== undefined ? num(patch.forgivenessMonths) : cur.forgivenessMonths,
+      minFico: patch.minFico !== undefined ? num(patch.minFico) : cur.minFico,
+      maxDti: patch.maxDti !== undefined ? num(patch.maxDti) : cur.maxDti,
+      updatedAt: today(), updatedBy: by || null,
+    },
+  };
+}
+
+// Cuánto del catálogo llevas documentado, para saber si vale la pena
+// confiar en el reporte todavía.
+export function dpaDetailCoverage(details) {
+  const total = LENDERS.reduce((a, l) =>
+    a + ((Array.isArray(l.products?.dpa) ? l.products.dpa : []).length), 0);
+  const filled = Object.values(details || {}).filter(d =>
+    d && (d.pct !== null || d.structure)).length;
+  return { total, filled, pct: total ? Math.round(100 * filled / total) : 0 };
+}
+
+// Un resumen en una línea, para la tarjeta del lender.
+export function dpaDetailSummary(d, lang = "es") {
+  if (!d || (d.pct === null && !d.structure)) return null;
+  const bits = [];
+  if (d.pct !== null) bits.push(d.pct + "%");
+  if (d.structure) bits.push((DPA_STRUCTURES[d.structure] || {})[lang] || d.structure);
+  if (d.forgivenessMonths) bits.push(
+    lang === "es" ? `perdón a ${d.forgivenessMonths} meses` : `forgiven at ${d.forgivenessMonths} months`);
+  if (d.fixesRate === true) bits.push(lang === "es" ? "fija la tasa" : "fixes the rate");
+  if (d.minFico) bits.push("FICO " + d.minFico + "+");
+  if (Array.isArray(d.states) && d.states.length) bits.push(d.states.join("/"));
+  return bits.join(" · ");
 }
 
 // ─── 3. HOUSE HUNT — the 60-day track ──────────────────────────────
