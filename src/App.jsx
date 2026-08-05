@@ -1641,7 +1641,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
   const [reqError,setReqError]=useState(null);
   const [scView,setScView]=useState("lender");
   const [scProduct,setScProduct]=useState(null);
-  const [scCat,setScCat]=useState("nonqm");
+  const [scCat,setScCat]=useState("dpa");
   const [scSpec,setScSpec]=useState(null);
   const [dpaOpen,setDpaOpen]=useState(null);
   const [dpaDraft,setDpaDraft]=useState(null);
@@ -2326,7 +2326,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                   style={{background:(scProduct||productsWorked(files,{cutover:BARRETT_CUTOVER})[0]?.product)===pw.product?"#4A90D9":"#21262D",
                     color:(scProduct||productsWorked(files,{cutover:BARRETT_CUTOVER})[0]?.product)===pw.product?"#0D1117":"#8B949E",
                     border:"none",borderRadius:6,padding:"5px 11px",fontSize:10.5,fontFamily:"DM Mono",cursor:"pointer"}}>
-                  {pw.product} · {pw.files}
+                  {P(categoryLabel(pw.product))} · {pw.files}
                 </button>
               ))}
             </div>
@@ -2421,7 +2421,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               return (
                 <div style={{display:"flex",flexDirection:"column",gap:12}}>
                   <div style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#F5A623"}}>
-                    {TX("productQ",{p:prod})}
+                    {TX("productQ",{p:P(categoryLabel(prod))})}
                   </div>
                   <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
                     <div style={{background:"#0D1117",padding:"8px 14px",fontSize:9.5,color:"#7EC8A4",
@@ -2510,9 +2510,10 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                             setDpaDraft(open?null:{...emptyDpaDetail(),...(det||{}),
                               states:(det?.states||[]).join(",")});
                           }}
-                          style={{background:"#21262D",border:`1px solid ${sum?"#7EC8A4":"#30363D"}`,
-                            borderRadius:4,color:sum?"#7EC8A4":"#6E7681",fontSize:9,padding:"3px 8px",
-                            cursor:"pointer",fontFamily:"DM Mono"}}>
+                          style={{background:sum?"#21262D":"rgba(126,200,164,.12)",
+                            border:`1px solid ${sum?"#7EC8A4":"#7EC8A488"}`,
+                            borderRadius:5,color:"#7EC8A4",fontSize:9.5,padding:"4px 10px",
+                            cursor:"pointer",fontFamily:"DM Mono",whiteSpace:"nowrap"}}>
                           {open?"✕":(sum?TX("dpaEdit"):TX("dpaEmpty"))}
                         </button>
                       )}
@@ -2577,6 +2578,12 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                     {cov&&<span style={{fontSize:10,color:"#484F58",marginLeft:"auto"}}>
                       {TX("dpaCoverage",{f:cov.filled,t:cov.total,p:cov.pct})}</span>}
                   </div>
+                  {isDpa&&isAdmin&&(
+                    <div style={{background:"rgba(126,200,164,.08)",border:"1px solid #7EC8A455",
+                      borderRadius:8,padding:"10px 14px",fontSize:11,color:"#7EC8A4",lineHeight:1.55}}>
+                      {TX("dpaFillHere")}
+                    </div>
+                  )}
                   {thin&&(
                     <div style={{background:"rgba(245,166,35,.08)",border:"1px solid #F5A62344",borderRadius:8,
                       padding:"10px 14px",fontSize:11,color:"#F5A623",lineHeight:1.55}}>{TX("specThin")}</div>
@@ -2916,8 +2923,14 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                   <div style={{fontSize:10,color:"#6E7681",fontFamily:"DM Mono",marginTop:4,lineHeight:1.6}}>
                     LO {(demo.shares.lo*100).toFixed(1)}%
                     {demo.shares.trainer>0?` · trainer ${(demo.shares.trainer*100).toFixed(1)}%`:""}
-                    <br/>sucursal {(demo.shares.branch*100).toFixed(1)}% · Paulo {(demo.shares.paulo*100).toFixed(0)}%
-                    <br/><span style={{color:demo.margin<0?"#E85D75":"#7EC8A4"}}>{TX("marginPerFile",{d:demo.margin.toLocaleString()})}</span>
+                    <br/>{demo.isBM
+                      ? TX("youKeep",{n:(demo.shares.lo*100).toFixed(0)})
+                      : TX("branchKeeps",{n:(demo.shares.branch*100).toFixed(1)})} · Paulo {(demo.shares.paulo*100).toFixed(0)}%
+                    <br/><span style={{color:demo.margin<0?"#E85D75":demo.isBM?"#F5A623":"#7EC8A4"}}>
+                      {demo.isBM
+                        ? TX("yourIncomePerFile",{d:demo.margin.toLocaleString()})
+                        : TX("marginPerFile",{d:demo.margin.toLocaleString()})}
+                    </span>
                   </div>
                 </div>
               );
@@ -3632,7 +3645,7 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
       {/* LENDER */}
       <div>
         <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>
-          LENDER <span style={{color:"#30363D"}}>· {options.length} {TX("makesProduct",{p:lenderProductKey(file.type)})}</span>
+          LENDER <span style={{color:"#30363D"}}>· {options.length} {TX("makesProduct",{p:P(categoryLabel(lenderProductKey(file.type)))})}</span>
         </div>
         <select value={lenderId} onChange={e=>setLenderId(e.target.value)} style={fs}>
           <option value="">{TX("unassigned")}</option>
