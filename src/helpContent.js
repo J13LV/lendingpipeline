@@ -607,6 +607,127 @@ export function helpSections(v = {}) {
 
   // ─────────────────────────────────────────────────────────────────
   {
+    id: "scorecard", icon: "◆", color: "#4A90D9",
+    es: "Scorecard de lenders", en: "Lender scorecard",
+    articles: [
+      {
+        id: "para-que",
+        es: "Para qué sirve", en: "What it is for",
+        blocks: [
+          { k:"lead",
+            es:"Contesta dos preguntas que antes había que preguntarle a alguien: a quién le mando este archivo, y con quién nos está yendo bien de verdad.",
+            en:"It answers two questions that used to require asking someone: who should get this file, and who is actually working out for us." },
+          { k:"p",
+            es:"Está en PRODUCTION → Scorecard de lenders, y lo ve todo el equipo. La tabla se arma sola con los archivos: al escoger lender en un archivo, ya cuenta aquí. Nadie la mantiene a mano.",
+            en:"It lives under PRODUCTION → Lender scorecard, and the whole team sees it. The table builds itself from files: choosing a lender on a file already counts here. Nobody maintains it by hand." },
+        ],
+      },
+      {
+        id: "tres-vistas",
+        es: "Las tres vistas", en: "The three views",
+        blocks: [
+          { k:"kv",
+            rows:[
+              [{es:"Por lender",en:"By lender"},
+               {es:"El resumen general de cada uno: cuántos archivos tocó, cuántos cerró, qué parte de tu volumen carga.",
+                en:"The overall summary of each one: how many files it touched, how many it closed, what share of your volume it carries."}],
+              [{es:"Por producto",en:"By product"},
+               {es:"El mismo lender puede ser excelente en FHA y malo en DSCR. Aquí se ve separado.",
+                en:"The same lender can be excellent at FHA and bad at DSCR. Here it is broken out."}],
+              [{es:"Por especialidad",en:"By specialty"},
+               {es:"La más útil en el día a día: 88 especialidades leídas del catálogo. ITIN, bank statement, FICO 500, Chenoa, HELOC con DSCR.",
+                en:"The most useful day to day: 88 specialties read from the catalog. ITIN, bank statement, FICO 500, Chenoa, DSCR HELOC."}],
+            ] },
+        ],
+      },
+      {
+        id: "leer-columnas",
+        es: "Cómo leer las columnas", en: "How to read the columns",
+        blocks: [
+          { k:"kv",
+            rows:[
+              [{es:"Toca",en:"Touched"},{es:"Archivos que pasaron por ese lender: cerrados, activos y los que se fueron.",en:"Files that went through that lender: closed, active and those that left."}],
+              [{es:"Pull-through",en:"Pull-through"},{es:"Qué porcentaje de lo que tocó terminó cerrando. Es la medida principal.",en:"What percentage of what it touched ended up closing. This is the main measure."}],
+              [{es:"Tu volumen",en:"Your volume"},{es:"Qué parte de tu volumen fondeado vive ahí. En ámbar sobre 40%.",en:"What share of your funded volume sits there. Amber above 40%."}],
+              [{es:"Salidas",en:"Exits"},{es:"Archivos que se movieron a otro lender.",en:"Files that moved to another lender."}],
+              [{es:"Por su culpa",en:"Its own call"},{es:"De esas salidas, cuántas fueron decisión del lender.",en:"Of those exits, how many were the lender's own decision."}],
+            ] },
+          { k:"note", tone:"gold",
+            es:"La columna que hace el trabajo es POR SU CULPA. Un archivo que se fue porque el prestatario no calificaba se habría ido de cualquier lender — eso no mide al lender. Uno que se fue por un overlay suyo, sí.",
+            en:"The column doing the work is ITS OWN CALL. A file that left because the borrower did not qualify would have left any lender — that does not measure the lender. One that left over its own overlay does." },
+          { k:"p",
+            es:"Por eso importa escoger bien el motivo al cambiar de lender. Sin ese dato, \"nos tumbaron tres archivos\" y \"esos clientes no calificaban en ningún lado\" se ven igual en el reporte.",
+            en:"That is why picking the right reason when changing lenders matters. Without it, \"they killed three files\" and \"those borrowers did not qualify anywhere\" look identical in the report." },
+        ],
+      },
+      {
+        id: "probados",
+        es: "Probados y sin probar", en: "Proven and untried",
+        blocks: [
+          { k:"p",
+            es:"En las vistas por producto y por especialidad la lista sale partida en dos.",
+            en:"In the product and specialty views the list comes split in two." },
+          { k:"list",
+            es:["Probados — tienes historial con ellos en eso. Salen ordenados por pull-through.",
+                "Sin probar — el catálogo dice que lo hacen, pero nunca has cerrado ahí. Ordenados por lo que pagan."],
+            en:["Proven — you have history with them on that. Sorted by pull-through.",
+                "Untried — the catalog says they do it, but you have never closed there. Sorted by what they pay."] },
+          { k:"note", tone:"blue",
+            es:"Que un lender ofrezca algo no es evidencia de nada. La lista de sin probar es dónde buscar cuando necesitas una opción nueva, no una recomendación.",
+            en:"A lender offering something is evidence of nothing. The untried list is where to look when you need a new option, not a recommendation." },
+        ],
+      },
+      {
+        id: "escasez",
+        es: "Cuando una especialidad tiene pocos lenders",
+        en: "When a specialty has few lenders",
+        blocks: [
+          { k:"p",
+            es:"Las especialidades salen ordenadas de más escasa a más común, y las de doce lenders o menos se marcan en ámbar. Ese orden es a propósito: lo escaso es lo que limita tus opciones, no lo abundante.",
+            en:"Specialties are sorted from scarcest to most common, and those with twelve lenders or fewer are marked amber. That order is deliberate: scarcity is what limits your options, not abundance." },
+          { k:"note", tone:"gold",
+            es:"Si una especialidad escasa es parte de tu mezcla, consigue un segundo nombre probado antes de necesitarlo. Buscar alternativa con el archivo en la mano y el reloj corriendo es la peor forma de escoger lender.",
+            en:"If a scarce specialty is part of your mix, get a second proven name before you need it. Hunting for an alternative with the file in hand and the clock running is the worst way to pick a lender." },
+        ],
+      },
+      {
+        id: "capturar",
+        es: "Capturar detalle y overlays", en: "Capturing detail and overlays",
+        blocks: [
+          { k:"lead",
+            es:"El catálogo dice qué hace cada lender. No dice cómo lo hace. Esa parte la escribe el equipo.",
+            en:"The catalog says what each lender does. It does not say how. That part the team writes." },
+          { k:"p",
+            es:"En la vista por especialidad, cada lender tiene un botón para capturar sus mínimos: FICO, LTV, DTI, reservas y estados. En DPA se agregan porcentaje, si se perdona, grant o segunda, y si fija la tasa.",
+            en:"In the specialty view, each lender has a button to capture its minimums: FICO, LTV, DTI, reserves and states. For DPA it adds percentage, whether it is forgiven, grant or second, and whether it fixes the rate." },
+          { k:"p",
+            es:"Debajo hay un campo de observaciones. Ahí va lo que aprendes trabajando: overlays que no están en la guía, condiciones raras, cómo respondieron. Cada observación queda con su fecha y su autor, y se suman — no se reemplazan.",
+            en:"Below there is an observations field. That is where what you learn while working goes: overlays not in the guidelines, odd conditions, how they responded. Each observation is stamped with date and author, and they accumulate — they do not replace each other." },
+          { k:"note", tone:"green",
+            es:"Que se sumen es el punto. \"Exigen 2 meses de reservas\" en agosto y \"ya no las piden\" en noviembre son dos datos: juntos te dicen que el lender cambió de criterio. Si el segundo borrara al primero, esa información se pierde.",
+            en:"Accumulating is the point. \"They require 2 months reserves\" in August and \"they no longer ask\" in November are two data points: together they tell you the lender changed its criteria. If the second erased the first, that information is lost." },
+          { k:"p",
+            es:"Cualquiera del equipo puede escribir. Si un dato sale mal, se sabe de quién viene y se corrige.",
+            en:"Anyone on the team can write. If something is wrong, you know who wrote it and it gets corrected." },
+        ],
+      },
+      {
+        id: "desde-cuando",
+        es: "Desde cuándo cuenta", en: "Since when it counts",
+        blocks: [
+          { k:"p",
+            es:"El scorecard cuenta desde el corte con Barrett. Lo anterior era PRMG y se rige por otras reglas.",
+            en:"The scorecard counts from the Barrett cutover. What came before was PRMG and follows different rules." },
+          { k:"note", tone:"blue",
+            es:"Con dos o tres archivos por lender los porcentajes engañan. Por eso las filas con menos de tres dicen \"pocos datos todavía\" en vez de dar un veredicto que no se sostiene. Empieza a valer en unos meses — y solo si el equipo registra el motivo cada vez que mueve un archivo.",
+            en:"With two or three files per lender the percentages mislead. That is why rows with fewer than three say \"not enough data yet\" instead of giving a verdict that does not hold. It starts being useful in a few months — and only if the team records the reason every time a file moves." },
+        ],
+      },
+    ],
+  },
+
+  // ─────────────────────────────────────────────────────────────────
+  {
     id: "referrals", icon: "⇄", color: "#A78BFA",
     es: "Referidos", en: "Referrals",
     articles: [
@@ -734,6 +855,7 @@ export function helpSections(v = {}) {
       },
     ],
   },
+
 
 
   ];
