@@ -1975,6 +1975,154 @@ export function lenderVerdict(r) {
   return { id: "mixed", es: "Mezclado", en: "Mixed", tone: "neutral" };
 }
 
+
+// ─── DESGLOSE POR PRODUCTO ─────────────────────────────────────────
+// Un promedio general esconde lo que importa: un lender puede cerrar todo
+// lo que le mandas en FHA y devolverte la mitad de los DSCR. La decisión
+// real no es "¿con quién trabajo?" sino "¿a quién le mando ESTE archivo?".
+//
+// Se distingue lo que el lender OFRECE (del catálogo) de aquello en lo que
+// tiene HISTORIAL contigo. Ofrecer un producto no es evidencia de nada.
+export function lenderProductBreakdown(files, { cutover = null } = {}) {
+  const map = new Map();
+  const key = (lid, prod) => lid + "||" + prod;
+  const get = (lid, prod) => {
+    const k = key(lid, prod);
+    if (!map.has(k)) map.set(k, {
+      lenderId: lid, lenderName: lenderById(lid)?.name || lid, product: prod,
+      placed: 0, funded: 0, active: 0, volume: 0,
+      exits: 0, exitsLender: 0, days: [], bps: [],
+    });
+    return map.get(k);
+  };
+
+  for (const f of files || []) {
+    if (cutover && fundedDate(f) && fundedDate(f) < cutover) continue;
+    const prod = lenderProductKey(f?.type) || "other";
+
+    for (const h of f.lenderHistory || []) {
+      if (!h.from) continue;
+      const r = get(h.from, prod);
+      r.exits++;
+      if ((h.category || "") === "lender") r.exitsLender++;
+    }
+
+    if (!f.lenderId) continue;
+    const r = get(f.lenderId, prod);
+    r.placed++;
+    r.volume += Number(f.loan) || 0;
+    const b = fileCompBps(f, 0);
+    if (b) r.bps.push(b);
+    const funded = fundedDate(f);
+    if (funded) {
+      r.funded++;
+      if (okDate(f.lenderSince)) r.days.push(daysBetween(f.lenderSince, funded));
+    } else r.active++;
+  }
+
+  const avg = a => a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) : null;
+  return [...map.values()].map(r => {
+    const touched = r.funded + r.active + r.exits;
+    return { ...r, touched,
+      pullThrough: touched ? Math.round(100 * r.funded / touched) : null,
+      avgDays: avg(r.days), avgBps: avg(r.bps),
+      offers: !!lenderById(r.lenderId)?.products?.[r.product] };
+  }).filter(r => r.touched > 0);
+}
+
+// Vista al revés: dado un producto, con quién te ha ido mejor.
+// `offersOnly` completa con lenders del catálogo que lo hacen pero con los
+// que nunca has cerrado — para que la lista no se limite a lo ya probado.
+export function productScorecard(files, product, { cutover = null, includeUntried = true } = {}) {
+  const rows = lenderProductBreakdown(files, { cutover }).filter(r => r.product === product);
+  const seen = new Set(rows.map(r => r.lenderId));
+  const out = rows.map(r => ({ ...r, tried: true }));
+  if (includeUntried) {
+    for (const l of LENDERS) {
+      if (seen.has(l.id) || !l.products?.[product]) continue;
+      out.push({ lenderId: l.id, lenderName: l.name, product, tried: false,
+        placed: 0, funded: 0, active: 0, exits: 0, exitsLender: 0, touched: 0,
+        volume: 0, pullThrough: null, avgDays: null, avgBps: l.lenderPaidBps ?? null,
+        offers: true });
+    }
+  }
+  // Primero lo probado y que cierra; después lo que solo ofrece.
+  out.sort((a, b) =>
+    (b.tried - a.tried) ||
+    ((b.pullThrough ?? -1) - (a.pullThrough ?? -1)) ||
+    (b.funded - a.funded) ||
+    ((b.avgBps ?? 0) - (a.avgBps ?? 0)));
+  return out;
+}
+
+// Qué productos has trabajado, con volumen, para llenar el selector.
+export function productsWorked(files, { cutover = null } = {}) {
+  const m = new Map();
+  for (const f of files || []) {
+    if (cutover && fundedDate(f) && fundedDate(f) < cutover) continue;
+    const k = lenderProductKey(f?.type) || "other";
+    const e = m.get(k) || { product: k, files: 0, funded: 0 };
+    e.files++;
+    if (fundedDate(f)) e.funded++;
+    m.set(k, e);
+  }
+  return [...m.values()].sort((a, b) => b.files - a.files);
+}
+
+
+// ─── PROGRAMAS DE DPA ──────────────────────────────────────────────
+// El catálogo guarda, por lender, qué programas de asistencia maneja.
+// Con DPA en la mitad de la producción, "¿quién hace Chenoa?" es una
+// pregunta diaria — y la respuesta ya estaba en el archivo sin usarse.
+export const DPA_PROGRAMS = [
+  { id: "fha_dpa",           es: "FHA DPA",            en: "FHA DPA" },
+  { id: "conventional_dpa",  es: "Conventional DPA",   en: "Conventional DPA" },
+  { id: "chenoa",            es: "Chenoa",             en: "Chenoa" },
+  { id: "calhfa",            es: "CalHFA",             en: "CalHFA" },
+  { id: "state_bond_grants", es: "Bonos y grants estatales", en: "State bonds & grants" },
+];
+export const dpaProgram = id => DPA_PROGRAMS.find(p => p.id === id) || null;
+
+export function lenderDpaPrograms(lenderId) {
+  const d = lenderById(lenderId)?.products?.dpa;
+  return Array.isArray(d) ? d : [];
+}
+
+// Quién maneja un programa, con el historial que tengas con cada uno.
+export function lendersByDpaProgram(files, programId, { cutover = null } = {}) {
+  const perf = new Map();
+  for (const r of lenderProductBreakdown(files, { cutover })) {
+    if (r.product !== "dpa") continue;
+    perf.set(r.lenderId, r);
+  }
+  return LENDERS
+    .filter(l => (Array.isArray(l.products?.dpa) ? l.products.dpa : []).includes(programId))
+    .map(l => {
+      const p = perf.get(l.id);
+      return {
+        lenderId: l.id, name: l.name, bps: l.lenderPaidBps ?? null,
+        programs: Array.isArray(l.products?.dpa) ? l.products.dpa : [],
+        tried: !!p, funded: p?.funded ?? 0, touched: p?.touched ?? 0,
+        pullThrough: p?.pullThrough ?? null, exitsLender: p?.exitsLender ?? 0,
+        avgDays: p?.avgDays ?? null,
+      };
+    })
+    .sort((a, b) =>
+      (b.tried - a.tried) ||
+      ((b.pullThrough ?? -1) - (a.pullThrough ?? -1)) ||
+      ((b.bps ?? 0) - (a.bps ?? 0)));
+}
+
+// Cuántos lenders manejan cada programa, para ver dónde tienes opciones
+// y dónde dependes de uno solo.
+export function dpaProgramCoverage() {
+  return DPA_PROGRAMS.map(p => ({
+    ...p,
+    lenders: LENDERS.filter(l =>
+      (Array.isArray(l.products?.dpa) ? l.products.dpa : []).includes(p.id)).length,
+  })).sort((a, b) => b.lenders - a.lenders);
+}
+
 // ─── 3. HOUSE HUNT — the 60-day track ──────────────────────────────
 // APG Realty reassigns a buyer to another agent if they are not under
 // contract in 60 days. So this is not a follow-up rhythm; it is a

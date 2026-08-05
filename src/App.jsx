@@ -33,7 +33,8 @@ import {
   REASON_CATEGORIES, reasonsByCategory, reasonById, isLenderFault,
   backupViability, changeCost, applyLenderChange, reregistrationCost,
   lenderChangeCount, lenderFaultChanges, LENDER_CHANGE_LANDING_STAGE,
-  lenderScorecard, lenderVerdict,
+  lenderScorecard, lenderVerdict, lenderProductBreakdown, productScorecard, productsWorked,
+  DPA_PROGRAMS, dpaProgram, lendersByDpaProgram, dpaProgramCoverage,
   noteEntries, latestNote, noteCount, addNoteEntry,
   LO_STAGES, STAGE_THRESHOLDS, teamLeadShare, branchCostPerFile, ladderCeiling,
   loanSplit, lendersHiddenByChannel, OTHER_LENDER_ID, lenderNameOf, payrollPeriodLabel, currentPayrollPeriod, payrollSummary, fundedDate,
@@ -1626,6 +1627,9 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
   const [copied,setCopied]=useState(false);
   const [openLog,setOpenLog]=useState(null);
   const [reqError,setReqError]=useState(null);
+  const [scView,setScView]=useState("lender");
+  const [scProduct,setScProduct]=useState(null);
+  const [scDpa,setScDpa]=useState("fha_dpa");
   const [filesMo,setFilesMo]=useState(8);
   const payroll=payrollSummary(files,{year:compYear,filesPerMonth:filesMo,roster:COMP_ROSTER});
   const [prodTab,setProdTab]=useState("team");
@@ -2283,10 +2287,36 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           <div style={{display:"flex",flexDirection:"column",gap:14}}>
             <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:8,padding:"12px 16px",
               fontSize:11.5,color:"#8B949E",lineHeight:1.6}}>
-              {TX("scorecardLead")}
+              {scView==="lender"?TX("scorecardLead"):scView==="product"?TX("productStrength"):TX("dpaLead")}
             </div>
 
-            {sc.length===0?(
+            <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+              {["lender","product","dpa"].map(v=>(
+                <button key={v} className="hov" onClick={()=>setScView(v)}
+                  style={{background:scView===v?"#F5A623":"#21262D",color:scView===v?"#0D1117":"#8B949E",
+                    border:"none",borderRadius:6,padding:"6px 14px",fontSize:11,fontFamily:"DM Mono",
+                    fontWeight:500,cursor:"pointer"}}>
+                  {v==="lender"?TX("byLender"):v==="product"?TX("byProduct"):TX("byDpa")}
+                </button>
+              ))}
+              {scView==="dpa"&&dpaProgramCoverage().map(p=>(
+                <button key={p.id} className="hov" onClick={()=>setScDpa(p.id)}
+                  style={{background:scDpa===p.id?"#7EC8A4":"#21262D",color:scDpa===p.id?"#0D1117":"#8B949E",
+                    border:"none",borderRadius:6,padding:"5px 11px",fontSize:10.5,fontFamily:"DM Mono",cursor:"pointer"}}>
+                  {P(p)} · {p.lenders}
+                </button>
+              ))}
+              {scView==="product"&&productsWorked(files,{cutover:BARRETT_CUTOVER}).map(pw=>(
+                <button key={pw.product} className="hov" onClick={()=>setScProduct(pw.product)}
+                  style={{background:(scProduct||productsWorked(files,{cutover:BARRETT_CUTOVER})[0]?.product)===pw.product?"#4A90D9":"#21262D",
+                    color:(scProduct||productsWorked(files,{cutover:BARRETT_CUTOVER})[0]?.product)===pw.product?"#0D1117":"#8B949E",
+                    border:"none",borderRadius:6,padding:"5px 11px",fontSize:10.5,fontFamily:"DM Mono",cursor:"pointer"}}>
+                  {pw.product} · {pw.files}
+                </button>
+              ))}
+            </div>
+
+            {scView==="lender"&&(sc.length===0?(
               <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,
                 padding:"26px 16px",textAlign:"center",color:"#484F58",fontSize:12}}>
                 {TX("scNoData")}
@@ -2338,7 +2368,128 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                   </tbody>
                 </table>
               </div>
-            )}
+            ))}
+
+            {scView==="product"&&(()=>{
+              const worked=productsWorked(files,{cutover:BARRETT_CUTOVER});
+              const prod=scProduct||worked[0]?.product;
+              if(!prod) return (
+                <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,
+                  padding:"26px 16px",textAlign:"center",color:"#484F58",fontSize:12}}>{TX("noProductData")}</div>
+              );
+              const list=productScorecard(files,prod,{cutover:BARRETT_CUTOVER});
+              const tried=list.filter(x=>x.tried), untried=list.filter(x=>!x.tried).slice(0,12);
+              const Row=({r,proven})=>(
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:10,
+                  padding:"9px 14px",borderBottom:"1px solid #21262D",fontSize:11.5}}>
+                  <span style={{color:proven?"#E6EDF3":"#6E7681",flex:1}}>{r.lenderName}</span>
+                  {proven?(
+                    <>
+                      <span style={{color:"#8B949E",fontFamily:"DM Mono",fontSize:10.5}}>
+                        {TX("closedOf",{a:r.funded,b:r.touched})}
+                      </span>
+                      <span style={{fontFamily:"Syne",fontWeight:800,fontSize:13,minWidth:48,textAlign:"right",
+                        color:r.pullThrough>=80?"#7EC8A4":r.pullThrough>=50?"#F5A623":"#E85D75"}}>
+                        {r.pullThrough}%
+                      </span>
+                      <span style={{color:r.exitsLender>0?"#E85D75":"#484F58",fontFamily:"DM Mono",
+                        fontSize:10,minWidth:90,textAlign:"right"}}>
+                        {r.exitsLender>0?TX("ownCall",{n:r.exitsLender}):""}
+                      </span>
+                    </>
+                  ):null}
+                  <span style={{color:"#484F58",fontFamily:"DM Mono",fontSize:10.5,minWidth:56,textAlign:"right"}}>
+                    {r.avgBps?r.avgBps+" bps":"—"}
+                  </span>
+                </div>
+              );
+              return (
+                <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                  <div style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#F5A623"}}>
+                    {TX("productQ",{p:prod})}
+                  </div>
+                  <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
+                    <div style={{background:"#0D1117",padding:"8px 14px",fontSize:9.5,color:"#7EC8A4",
+                      letterSpacing:"1px",borderBottom:"1px solid #30363D"}}>{TX("proven")}</div>
+                    {tried.length===0
+                      ? <div style={{padding:"16px",color:"#484F58",fontSize:11.5}}>—</div>
+                      : tried.map(r=><Row key={r.lenderId} r={r} proven/>)}
+                  </div>
+                  <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
+                    <div style={{background:"#0D1117",padding:"8px 14px",fontSize:9.5,color:"#484F58",
+                      letterSpacing:"1px",borderBottom:"1px solid #21262D"}}>{TX("untried")}</div>
+                    {untried.map(r=><Row key={r.lenderId} r={r}/>)}
+                    <div style={{padding:"9px 14px",fontSize:9.5,color:"#484F58",lineHeight:1.55}}>
+                      {TX("offersNotProof")}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+
+            {scView==="dpa"&&(()=>{
+              const list=lendersByDpaProgram(files,scDpa,{cutover:BARRETT_CUTOVER});
+              const prog=dpaProgram(scDpa);
+              const tried=list.filter(x=>x.tried), rest=list.filter(x=>!x.tried);
+              return (
+                <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                  <div style={{display:"flex",alignItems:"baseline",gap:10,flexWrap:"wrap"}}>
+                    <span style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#7EC8A4"}}>
+                      {TX("dpaQ",{p:P(prog)})}
+                    </span>
+                    <span style={{fontSize:11,color:"#484F58"}}>{TX("dpaCoverage",{n:list.length})}</span>
+                  </div>
+                  {list.length<=8&&(
+                    <div style={{background:"rgba(245,166,35,.08)",border:"1px solid #F5A62344",borderRadius:8,
+                      padding:"10px 14px",fontSize:11,color:"#F5A623",lineHeight:1.55}}>{TX("dpaThin")}</div>
+                  )}
+                  {scDpa==="calhfa"&&(
+                    <div style={{background:"rgba(74,144,217,.08)",border:"1px solid #4A90D944",borderRadius:8,
+                      padding:"10px 14px",fontSize:11,color:"#4A90D9",lineHeight:1.55}}>{TX("notLicensed")}</div>
+                  )}
+                  <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
+                    {tried.length>0&&(
+                      <div style={{background:"#0D1117",padding:"8px 14px",fontSize:9.5,color:"#7EC8A4",
+                        letterSpacing:"1px",borderBottom:"1px solid #30363D"}}>{TX("proven")}</div>
+                    )}
+                    {[...tried,...rest].map((l,i)=>(
+                      <div key={l.lenderId}>
+                        {i===tried.length&&tried.length>0&&(
+                          <div style={{background:"#0D1117",padding:"8px 14px",fontSize:9.5,color:"#484F58",
+                            letterSpacing:"1px",borderTop:"1px solid #30363D",borderBottom:"1px solid #21262D"}}>
+                            {TX("untried")}
+                          </div>
+                        )}
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:10,
+                          padding:"9px 14px",borderBottom:"1px solid #21262D",fontSize:11.5}}>
+                          <span style={{color:l.tried?"#E6EDF3":"#8B949E",flex:1}}>
+                            {l.name}
+                            <span style={{color:"#484F58",fontSize:9.5}}>
+                              {"  "}{TX("dpaPrograms",{n:l.programs.length})}
+                            </span>
+                          </span>
+                          {l.tried&&(
+                            <>
+                              <span style={{color:"#8B949E",fontFamily:"DM Mono",fontSize:10.5}}>
+                                {TX("closedOf",{a:l.funded,b:l.touched})}
+                              </span>
+                              <span style={{fontFamily:"Syne",fontWeight:800,fontSize:13,minWidth:46,textAlign:"right",
+                                color:l.pullThrough>=80?"#7EC8A4":l.pullThrough>=50?"#F5A623":"#E85D75"}}>
+                                {l.pullThrough}%
+                              </span>
+                            </>
+                          )}
+                          <span style={{color:"#484F58",fontFamily:"DM Mono",fontSize:10.5,minWidth:56,textAlign:"right"}}>
+                            {l.bps?l.bps+" bps":"—"}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
 
             <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:8,padding:"11px 16px",
               fontSize:10,color:"#484F58",lineHeight:1.6}}>
