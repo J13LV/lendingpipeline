@@ -2310,6 +2310,82 @@ export function specDetailSummary(d, lang = "es", isDpa = false) {
 }
 export const dpaDetailSummary = (d, lang) => specDetailSummary(d, lang, true);
 
+
+// ─── PRODUCCIÓN POR PRODUCTO ───────────────────────────────────────
+// Un préstamo pertenece a dos dimensiones a la vez: "NV HIP FHA" es DPA y
+// es FHA. Contar solo una de las dos esconde la mitad de la mezcla, así que
+// el reporte las separa y ambas suman el total.
+export const BASE_PRODUCTS = [
+  { id: "fha",          es: "FHA",          en: "FHA",          match: /\bfha\b/i },
+  { id: "conventional", es: "Conventional", en: "Conventional", match: /conv/i },
+  { id: "va",           es: "VA",           en: "VA",           match: /\bva\b|irrrl/i },
+  { id: "usda",         es: "USDA",         en: "USDA",         match: /usda/i },
+  { id: "nonqm",        es: "Non-QM",       en: "Non-QM",       match: /non-?qm|dscr|bank statement/i },
+  { id: "jumbo",        es: "Jumbo",        en: "Jumbo",        match: /jumbo/i },
+  { id: "second",       es: "Segunda / HELOC", en: "Second / HELOC", match: /heloc|second|piggyback/i },
+];
+export function baseProductOf(type) {
+  const t = String(type || "");
+  for (const p of BASE_PRODUCTS) if (p.match.test(t)) return p.id;
+  return "other";
+}
+export const baseProductLabel = id =>
+  BASE_PRODUCTS.find(p => p.id === id) || { es: "Otro", en: "Other" };
+
+// Agrupa por lo que se le pase: una función que devuelve la clave.
+function tally(files, keyOf, { cutover = null, bpsDefault = 150 } = {}) {
+  const m = new Map();
+  const get = k => {
+    if (!m.has(k)) m.set(k, { key: k, funded: 0, fundedVolume: 0, comp: 0,
+      active: 0, activeVolume: 0, loans: [] });
+    return m.get(k);
+  };
+  for (const f of files || []) {
+    const k = keyOf(f);
+    if (k === null || k === undefined) continue;
+    const d = fundedDate(f);
+    if (d && cutover && d < cutover) continue;
+    const r = get(k);
+    const amt = Number(f.loan) || 0;
+    if (d) {
+      r.funded++; r.fundedVolume += amt;
+      r.comp += fileCompDollars(f, bpsDefault);
+      r.loans.push(amt);
+    } else if (f.stage) { r.active++; r.activeVolume += amt; }
+  }
+  const totF = [...m.values()].reduce((a, r) => a + r.funded, 0);
+  const totV = [...m.values()].reduce((a, r) => a + r.fundedVolume, 0);
+  return [...m.values()].map(r => ({
+    ...r,
+    avgLoan: r.loans.length ? Math.round(r.fundedVolume / r.loans.length) : null,
+    unitShare: totF ? Math.round(100 * r.funded / totF) : 0,
+    volumeShare: totV ? Math.round(100 * r.fundedVolume / totV) : 0,
+  })).sort((a, b) => b.fundedVolume - a.fundedVolume || b.funded - a.funded);
+}
+
+// Por producto base: FHA, Conventional, Non-QM…
+export const productionByProduct = (files, opts = {}) =>
+  tally(files, f => baseProductOf(f?.type), opts);
+
+// Por grupo del tipo: Standard, NV — DPA, Refi… La función que traduce
+// tipo→grupo vive en la interfaz, así que se recibe como parámetro.
+export const productionByGroup = (files, groupOf, opts = {}) =>
+  tally(files, f => groupOf(f?.type), opts);
+
+// Por originador.
+export const productionByLo = (files, opts = {}) =>
+  tally(files, f => f?.lo || null, opts);
+
+// Comparación contra la mezcla planeada. `plan` es {claveDelGrupo: porcentaje}.
+export function mixVsPlan(rows, plan) {
+  if (!plan) return rows;
+  return rows.map(r => {
+    const target = plan[r.key];
+    return { ...r, planPct: target ?? null,
+      delta: target === undefined || target === null ? null : r.unitShare - target };
+  });
+}
+
 // ─── 3. HOUSE HUNT — the 60-day track ──────────────────────────────
 // APG Realty reassigns a buyer to another agent if they are not under
 // contract in 60 days. So this is not a follow-up rhythm; it is a

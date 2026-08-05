@@ -34,7 +34,8 @@ import {
   backupViability, changeCost, applyLenderChange, reregistrationCost,
   lenderChangeCount, lenderFaultChanges, LENDER_CHANGE_LANDING_STAGE,
   lenderScorecard, lenderVerdict, lenderProductBreakdown, productScorecard, productsWorked,
-  lenderConcentration,
+  lenderConcentration, productionByProduct, productionByGroup, productionByLo,
+  mixVsPlan, baseProductLabel,
   specialtyCatalog, lendersBySpecialty, specialtyLabel, categoryLabel,
   DPA_STRUCTURES, dpaStructure, specDetail, setSpecDetail, specDetailCoverage,
   specDetailSummary, emptySpecDetail,
@@ -1642,6 +1643,8 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
   const [scView,setScView]=useState("lender");
   const [scProduct,setScProduct]=useState(null);
   const [scCat,setScCat]=useState("dpa");
+  // El plan de mezcla vive aquí para poder ajustarlo sin tocar el motor.
+  const [mixPlan,setMixPlan]=useState({"NV — DPA":50,"Standard":40,"FL — DPA":10});
   const [scSpec,setScSpec]=useState(null);
   const [dpaOpen,setDpaOpen]=useState(null);
   const [dpaDraft,setDpaDraft]=useState(null);
@@ -1836,6 +1839,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           isLO && ["mycomp","💵 MY COMP"],
           isAdmin && ["override","💰 OVERRIDE & COMP"],
           ["scorecard",TX("scorecardTab")],
+          ["mix",TX("mixTab")],
         ].filter(Boolean).map(([t,l])=>(
           <button key={t} className="hov" onClick={()=>setProdTab(t)}
             style={{background:prodTab===t?"#F5A623":"#21262D",color:prodTab===t?"#0D1117":"#8B949E",borderRadius:6,padding:"6px 14px",fontSize:11,fontFamily:"DM Mono",fontWeight:500}}>
@@ -2293,6 +2297,130 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
 
       </div>}
 
+
+
+      {/* MEZCLA · producción por producto y por programa */}
+      {prodTab==="mix"&&(()=>{
+        const groupOf=t=>{
+          const g=LOAN_TYPE_GROUPS.find(x=>x.types.includes(t));
+          return g?g.group:"Standard";
+        };
+        const byProd=productionByProduct(files,{cutover:BARRETT_CUTOVER,bpsDefault:BPS_RATE});
+        const byGrp=mixVsPlan(productionByGroup(files,groupOf,{cutover:BARRETT_CUTOVER,bpsDefault:BPS_RATE}),mixPlan);
+        const byLo=productionByLo(files,{cutover:BARRETT_CUTOVER,bpsDefault:BPS_RATE});
+        const totF=byProd.reduce((a,r)=>a+r.funded,0);
+        const totV=byProd.reduce((a,r)=>a+r.fundedVolume,0);
+        const totC=byProd.reduce((a,r)=>a+r.comp,0);
+        const th=(t,c)=>(<th style={{padding:"9px 12px",textAlign:c||"center",fontSize:9.5,
+          color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{t}</th>);
+        const money=n=>"$"+Math.round(n).toLocaleString();
+        if(totF===0&&byProd.every(r=>!r.active)) return (
+          <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,
+            padding:"26px 16px",textAlign:"center",color:"#484F58",fontSize:12}}>{TX("mixNoData")}</div>
+        );
+        return (
+          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+            <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:8,padding:"12px 16px",
+              fontSize:11.5,color:"#8B949E",lineHeight:1.6}}>{TX("mixLead")}</div>
+
+            <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
+              <div style={{background:"#0D1117",padding:"9px 14px",fontSize:10,color:"#F5A623",
+                letterSpacing:"1px",borderBottom:"1px solid #30363D"}}>{TX("byBaseProduct")}</div>
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+                <thead><tr style={{borderBottom:"1px solid #21262D"}}>
+                  {th(TX("byBaseProduct"),"left")}{th(TX("hClosed"))}{th(TX("hVolume"))}
+                  {th(TX("hShare"))}{th(TX("hAvg"))}{th(TX("hComp"))}{th(TX("hActive"))}
+                </tr></thead>
+                <tbody>
+                  {byProd.map((r,i)=>(
+                    <tr key={r.key} style={{borderBottom:"1px solid #21262D",background:i%2?"#161B22":"#0D1117"}}>
+                      <td style={{padding:"10px 12px",color:"#E6EDF3"}}>{P(baseProductLabel(r.key))}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>{r.funded||"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"#8B949E",fontFamily:"DM Mono"}}>{r.fundedVolume?money(r.fundedVolume):"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,
+                        fontSize:13,color:"#F5A623"}}>{r.unitShare?r.unitShare+"%":"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"#6E7681",fontFamily:"DM Mono",fontSize:11}}>{r.avgLoan?money(r.avgLoan):"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"#8B949E",fontFamily:"DM Mono"}}>{r.comp?money(r.comp):"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"#4A90D9",fontFamily:"DM Mono"}}>{r.active||"—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot><tr style={{background:"#1a1000",borderTop:"2px solid #F5A623"}}>
+                  <td style={{padding:"10px 12px",fontFamily:"Syne",fontWeight:700,color:"#F5A623"}}>{TX("mixTotal",{n:totF})}</td>
+                  <td/>
+                  <td style={{padding:"10px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>{money(totV)}</td>
+                  <td/><td/>
+                  <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,color:"#F5A623"}}>{money(totC)}</td>
+                  <td/>
+                </tr></tfoot>
+              </table>
+            </div>
+
+            <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
+              <div style={{background:"#0D1117",padding:"9px 14px",fontSize:10,color:"#7EC8A4",
+                letterSpacing:"1px",borderBottom:"1px solid #30363D",display:"flex",
+                justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
+                <span>{TX("byGroup")}</span>
+                <span style={{color:"#484F58",fontSize:9}}>{TX("planEdit")}</span>
+              </div>
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+                <thead><tr style={{borderBottom:"1px solid #21262D"}}>
+                  {th(TX("byGroup"),"left")}{th(TX("hClosed"))}{th(TX("hVolume"))}
+                  {th(TX("hShare"))}{th(TX("hPlan"))}{th(TX("hDelta"))}{th(TX("hActive"))}
+                </tr></thead>
+                <tbody>
+                  {byGrp.map((r,i)=>(
+                    <tr key={r.key} style={{borderBottom:"1px solid #21262D",background:i%2?"#161B22":"#0D1117"}}>
+                      <td style={{padding:"10px 12px",color:"#E6EDF3"}}>{r.key}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>{r.funded||"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"#8B949E",fontFamily:"DM Mono"}}>{r.fundedVolume?money(r.fundedVolume):"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,
+                        fontSize:13,color:"#F5A623"}}>{r.unitShare}%</td>
+                      <td style={{padding:"10px 12px",textAlign:"center"}}>
+                        <input value={mixPlan[r.key]??""} inputMode="numeric"
+                          onChange={e=>{const v=e.target.value.replace(/[^\d]/g,"");
+                            setMixPlan({...mixPlan,[r.key]:v===""?undefined:Number(v)});}}
+                          style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:4,
+                            color:"#8B949E",padding:"3px 6px",fontSize:11,fontFamily:"DM Mono",
+                            width:46,textAlign:"center"}}/>
+                      </td>
+                      <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"DM Mono",
+                        color:r.delta===null?"#484F58":Math.abs(r.delta)<=5?"#7EC8A4":r.delta>0?"#4A90D9":"#F5A623"}}>
+                        {r.delta===null?"—":(r.delta>0?"+":"")+r.delta}
+                      </td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"#4A90D9",fontFamily:"DM Mono"}}>{r.active||"—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
+              <div style={{background:"#0D1117",padding:"9px 14px",fontSize:10,color:"#BD65E8",
+                letterSpacing:"1px",borderBottom:"1px solid #30363D"}}>{TX("byOriginator")}</div>
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+                <thead><tr style={{borderBottom:"1px solid #21262D"}}>
+                  {th("LO","left")}{th(TX("hClosed"))}{th(TX("hVolume"))}{th(TX("hShare"))}
+                  {th(TX("hAvg"))}{th(TX("hActive"))}
+                </tr></thead>
+                <tbody>
+                  {byLo.map((r,i)=>(
+                    <tr key={r.key} style={{borderBottom:"1px solid #21262D",background:i%2?"#161B22":"#0D1117"}}>
+                      <td style={{padding:"10px 12px",color:"#E6EDF3"}}>{r.key}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>{r.funded||"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"#8B949E",fontFamily:"DM Mono"}}>{r.fundedVolume?money(r.fundedVolume):"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,
+                        fontSize:13,color:"#F5A623"}}>{r.unitShare}%</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"#6E7681",fontFamily:"DM Mono",fontSize:11}}>{r.avgLoan?money(r.avgLoan):"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"#4A90D9",fontFamily:"DM Mono"}}>{r.active||"—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* SCORECARD DE LENDERS */}
       {prodTab==="scorecard"&&(()=>{
