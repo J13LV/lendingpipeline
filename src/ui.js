@@ -443,6 +443,20 @@ export const UI = {
   result:     { es:"resultado", en:"result" },
   hide:       { es:"OCULTAR", en:"HIDE" },
 
+  specDetailTitle:{ es:"DETALLE Y OVERLAYS", en:"DETAIL & OVERLAYS" },
+  specDetailHint:{ es:"Aquí se captura lo que Barrett no publica: mínimos, overlays y cómo responde el lender de verdad. Cualquiera del equipo puede escribir; queda con su fecha y su autor.",
+                   en:"Here you capture what Barrett does not publish: minimums, overlays and how the lender actually responds. Anyone on the team can write; it is stamped with date and author." },
+  specFillHere:{ es:"Toca AGREGAR DETALLE en cualquier lender para capturar sus mínimos y lo que aprendas de sus overlays.",
+                 en:"Tap ADD DETAIL on any lender to capture its minimums and what you learn about its overlays." },
+  maxLtv:     { es:"LTV MÁX", en:"MAX LTV" },
+  reserves:   { es:"RESERVAS (MESES)", en:"RESERVES (MONTHS)" },
+  addObservation:{ es:"Observación nueva — overlay, condición, cómo respondieron",
+                   en:"New observation — overlay, condition, how they responded" },
+  observations:{ es:"OBSERVACIONES", en:"OBSERVATIONS" },
+  noObservations:{ es:"Todavía nadie ha escrito nada de este lender en esta especialidad.",
+                   en:"Nobody has written anything about this lender on this specialty yet." },
+  specCoverage:{ es:"{f} de {t} capturados", en:"{f} of {t} captured" },
+
   // ─── tiempo ───
   inStage:     { es:"d en la etapa", en:"d in stage" },
   total:       { es:"d total",       en:"d total" },

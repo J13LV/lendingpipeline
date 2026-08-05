@@ -36,8 +36,8 @@ import {
   lenderScorecard, lenderVerdict, lenderProductBreakdown, productScorecard, productsWorked,
   lenderConcentration,
   specialtyCatalog, lendersBySpecialty, specialtyLabel, categoryLabel,
-  DPA_STRUCTURES, dpaStructure, dpaDetail, setDpaDetail, dpaDetailCoverage,
-  dpaDetailSummary, emptyDpaDetail,
+  DPA_STRUCTURES, dpaStructure, specDetail, setSpecDetail, specDetailCoverage,
+  specDetailSummary, emptySpecDetail,
   noteEntries, latestNote, noteCount, addNoteEntry,
   LO_STAGES, STAGE_THRESHOLDS, teamLeadShare, branchCostPerFile, ladderCeiling,
   loanSplit, lendersHiddenByChannel, OTHER_LENDER_ID, lenderNameOf, payrollPeriodLabel, currentPayrollPeriod, payrollSummary, fundedDate,
@@ -2452,7 +2452,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               const list=lendersBySpecialty(files,cat.category,spec,{cutover:BARRETT_CUTOVER});
               const thin=list.length<=12;
               const isDpa=cat.category==="dpa";
-              const cov=isDpa?dpaDetailCoverage(dpaDetails):null;
+              const cov=specDetailCoverage(dpaDetails,cat.category);
               const tried=list.filter(x=>x.tried), rest=list.filter(x=>!x.tried);
               // NO convertir esto en componente. Definido dentro del render, un
               // componente cambia de identidad en cada tecla y React desmonta el
@@ -2482,8 +2482,8 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               };
               const row=(l)=>{
                 const key=l.lenderId+"::"+spec;
-                const det=isDpa?dpaDetail(dpaDetails,l.lenderId,spec):null;
-                const sum=det?dpaDetailSummary(det,CURRENT_LANG):null;
+                const det=specDetail(dpaDetails,l.lenderId,cat.category,spec);
+                const sum=det?specDetailSummary(det,CURRENT_LANG,isDpa):null;
                 const open=dpaOpen===key;
                 return (
                   <div key={key} style={{borderBottom:"1px solid #21262D"}}>
@@ -2516,11 +2516,11 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                       <span style={{color:"#484F58",fontFamily:"DM Mono",fontSize:10.5,minWidth:54,textAlign:"right"}}>
                         {l.bps?l.bps+" bps":"—"}
                       </span>
-                      {isDpa&&(
+                      {(
                         <button className="hov" onClick={()=>{
                             setDpaOpen(open?null:key);
-                            setDpaDraft(open?null:{...emptyDpaDetail(),...(det||{}),
-                              states:(det?.states||[]).join(",")});
+                            setDpaDraft(open?null:{...emptySpecDetail(),...(det||{}),
+                              states:(det?.states||[]).join(","),newNote:""});
                           }}
                           style={{background:sum?"#21262D":"rgba(126,200,164,.12)",
                             border:`1px solid ${sum?"#7EC8A4":"#7EC8A488"}`,
@@ -2533,37 +2533,55 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                     {open&&(
                       <div style={{padding:"11px 14px 14px",background:"#0D1117",borderTop:"1px solid #21262D"}}>
                         <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:8}}>
-                          {TX("dpaDetailTitle")}
+                          {TX("specDetailTitle")}
                         </div>
                         <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:9}}>
-                          {field("pct",TX("dpaPct"),{type:"num",w:86})}
-                          {field("pctOf",TX("dpaPctOf"),{w:150,opts:[
+                          {isDpa&&field("pct",TX("dpaPct"),{type:"num",w:86})}
+                          {isDpa&&field("pctOf",TX("dpaPctOf"),{w:150,opts:[
                             {v:"purchase",l:TX("purchase")},{v:"loan",l:TX("loanAmt")},{v:"down_payment",l:TX("downPay")}]})}
-                          {field("structure",TX("dpaStructure"),{w:180,opts:
+                          {isDpa&&field("structure",TX("dpaStructure"),{w:180,opts:
                             Object.keys(DPA_STRUCTURES).map(k=>({v:k,l:P(DPA_STRUCTURES[k])}))})}
-                          {field("forgivenessMonths",TX("dpaForgive"),{type:"num",w:110})}
-                          {field("fixesRate",TX("dpaFixesRate"),{w:90,opts:[
+                          {isDpa&&field("forgivenessMonths",TX("dpaForgive"),{type:"num",w:110})}
+                          {isDpa&&field("fixesRate",TX("dpaFixesRate"),{w:90,opts:[
                             {v:"true",l:TX("yesShort")},{v:"false",l:TX("noShort")}]})}
                           {field("minFico",TX("dpaMinFico"),{type:"num",w:80})}
+                          {field("maxLtv",TX("maxLtv"),{type:"num",w:80})}
                           {field("maxDti",TX("dpaMaxDti"),{type:"num",w:80})}
+                          {field("reservesMonths",TX("reserves"),{type:"num",w:110})}
                           {field("states",TX("dpaStates"),{w:120})}
                         </div>
-                        <input value={dpaDraft?.note??""} onChange={e=>setDpaDraft({...dpaDraft,note:e.target.value})}
-                          placeholder={TX("dpaNote")}
+                        {Array.isArray(det?.notes)&&det.notes.length>0&&(
+                          <div style={{marginBottom:9}}>
+                            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>
+                              {TX("observations")}
+                            </div>
+                            {det.notes.slice().reverse().map((n,ni)=>(
+                              <div key={ni} style={{borderLeft:"2px solid #21262D",paddingLeft:9,marginBottom:6}}>
+                                <div style={{fontSize:9,color:"#484F58"}}>
+                                  {n.at}{n.by?" · "+String(n.by).split(" ")[0]:""}
+                                </div>
+                                <div style={{fontSize:11,color:"#8B949E",lineHeight:1.5}}>{n.text}</div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <input value={dpaDraft?.newNote??""}
+                          onChange={e=>setDpaDraft({...dpaDraft,newNote:e.target.value})}
+                          placeholder={TX("addObservation")}
                           style={{background:"#161B22",border:"1px solid #30363D",borderRadius:5,color:"#E6EDF3",
                             padding:"6px 9px",fontSize:11,fontFamily:"DM Mono",width:"100%",marginBottom:9}}/>
                         <button className="hov" onClick={()=>{
                             const d={...dpaDraft};
                             d.fixesRate = d.fixesRate==="true"?true:d.fixesRate==="false"?false:null;
                             d.states = String(d.states||"").split(",").map(x=>x.trim().toUpperCase()).filter(Boolean);
-                            onSaveDpa&&onSaveDpa(setDpaDetail(dpaDetails,l.lenderId,spec,d,profile.name));
+                            onSaveDpa&&onSaveDpa(setSpecDetail(dpaDetails,l.lenderId,cat.category,spec,d,profile.name));
                             setDpaOpen(null); setDpaDraft(null);
                           }}
                           style={{background:"#7EC8A4",color:"#0D1117",border:"none",borderRadius:6,
                             padding:"7px 16px",fontSize:11,fontFamily:"DM Mono",fontWeight:500,cursor:"pointer"}}>
                           {TX("dpaSave")}
                         </button>
-                        <div style={{fontSize:9,color:"#484F58",marginTop:7,lineHeight:1.5}}>{TX("dpaDetailHint")} {TX("anyoneCanFill")}</div>
+                        <div style={{fontSize:9,color:"#484F58",marginTop:7,lineHeight:1.5}}>{TX("specDetailHint")}</div>
                       </div>
                     )}
                   </div>
@@ -2588,12 +2606,12 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                     </span>
                     <span style={{fontSize:11,color:"#484F58"}}>{list.length} lenders</span>
                     {cov&&<span style={{fontSize:10,color:"#484F58",marginLeft:"auto"}}>
-                      {TX("dpaCoverage",{f:cov.filled,t:cov.total,p:cov.pct})}</span>}
+                      {TX("specCoverage",{f:cov.filled,t:cov.total})}</span>}
                   </div>
-                  {isDpa&&(
+                  {(
                     <div style={{background:"rgba(126,200,164,.08)",border:"1px solid #7EC8A455",
                       borderRadius:8,padding:"10px 14px",fontSize:11,color:"#7EC8A4",lineHeight:1.55}}>
-                      {TX("dpaFillHere")}
+                      {isDpa?TX("dpaFillHere"):TX("specFillHere")}
                     </div>
                   )}
                   {thin&&(

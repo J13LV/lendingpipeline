@@ -2213,67 +2213,102 @@ export const DPA_STRUCTURES = {
 };
 export const dpaStructure = id => DPA_STRUCTURES[id] || null;
 
+export const specKey = (lenderId, category, specialty) => `${lenderId}::${category}::${specialty}`;
+// Las capturas viejas usaban lenderId::programa sin categoría. Se leen igual.
 export const dpaKey = (lenderId, program) => `${lenderId}::${program}`;
 
-// Un registro vacío, listo para llenar.
-export const emptyDpaDetail = () => ({
-  pct: null,              // 3.5, 5, 100 (del enganche) — como lo diga la guía
-  pctOf: "purchase",      // purchase | loan | down_payment
-  structure: null,        // grant | forgivable_second | repayable_second | deferred_second
-  forgivenessMonths: null,// si aplica
-  fixesRate: null,        // true si el programa amarra la tasa
-  minFico: null,
-  maxDti: null,
-  states: [],             // dónde aplica: NV, FL, TX…
-  note: "",
+// Un registro vacío. Los cinco primeros campos valen para las 88
+// especialidades; los de DPA solo aparecen cuando la categoría es dpa.
+export const emptySpecDetail = () => ({
+  minFico: null, maxLtv: null, maxDti: null, reservesMonths: null,
+  states: [],
+  // solo DPA
+  pct: null, pctOf: "purchase", structure: null,
+  forgivenessMonths: null, fixesRate: null,
+  // El aprendizaje sobre un lender se acumula: un overlay que aparece en
+  // agosto y otro en noviembre son dos datos, no uno que reemplaza al otro.
+  notes: [],
   updatedAt: null, updatedBy: null,
 });
+export const emptyDpaDetail = emptySpecDetail;
 
-export function dpaDetail(details, lenderId, program) {
-  return (details || {})[dpaKey(lenderId, program)] || null;
+export const DPA_ONLY_FIELDS = ["pct","pctOf","structure","forgivenessMonths","fixesRate"];
+
+export function specDetail(details, lenderId, category, specialty) {
+  const d = details || {};
+  return d[specKey(lenderId, category, specialty)] || d[dpaKey(lenderId, specialty)] || null;
 }
+export const dpaDetail = (details, lenderId, program) =>
+  specDetail(details, lenderId, "dpa", program);
 
-export function setDpaDetail(details, lenderId, program, patch, by) {
-  const k = dpaKey(lenderId, program);
-  const cur = (details || {})[k] || emptyDpaDetail();
+export function setSpecDetail(details, lenderId, category, specialty, patch, by) {
+  const k = specKey(lenderId, category, specialty);
+  const cur = specDetail(details, lenderId, category, specialty) || emptySpecDetail();
   const num = v => (v === "" || v === null || v === undefined || !Number.isFinite(Number(v)))
     ? null : Number(v);
-  return {
-    ...(details || {}),
-    [k]: {
-      ...cur, ...patch,
-      pct: patch.pct !== undefined ? num(patch.pct) : cur.pct,
-      forgivenessMonths: patch.forgivenessMonths !== undefined ? num(patch.forgivenessMonths) : cur.forgivenessMonths,
-      minFico: patch.minFico !== undefined ? num(patch.minFico) : cur.minFico,
-      maxDti: patch.maxDti !== undefined ? num(patch.maxDti) : cur.maxDti,
-      updatedAt: today(), updatedBy: by || null,
-    },
-  };
+  const next = { ...cur, ...patch };
+  for (const f of ["minFico","maxLtv","maxDti","reservesMonths","pct","forgivenessMonths"])
+    if (patch[f] !== undefined) next[f] = num(patch[f]);
+  next.notes = Array.isArray(cur.notes) ? cur.notes : [];
+  const t = String(patch.newNote || "").trim();
+  if (t) next.notes = [...next.notes, { at: today(), by: by || null, text: t }];
+  delete next.newNote;
+  next.updatedAt = today();
+  next.updatedBy = by || null;
+  const out = { ...(details || {}), [k]: next };
+  // Si venía de una captura vieja sin categoría, se retira la clave anterior.
+  if (category === "dpa" && out[dpaKey(lenderId, specialty)]) delete out[dpaKey(lenderId, specialty)];
+  return out;
 }
+export const setDpaDetail = (details, lenderId, program, patch, by) =>
+  setSpecDetail(details, lenderId, "dpa", program, patch, by);
 
-// Cuánto del catálogo llevas documentado, para saber si vale la pena
-// confiar en el reporte todavía.
-export function dpaDetailCoverage(details) {
-  const total = LENDERS.reduce((a, l) =>
-    a + ((Array.isArray(l.products?.dpa) ? l.products.dpa : []).length), 0);
-  const filled = Object.values(details || {}).filter(d =>
-    d && (d.pct !== null || d.structure)).length;
+export function specDetailCoverage(details, category) {
+  const key = category || null;
+  let total = 0;
+  for (const l of LENDERS) {
+    for (const [cat, list] of Object.entries(l.products || {})) {
+      if (!Array.isArray(list)) continue;
+      if (key && cat !== key) continue;
+      total += list.length;
+    }
+  }
+  const filled = Object.entries(details || {}).filter(([k, d]) => {
+    if (!d) return false;
+    if (key) {
+      // Las claves nuevas llevan categoría; las viejas de DPA no la tienen.
+      const nueva = k.includes("::" + key + "::");
+      const vieja = key === "dpa" && k.split("::").length === 2;
+      if (!nueva && !vieja) return false;
+    }
+    return d.minFico !== null || d.maxLtv !== null || d.pct !== null || d.structure ||
+           (Array.isArray(d.notes) && d.notes.length);
+  }).length;
   return { total, filled, pct: total ? Math.round(100 * filled / total) : 0 };
 }
+export const dpaDetailCoverage = details => specDetailCoverage(details, "dpa");
 
-// Un resumen en una línea, para la tarjeta del lender.
-export function dpaDetailSummary(d, lang = "es") {
-  if (!d || (d.pct === null && !d.structure)) return null;
+// Un resumen en una línea, para la fila del lender.
+export function specDetailSummary(d, lang = "es", isDpa = false) {
+  if (!d) return null;
+  const es = lang === "es";
   const bits = [];
-  if (d.pct !== null) bits.push(d.pct + "%");
-  if (d.structure) bits.push((DPA_STRUCTURES[d.structure] || {})[lang] || d.structure);
-  if (d.forgivenessMonths) bits.push(
-    lang === "es" ? `perdón a ${d.forgivenessMonths} meses` : `forgiven at ${d.forgivenessMonths} months`);
-  if (d.fixesRate === true) bits.push(lang === "es" ? "fija la tasa" : "fixes the rate");
+  if (isDpa) {
+    if (d.pct !== null) bits.push(d.pct + "%");
+    if (d.structure) bits.push((DPA_STRUCTURES[d.structure] || {})[lang] || d.structure);
+    if (d.forgivenessMonths) bits.push(es ? `perdón a ${d.forgivenessMonths} meses` : `forgiven at ${d.forgivenessMonths} months`);
+    if (d.fixesRate === true) bits.push(es ? "fija la tasa" : "fixes the rate");
+  }
   if (d.minFico) bits.push("FICO " + d.minFico + "+");
+  if (d.maxLtv) bits.push("LTV " + d.maxLtv + "%");
+  if (d.maxDti) bits.push("DTI " + d.maxDti + "%");
+  if (d.reservesMonths) bits.push(es ? `${d.reservesMonths} meses de reservas` : `${d.reservesMonths} months reserves`);
   if (Array.isArray(d.states) && d.states.length) bits.push(d.states.join("/"));
-  return bits.join(" · ");
+  const n = Array.isArray(d.notes) ? d.notes.length : 0;
+  if (n) bits.push(es ? `${n} nota${n === 1 ? "" : "s"}` : `${n} note${n === 1 ? "" : "s"}`);
+  return bits.length ? bits.join(" · ") : null;
 }
+export const dpaDetailSummary = (d, lang) => specDetailSummary(d, lang, true);
 
 // ─── 3. HOUSE HUNT — the 60-day track ──────────────────────────────
 // APG Realty reassigns a buyer to another agent if they are not under
