@@ -34,6 +34,7 @@ import {
   backupViability, changeCost, applyLenderChange, reregistrationCost,
   lenderChangeCount, lenderFaultChanges, LENDER_CHANGE_LANDING_STAGE,
   lenderScorecard, lenderVerdict, lenderProductBreakdown, productScorecard, productsWorked,
+  lenderConcentration,
   specialtyCatalog, lendersBySpecialty, specialtyLabel, categoryLabel,
   DPA_STRUCTURES, dpaStructure, dpaDetail, setDpaDetail, dpaDetailCoverage,
   dpaDetailSummary, emptyDpaDetail,
@@ -1041,8 +1042,7 @@ export default function App() {
       {idsBackfilled>0&&(
         <div style={{margin:"0 24px 10px",background:"rgba(74,144,217,.1)",border:"1px solid #4A90D9",
           borderRadius:8,padding:"10px 14px",fontSize:11.5,color:"#4A90D9",lineHeight:1.6}}>
-          {idsBackfilled} archivo{idsBackfilled===1?"":"s"} no tenía{idsBackfilled===1?"":"n"} identificador y no se podía{idsBackfilled===1?"":"n"} editar en masa.
-          Ya {idsBackfilled===1?"tiene":"tienen"} uno. Guarda cualquier cambio para dejarlo fijo.
+          {TX("idsBackfilledMsg",{n:idsBackfilled})}
         </div>
       )}
 
@@ -1050,8 +1050,8 @@ export default function App() {
         <div style={{margin:"0 24px",background:"rgba(232,93,117,.1)",border:"1px solid #E85D75",
           borderRadius:8,padding:"11px 14px",fontSize:11.5,color:"#E85D75",lineHeight:1.6}}>
           {sizeAlert > 1000000
-            ? `El pipeline pesa ${(sizeAlert/1048576).toFixed(2)} MB y Firestore no acepta más de 1 MB. Los cambios NO se están guardando. Archiva o exporta archivos viejos.`
-            : `El pipeline pesa ${(sizeAlert/1048576).toFixed(2)} MB. El tope de Firestore es 1 MB — conviene archivar archivos cerrados antes de llegar.`}
+            ? TX("docTooBig",{mb:(sizeAlert/1048576).toFixed(2)})
+            : TX("docNearLimit",{mb:(sizeAlert/1048576).toFixed(2)})}
         </div>
       )}
 
@@ -1439,7 +1439,7 @@ export default function App() {
                                   {n.legacy
                                     ? "nota anterior al historial · sin fecha ni autor"
                                     : `${timeAgo(n.at)}${n.by?` · ${n.by.split(" ")[0]}`:""}`}
-                                  {c>1?` · ${c-1} más`:""}
+                                  {c>1?" · "+TX("nMore",{n:c-1}):""}
                                 </div>
                               </div>
                             );})()}
@@ -1835,7 +1835,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           ["bankrefs","🏦 BANK REFERRALS"],
           isLO && ["mycomp","💵 MY COMP"],
           isAdmin && ["override","💰 OVERRIDE & COMP"],
-          isAdmin && ["scorecard",TX("scorecardTab")],
+          ["scorecard",TX("scorecardTab")],
         ].filter(Boolean).map(([t,l])=>(
           <button key={t} className="hov" onClick={()=>setProdTab(t)}
             style={{background:prodTab===t?"#F5A623":"#21262D",color:prodTab===t?"#0D1117":"#8B949E",borderRadius:6,padding:"6px 14px",fontSize:11,fontFamily:"DM Mono",fontWeight:500}}>
@@ -2295,14 +2295,15 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
 
 
       {/* SCORECARD DE LENDERS */}
-      {prodTab==="scorecard"&&isAdmin&&(()=>{
-        const sc=lenderScorecard(files,{cutover:BARRETT_CUTOVER});
+      {prodTab==="scorecard"&&(()=>{
+        const sc=lenderConcentration(lenderScorecard(files,{cutover:BARRETT_CUTOVER}));
         const TONE={good:"#7EC8A4",warn:"#F5A623",bad:"#E85D75",neutral:"#8B949E"};
         return (
           <div style={{display:"flex",flexDirection:"column",gap:14}}>
             <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:8,padding:"12px 16px",
               fontSize:11.5,color:"#8B949E",lineHeight:1.6}}>
               {scView==="lender"?TX("scorecardLead"):scView==="product"?TX("productStrength"):TX("specLead")}
+              <div style={{fontSize:10,color:"#484F58",marginTop:6}}>{TX("autoDerived")}</div>
             </div>
 
             <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
@@ -2342,9 +2343,9 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                   <thead>
                     <tr style={{background:"#0D1117",borderBottom:"1px solid #30363D"}}>
                       {[TX("scHeadLender"),TX("scHeadTouched"),TX("scHeadFunded"),TX("scHeadPull"),
-                        TX("scHeadExits"),TX("scHeadFault"),TX("scHeadDays"),TX("scHeadBps"),TX("scHeadVerdict")]
+                        TX("scHeadShare"),TX("scHeadExits"),TX("scHeadFault"),TX("scHeadDays"),TX("scHeadBps"),TX("scHeadVerdict")]
                         .map((h,i)=>(
-                        <th key={i} style={{padding:"9px 12px",textAlign:i===0||i===8?"left":"center",
+                        <th key={i} style={{padding:"9px 12px",textAlign:i===0||i===9?"left":"center",
                           fontSize:9.5,color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                       ))}
                     </tr>
@@ -2369,6 +2370,8 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                             fontSize:14,color:r.pullThrough>=80?"#7EC8A4":r.pullThrough>=50?"#F5A623":"#E85D75"}}>
                             {r.pullThrough!==null?r.pullThrough+"%":"—"}
                           </td>
+                          <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"DM Mono",
+                            color:r.sharePct>=40?"#F5A623":"#8B949E"}}>{r.sharePct?r.sharePct+"%":"—"}</td>
                           <td style={{padding:"10px 12px",textAlign:"center",color:"#8B949E",fontFamily:"DM Mono"}}>{r.exits||"—"}</td>
                           <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"DM Mono",
                             color:r.exitsLender>0?"#E85D75":"#484F58"}}>
@@ -2492,7 +2495,12 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                             {"  "}{TX("alsoDoes")} {l.siblings.slice(0,3).map(x=>P(specialtyLabel(x))).join(", ")}
                           </span>
                         )}
-                        {sum&&<div style={{fontSize:10,color:"#7EC8A4",marginTop:2}}>{sum}</div>}
+                        {sum&&<div style={{fontSize:10,color:"#7EC8A4",marginTop:2}}>
+                          {sum}
+                          {det?.updatedBy&&<span style={{color:"#484F58"}}>
+                            {"  "}{TX("capturedBy",{who:String(det.updatedBy).split(" ")[0],d:det.updatedAt})}
+                          </span>}
+                        </div>}
                       </span>
                       {l.tried&&(
                         <>
@@ -2508,7 +2516,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                       <span style={{color:"#484F58",fontFamily:"DM Mono",fontSize:10.5,minWidth:54,textAlign:"right"}}>
                         {l.bps?l.bps+" bps":"—"}
                       </span>
-                      {isDpa&&isAdmin&&(
+                      {isDpa&&(
                         <button className="hov" onClick={()=>{
                             setDpaOpen(open?null:key);
                             setDpaDraft(open?null:{...emptyDpaDetail(),...(det||{}),
@@ -2555,7 +2563,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                             padding:"7px 16px",fontSize:11,fontFamily:"DM Mono",fontWeight:500,cursor:"pointer"}}>
                           {TX("dpaSave")}
                         </button>
-                        <div style={{fontSize:9,color:"#484F58",marginTop:7,lineHeight:1.5}}>{TX("dpaDetailHint")}</div>
+                        <div style={{fontSize:9,color:"#484F58",marginTop:7,lineHeight:1.5}}>{TX("dpaDetailHint")} {TX("anyoneCanFill")}</div>
                       </div>
                     )}
                   </div>
@@ -2582,7 +2590,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                     {cov&&<span style={{fontSize:10,color:"#484F58",marginLeft:"auto"}}>
                       {TX("dpaCoverage",{f:cov.filled,t:cov.total,p:cov.pct})}</span>}
                   </div>
-                  {isDpa&&isAdmin&&(
+                  {isDpa&&(
                     <div style={{background:"rgba(126,200,164,.08)",border:"1px solid #7EC8A455",
                       borderRadius:8,padding:"10px 14px",fontSize:11,color:"#7EC8A4",lineHeight:1.55}}>
                       {TX("dpaFillHere")}
@@ -3161,9 +3169,9 @@ function LenderChangeModal({file,profile,onClose,onConfirm}){
                     </span>
                   </div>
                   <div style={{fontSize:9,color:"#484F58",marginTop:3,lineHeight:1.5}}>
-                    Hoy cobras {cost.comp.current} bps. {cost.comp.cappedByNewLender
-                      ? `El techo de ${to?.name} es ${cost.comp.toCeiling}, así que ahí cobrarías ${cost.comp.after}.`
-                      : `El techo de ${to?.name} es ${cost.comp.toCeiling}, así que puedes seguir cobrando lo mismo.`}
+                    {TX("youChargeToday",{n:cost.comp.current})} {cost.comp.cappedByNewLender
+                      ? TX("cappedThere",{name:to?.name,n:cost.comp.toCeiling,a:cost.comp.after})
+                      : TX("notCappedThere",{name:to?.name,n:cost.comp.toCeiling})}
                   </div>
                 </div>
               )}
@@ -4503,7 +4511,7 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
               <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px"}}>{L("activity")}</div>
               <button onClick={()=>setShowHistory(s=>!s)}
                 style={{background:"transparent",border:"none",color:"#8B949E",fontSize:10,fontFamily:"DM Mono",cursor:"pointer",letterSpacing:"1px"}}>
-                {showHistory ? (lang==="es"?"OCULTAR ↑":"HIDE ↑") : L("showAll")+" ↓"}
+                {showHistory ? L("hide")+" ↑" : L("showAll")+" ↓"}
               </button>
             </div>
             {file.lastEditedBy && (
@@ -4861,29 +4869,29 @@ function HelpModal({profile, onClose}){
   const TONE={gold:["#F5A623","rgba(245,166,35,.08)"],green:["#7EC8A4","rgba(126,200,164,.07)"],
               red:["#E85D75","rgba(232,93,117,.08)"],blue:["#4A90D9","rgba(74,144,217,.08)"]};
 
-  const block=(b,i)=>{
+  const block=(b,bi)=>{
     const k=b.k;
-    if(k==="lead") return <div key={i} style={{fontSize:13,color:"#E6EDF3",fontWeight:500,lineHeight:1.6,margin:"0 0 8px"}}>{T(b)}</div>;
-    if(k==="p")    return <div key={i} style={{fontSize:12.5,color:"#8B949E",lineHeight:1.7,margin:"0 0 9px"}}>{T(b)}</div>;
+    if(k==="lead") return <div key={bi} style={{fontSize:13,color:"#E6EDF3",fontWeight:500,lineHeight:1.6,margin:"0 0 8px"}}>{T(b)}</div>;
+    if(k==="p")    return <div key={bi} style={{fontSize:12.5,color:"#8B949E",lineHeight:1.7,margin:"0 0 9px"}}>{T(b)}</div>;
     if(k==="note"){ const [c,bg]=TONE[b.tone]||TONE.gold;
-      return <div key={i} style={{background:bg,border:`1px solid ${c}44`,borderLeft:`3px solid ${c}`,borderRadius:6,
+      return <div key={bi} style={{background:bg,border:`1px solid ${c}44`,borderLeft:`3px solid ${c}`,borderRadius:6,
         padding:"10px 13px",fontSize:12.5,color:"#C9D1D9",lineHeight:1.65,margin:"0 0 10px"}}>{T(b)}</div>; }
     if(k==="list") return (
-      <div key={i} style={{margin:"0 0 10px"}}>
+      <div key={bi} style={{margin:"0 0 10px"}}>
         {(b[lang]||P(b)).map((x,i)=>(
           <div key={i} style={{display:"flex",gap:8,fontSize:12.5,color:"#8B949E",lineHeight:1.7,marginBottom:2}}>
             <span style={{color:"#484F58"}}>—</span><span>{x}</span>
           </div>))}
       </div>);
     if(k==="steps") return (
-      <div key={i} style={{margin:"0 0 10px"}}>
+      <div key={bi} style={{margin:"0 0 10px"}}>
         {(b[lang]||P(b)).map((x,i)=>(
           <div key={i} style={{display:"flex",gap:9,fontSize:12.5,color:"#8B949E",lineHeight:1.7,marginBottom:5}}>
             <span style={{color:"#F5A623",fontFamily:"DM Mono",flexShrink:0}}>{i+1}</span><span>{x}</span>
           </div>))}
       </div>);
     if(k==="table") return (
-      <table key={i} style={{width:"100%",borderCollapse:"collapse",margin:"0 0 12px",fontSize:12}}>
+      <table key={bi} style={{width:"100%",borderCollapse:"collapse",margin:"0 0 12px",fontSize:12}}>
         <thead><tr>{(b.head[lang]||b.head.es).map((h,i)=>(
           <th key={i} style={{textAlign:"left",padding:"7px 10px",background:"#0D1117",color:"#484F58",
             fontSize:10,letterSpacing:"1px",fontWeight:500,borderBottom:"1px solid #30363D"}}>{h}</th>))}</tr></thead>
@@ -4893,7 +4901,7 @@ function HelpModal({profile, onClose}){
               color:j===0?"#E6EDF3":"#8B949E"}}>{T(cell)}</td>))}</tr>))}</tbody>
       </table>);
     if(k==="kv") return (
-      <div key={i} style={{margin:"0 0 10px"}}>
+      <div key={bi} style={{margin:"0 0 10px"}}>
         {b.rows.map((r,i)=>(
           <div key={i} style={{borderTop:"1px solid #21262D",padding:"9px 0"}}>
             <div style={{fontSize:12.5,color:"#E6EDF3",marginBottom:2}}>{T(r[0])}</div>
@@ -4914,7 +4922,7 @@ function HelpModal({profile, onClose}){
           justifyContent:"space-between",alignItems:"flex-start",gap:12,flexShrink:0}}>
           <div>
             <div style={{fontFamily:"Syne",fontWeight:800,fontSize:19,color:"#E6EDF3",letterSpacing:"-0.5px"}}>
-              {lang==="es"?"GUÍA DEL PIPELINE":"PIPELINE GUIDE"}
+              {TX("guideTitle")}
             </div>
             <div style={{fontSize:10.5,color:"#484F58",letterSpacing:"1px",marginTop:3}}>
               DEL VALLE LENDING CO. · BARRETT FINANCIAL GROUP · NMLS 181106
@@ -4938,7 +4946,7 @@ function HelpModal({profile, onClose}){
           display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",flexShrink:0,
           maxHeight:120,overflowY:"auto"}}>
           <input value={q} onChange={e=>setQ(e.target.value)}
-            placeholder={lang==="es"?"Buscar en la guía…":"Search the guide…"}
+            placeholder={TX("searchGuide")}
             style={{background:"#161B22",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",
               padding:"6px 10px",fontSize:11.5,fontFamily:"DM Mono",flex:"1 1 200px",minWidth:150}}/>
           {!hits&&sections.map(x=>(
@@ -4950,14 +4958,14 @@ function HelpModal({profile, onClose}){
             </button>))}
           {hits&&(
             <span style={{fontSize:11,color:"#6E7681",fontFamily:"DM Mono"}}>
-              {hits.length} {lang==="es"?"resultado":"result"}{hits.length===1?"":"s"}
+              {hits.length} {TX("result")}{hits.length===1?"":"s"}
             </span>)}
         </div>
 
         <div style={{flex:1,overflowY:"auto",padding:"18px 22px 26px"}}>
           {shown.length===0&&(
             <div style={{color:"#484F58",fontSize:12.5,textAlign:"center",padding:"30px 0"}}>
-              {lang==="es"?"Nada coincide con esa búsqueda todavía.":"Nothing matches that search yet."}
+              {TX("noGuideMatch")}
             </div>)}
           {shown.map((a,i)=>(
             <div key={a.id} style={{marginBottom:26,paddingBottom:i<shown.length-1?18:0,
@@ -4971,9 +4979,7 @@ function HelpModal({profile, onClose}){
 
         <div style={{padding:"10px 22px",borderTop:"1px solid #21262D",background:"#0D1117",
           fontSize:9.5,color:"#484F58",flexShrink:0}}>
-          {lang==="es"
-            ? "Los porcentajes y umbrales de esta guía los lee del sistema, no están escritos a mano. Si cambian, la guía cambia."
-            : "The percentages and thresholds here are read from the system, not typed by hand. If they change, the guide changes."}
+          {TX("guideLive")}
         </div>
       </div>
     </div>

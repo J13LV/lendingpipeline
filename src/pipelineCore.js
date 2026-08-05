@@ -1404,11 +1404,11 @@ export const TRAINER_RATES = { newbie: 0.15, intermediate: 0.10, senior: 0, bm: 
 // los archivos ya cerrados conservan la clasificación con la que se pagaron.
 // Reescribir cheques viejos al cambiar una regla es lo que rompe la confianza.
 export const LEAD_ORIGINS = [
-  { id: "self",     es: "Self-Generated",   klass: "self",     note_es: "Esfera y marketing propios del originador", note_en: "The originator's own sphere and marketing" },
-  { id: "partner",  es: "Referral Partner", klass: "self",     note_es: "Socio referidor del originador", note_en: "A referral partner of the originator" },
-  { id: "inhouse",  es: "In-House Lead",    klass: "in_house", note_es: "Asignado por la sucursal — sin importar de dónde venga", note_en: "Assigned by the branch — no matter where it came from" },
-  { id: "smartb",   es: "Smart Bee Client",    klass: "in_house", note_es: "Base de la práctica de taxes · misma regla para todos los LO", note_en: "The tax practice database · same rule for every LO" },
-  { id: "apg",      es: "APG Realty",       klass: "pending",  note_es: "Clasificación pendiente de definir", note_en: "Classification still to be defined" },
+  { id: "self",     es: "Self-Generated",   en: "Self-Generated",   klass: "self",     note_es: "Esfera y marketing propios del originador", note_en: "The originator's own sphere and marketing" },
+  { id: "partner",  es: "Referral Partner", en: "Referral Partner", klass: "self",     note_es: "Socio referidor del originador", note_en: "A referral partner of the originator" },
+  { id: "inhouse",  es: "In-House Lead",    en: "In-House Lead",    klass: "in_house", note_es: "Asignado por la sucursal — sin importar de dónde venga", note_en: "Assigned by the branch — no matter where it came from" },
+  { id: "smartb",   es: "Smart Bee Client", en: "Smart Bee Client", klass: "in_house", note_es: "Base de la práctica de taxes · misma regla para todos los LO", note_en: "The tax practice database · same rule for every LO" },
+  { id: "apg",      es: "APG Realty",       en: "APG Realty",       klass: "pending",  note_es: "Clasificación pendiente de definir", note_en: "Classification still to be defined" },
 ];
 export const leadOrigin = id => LEAD_ORIGINS.find(o => o.id === id) || null;
 
@@ -1961,6 +1961,17 @@ export function lenderScorecard(files, { cutover = null, minFiles = 1 } = {}) {
   // Ordenar por lo que importa: primero quien más cierra, luego quien menos falla.
   out.sort((a, b) => (b.funded - a.funded) || (a.exitsLender - b.exitsLender) || (b.volume - a.volume));
   return out;
+}
+
+// Concentración: qué parte de tu volumen vive en cada lender. Es la pregunta
+// que se hace un LO al escoger — "ya le puse mucho a este, muevo el próximo".
+// Un solo lender con demasiado peso es riesgo operativo, no eficiencia.
+export function lenderConcentration(scorecard) {
+  const total = scorecard.reduce((a, r) => a + (r.fundedVolume || 0), 0);
+  return scorecard.map(r => ({
+    ...r,
+    sharePct: total ? Math.round(100 * (r.fundedVolume || 0) / total) : 0,
+  }));
 }
 
 // Lo que el scorecard concluye, en una frase por lender.
