@@ -2394,8 +2394,8 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               );
               const list=productScorecard(files,prod,{cutover:BARRETT_CUTOVER});
               const tried=list.filter(x=>x.tried), untried=list.filter(x=>!x.tried).slice(0,12);
-              const Row=({r,proven})=>(
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:10,
+              const prodRow=(r,proven)=>(
+                <div key={r.lenderId} style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:10,
                   padding:"9px 14px",borderBottom:"1px solid #21262D",fontSize:11.5}}>
                   <span style={{color:proven?"#E6EDF3":"#6E7681",flex:1}}>{r.lenderName}</span>
                   {proven?(
@@ -2428,12 +2428,12 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                       letterSpacing:"1px",borderBottom:"1px solid #30363D"}}>{TX("proven")}</div>
                     {tried.length===0
                       ? <div style={{padding:"16px",color:"#484F58",fontSize:11.5}}>—</div>
-                      : tried.map(r=><Row key={r.lenderId} r={r} proven/>)}
+                      : tried.map(r=>prodRow(r,true))}
                   </div>
                   <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
                     <div style={{background:"#0D1117",padding:"8px 14px",fontSize:9.5,color:"#484F58",
                       letterSpacing:"1px",borderBottom:"1px solid #21262D"}}>{TX("untried")}</div>
-                    {untried.map(r=><Row key={r.lenderId} r={r}/>)}
+                    {untried.map(r=>prodRow(r,false))}
                     <div style={{padding:"9px 14px",fontSize:9.5,color:"#484F58",lineHeight:1.55}}>
                       {TX("offersNotProof")}
                     </div>
@@ -2451,11 +2451,15 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               const isDpa=cat.category==="dpa";
               const cov=isDpa?dpaDetailCoverage(dpaDetails):null;
               const tried=list.filter(x=>x.tried), rest=list.filter(x=>!x.tried);
-              const Field=({k,label,type,opts,w})=>{
+              // NO convertir esto en componente. Definido dentro del render, un
+              // componente cambia de identidad en cada tecla y React desmonta el
+              // input — el cursor se pierde y hay que hacer clic por cada letra.
+              // Como función simple no crea frontera de componente.
+              const field=(k,label,{type,opts,w}={})=>{
                 const d=dpaDraft||{};
                 const set=v=>setDpaDraft({...d,[k]:v});
                 return (
-                  <div style={{minWidth:w||96}}>
+                  <div key={k} style={{minWidth:w||96}}>
                     <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>{label}</div>
                     {opts?(
                       <select value={d[k]??""} onChange={e=>set(e.target.value||null)}
@@ -2473,13 +2477,13 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                   </div>
                 );
               };
-              const Row=({l})=>{
+              const row=(l)=>{
                 const key=l.lenderId+"::"+spec;
                 const det=isDpa?dpaDetail(dpaDetails,l.lenderId,spec):null;
                 const sum=det?dpaDetailSummary(det,CURRENT_LANG):null;
                 const open=dpaOpen===key;
                 return (
-                  <div style={{borderBottom:"1px solid #21262D"}}>
+                  <div key={key} style={{borderBottom:"1px solid #21262D"}}>
                     <div style={{display:"flex",alignItems:"baseline",gap:10,padding:"9px 14px",fontSize:11.5}}>
                       <span style={{flex:1,color:l.tried?"#E6EDF3":"#8B949E"}}>
                         {l.name}
@@ -2524,17 +2528,17 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                           {TX("dpaDetailTitle")}
                         </div>
                         <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:9}}>
-                          <Field k="pct" label={TX("dpaPct")} type="num" w={86}/>
-                          <Field k="pctOf" label={TX("dpaPctOf")} w={150} opts={[
-                            {v:"purchase",l:TX("purchase")},{v:"loan",l:TX("loanAmt")},{v:"down_payment",l:TX("downPay")}]}/>
-                          <Field k="structure" label={TX("dpaStructure")} w={180} opts={
-                            Object.keys(DPA_STRUCTURES).map(k=>({v:k,l:P(DPA_STRUCTURES[k])}))}/>
-                          <Field k="forgivenessMonths" label={TX("dpaForgive")} type="num" w={110}/>
-                          <Field k="fixesRate" label={TX("dpaFixesRate")} w={90} opts={[
-                            {v:"true",l:TX("yesShort")},{v:"false",l:TX("noShort")}]}/>
-                          <Field k="minFico" label={TX("dpaMinFico")} type="num" w={80}/>
-                          <Field k="maxDti" label={TX("dpaMaxDti")} type="num" w={80}/>
-                          <Field k="states" label={TX("dpaStates")} w={120}/>
+                          {field("pct",TX("dpaPct"),{type:"num",w:86})}
+                          {field("pctOf",TX("dpaPctOf"),{w:150,opts:[
+                            {v:"purchase",l:TX("purchase")},{v:"loan",l:TX("loanAmt")},{v:"down_payment",l:TX("downPay")}]})}
+                          {field("structure",TX("dpaStructure"),{w:180,opts:
+                            Object.keys(DPA_STRUCTURES).map(k=>({v:k,l:P(DPA_STRUCTURES[k])}))})}
+                          {field("forgivenessMonths",TX("dpaForgive"),{type:"num",w:110})}
+                          {field("fixesRate",TX("dpaFixesRate"),{w:90,opts:[
+                            {v:"true",l:TX("yesShort")},{v:"false",l:TX("noShort")}]})}
+                          {field("minFico",TX("dpaMinFico"),{type:"num",w:80})}
+                          {field("maxDti",TX("dpaMaxDti"),{type:"num",w:80})}
+                          {field("states",TX("dpaStates"),{w:120})}
                         </div>
                         <input value={dpaDraft?.note??""} onChange={e=>setDpaDraft({...dpaDraft,note:e.target.value})}
                           placeholder={TX("dpaNote")}
@@ -2591,11 +2595,11 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                   <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
                     {tried.length>0&&<div style={{background:"#0D1117",padding:"8px 14px",fontSize:9.5,
                       color:"#7EC8A4",letterSpacing:"1px",borderBottom:"1px solid #30363D"}}>{TX("proven")}</div>}
-                    {tried.map(l=><Row key={l.lenderId} l={l}/>)}
+                    {tried.map(l=>row(l))}
                     {rest.length>0&&<div style={{background:"#0D1117",padding:"8px 14px",fontSize:9.5,
                       color:"#484F58",letterSpacing:"1px",borderTop:tried.length?"1px solid #30363D":"none",
                       borderBottom:"1px solid #21262D"}}>{TX("untried")}</div>}
-                    {rest.slice(0,30).map(l=><Row key={l.lenderId} l={l}/>)}
+                    {rest.slice(0,30).map(l=>row(l))}
                     {rest.length>30&&<div style={{padding:"9px 14px",fontSize:9.5,color:"#484F58"}}>
                       +{rest.length-30}</div>}
                   </div>
@@ -4857,29 +4861,29 @@ function HelpModal({profile, onClose}){
   const TONE={gold:["#F5A623","rgba(245,166,35,.08)"],green:["#7EC8A4","rgba(126,200,164,.07)"],
               red:["#E85D75","rgba(232,93,117,.08)"],blue:["#4A90D9","rgba(74,144,217,.08)"]};
 
-  const Block=({b})=>{
+  const block=(b,i)=>{
     const k=b.k;
-    if(k==="lead") return <div style={{fontSize:13,color:"#E6EDF3",fontWeight:500,lineHeight:1.6,margin:"0 0 8px"}}>{T(b)}</div>;
-    if(k==="p")    return <div style={{fontSize:12.5,color:"#8B949E",lineHeight:1.7,margin:"0 0 9px"}}>{T(b)}</div>;
+    if(k==="lead") return <div key={i} style={{fontSize:13,color:"#E6EDF3",fontWeight:500,lineHeight:1.6,margin:"0 0 8px"}}>{T(b)}</div>;
+    if(k==="p")    return <div key={i} style={{fontSize:12.5,color:"#8B949E",lineHeight:1.7,margin:"0 0 9px"}}>{T(b)}</div>;
     if(k==="note"){ const [c,bg]=TONE[b.tone]||TONE.gold;
-      return <div style={{background:bg,border:`1px solid ${c}44`,borderLeft:`3px solid ${c}`,borderRadius:6,
+      return <div key={i} style={{background:bg,border:`1px solid ${c}44`,borderLeft:`3px solid ${c}`,borderRadius:6,
         padding:"10px 13px",fontSize:12.5,color:"#C9D1D9",lineHeight:1.65,margin:"0 0 10px"}}>{T(b)}</div>; }
     if(k==="list") return (
-      <div style={{margin:"0 0 10px"}}>
+      <div key={i} style={{margin:"0 0 10px"}}>
         {(b[lang]||P(b)).map((x,i)=>(
           <div key={i} style={{display:"flex",gap:8,fontSize:12.5,color:"#8B949E",lineHeight:1.7,marginBottom:2}}>
             <span style={{color:"#484F58"}}>—</span><span>{x}</span>
           </div>))}
       </div>);
     if(k==="steps") return (
-      <div style={{margin:"0 0 10px"}}>
+      <div key={i} style={{margin:"0 0 10px"}}>
         {(b[lang]||P(b)).map((x,i)=>(
           <div key={i} style={{display:"flex",gap:9,fontSize:12.5,color:"#8B949E",lineHeight:1.7,marginBottom:5}}>
             <span style={{color:"#F5A623",fontFamily:"DM Mono",flexShrink:0}}>{i+1}</span><span>{x}</span>
           </div>))}
       </div>);
     if(k==="table") return (
-      <table style={{width:"100%",borderCollapse:"collapse",margin:"0 0 12px",fontSize:12}}>
+      <table key={i} style={{width:"100%",borderCollapse:"collapse",margin:"0 0 12px",fontSize:12}}>
         <thead><tr>{(b.head[lang]||b.head.es).map((h,i)=>(
           <th key={i} style={{textAlign:"left",padding:"7px 10px",background:"#0D1117",color:"#484F58",
             fontSize:10,letterSpacing:"1px",fontWeight:500,borderBottom:"1px solid #30363D"}}>{h}</th>))}</tr></thead>
@@ -4889,7 +4893,7 @@ function HelpModal({profile, onClose}){
               color:j===0?"#E6EDF3":"#8B949E"}}>{T(cell)}</td>))}</tr>))}</tbody>
       </table>);
     if(k==="kv") return (
-      <div style={{margin:"0 0 10px"}}>
+      <div key={i} style={{margin:"0 0 10px"}}>
         {b.rows.map((r,i)=>(
           <div key={i} style={{borderTop:"1px solid #21262D",padding:"9px 0"}}>
             <div style={{fontSize:12.5,color:"#E6EDF3",marginBottom:2}}>{T(r[0])}</div>
@@ -4961,7 +4965,7 @@ function HelpModal({profile, onClose}){
               <div style={{fontFamily:"Syne",fontWeight:700,fontSize:15,color:"#E6EDF3",marginBottom:10}}>
                 {T(a)}
               </div>
-              {(a.blocks||[]).map((b,j)=><Block key={j} b={b}/>)}
+              {(a.blocks||[]).map((b,j)=>block(b,j))}
             </div>))}
         </div>
 
