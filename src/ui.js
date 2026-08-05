@@ -341,6 +341,26 @@ export const UI = {
                  en:"none of the selected files were found" },
   errClipboard:{ es:"el navegador bloqueó el portapapeles", en:"the browser blocked the clipboard" },
 
+  // ─── scorecard de lenders ───
+  scorecardTab:{ es:"◆ SCORECARD DE LENDERS", en:"◆ LENDER SCORECARD" },
+  scorecardLead:{ es:"El volumen colocado no dice con quién trabajar. Lo que mide a un lender es qué proporción de lo que toca termina cerrando, y cuántos archivos devuelve por decisión suya.",
+                  en:"Placed volume does not tell you who to work with. What measures a lender is how much of what it touches ends up closing, and how many files it sends back on its own call." },
+  scHeadLender:{ es:"LENDER", en:"LENDER" },
+  scHeadTouched:{ es:"TOCA", en:"TOUCHED" },
+  scHeadFunded:{ es:"CIERRA", en:"CLOSED" },
+  scHeadPull: { es:"PULL-THROUGH", en:"PULL-THROUGH" },
+  scHeadExits:{ es:"SALIDAS", en:"EXITS" },
+  scHeadFault:{ es:"POR SU CULPA", en:"ITS OWN CALL" },
+  scHeadDays: { es:"DÍAS A CIERRE", en:"DAYS TO CLOSE" },
+  scHeadBps:  { es:"BPS PROM", en:"AVG BPS" },
+  scHeadVerdict:{ es:"VEREDICTO", en:"VERDICT" },
+  scNoData:   { es:"Todavía no hay suficientes cambios de lender registrados para medir a nadie.",
+                en:"Not enough lender changes recorded yet to measure anyone." },
+  scFaultNote:{ es:"Solo las salidas por decisión del lender lo miden a él. Las del prestatario o de la propiedad se habrían ido con cualquiera.",
+                en:"Only exits on the lender's own call measure the lender. Borrower or property exits would have happened anywhere." },
+  scCompLost: { es:"comp perdida por salidas de su culpa", en:"comp lost to its own exits" },
+  scMinFiles: { es:"con al menos {n} archivo(s)", en:"with at least {n} file(s)" },
+
   // ─── tiempo ───
   inStage:     { es:"d en la etapa", en:"d in stage" },
   total:       { es:"d total",       en:"d total" },

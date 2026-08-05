@@ -33,6 +33,7 @@ import {
   REASON_CATEGORIES, reasonsByCategory, reasonById, isLenderFault,
   backupViability, changeCost, applyLenderChange, reregistrationCost,
   lenderChangeCount, lenderFaultChanges, LENDER_CHANGE_LANDING_STAGE,
+  lenderScorecard, lenderVerdict,
   noteEntries, latestNote, noteCount, addNoteEntry,
   LO_STAGES, STAGE_THRESHOLDS, teamLeadShare, branchCostPerFile, ladderCeiling,
   loanSplit, lendersHiddenByChannel, OTHER_LENDER_ID, lenderNameOf, payrollPeriodLabel, currentPayrollPeriod, payrollSummary, fundedDate,
@@ -1815,6 +1816,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           ["bankrefs","🏦 BANK REFERRALS"],
           isLO && ["mycomp","💵 MY COMP"],
           isAdmin && ["override","💰 OVERRIDE & COMP"],
+          isAdmin && ["scorecard",TX("scorecardTab")],
         ].filter(Boolean).map(([t,l])=>(
           <button key={t} className="hov" onClick={()=>setProdTab(t)}
             style={{background:prodTab===t?"#F5A623":"#21262D",color:prodTab===t?"#0D1117":"#8B949E",borderRadius:6,padding:"6px 14px",fontSize:11,fontFamily:"DM Mono",fontWeight:500}}>
@@ -2271,6 +2273,80 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
         )}
 
       </div>}
+
+
+      {/* SCORECARD DE LENDERS */}
+      {prodTab==="scorecard"&&isAdmin&&(()=>{
+        const sc=lenderScorecard(files,{cutover:BARRETT_CUTOVER});
+        const TONE={good:"#7EC8A4",warn:"#F5A623",bad:"#E85D75",neutral:"#8B949E"};
+        return (
+          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+            <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:8,padding:"12px 16px",
+              fontSize:11.5,color:"#8B949E",lineHeight:1.6}}>
+              {TX("scorecardLead")}
+            </div>
+
+            {sc.length===0?(
+              <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,
+                padding:"26px 16px",textAlign:"center",color:"#484F58",fontSize:12}}>
+                {TX("scNoData")}
+              </div>
+            ):(
+              <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+                  <thead>
+                    <tr style={{background:"#0D1117",borderBottom:"1px solid #30363D"}}>
+                      {[TX("scHeadLender"),TX("scHeadTouched"),TX("scHeadFunded"),TX("scHeadPull"),
+                        TX("scHeadExits"),TX("scHeadFault"),TX("scHeadDays"),TX("scHeadBps"),TX("scHeadVerdict")]
+                        .map((h,i)=>(
+                        <th key={i} style={{padding:"9px 12px",textAlign:i===0||i===8?"left":"center",
+                          fontSize:9.5,color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sc.map((r,i)=>{
+                      const v=lenderVerdict(r); const c=TONE[v.tone];
+                      return (
+                        <tr key={r.id} style={{borderBottom:"1px solid #21262D",
+                          background:i%2===0?"#0D1117":"#161B22"}}>
+                          <td style={{padding:"10px 12px",color:"#E6EDF3"}}>
+                            {r.name}
+                            {r.compLost>0&&(
+                              <div style={{fontSize:9,color:"#E85D75"}}>
+                                −${r.compLost.toLocaleString()} {TX("scCompLost")}
+                              </div>
+                            )}
+                          </td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:"#8B949E",fontFamily:"DM Mono"}}>{r.touched}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>{r.funded}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,
+                            fontSize:14,color:r.pullThrough>=80?"#7EC8A4":r.pullThrough>=50?"#F5A623":"#E85D75"}}>
+                            {r.pullThrough!==null?r.pullThrough+"%":"—"}
+                          </td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:"#8B949E",fontFamily:"DM Mono"}}>{r.exits||"—"}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"DM Mono",
+                            color:r.exitsLender>0?"#E85D75":"#484F58"}}>
+                            {r.exitsLender||"—"}{r.exitsLender>0&&r.faultRate!==null?` · ${r.faultRate}%`:""}
+                          </td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:"#8B949E",fontFamily:"DM Mono"}}>{r.avgDaysToClose??"—"}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:"#8B949E",fontFamily:"DM Mono"}}>{r.avgBps??"—"}</td>
+                          <td style={{padding:"10px 12px",color:c,fontSize:11}}>{P(v)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:8,padding:"11px 16px",
+              fontSize:10,color:"#484F58",lineHeight:1.6}}>
+              {TX("scFaultNote")}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* OVERRIDE & PAYROLL — modelo Barrett, reemplaza los 25 bps de PRMG */}
       {prodTab==="override"&&isAdmin&&<div style={{display:"flex",flexDirection:"column",gap:14}}>

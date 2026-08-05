@@ -1881,6 +1881,100 @@ export function markPaid(file, by) {
   return { ...file, claimState: "paid", paidAt: today(), paidBy: by || null };
 }
 
+// ─── 2J. SCORECARD DE LENDERS ──────────────────────────────────────
+// La pregunta que contesta: ¿con quién trabajar de verdad?
+//
+// El volumen colocado no lo dice. Un lender que recibe muchos archivos y
+// los devuelve a mitad de camino cuesta más que uno que recibe pocos y los
+// cierra. Lo que separa a los dos es la CATEGORÍA de las salidas: un archivo
+// que se fue por el prestatario se habría ido de cualquier lender; uno que
+// se fue por el lender es culpa suya y solo suya.
+//
+// Sin esa distinción, "Eleven nos tumbó tres archivos" y "esos clientes no
+// calificaban en ningún lado" se ven igual en un reporte de volumen.
+export function lenderScorecard(files, { cutover = null, minFiles = 1 } = {}) {
+  const rows = new Map();
+  const get = id => {
+    if (!rows.has(id)) rows.set(id, {
+      id, name: lenderById(id)?.name || id,
+      placed: 0, funded: 0, active: 0, volume: 0, fundedVolume: 0,
+      exits: 0, exitsLender: 0, exitsBorrower: 0, exitsProperty: 0, exitsOther: 0,
+      daysWith: [], daysToClose: [], bps: [], compLost: 0,
+      inbound: 0, reasons: {},
+    });
+    return rows.get(id);
+  };
+
+  for (const f of files || []) {
+    if (cutover && fundedDate(f) && fundedDate(f) < cutover) continue;
+
+    // Salidas: cada entrada del historial es un archivo que ESTE lender perdió.
+    for (const h of f.lenderHistory || []) {
+      if (h.from) {
+        const r = get(h.from);
+        r.exits++;
+        const cat = h.category || "other";
+        if (cat === "lender") r.exitsLender++;
+        else if (cat === "borrower") r.exitsBorrower++;
+        else if (cat === "property") r.exitsProperty++;
+        else r.exitsOther++;
+        if (h.reasonId) r.reasons[h.reasonId] = (r.reasons[h.reasonId] || 0) + 1;
+        if (Number.isFinite(h.daysWithPrevLender)) r.daysWith.push(h.daysWithPrevLender);
+        // Lo que costó la salida: solo cuenta si fue culpa del lender.
+        if (cat === "lender" && Number.isFinite(h.compDeltaDollars) && h.compDeltaDollars < 0)
+          r.compLost += Math.abs(h.compDeltaDollars);
+      }
+      if (h.to) get(h.to).inbound++;
+    }
+
+    if (!f.lenderId) continue;
+    const r = get(f.lenderId);
+    r.placed++;
+    r.volume += Number(f.loan) || 0;
+    const bps = fileCompBps(f, 0);
+    if (bps) r.bps.push(bps);
+
+    const funded = fundedDate(f);
+    if (funded) {
+      r.funded++;
+      r.fundedVolume += Number(f.loan) || 0;
+      if (okDate(f.lenderSince)) r.daysToClose.push(daysBetween(f.lenderSince, funded));
+    } else if (f.stage) {
+      r.active++;
+    }
+  }
+
+  const avg = a => a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) : null;
+  const out = [...rows.values()].map(r => {
+    // Pull-through: de los archivos que tocaron a este lender, cuántos cerró.
+    const touched = r.funded + r.active + r.exits;
+    return {
+      ...r, touched,
+      pullThrough: touched ? Math.round(100 * r.funded / touched) : null,
+      // Solo las salidas por culpa del lender miden al lender.
+      faultRate: touched ? Math.round(100 * r.exitsLender / touched) : null,
+      avgDaysWith: avg(r.daysWith), avgDaysToClose: avg(r.daysToClose), avgBps: avg(r.bps),
+      topReason: Object.entries(r.reasons).sort((a, b) => b[1] - a[1])[0]?.[0] || null,
+    };
+  }).filter(r => r.touched >= minFiles);
+
+  // Ordenar por lo que importa: primero quien más cierra, luego quien menos falla.
+  out.sort((a, b) => (b.funded - a.funded) || (a.exitsLender - b.exitsLender) || (b.volume - a.volume));
+  return out;
+}
+
+// Lo que el scorecard concluye, en una frase por lender.
+export function lenderVerdict(r) {
+  if (r.touched < 3) return { id: "thin", es: "Pocos datos todavía", en: "Not enough data yet", tone: "neutral" };
+  if (r.exitsLender === 0 && r.pullThrough >= 80)
+    return { id: "solid", es: "Cierra y no devuelve archivos", en: "Closes and does not send files back", tone: "good" };
+  if (r.faultRate >= 30)
+    return { id: "risky", es: "Devuelve demasiado por decisión suya", en: "Sends too much back on its own call", tone: "bad" };
+  if (r.exitsLender > 0 && r.exitsLender <= 1)
+    return { id: "ok", es: "Una salida por su cuenta — vigilar", en: "One exit on its own call — watch it", tone: "warn" };
+  return { id: "mixed", es: "Mezclado", en: "Mixed", tone: "neutral" };
+}
+
 // ─── 3. HOUSE HUNT — the 60-day track ──────────────────────────────
 // APG Realty reassigns a buyer to another agent if they are not under
 // contract in 60 days. So this is not a follow-up rhythm; it is a
