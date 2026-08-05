@@ -93,7 +93,7 @@ const EXCLUDED_TYPES = ["Lightning Equity Hybrid HELOC","Symmetry HELOC","CE Sec
   "Fannie RefiNow","Freddie Refi Possible","USDA Streamlined Assist","CO CHFA FHA Streamline"];
 
 // ─── BANK-TO-BANK REFERRAL CONSTANTS ───
-// When a file can't be done at PRMG (product limits, credit, etc.), Jose refers
+// Cuando la sucursal no puede colocar un archivo (producto, crédito, nicho), se refiere
 // it to another banker and earns a referral fee. We also track inbound deals
 // where another banker sent us business.
 const REFERRED_OUT_STAGE = "REFERRED OUT — EXTERNAL BANK";
@@ -101,7 +101,7 @@ const REFERRAL_FEE_BPS = 50; // bps earned on referred-out closed deals
 const REFERRAL_REASONS = [
   "Credit Score Too Low",
   "DTI / Income Issue",
-  "Product Not Offered at PRMG",
+  "Product Not Offered",
   "Property Type Restriction",
   "LTV / Down Payment Issue",
   "Bankruptcy / Credit Event",
@@ -282,26 +282,31 @@ function LoginScreen() {
         .fade{animation:fadeIn .4s ease;}
         input:focus{outline:none;}
       `}</style>
-      <div className="fade" style={{
-        background:"#161B22", border:"1px solid #30363D", borderRadius:16,
-        padding:"40px 36px", width:"100%", maxWidth:420,
-        display:"flex", flexDirection:"column", alignItems:"center", gap:22
-      }}>
-        <div style={{
-          width:56, height:56, borderRadius:"50%",
-          background:"linear-gradient(135deg,#C8922A,#F5A623)",
-          display:"flex", alignItems:"center", justifyContent:"center",
-          fontFamily:"Syne", fontWeight:800, fontSize:22, color:"#0D1117"
-        }}>DV</div>
+      <div className="fade" style={{width:"100%", maxWidth:430,
+        display:"flex", flexDirection:"column", alignItems:"stretch", gap:0}}>
 
-        <div style={{textAlign:"center"}}>
-          <div style={{fontFamily:"Syne", fontWeight:800, fontSize:22, color:"#E6EDF3", letterSpacing:"-0.5px"}}>
-            PIPELINE
+        {/* MARCA — el nombre primero, la herramienta después */}
+        <div style={{textAlign:"center", marginBottom:24}}>
+          <div style={{
+            width:62, height:62, borderRadius:16, margin:"0 auto 15px",
+            background:"linear-gradient(140deg,#F5A623,#B87F1E)",
+            display:"flex", alignItems:"center", justifyContent:"center",
+            fontFamily:"Syne", fontWeight:800, fontSize:24, color:"#0D1117",
+            letterSpacing:"-1px", boxShadow:"0 10px 30px rgba(245,166,35,.16)"
+          }}>DV</div>
+          <div style={{fontFamily:"Syne", fontWeight:800, fontSize:25, color:"#E6EDF3",
+            letterSpacing:"-0.7px", lineHeight:1.15}}>Del Valle Lending Co.</div>
+          <div style={{fontSize:10.5, color:"#484F58", letterSpacing:"2.5px", marginTop:8}}>
+            PIPELINE · BARRETT FINANCIAL GROUP
           </div>
-          <div style={{fontSize:11, color:"#484F58", letterSpacing:"2px", marginTop:4}}>
-            MORTGAGE BY DELVALLE · PRMG 541-A
-          </div>
+          <div style={{width:34, height:2, background:"#F5A623", margin:"16px auto 13px",
+            borderRadius:2, opacity:.7}}/>
+          <div style={{fontFamily:"Syne", fontWeight:700, fontSize:12.5, color:"#F5A623",
+            letterSpacing:"0.3px"}}>Trust the Numbers. Trust the Name.</div>
         </div>
+
+        <div style={{background:"#161B22", border:"1px solid #30363D", borderRadius:14,
+          padding:"26px 24px", display:"flex", flexDirection:"column", gap:16}}>
 
         {resetSent ? (
           <div style={{width:"100%", display:"flex", flexDirection:"column", gap:12, textAlign:"center"}}>
@@ -328,7 +333,7 @@ function LoginScreen() {
                 autoComplete="username"
                 onChange={e => { setEmail(e.target.value); setError(""); }}
                 onKeyDown={e => e.key === "Enter" && (resetMode ? sendReset() : attempt())}
-                placeholder="you@prmg.net"
+                placeholder="tu@barrettfinancial.com"
                 autoFocus
                 disabled={busy}
                 style={{
@@ -401,9 +406,11 @@ function LoginScreen() {
           </div>
         )}
 
-        <div style={{fontSize:11, color:"#30363D", textAlign:"center", lineHeight:1.5}}>
-          Authorized personnel only · PRMG Branch 541-A<br/>
-          All activity is logged.
+        </div>
+
+        <div style={{fontSize:10.5, color:"#30363D", textAlign:"center", lineHeight:1.6, marginTop:18}}>
+          Solo personal autorizado · Authorized personnel only<br/>
+          Toda la actividad queda registrada · All activity is logged
         </div>
       </div>
     </div>
@@ -679,7 +686,7 @@ export default function App() {
     const payload = {
       exportedAt: new Date().toISOString(),
       version: "1.0",
-      branch: "PRMG 541-A",
+      branch: "Del Valle Lending Co.",
       fileCount: files.length,
       files: files,
     };
@@ -813,7 +820,7 @@ export default function App() {
   const closeFile=id=>{
     setFiles(p=>p.map(f=>{
       if(f.id!==id) return f;
-      if(f.stage===REFERRED_OUT_STAGE) return f; // can't close a referred-out file at PRMG
+      if(f.stage===REFERRED_OUT_STAGE) return f; // un archivo referido afuera lo cierra el otro banco, no nosotros
       // No llamarla fundedDate: ese nombre ya existe importado del motor.
       const fundedOn = f.closing || today();
       return stampEdit({...f, stage:CLOSED_STAGE, closedAt:fundedOn, daysInStage:0}, profile, "closed", {from:f.stage, closedAt:fundedOn});
@@ -1672,7 +1679,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
       monthVol:loMonthClosed.reduce((s,f)=>s+(f.loan||0),0)};
   });
 
-  // El override de PRMG —25 bps planos, excluyendo HELOCs y segundas, ciclo
+  // El override anterior —25 bps planos, excluyendo HELOCs y segundas, ciclo
   // mensual— desapareció con la mudanza a Barrett. Lo reemplaza loanSplit(),
   // que reparte porcentajes del NET según etapa, trainer, año y volumen.
   const myComp=f=>fileCompDollars(f,BPS_RATE);
@@ -1706,7 +1713,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
     const finalAmt = parseInt(ro.finalLoanAmount)||f.loan||0;
     return s + Math.round(finalAmt * REFERRAL_FEE_BPS / 10000);
   }, 0);
-  // What PRMG would have earned at full BPS comp
+  // Lo que se habría ganado cerrándolo en casa, a comp completa
   const outboundWouldHaveEarned = outboundFunded.reduce((s,f)=>{
     const ro = f.referredOut||{};
     const finalAmt = parseInt(ro.finalLoanAmount)||f.loan||0;
@@ -2188,7 +2195,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
             <div style={{background:"#161B22",border:"1px solid #E85D7544",borderTop:"3px solid #E85D75",borderRadius:8,padding:12}}>
               <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>LOST COMP (GROSS)</div>
               <div style={{fontFamily:"Syne",fontWeight:800,fontSize:20,color:"#E85D75"}}>${outboundLostComp.toLocaleString()}</div>
-              <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>vs. {BPS_RATE} bps PRMG comp</div>
+              <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>vs. {BPS_RATE} bps de comp propia</div>
             </div>
           )}
         </div>
@@ -2269,7 +2276,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
             </div>
             <div style={{padding:"16px 18px",display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:14}}>
               <div>
-                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>OUTBOUND — WHAT YOU WOULD HAVE EARNED AT PRMG</div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>OUTBOUND — WHAT YOU WOULD HAVE EARNED IN HOUSE</div>
                 <div style={{fontFamily:"Syne",fontWeight:700,fontSize:18,color:"#8B949E"}}>${outboundWouldHaveEarned.toLocaleString()}</div>
                 <div style={{fontSize:10,color:"#484F58",marginTop:3}}>{BPS_RATE} bps × ${(outboundFundedVol/1000).toFixed(0)}K</div>
               </div>
@@ -2290,7 +2297,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               </div>
             </div>
             <div style={{padding:"12px 18px",borderTop:"1px solid #21262D",background:"#0D1117",fontSize:11,color:"#8B949E",lineHeight:1.6}}>
-              <strong style={{color:"#F5A623"}}>Read it:</strong> Outbound is what PRMG can't do that you sent away — you got <strong style={{color:"#F5A623"}}>${outboundFeesEarned.toLocaleString()}</strong> in referral fees but missed <strong style={{color:"#E85D75"}}>${outboundLostComp.toLocaleString()}</strong> in PRMG comp. Inbound is what bankers send your way — you earned <strong style={{color:"#06D6A0"}}>${inboundCompEarned.toLocaleString()}</strong> from those. Use this to negotiate product expansion at PRMG, or to evaluate broker/correspondent options.
+              <strong style={{color:"#F5A623"}}>Read it:</strong> Outbound is what the branch could not place and you sent away — you got <strong style={{color:"#F5A623"}}>${outboundFeesEarned.toLocaleString()}</strong> in referral fees but missed <strong style={{color:"#E85D75"}}>${outboundLostComp.toLocaleString()}</strong> in your own comp. Inbound is what bankers send your way — you earned <strong style={{color:"#06D6A0"}}>${inboundCompEarned.toLocaleString()}</strong> from those. Use this to decide which lenders or channels are worth adding.
             </div>
           </div>
         )}
@@ -2780,7 +2787,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
         );
       })()}
 
-      {/* OVERRIDE & PAYROLL — modelo Barrett, reemplaza los 25 bps de PRMG */}
+      {/* OVERRIDE & PAYROLL — modelo Barrett por % del NET */}
       {prodTab==="override"&&isAdmin&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
         <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center",
           background:"#161B22",border:"1px solid #30363D",borderRadius:8,padding:"10px 14px"}}>
@@ -4769,7 +4776,7 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
               style={{flex:2,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"none",cursor:"pointer"}}>REOPEN FILE</button>
           ):isReferredOut?(
             <button className="hov" onClick={()=>{
-              if(confirm(`Bring ${file.borrower} back into PRMG pipeline? This will reset stage to Lead Inquiry and clear outbound banker data.`)){
+              if(confirm(`Bring ${file.borrower} back into the pipeline? This will reset stage to Lead Inquiry and clear outbound banker data.`)){
                 onSave({stage:"Lead Inquiry", stageEnteredAt:today(), daysInStage:0, referredOut: null});
                 onClose();
               }
@@ -5165,7 +5172,7 @@ function _HelpModalLegacy({profile, onClose}){
         <div style={{padding:"20px 24px 16px",borderBottom:"1px solid #21262D",flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div>
             <div style={{fontFamily:"Syne",fontWeight:800,fontSize:20,color:"#E6EDF3",letterSpacing:"-0.5px"}}>HELP & BEST PRACTICES</div>
-            <div style={{fontSize:11,color:"#484F58",letterSpacing:"1px",marginTop:3}}>PIPELINE · MORTGAGE BY DELVALLE · PRMG 541-A</div>
+            <div style={{fontSize:11,color:"#484F58",letterSpacing:"1px",marginTop:3}}>PIPELINE · DEL VALLE LENDING CO. · BARRETT FINANCIAL GROUP</div>
           </div>
           <button onClick={onClose} style={{background:"transparent",border:"none",color:"#484F58",fontSize:20,cursor:"pointer",padding:"0 0 0 12px"}}>✕</button>
         </div>
@@ -5282,7 +5289,7 @@ function _HelpModalLegacy({profile, onClose}){
               <div>
                 <div style={{fontFamily:"Syne",fontWeight:700,fontSize:16,color:"#A78BFA",marginBottom:8}}>🏦 Bank-to-Bank Referrals</div>
                 <div style={{color:"#8B949E"}}>
-                  When PRMG can't handle a file (product, credit, niche), refer it out to another banker and track everything.
+                  When the branch can't place a file (product, credit, niche), refer it out to another banker and track everything.
                   When other bankers send you deals, tag the inbound so you can measure reciprocity at year end.
                 </div>
               </div>
@@ -5295,7 +5302,7 @@ function _HelpModalLegacy({profile, onClose}){
                   <li>Select a REFERRAL REASON (credit, product, property type, etc.)</li>
                   <li>Set STATUS to "Pending at Banker" while you wait for outcome</li>
                   <li>Once the deal closes, update STATUS to "Closed (Funded)" + enter FINAL LOAN AMOUNT at banker + CLOSE DATE</li>
-                  <li>Your <strong style={{color:"#F5A623"}}>{REFERRAL_FEE_BPS} bps referral fee</strong> auto-calculates. Lost comp (vs PRMG comp) shows alongside.</li>
+                  <li>Your <strong style={{color:"#F5A623"}}>{REFERRAL_FEE_BPS} bps referral fee</strong> auto-calculates. Lost comp shows alongside.</li>
                 </ol>
               </div>
 
@@ -5307,7 +5314,7 @@ function _HelpModalLegacy({profile, onClose}){
                   <li>Fill in the referring banker's name, company, phone, and email</li>
                   <li>Continue with normal borrower info → ADD TO PIPELINE</li>
                   <li>The file lives in <strong style={{color:"#FFD166"}}>🤝 INBOUND</strong> tab + the normal pipeline (it has a 🤝 badge on its card)</li>
-                  <li>Process and close normally — you earn your full PRMG comp on inbound closed deals</li>
+                  <li>Process and close normally — you earn your full comp on inbound closed deals</li>
                 </ol>
               </div>
 
@@ -5318,7 +5325,7 @@ function _HelpModalLegacy({profile, onClose}){
                 </div>
                 <ul style={{color:"#8B949E",paddingLeft:18,lineHeight:1.8,fontSize:12,marginTop:6}}>
                   <li>Outbound totals: # sent out, $ fees earned, $ lost comp</li>
-                  <li>Inbound totals: # received, $ closed at PRMG, $ comp earned</li>
+                  <li>Inbound totals: # received, $ closed, $ comp earned</li>
                   <li>Reciprocity table: per-banker balance (who's sending who what)</li>
                   <li>Year-end comp impact summary (admin only)</li>
                 </ul>
@@ -5384,7 +5391,7 @@ function _HelpModalLegacy({profile, onClose}){
                 {q:"How does the 50 bps referral fee calculate?",
                  a:"When you mark a referred-out file as 'Closed (Funded)' and enter the final loan amount at the banker, the system auto-calculates 50 bps × that loan amount. You'll see this on the BANK REFERRALS dashboard."},
                 {q:"What does 'lost comp' mean on the dashboard?",
-                 a:"For each referred-out closed deal: lost comp = (your normal PRMG bps × loan) − (50 bps referral fee). It shows what you would have earned if PRMG could have done the deal. Use this to make a case for product expansion."},
+                 a:"For each referred-out closed deal: lost comp = (your normal bps × loan) − (50 bps referral fee). It shows what you would have earned closing it in house. Use it to decide which products are worth adding."},
                 {q:"What's the difference between Referral Partner and Bank Referral?",
                  a:"Referral Partner = the source who sent you the borrower (Smart Bee client, agent, CPA, family member). Tracked on the existing REFERRAL PARTNERS tab. Bank Referral = formal bank-to-bank deal flow with another mortgage banker. Tracked on the new BANK REFERRALS tab. Both can coexist on the same file."},
                 {q:"I made a change but don't see SAVED — did it save?",
