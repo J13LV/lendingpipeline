@@ -2307,7 +2307,8 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
         };
         const byProd=productionByProduct(files,{cutover:BARRETT_CUTOVER,bpsDefault:BPS_RATE});
         const byGrp=mixVsPlan(productionByGroup(files,groupOf,{cutover:BARRETT_CUTOVER,bpsDefault:BPS_RATE}),mixPlan);
-        const byLo=productionByLo(files,{cutover:BARRETT_CUTOVER,bpsDefault:BPS_RATE});
+        const byLo=productionByLo(files,{cutover:BARRETT_CUTOVER,bpsDefault:BPS_RATE,
+          roster:LO_LIST.map(x=>x.name)});
         const totF=byProd.reduce((a,r)=>a+r.funded,0);
         const totV=byProd.reduce((a,r)=>a+r.fundedVolume,0);
         const totC=byProd.reduce((a,r)=>a+r.comp,0);
@@ -2322,6 +2323,13 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           <div style={{display:"flex",flexDirection:"column",gap:14}}>
             <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:8,padding:"12px 16px",
               fontSize:11.5,color:"#8B949E",lineHeight:1.6}}>{TX("mixLead")}</div>
+
+            {totF<20&&(
+              <div style={{background:"rgba(245,166,35,.08)",border:"1px solid #F5A62344",borderRadius:8,
+                padding:"10px 14px",fontSize:11,color:"#F5A623",lineHeight:1.55}}>
+                {TX("thinMix",{n:totF})}
+              </div>
+            )}
 
             <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
               <div style={{background:"#0D1117",padding:"9px 14px",fontSize:10,color:"#F5A623",
@@ -2406,11 +2414,14 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 <tbody>
                   {byLo.map((r,i)=>(
                     <tr key={r.key} style={{borderBottom:"1px solid #21262D",background:i%2?"#161B22":"#0D1117"}}>
-                      <td style={{padding:"10px 12px",color:"#E6EDF3"}}>{r.key}</td>
+                      <td style={{padding:"10px 12px",color:r.funded||r.active?"#E6EDF3":"#6E7681"}}>
+                        {r.key}
+                        {!r.funded&&!r.active&&<span style={{color:"#484F58",fontSize:9.5}}>{"  "}{TX("noProduction")}</span>}
+                      </td>
                       <td style={{padding:"10px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>{r.funded||"—"}</td>
                       <td style={{padding:"10px 12px",textAlign:"center",color:"#8B949E",fontFamily:"DM Mono"}}>{r.fundedVolume?money(r.fundedVolume):"—"}</td>
                       <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,
-                        fontSize:13,color:"#F5A623"}}>{r.unitShare}%</td>
+                        fontSize:13,color:r.unitShare?"#F5A623":"#484F58"}}>{r.unitShare}%</td>
                       <td style={{padding:"10px 12px",textAlign:"center",color:"#6E7681",fontFamily:"DM Mono",fontSize:11}}>{r.avgLoan?money(r.avgLoan):"—"}</td>
                       <td style={{padding:"10px 12px",textAlign:"center",color:"#4A90D9",fontFamily:"DM Mono"}}>{r.active||"—"}</td>
                     </tr>
