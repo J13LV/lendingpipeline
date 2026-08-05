@@ -2372,9 +2372,18 @@ export const productionByProduct = (files, opts = {}) =>
 export const productionByGroup = (files, groupOf, opts = {}) =>
   tally(files, f => groupOf(f?.type), opts);
 
-// Por originador.
-export const productionByLo = (files, opts = {}) =>
-  tally(files, f => f?.lo || null, opts);
+// Por originador. `roster` completa a quien no tiene archivos: un LO en cero
+// es un dato, no una ausencia, y es justo lo que un BM necesita ver.
+export function productionByLo(files, opts = {}) {
+  const rows = tally(files, f => f?.lo || null, opts);
+  const seen = new Set(rows.map(r => r.key));
+  for (const name of opts.roster || []) {
+    if (seen.has(name)) continue;
+    rows.push({ key: name, funded: 0, fundedVolume: 0, comp: 0, active: 0,
+      activeVolume: 0, loans: [], avgLoan: null, unitShare: 0, volumeShare: 0 });
+  }
+  return rows;
+}
 
 // Comparación contra la mezcla planeada. `plan` es {claveDelGrupo: porcentaje}.
 export function mixVsPlan(rows, plan) {
