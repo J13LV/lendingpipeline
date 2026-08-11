@@ -80,6 +80,7 @@ const TEAM = {
   "rGY5FGA7P3N5lXE74TjZ07tHQWg1": { name: "Ana M Plasencia",    short: "Ana",      role: "lo",        nmls: "2683283", color: "#BD65E8" },
   "iXcEzyc2nTTy2CJirLUz1FJ1oye2": { name: "Ana M Plasencia",    short: "Ana",      role: "lo",        nmls: "2683283", color: "#BD65E8" },
   "0dpbvxe4RZUmCDhm03Zne6JSKE32": { name: "Marelis Pinales",    short: "Marelis",  role: "lo",        nmls: "",        color: "#06D6A0" },
+  "qMVqzjs59yMIcZfvsWACpjm1o4F2": { name: "Tina",              short: "Tina",     role: "assistant", nmls: null, color: "#7EC8A4" },
   "Hj0KI0wmGfTHinHxxx8mrdLx5jw2": { name: "Laura de Armas",     short: "Laura",    role: "assistant", nmls: "",        color: "#F5A623" },
 };
 function getProfile(uid){ return TEAM[uid] || { name:"Unknown User", short:"Unknown", role:"assistant", nmls:"", color:"#8B949E" }; }
@@ -1640,6 +1641,7 @@ function ArchiveModal({file, onClose, onConfirm}){
 function ProductionDashboard({profile, files, closed, active, referredOut, inbound, onOpenFile, onBulkUpdate, payrollLog, onLogPayroll, onClosePeriod, onDeletePayrollLog, dpaDetails, onSaveDpa}){
   const isAdmin = profile?.role === "admin";
   const isLO = profile?.role === "lo";
+  const isAssistant = profile?.role === "assistant";
   const [compYear,setCompYear]=useState(1);
   const [justClaimed,setJustClaimed]=useState(null);
   const [picked,setPicked]=useState(()=>new Set());
@@ -1648,6 +1650,8 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
   const [openLog,setOpenLog]=useState(null);
   const [reqError,setReqError]=useState(null);
   const [scView,setScView]=useState("lender");
+  // El equipo de apoyo entra directo a especialidades: consulta y captura,
+  // sin las columnas de rendimiento y volumen que no necesitan.
   const [scProduct,setScProduct]=useState(null);
   const [scCat,setScCat]=useState("dpa");
   // El plan de mezcla vive aquí para poder ajustarlo sin tocar el motor.
@@ -1657,7 +1661,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
   const [dpaDraft,setDpaDraft]=useState(null);
   const [filesMo,setFilesMo]=useState(8);
   const payroll=payrollSummary(files,{year:compYear,filesPerMonth:filesMo,roster:COMP_ROSTER});
-  const [prodTab,setProdTab]=useState("team");
+  const [prodTab,setProdTab]=useState(profile?.role==="assistant"?"scorecard":"team");
   const [showAutoFixPreview, setShowAutoFixPreview] = useState(false);
 
   const thisMonth=new Date().toISOString().slice(0,7);
@@ -1839,14 +1843,14 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
       {/* INNER TAB BAR — now includes BANK REFERRALS */}
       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
         {[
-          ["team","🏆 TEAM PRODUCTION"],
-          ["monthly","📅 MONTHLY"],
-          ["referrals","🤝 REFERRAL PARTNERS"],
-          ["bankrefs","🏦 BANK REFERRALS"],
+          !isAssistant && ["team","🏆 TEAM PRODUCTION"],
+          !isAssistant && ["monthly","📅 MONTHLY"],
+          !isAssistant && ["referrals","🤝 REFERRAL PARTNERS"],
+          !isAssistant && ["bankrefs","🏦 BANK REFERRALS"],
           isLO && ["mycomp","💵 MY COMP"],
           isAdmin && ["override","💰 OVERRIDE & COMP"],
           ["scorecard",TX("scorecardTab")],
-          ["mix",TX("mixTab")],
+          !isAssistant && ["mix",TX("mixTab")],
         ].filter(Boolean).map(([t,l])=>(
           <button key={t} className="hov" onClick={()=>setProdTab(t)}
             style={{background:prodTab===t?"#F5A623":"#21262D",color:prodTab===t?"#0D1117":"#8B949E",borderRadius:6,padding:"6px 14px",fontSize:11,fontFamily:"DM Mono",fontWeight:500}}>
@@ -2443,17 +2447,18 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
       {/* SCORECARD DE LENDERS */}
       {prodTab==="scorecard"&&(()=>{
         const sc=lenderConcentration(lenderScorecard(files,{cutover:BARRETT_CUTOVER}));
+        const vista=isAssistant?"spec":scView;
         const TONE={good:"#7EC8A4",warn:"#F5A623",bad:"#E85D75",neutral:"#8B949E"};
         return (
           <div style={{display:"flex",flexDirection:"column",gap:14}}>
             <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:8,padding:"12px 16px",
               fontSize:11.5,color:"#8B949E",lineHeight:1.6}}>
-              {scView==="lender"?TX("scorecardLead"):scView==="product"?TX("productStrength"):TX("specLead")}
+              {vista==="lender"?TX("scorecardLead"):vista==="product"?TX("productStrength"):TX("specLead")}
               <div style={{fontSize:10,color:"#484F58",marginTop:6}}>{TX("autoDerived")}</div>
             </div>
 
             <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
-              {["lender","product","spec"].map(v=>(
+              {(isAssistant?["spec"]:["lender","product","spec"]).map(v=>(
                 <button key={v} className="hov" onClick={()=>setScView(v)}
                   style={{background:scView===v?"#F5A623":"#21262D",color:scView===v?"#0D1117":"#8B949E",
                     border:"none",borderRadius:6,padding:"6px 14px",fontSize:11,fontFamily:"DM Mono",
@@ -2461,14 +2466,14 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                   {v==="lender"?TX("byLender"):v==="product"?TX("byProduct"):TX("bySpecialty")}
                 </button>
               ))}
-              {scView==="spec"&&specialtyCatalog().map(c=>(
+              {vista==="spec"&&specialtyCatalog().map(c=>(
                 <button key={c.category} className="hov" onClick={()=>{setScCat(c.category);setScSpec(null);}}
                   style={{background:scCat===c.category?"#4A90D9":"#21262D",color:scCat===c.category?"#0D1117":"#8B949E",
                     border:"none",borderRadius:6,padding:"5px 11px",fontSize:10.5,fontFamily:"DM Mono",cursor:"pointer"}}>
                   {P(c.label)} · {c.lenders}
                 </button>
               ))}
-              {scView==="product"&&productsWorked(files,{cutover:BARRETT_CUTOVER}).map(pw=>(
+              {vista==="product"&&productsWorked(files,{cutover:BARRETT_CUTOVER}).map(pw=>(
                 <button key={pw.product} className="hov" onClick={()=>setScProduct(pw.product)}
                   style={{background:(scProduct||productsWorked(files,{cutover:BARRETT_CUTOVER})[0]?.product)===pw.product?"#4A90D9":"#21262D",
                     color:(scProduct||productsWorked(files,{cutover:BARRETT_CUTOVER})[0]?.product)===pw.product?"#0D1117":"#8B949E",
@@ -2478,7 +2483,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               ))}
             </div>
 
-            {scView==="lender"&&(sc.length===0?(
+            {vista==="lender"&&(sc.length===0?(
               <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,
                 padding:"26px 16px",textAlign:"center",color:"#484F58",fontSize:12}}>
                 {TX("scNoData")}
@@ -2534,7 +2539,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               </div>
             ))}
 
-            {scView==="product"&&(()=>{
+            {vista==="product"&&(()=>{
               const worked=productsWorked(files,{cutover:BARRETT_CUTOVER});
               const prod=scProduct||worked[0]?.product;
               if(!prod) return (
@@ -2592,7 +2597,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
             })()}
 
 
-            {scView==="spec"&&(()=>{
+            {vista==="spec"&&(()=>{
               const cat=specialtyCatalog().find(c=>c.category===scCat)||specialtyCatalog()[0];
               const spec=scSpec||cat.specialties[0]?.id;
               const list=lendersBySpecialty(files,cat.category,spec,{cutover:BARRETT_CUTOVER});
@@ -2648,7 +2653,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                           </span>}
                         </div>}
                       </span>
-                      {l.tried&&(
+                      {l.tried&&!isAssistant&&(
                         <>
                           <span style={{color:"#8B949E",fontFamily:"DM Mono",fontSize:10.5}}>
                             {TX("closedOf",{a:l.funded,b:l.touched})}

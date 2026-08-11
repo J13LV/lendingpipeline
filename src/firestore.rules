@@ -1,0 +1,82 @@
+rules_version = '2';
+
+// ═══════════════════════════════════════════════════════════════════
+//  REGLAS DE FIRESTORE · Del Valle Lending Co.
+//
+//  Ocultar un botón en la pantalla no protege un dato. Todo el control
+//  de acceso de la app vive en la interfaz, y la interfaz corre en el
+//  navegador del usuario — cualquiera con la consola abierta puede
+//  saltársela. Estas reglas son la única barrera real.
+//
+//  Se pegan en Firebase Console → Firestore Database → Rules → Publish.
+// ═══════════════════════════════════════════════════════════════════
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── El equipo, por UID ──────────────────────────────────────
+    // Estar autenticado no basta: cualquiera puede crearse una cuenta
+    // en un proyecto de Firebase con registro abierto. Solo estos UIDs.
+    function equipo() {
+      return [
+        // Jose Del Valle — cuenta nueva de Barrett
+        'a7gM7SK7GhUuomyL8apuw68PptA2',
+        // Jose Del Valle — cuenta de PRMG, desactivar cuando se confirme
+        'vllTjiE2Aba8CKIC3UWGxMdzBcM2',
+        // Ana M Plasencia — cuenta nueva
+        'rGY5FGA7P3N5lXE74TjZ07tHQWg1',
+        // Ana M Plasencia — cuenta de PRMG
+        'iXcEzyc2nTTy2CJirLUz1FJ1oye2',
+        // Marelis Pinales
+        '0dpbvxe4RZUmCDhm03Zne6JSKE32',
+        // Tina — registro y condiciones
+        'qMVqzjs59yMIcZfvsWACpjm1o4F2',
+        // Laura de Armas
+        'Hj0KI0wmGfTHinHxxx8mrdLx5jw2'
+      ];
+    }
+
+    function esDelEquipo() {
+      return request.auth != null && request.auth.uid in equipo();
+    }
+
+    function esAdmin() {
+      return request.auth != null && request.auth.uid in [
+        'a7gM7SK7GhUuomyL8apuw68PptA2',
+        'vllTjiE2Aba8CKIC3UWGxMdzBcM2'
+      ];
+    }
+
+    // ─── El pipeline ─────────────────────────────────────────────
+    // Hoy todo vive en un solo documento, así que no se puede separar
+    // por campo: quien puede escribir archivos puede escribir todo lo
+    // que esté ahí dentro. Separar la compensación a su propio
+    // documento es el siguiente paso, y de paso resuelve el tope de 1 MB.
+    match /pipeline/{doc} {
+      allow read:  if esDelEquipo();
+      allow write: if esDelEquipo();
+    }
+
+    // ─── Compensación y payroll, cuando se separen ───────────────
+    // Preparado para el día que se muevan a su propio documento.
+    match /compensation/{doc} {
+      allow read, write: if esAdmin();
+    }
+    match /payroll/{doc} {
+      allow read, write: if esAdmin();
+    }
+
+    // ─── Archivos cerrados por año, cuando se particionen ────────
+    match /pipeline_archive/{year} {
+      allow read:  if esDelEquipo();
+      allow write: if esAdmin();
+    }
+
+    // ─── Todo lo demás, cerrado ──────────────────────────────────
+    // Sin esta regla, una colección nueva podría quedar abierta por
+    // descuido. Lo que no está permitido explícitamente, se niega.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
