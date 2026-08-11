@@ -2395,6 +2395,76 @@ export function mixVsPlan(rows, plan) {
   });
 }
 
+
+// ─── SOCIOS REFERIDORES · UN SOLO NOMBRE ───────────────────────────
+// El campo es texto libre y cada quien escribe distinto: "APG Realty Group",
+// "APG REALTY", "Apg Realty Group" y "APG Realty" eran cuatro filas en el
+// tablero con 29 archivos repartidos entre ellas.
+//
+// Tres capas, porque ninguna sola alcanza:
+//   1. Normalizar   junta lo que solo cambia en mayúsculas o puntuación.
+//   2. Autocompletar evita que nazcan variantes nuevas al escribir.
+//   3. Alias        para lo que la máquina no puede saber: que "APG Realty"
+//                   y "APG Realty Group" son el mismo, o que no lo son.
+// "Client" entra aquí porque en un campo de socio referidor nunca distingue a
+// nadie: "Smart Bee" y "Smart Bee Client" son el mismo. Lo mismo con las
+// palabras de tipo de negocio.
+const PALABRAS_GENERICAS =
+  /\b(re|realty|real estate|realtor|group|team|llc|inc|corp|company|co|client|clients|cliente|clientes|partner|partners|mortgage|lending|loans|the|de|del)\b/g;
+
+export function canonicalPartner(name) {
+  return String(name || "")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(PALABRAS_GENERICAS, " ")
+    .replace(/\s+/g, "");
+}
+
+// Agrupa los archivos por socio, ya unificado. `aliases` mapea clave
+// canónica → nombre que se muestra, y también permite forzar separaciones.
+export function partnerLeaderboard(files, { aliases = {}, cutover = null } = {}) {
+  const g = new Map();
+  for (const f of files || []) {
+    const raw = String(f?.referralPartner || "").trim();
+    if (!raw) continue;
+    const key = aliases[raw] ? canonicalPartner(aliases[raw]) : canonicalPartner(raw);
+    if (!key) continue;
+    if (!g.has(key)) g.set(key, { key, variants: new Map(), files: 0, closed: 0,
+      active: 0, fundedVolume: 0, activeVolume: 0 });
+    const r = g.get(key);
+    r.variants.set(raw, (r.variants.get(raw) || 0) + 1);
+    r.files++;
+    const amt = Number(f.loan) || 0;
+    const d = fundedDate(f);
+    if (d && (!cutover || d >= cutover)) { r.closed++; r.fundedVolume += amt; }
+    else if (!d && f.stage) { r.active++; r.activeVolume += amt; }
+  }
+  return [...g.values()].map(r => {
+    const vs = [...r.variants.entries()].sort((a, b) => b[1] - a[1] || b[0].length - a[0].length);
+    return {
+      ...r,
+      // El nombre que se muestra: el más usado, y a igualdad el más completo.
+      name: aliases["__display__" + r.key] || vs[0][0],
+      variants: vs.map(([n, count]) => ({ name: n, count })),
+      merged: vs.length > 1,
+    };
+  }).sort((a, b) => b.fundedVolume - a.fundedVolume || b.files - a.files);
+}
+
+// Nombres ya usados, para autocompletar y no crear variantes nuevas.
+export function knownPartners(files) {
+  const seen = new Map();
+  for (const f of files || []) {
+    const raw = String(f?.referralPartner || "").trim();
+    if (!raw) continue;
+    const k = canonicalPartner(raw);
+    const cur = seen.get(k);
+    if (!cur || raw.length > cur.length) seen.set(k, raw);
+  }
+  return [...seen.values()].sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" }));
+}
+
 // ─── 3. HOUSE HUNT — the 60-day track ──────────────────────────────
 // APG Realty reassigns a buyer to another agent if they are not under
 // contract in 60 days. So this is not a follow-up rhythm; it is a

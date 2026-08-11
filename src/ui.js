@@ -471,11 +471,20 @@ export const UI = {
   hAvg:       { es:"PROMEDIO", en:"AVERAGE" },
   hPlan:      { es:"% PLAN", en:"% PLAN" },
   hDelta:     { es:"DIFERENCIA", en:"DIFFERENCE" },
-  planEdit:   { es:"tu plan · edítalo aquí", en:"your plan · edit here" },
+  planEdit:   { es:"escribe tu % en la columna % PLAN", en:"type your % in the % PLAN column" },
   mixNoData:  { es:"Todavía no hay archivos fondeados desde el corte.", en:"No files funded since the cutover yet." },
   mixTotal:   { es:"TOTAL · {n} cerrados", en:"TOTAL · {n} closed" },
   aheadOfPlan:{ es:"por encima del plan", en:"ahead of plan" },
   behindPlan: { es:"por debajo del plan", en:"behind plan" },
+
+  thinMix:    { es:"Con {n} archivo(s) cerrado(s) los porcentajes no dicen nada todavía. Empiezan a significar algo cerca de veinte.",
+                en:"With {n} closed file(s) the percentages mean nothing yet. They start to matter around twenty." },
+  noProduction:{ es:"sin producción cerrada", en:"no closed production" },
+
+  unifies:    { es:"unifica:", en:"merges:" },
+  partnerPlaceholder:{ es:"Agente, CPA, Smart Bee, walk-in…", en:"Agent, CPA, Smart Bee, walk-in…" },
+  newPartner: { es:"Socio nuevo — si ya existe, escógelo de la lista para no duplicarlo.",
+                en:"New partner — if it already exists, pick it from the list so it is not duplicated." },
 
   // ─── tiempo ───
   inStage:     { es:"d en la etapa", en:"d in stage" },

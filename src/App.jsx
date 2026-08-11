@@ -34,6 +34,7 @@ import {
   backupViability, changeCost, applyLenderChange, reregistrationCost,
   lenderChangeCount, lenderFaultChanges, LENDER_CHANGE_LANDING_STAGE,
   lenderScorecard, lenderVerdict, lenderProductBreakdown, productScorecard, productsWorked,
+  partnerLeaderboard, knownPartners, canonicalPartner,
   lenderConcentration, productionByProduct, productionByGroup, productionByLo,
   mixVsPlan, baseProductLabel,
   specialtyCatalog, lendersBySpecialty, specialtyLabel, categoryLabel,
@@ -1690,16 +1691,13 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
   const myClosedFiles = closed.filter(f=>f.lo===profile.name);
   const myTotalComp = myClosedFiles.reduce((s,f)=>s+myComp(f),0);
 
-  const refMap={};
-  files.forEach(f=>{
-    if(!f.referralPartner)return;
-    const key=f.referralPartner;
-    if(!refMap[key])refMap[key]={name:key,total:0,closed:0,active:0,vol:0};
-    refMap[key].total++;
-    if(f.stage===CLOSED_STAGE){refMap[key].closed++;refMap[key].vol+=(f.loan||0);}
-    else refMap[key].active++;
-  });
-  const topRefs=Object.values(refMap).sort((a,b)=>b.total-a.total);
+  // El campo es texto libre y APG aparecía cuatro veces con 29 archivos
+  // repartidos. partnerLeaderboard unifica lo que solo cambia en mayúsculas,
+  // puntuación o palabras genéricas como "Realty" y "Group".
+  const topRefs=partnerLeaderboard(files).map(r=>({
+    name:r.name, total:r.files, closed:r.closed, active:r.active,
+    vol:r.fundedVolume, variants:r.variants, merged:r.merged,
+  }));
 
   // ─── BANK-TO-BANK REFERRAL METRICS ───
   // Outbound: deals we referred to other bankers
@@ -2160,7 +2158,14 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 {topRefs.map((ref,i)=>(
                   <tr key={ref.name} style={{borderBottom:"1px solid #21262D",background:i%2===0?"#0D1117":"#161B22"}}>
                     <td style={{padding:"10px 14px",color:i===0?"#F5A623":i===1?"#8B949E":i===2?"#CD7F32":"#484F58",fontFamily:"Syne",fontWeight:700}}>{i+1}</td>
-                    <td style={{padding:"10px 14px",color:"#E6EDF3",fontFamily:"Syne",fontWeight:700,fontSize:12}}>{ref.name}</td>
+                    <td style={{padding:"10px 14px",color:"#E6EDF3",fontFamily:"Syne",fontWeight:700,fontSize:12}}>
+                      {ref.name}
+                      {ref.merged&&(
+                        <div style={{fontSize:9,color:"#484F58",fontFamily:"DM Mono",fontWeight:400,marginTop:2}}>
+                          {TX("unifies")} {ref.variants.map(v=>v.name+" ("+v.count+")").join(" · ")}
+                        </div>
+                      )}
+                    </td>
                     <td style={{padding:"10px 14px",textAlign:"center"}}>
                       <span style={{background:"#21262D",color:"#E6EDF3",borderRadius:12,padding:"2px 10px",fontSize:12,fontWeight:500}}>{ref.total}</span>
                     </td>
@@ -4386,7 +4391,14 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
           </div>
           <div style={{gridColumn:"1/-1"}}>
             <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L("referralPartner")}</div>
-            <input value={referralPartner} onChange={e=>setReferralPartner(e.target.value)} placeholder="Agent name, CPA, Smart Bee, walk-in..." style={fs2}/>
+            <input value={referralPartner} onChange={e=>setReferralPartner(e.target.value)}
+              list="socios-conocidos" placeholder={TX("partnerPlaceholder")} style={fs2}/>
+            <datalist id="socios-conocidos">
+              {knownPartners(allFiles||[]).map(n=><option key={n} value={n}/>)}
+            </datalist>
+            {referralPartner.trim()&&!knownPartners(allFiles||[]).some(n=>canonicalPartner(n)===canonicalPartner(referralPartner))&&(
+              <div style={{fontSize:9,color:"#F5A623",marginTop:4}}>{TX("newPartner")}</div>
+            )}
           </div>
           <div>
             <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>📱 PHONE</div>
