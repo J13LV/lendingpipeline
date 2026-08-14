@@ -1037,7 +1037,7 @@ export function fileCompBps(file, branchDefault = 150) {
   return resolvedCompBps(file) ?? branchDefault;
 }
 export function fileCompDollars(file, branchDefault = 150, amount = null) {
-  return Math.round((amount ?? file?.loan ?? 0) * fileCompBps(file, branchDefault) / 10000);
+  return Math.round((amount ?? compBasisAmount(file)) * fileCompBps(file, branchDefault) / 10000);
 }
 export function fileCompSource(file) {
   if (Number.isFinite(Number(file?.bps)) && file?.bps) return "field";
@@ -1540,7 +1540,7 @@ export const STANDARD_FEES = [
 ];
 
 export function grossComp(file) {
-  return Math.round((file?.loan || 0) * fileCompBps(file) / 10000);
+  return Math.round(compBasisAmount(file) * fileCompBps(file) / 10000);
 }
 
 // Los ajustes tienen tipo explícito. Un crédito guardado como "descuento
@@ -2310,6 +2310,41 @@ export function specDetailSummary(d, lang = "es", isDpa = false) {
 }
 export const dpaDetailSummary = (d, lang) => specDetailSummary(d, lang, true);
 
+
+
+// ─── CARGOS FINANCIADOS · LA BASE DE LA COMISIÓN ───────────────────
+// FHA, VA y USDA financian un cargo dentro del préstamo, así que el pagaré
+// es mayor que el monto base. Arive paga la comisión sobre el TOTAL, y el
+// pipeline la calculaba sobre el base — de ahí que los dólares no cuadraran
+// entre los dos sistemas.
+//
+// En un FHA de $482,500 el UFMIP son $8,443.75 y a 312 bps eso es $263 por
+// archivo que no se estaban reportando.
+export const FINANCED_FEES = {
+  fha:  { pct: 1.75, es: "UFMIP financiado",        en: "Financed UFMIP" },
+  va:   { pct: 2.15, es: "Funding fee financiado",  en: "Financed funding fee" },
+  usda: { pct: 1.00, es: "Guarantee fee financiado",en: "Financed guarantee fee" },
+};
+
+// El porcentaje que aplica. Se puede sobrescribir por archivo: el VA cambia
+// según servicio y enganche, y a veces el cliente paga el UFMIP en efectivo
+// en vez de financiarlo — en ese caso se pone 0.
+export function financedFeePct(file) {
+  const o = file?.financedFeePct;
+  if (o !== undefined && o !== null && o !== "" && Number.isFinite(Number(o))) return Number(o);
+  return FINANCED_FEES[baseProductOf(file?.type)]?.pct ?? 0;
+}
+export const financedFeeMeta = file => FINANCED_FEES[baseProductOf(file?.type)] || null;
+
+export function financedFeeAmount(file) {
+  const base = Number(file?.loan) || 0;
+  return Math.round(base * financedFeePct(file)) / 100;
+}
+
+// El monto sobre el que se paga la comisión: base + lo financiado.
+export function compBasisAmount(file) {
+  return (Number(file?.loan) || 0) + financedFeeAmount(file);
+}
 
 // ─── PRODUCCIÓN POR PRODUCTO ───────────────────────────────────────
 // Un préstamo pertenece a dos dimensiones a la vez: "NV HIP FHA" es DPA y

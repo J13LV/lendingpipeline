@@ -486,6 +486,11 @@ export const UI = {
   newPartner: { es:"Socio nuevo — si ya existe, escógelo de la lista para no duplicarlo.",
                 en:"New partner — if it already exists, pick it from the list so it is not duplicated." },
 
+  baseLoan:   { es:"Monto base", en:"Base loan" },
+  compBasis:  { es:"Base de la comisión", en:"Comp basis" },
+  financedHint:{ es:"El cargo se financia dentro del préstamo, así que el pagaré es mayor que el monto base. La comisión se paga sobre el total — igual que Arive. Pon 0 si el cliente lo paga en efectivo.",
+                 en:"The fee is financed into the loan, so the note is larger than the base amount. Comp is paid on the total — same as Arive. Set 0 if the borrower pays it in cash." },
+
   // ─── tiempo ───
   inStage:     { es:"d en la etapa", en:"d in stage" },
   total:       { es:"d total",       en:"d total" },

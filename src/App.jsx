@@ -45,7 +45,8 @@ import {
   loanSplit, lendersHiddenByChannel, OTHER_LENDER_ID, lenderNameOf, payrollPeriodLabel, currentPayrollPeriod, payrollSummary, fundedDate,
   losWithoutCompRule, BARRETT_CUTOVER, referralFunded, referralBranchPct,
   buildPayrollRequest, payrollRequestText, STANDARD_FEES, payoutBreakdown, feeWaterfall,
-  ADJUSTMENT_KINDS, withLoContext, LEAD_ORIGINS, leadOrigin, IN_HOUSE_REDUCTION,
+  ADJUSTMENT_KINDS, withLoContext, financedFeePct, financedFeeMeta,
+  financedFeeAmount, compBasisAmount, LEAD_ORIGINS, leadOrigin, IN_HOUSE_REDUCTION,
 } from "./pipelineCore";
 import {
   getAuth,
@@ -3527,18 +3528,20 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
   // cargo distinto no hay dónde ponerlo y alguien lo mete a mano en otro
   // campo — o peor, no lo mete y el reparto queda mal.
   const [origin,setOrigin]=useState(file.leadOrigin||"self");
+  const [feePct,setFeePct]=useState(()=>String(financedFeePct(file)));
   const [extras,setExtras]=useState(()=>cur.filter(f=>String(f.id).startsWith("custom"))
     .map(f=>({id:f.id,label:f.label||"",amount:Math.abs(Number(f.amount))||0,
               kind:f.kind==="credit"?"credit":"fee"})));
 
   // Los bps sin guardar del bloque de lender mandan sobre los del archivo.
   const effBps = Number.isFinite(Number(pendingBps)) && pendingBps!==null ? Number(pendingBps) : null;
-  const draft={...file,leadOrigin:origin,...(effBps!==null?{bps:effBps}:{}),absorbedFees:[
+  const draft={...file,leadOrigin:origin,financedFeePct:feePct===""?null:Number(feePct),
+    ...(effBps!==null?{bps:effBps}:{}),absorbedFees:[
     ...fees.filter(f=>f.on).map(f=>({id:f.id,amount:f.amount})),
     ...extras.filter(e=>e.amount>0&&e.label.trim())
       .map(e=>({id:e.id,label:e.label.trim(),amount:e.amount,kind:e.kind})),
   ]};
-  const sig=JSON.stringify(draft.absorbedFees)+origin;
+  const sig=JSON.stringify(draft.absorbedFees)+origin+feePct;
   // Un descuento con monto pero sin nombre no se guarda — un cargo anónimo en
   // el reparto es exactamente lo que causa la discusión del cheque.
   const unnamed=extras.some(e=>e.amount>0&&!e.label.trim());
@@ -3546,6 +3549,7 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
   // este archivo conserva la que tenía cuando se pagó.
   useEffect(()=>{ onDraft&&onDraft({
     absorbedFees:draft.absorbedFees, leadOrigin:origin,
+    financedFeePct:feePct===""?null:Number(feePct),
     leadClass:leadOrigin(origin)?.klass==="pending"?(file.leadClass||null):leadOrigin(origin)?.klass,
   }); },[sig,origin]);
 
@@ -3594,6 +3598,36 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
           <div style={{fontSize:9,color:"#484F58",marginTop:3}}>{PN(leadOrigin(origin))}</div>
         )}
       </div>
+
+      {financedFeeAmount(draft)>0&&(
+        <div style={{borderTop:"1px solid #21262D",paddingTop:9,fontSize:11.5}}>
+          <div style={{display:"flex",justifyContent:"space-between",color:"#6E7681",marginBottom:3}}>
+            <span>{TX("baseLoan")}</span>
+            <span style={{fontFamily:"DM Mono"}}>${(Number(draft.loan)||0).toLocaleString()}</span>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,marginBottom:3}}>
+            <span style={{color:"#6E7681"}}>+ {P(financedFeeMeta(draft))}</span>
+            <span style={{display:"flex",alignItems:"center",gap:6}}>
+              {isAdmin?(
+                <input value={feePct} inputMode="decimal"
+                  onChange={e=>setFeePct(e.target.value.replace(/[^\d.]/g,""))}
+                  style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:4,color:"#8B949E",
+                    padding:"2px 5px",fontSize:10.5,fontFamily:"DM Mono",width:44,textAlign:"right"}}/>
+              ):<span style={{color:"#484F58",fontSize:10.5}}>{financedFeePct(draft)}</span>}
+              <span style={{color:"#484F58",fontSize:10}}>%</span>
+              <span style={{color:"#6E7681",fontFamily:"DM Mono",minWidth:74,textAlign:"right"}}>
+                ${financedFeeAmount(draft).toLocaleString()}
+              </span>
+            </span>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",color:"#8B949E",
+            borderTop:"1px solid #21262D",paddingTop:5}}>
+            <span>{TX("compBasis")}</span>
+            <span style={{fontFamily:"DM Mono"}}>${compBasisAmount(draft).toLocaleString()}</span>
+          </div>
+          {isAdmin&&<div style={{fontSize:9,color:"#484F58",marginTop:5,lineHeight:1.5}}>{TX("financedHint")}</div>}
+        </div>
+      )}
 
       <div style={{display:"flex",justifyContent:"space-between",fontSize:12,borderTop:"1px solid #21262D",paddingTop:9}}>
         <span style={{color:"#8B949E"}}>{TX("grossComm")}{isAdmin?` · ${fileCompBps(draft)} bps`:""}
