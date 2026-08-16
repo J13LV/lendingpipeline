@@ -44,6 +44,7 @@ import {
   LO_STAGES, STAGE_THRESHOLDS, teamLeadShare, branchCostPerFile, ladderCeiling,
   loanSplit, lendersHiddenByChannel, OTHER_LENDER_ID, lenderNameOf, payrollPeriodLabel, currentPayrollPeriod, payrollSummary, fundedDate,
   losWithoutCompRule, BARRETT_CUTOVER, referralFunded, referralBranchPct,
+  PAYROLL_DOCS, checkReceived, docsDone, payrollBlockers, payrollReady, payrollPayDate,
   buildPayrollRequest, payrollRequestText, STANDARD_FEES, payoutBreakdown, feeWaterfall,
   ADJUSTMENT_KINDS, withLoContext, financedFeePct, financedFeeMeta,
   financedFeeAmount, compBasisAmount, LEAD_ORIGINS, leadOrigin, IN_HOUSE_REDUCTION,
@@ -2820,7 +2821,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
         {justClaimed&&(
           <div style={{background:"rgba(74,144,217,.1)",border:"1px solid #4A90D9",borderRadius:8,
             padding:"9px 14px",fontSize:11.5,color:"#4A90D9"}}>
-            Reclamado para el corte {payrollPeriodLabel(currentPayrollPeriod())} — {justClaimed}
+            Reclamado para el corte {payrollPeriodLabel(currentPayrollPeriod(),CURRENT_LANG)} — {justClaimed}
           </div>
         )}
 
@@ -2834,9 +2835,11 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
 
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:10}}>
           {[
-            {label:TX("currentCut"),value:payrollPeriodLabel(currentPayrollPeriod()),color:"#4A90D9",sub:TX("barrettCloses"),small:true},
+            {label:TX("currentCut"),value:payrollPeriodLabel(currentPayrollPeriod(),CURRENT_LANG),color:"#4A90D9",sub:TX("barrettCloses"),small:true},
             {label:TX("unclaimed"),value:`${payroll.count}`,color:"#F5A623",sub:TX("fundedFiles")},
             {label:TX("yourShare"),value:`$${payroll.toBM.toLocaleString()}`,color:"#F5A623",sub:TX("yourSplitPlusBranch")},
+            {label:TX("blocked"),value:String(payroll.blockedCount),color:payroll.blockedCount?"#E85D75":"#484F58",
+              sub:`$${payroll.blockedDollars.toLocaleString()}`},
             {label:TX("fromOldCuts"),value:`$${payroll.staleDollars.toLocaleString()}`,color:payroll.staleCount?"#E85D75":"#484F58",sub:TX("carriedN",{n:payroll.staleCount})},
           ].map(s=>(
             <div key={s.label} style={{background:"#1a1000",border:`1px solid ${s.color}44`,borderTop:`3px solid ${s.color}`,borderRadius:8,padding:"12px"}}>
@@ -2871,8 +2874,8 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
                   <th style={{padding:"8px 6px 8px 12px",width:24}}>
                     <input type="checkbox"
-                      checked={payroll.rows.length>0&&picked.size===payroll.rows.length}
-                      onChange={e=>setPicked(e.target.checked?new Set(payroll.rows.map(r=>r.file.id)):new Set())}
+                      checked={payroll.rows.filter(r=>r.ready).length>0&&picked.size===payroll.rows.filter(r=>r.ready).length}
+                      onChange={e=>setPicked(e.target.checked?new Set(payroll.rows.filter(r=>r.ready).map(r=>r.file.id)):new Set())}
                       style={{accentColor:"#F5A623",cursor:"pointer"}}/>
                   </th>
                   {[TX("client"),TX("fundedOn"),TX("cut"),"LO",TX("split"),"NET",TX("yourShare"),""].map((h,i)=>(
@@ -2884,12 +2887,17 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 {payroll.rows.map((r,i)=>(
                   <tr key={r.file.id||i} style={{borderBottom:"1px solid #21262D",background:r.stale?"rgba(232,93,117,.06)":(i%2===0?"#0D1117":"#161B22")}}>
                     <td style={{padding:"9px 6px 9px 12px"}}>
-                      <input type="checkbox" checked={picked.has(r.file.id)}
+                      <input type="checkbox" checked={picked.has(r.file.id)} disabled={!r.ready}
                         onChange={()=>{const n=new Set(picked); n.has(r.file.id)?n.delete(r.file.id):n.add(r.file.id); setPicked(n);}}
-                        style={{accentColor:"#F5A623",cursor:"pointer"}}/>
+                        style={{accentColor:"#F5A623",cursor:r.ready?"pointer":"not-allowed",opacity:r.ready?1:.3}}/>
                     </td>
                     <td style={{padding:"9px 12px",color:"#E6EDF3"}}>
                       {r.file.borrower}
+                      {!r.ready&&(
+                        <div style={{fontSize:9,color:"#E85D75",marginTop:2}}>
+                          {TX("blocked")} · {TX("blockedWhy")} {r.blockers.map(x=>P(x)).join(" · ")}
+                        </div>
+                      )}
                       {r.kind==="referral"&&(
                         <div style={{fontSize:9,color:"#A78BFA"}}>
                           {TX("referralFeeOf",{b:r.referral.bps})}{r.referral.banker?` · ${r.referral.banker}`:""}
@@ -4321,6 +4329,8 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
   const [bps,setBps]=useState(String(file.bps||""));
   const [loAssigned,setLoAssigned]=useState(file.lo||"Jose Del Valle");
   const [referralPartner,setReferralPartner]=useState(file.referralPartner||"");
+  const [chkDraft,setChkDraft]=useState(!!file.brokerCheckReceived);
+  const [compDraft,setCompDraft]=useState(()=>({...(file.compliance||{})}));
   const [phone,setPhone]=useState(file.phone||"");
   const [email,setEmail]=useState(file.email||"");
   const [closedAt,setClosedAt]=useState(file.closedAt||"");
@@ -4449,6 +4459,44 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
           <LenderPanel file={file} profile={profile}
             onDraft={p=>{panelDrafts.current.lender=p; setPendingBps(p.bps ?? null);}}
             onChangeLender={()=>setShowChange(true)}/>
+        )}
+
+
+        {/* REQUISITOS PARA COBRAR — Barrett no paga solo por fondear */}
+        {!inPrep && !isReferredOut && (
+          <div style={{background:"rgba(74,144,217,.05)",border:"1px solid #4A90D933",borderRadius:8,
+            padding:14,display:"flex",flexDirection:"column",gap:9}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#4A90D9",letterSpacing:"1px"}}>
+                {TX("compliance")}
+              </span>
+              <span style={{marginLeft:"auto",fontSize:10,
+                color:docsDone({compliance:compDraft})===PAYROLL_DOCS.length&&chkDraft?"#7EC8A4":"#6E7681"}}>
+                {TX("docsOf",{a:docsDone({compliance:compDraft}),b:PAYROLL_DOCS.length})}
+              </span>
+            </div>
+
+            <label style={{display:"flex",alignItems:"center",gap:8,fontSize:11.5,
+              color:chkDraft?"#7EC8A4":"#E6EDF3",cursor:"pointer"}}>
+              <input type="checkbox" checked={chkDraft} onChange={e=>setChkDraft(e.target.checked)}
+                style={{accentColor:"#7EC8A4",cursor:"pointer"}}/>
+              {TX("checkReceived")}
+            </label>
+            <div style={{fontSize:9,color:"#484F58",marginTop:-4,marginLeft:21}}>{TX("checkWhere")}</div>
+
+            <div style={{borderTop:"1px solid #21262D",paddingTop:8}}>
+              {PAYROLL_DOCS.map(d=>(
+                <label key={d.id} style={{display:"flex",alignItems:"center",gap:8,fontSize:11.5,
+                  color:compDraft[d.id]?"#7EC8A4":"#8B949E",cursor:"pointer",marginBottom:5}}>
+                  <input type="checkbox" checked={!!compDraft[d.id]}
+                    onChange={e=>setCompDraft({...compDraft,[d.id]:e.target.checked})}
+                    style={{accentColor:"#7EC8A4",cursor:"pointer"}}/>
+                  {P(d)}
+                </label>
+              ))}
+            </div>
+            <div style={{fontSize:9,color:"#484F58",lineHeight:1.5}}>{TX("complianceHint")}</div>
+          </div>
         )}
 
         {/* COMPENSACIÓN — bruto, descuentos, neto y lo que cobra cada quien */}
@@ -4773,6 +4821,8 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
               loan: parseInt(loanAmt) || file.loan,
               lo: (loAssigned || JOSE_LO).trim(),
               referralPartner: (referralPartner||"").trim() || null,
+              brokerCheckReceived: chkDraft,
+              compliance: compDraft,
               phone: (phone||"").trim() || null,
               email: (email||"").trim() || null,
             };
