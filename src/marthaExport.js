@@ -20,7 +20,7 @@
 
 import {
   okDate, today, addDays, lenderNameOf, baseProductOf,
-  productKeyForLoanType, stageLogOf, latestNote, lockStatus,
+  productKeyForLoanType, stageLogOf, latestNote, lockStatus, STAGE_DAYS,
 } from "./pipelineCore";
 
 const EXCELJS_CDN = "https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js";
@@ -123,11 +123,31 @@ export function registeredAt(file) {
   return okDate(file?.registeredAt) || okDate(stageLogOf(file)["Full Application"]);
 }
 
-// Sale en su hoja solo si ya está registrado. Un archivo sin registrar
-// Martha todavía no lo tiene, y ponerlo la haría buscar algo que no
-// existe.
-export const inMarthaSheet = file =>
-  !!registeredAt(file) && !file?.archived && !okDate(file?.closedAt);
+// ─── QUE ARCHIVOS SALEN EN SU HOJA ─────────────────────────────────
+// La primera version filtraba por fecha de registro y la hoja salio
+// VACIA: esa fecha se deriva de stageLog, que empezo a sellar hoy, asi
+// que ningun archivo existente la tiene. El filtro no puede depender de
+// un dato que apenas nace — tiene que leer algo que ya esta ahi.
+//
+// Lo que si esta desde siempre es la ETAPA. Un archivo que ya llego a
+// Full Application o mas alla es un archivo registrado, o en camino de
+// serlo, y es exactamente lo que Martha tiene en su escritorio. La fecha
+// se queda como dato de la columna, no como condicion de entrada: una
+// celda en blanco es honesta, una fila ausente es un archivo perdido.
+const PROCESSING_STAGES = Object.keys(STAGE_DAYS);
+const FIRST_STAGE = "Full Application";
+
+export function stageRank(stage) {
+  return PROCESSING_STAGES.indexOf(stage);
+}
+
+export function inMarthaSheet(file) {
+  if (file?.archived || okDate(file?.closedAt) || file?.prep) return false;
+  const rank = stageRank(file?.stage);
+  // -1 son las etapas de antes del contrato y las de despues del cierre.
+  // Ni unas ni otras estan en su hoja.
+  return rank >= stageRank(FIRST_STAGE);
+}
 
 // Su formato de texto para pedidos: "REQ 07/17". No es fecha de Excel,
 // es texto, y hay que respetarlo o la columna se le desalinea.
@@ -252,10 +272,12 @@ export async function buildMarthaWorkbook(files) {
   });
 
   // Los archivos empiezan en la fila 4. La 3 va vacía, como en su hoja.
+  // El que cierra primero va arriba. Sin COE se va al final, no al
+  // principio: un archivo sin fecha de cierre no es urgente, es incompleto.
   const rows = files.filter(inMarthaSheet).sort((a, b) => {
-    const ca = okDate(a?.contingencies?.coe) || "9999";
-    const cb = okDate(b?.contingencies?.coe) || "9999";
-    return ca.localeCompare(cb);            // el que cierra primero, arriba
+    const ca = okDate(a?.contingencies?.coe) || okDate(a?.closing) || "9999-12-31";
+    const cb = okDate(b?.contingencies?.coe) || okDate(b?.closing) || "9999-12-31";
+    return ca.localeCompare(cb) || String(a?.borrower || "").localeCompare(String(b?.borrower || ""));
   });
 
   rows.forEach((file, i) => {
