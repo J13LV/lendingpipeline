@@ -491,6 +491,20 @@ export const UI = {
   financedHint:{ es:"El cargo se financia dentro del préstamo, así que el pagaré es mayor que el monto base. La comisión se paga sobre el total — igual que Arive. Pon 0 si el cliente lo paga en efectivo.",
                  en:"The fee is financed into the loan, so the note is larger than the base amount. Comp is paid on the total — same as Arive. Set 0 if the borrower pays it in cash." },
 
+  compliance: { es:"✓ REQUISITOS PARA COBRAR", en:"✓ PAYROLL REQUIREMENTS" },
+  complianceHint:{ es:"Barrett paga cuando el préstamo fondeó, llegó el cheque y estos documentos están en Arive. Sin esto el archivo no entra al corte.",
+                   en:"Barrett pays once the loan funded, the check arrived and these documents are in Arive. Without them the file does not enter the cut." },
+  checkReceived:{ es:"Cheque recibido por Barrett", en:"Broker check received" },
+  checkWhere: { es:"En Arive lo ves en Audits & Dates → Broker Check Received",
+                en:"In Arive, see Audits & Dates → Broker Check Received" },
+  docsOf:     { es:"{a} de {b} documentos", en:"{a} of {b} documents" },
+  blocked:    { es:"NO COBRABLE", en:"BLOCKED" },
+  blockedN:   { es:"{n} fondeado(s) sin poder cobrar", en:"{n} funded but not payable" },
+  blockedWhy: { es:"le falta:", en:"missing:" },
+  paysOn:     { es:"se paga {d}", en:"paid {d}" },
+  extraPayroll:{ es:"Barrett procesa un Extra Payroll fuera de ciclo. La solicitud entra antes de la 1PM del jueves y el depósito cae el martes siguiente.",
+                 en:"Barrett runs an off-cycle Extra Payroll. The request goes in before 1PM Thursday and the deposit lands the following Tuesday." },
+
   // ─── tiempo ───
   inStage:     { es:"d en la etapa", en:"d in stage" },
   total:       { es:"d total",       en:"d total" },
