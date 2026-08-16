@@ -2802,12 +2802,55 @@ export function compGivenUpDollars(file) {
 }
 
 // ─── 8. STAMPING ───────────────────────────────────────────────────
+
+// ─── 8A. SELLOS DE ETAPA ───────────────────────────────────────────
+// stampStage pisaba stageEnteredAt en cada avance. Eso significa que la
+// fecha en que un archivo entro a "Submitted to UW" se perdia en cuanto
+// pasaba a la etapa siguiente, y la hoja de Marta pide NUEVE de esas
+// fechas. stageLog las guarda: etapa -> dia de PRIMERA entrada. Se
+// escribe una sola vez por etapa y no se pisa nunca.
+//
+// Sin tope, a diferencia de history: son 18 etapas como maximo, o sea
+// menos de 400 bytes por archivo. history esta cortado a 20 entradas y
+// lo comparten todos los tipos de edicion, por eso no sirve para esto.
+export const stageLogOf = file => file?.stageLog || {};
+
+// La fecha en que este archivo entro a esa etapa, o null si nunca entro.
+export function stageStampedAt(file, stage) {
+  return okDate(stageLogOf(file)[stage]);
+}
+
+// Rescate para archivos que ya existen. history todavia carga entradas
+// stage_advanced de antes de este cambio, asi que recuperamos lo que
+// haya sobrevivido al corte de 20. No es el historial completo — es lo
+// que quedo — y por eso solo se usa como base, nunca pisa a stageLog.
+//
+// h.at viene de toISOString(), que es UTC. Partirlo en la "T" devuelve
+// el dia UTC, y en Las Vegas eso adelanta un dia todo lo que se registro
+// despues de las 5pm. Hay que convertirlo a dia local igual que today().
+export function stageLogFromHistory(file) {
+  const out = {};
+  for (const h of file?.history || []) {
+    if (h?.action !== "stage_advanced" || !h?.to || !h?.at) continue;
+    const iso = localISO(new Date(h.at));
+    if (!isValidISO(iso)) continue;
+    if (!out[h.to] || iso < out[h.to]) out[h.to] = iso;   // la primera entrada gana
+  }
+  return out;
+}
+
 export function stampStage(file, newStage) {
+  // El orden importa: lo rescatado de history es la BASE y stageLog lo
+  // pisa, porque stageLog es el dato bueno y history es una reconstruccion.
+  const log = { ...stageLogFromHistory(file), ...stageLogOf(file) };
+  if (!log[newStage]) log[newStage] = today();          // se sella una sola vez
+
   return {
     ...file,
     stage: newStage,
     stageEnteredAt: today(),
     daysInStage: 0,                                  // legacy field, kept for old views
+    stageLog: log,
     // Set once, never again — and when it was never set, fall back to the
     // day the file was created. today() here restarted the clock on every
     // legacy file the moment somebody advanced it.
