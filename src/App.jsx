@@ -3,6 +3,7 @@ import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, onSnapshot } from "firebase/firestore";
 import { helpSections, searchHelp } from "./helpContent";
 import { tr, defaultLang } from "./ui";
+import { downloadMarthaSheet } from "./marthaExport";
 
 // Idioma vigente, a nivel de módulo. El motor devuelve {es, en} en 84 lugares
 // y la interfaz leía siempre `.es`. Pasar `lang` por props a los seis paneles
@@ -686,6 +687,25 @@ export default function App() {
     });
   },[files,loaded]);
 
+  // ─── HOJA DE MARTHA ───
+  // Genera SU Excel con las columnas que ya sabemos. ExcelJS se baja del
+  // CDN en el primer clic, por eso hay estado de carga: son ~950 KB y en
+  // conexion lenta el boton parece muerto si no avisa.
+  const [marthaBusy, setMarthaBusy] = useState(false);
+
+  async function exportMarthaSheet(){
+    if(marthaBusy) return;
+    setMarthaBusy(true);
+    try{
+      const n = await downloadMarthaSheet(files);
+      if(n === 0) alert(TX("marthaEmpty"));
+    }catch(err){
+      alert(TX("marthaFailed"));
+    }finally{
+      setMarthaBusy(false);
+    }
+  }
+
   function exportBackup(){
     const payload = {
       exportedAt: new Date().toISOString(),
@@ -959,6 +979,13 @@ export default function App() {
             style={{background:"#21262D",color:"#8B949E",borderRadius:6,padding:"8px 12px",fontFamily:"DM Mono",fontSize:11,border:"1px solid #30363D"}}>
             ↓ BACKUP
           </button>
+          {isAdmin && (
+            <button className="hov" onClick={exportMarthaSheet} disabled={marthaBusy}
+              title={TX("marthaHint")}
+              style={{background:"#21262D",color:marthaBusy?"#484F58":"#8B949E",borderRadius:6,padding:"8px 12px",fontFamily:"DM Mono",fontSize:11,border:"1px solid #30363D",cursor:marthaBusy?"wait":"pointer"}}>
+              {marthaBusy ? TX("marthaBusy") : TX("marthaBtn")}
+            </button>
+          )}
           {isAdmin && (
             <label className="hov"
               title="Admin only — restore your pipeline from a JSON backup file"
