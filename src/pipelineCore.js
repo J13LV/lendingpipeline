@@ -160,7 +160,7 @@ export function targetsFor(file) {
 // underwriting asks for something, the branch already has it. Doc
 // Collection is finished at Gate 1 and costs nothing after contract.
 //
-// Marta orders appraisal, title and HOI on day 1 of receipt, so those run
+// Martha orders appraisal, title and HOI on day 1 of receipt, so those run
 // underneath the underwriting clock instead of after it.
 //
 // These are explicit days, not scaled from a target. The critical path
@@ -190,17 +190,17 @@ export const STAGE_DAYS = {
   "Full Application":         { warn: 2, wait: "team",   owner: "Tina",  note: "register with lender" },
   "Initial Disclosures Sent": { warn: 2, wait: "legal",  owner: "Tina",  note: "borrower must sign within 3 business days", legalBusinessDays: 3 },
   "Doc Collection":           { warn: 4, wait: "client", owner: "Laura", note: "exceptions only — done at Gate 1", offPath: true },
-  "Title Ordered":            { warn: 2, wait: "vendor", owner: "Marta" },
-  "Appraisal Ordered":        { warn: 6, wait: "vendor", owner: "Marta", note: "5-7 in Las Vegas, plus borrower payment" },
-  "Insurance Ordered":        { warn: 2, wait: "client", owner: "Marta", note: "borrower picks the policy" },
-  "Submitted to UW":          { warn: 1, wait: "team",   owner: "Marta" },
-  "UW Review":                { warn: 3, wait: "vendor", owner: "Marta", dpa: { warn: 5 } },
+  "Title Ordered":            { warn: 2, wait: "vendor", owner: "Martha" },
+  "Appraisal Ordered":        { warn: 6, wait: "vendor", owner: "Martha", note: "5-7 in Las Vegas, plus borrower payment" },
+  "Insurance Ordered":        { warn: 2, wait: "client", owner: "Martha", note: "borrower picks the policy" },
+  "Submitted to UW":          { warn: 1, wait: "team",   owner: "Martha" },
+  "UW Review":                { warn: 3, wait: "vendor", owner: "Martha", dpa: { warn: 5 } },
   "Conditional Approval":     { warn: 1, wait: "team",   owner: "Tina" },
   "Condition Clearing":       { warn: 4, wait: "client", owner: "Tina",  dpa: { warn: 7 } },
   "Clear to Close":           { warn: 1, wait: "team",   owner: "Tina" },
   "CD Issued":                { warn: 2, wait: "legal",  owner: "Tina",  note: "TRID: received 3 business days before closing", legalBusinessDays: 3 },
   "Closing Scheduled":        { warn: 2, wait: "team",   owner: "Tina" },
-  "Final Verifications":      { warn: 1, wait: "team",   owner: "Marta" },
+  "Final Verifications":      { warn: 1, wait: "team",   owner: "Martha" },
   "Closing Docs Drawn":       { warn: 1, wait: "team",   owner: "Tina" },
   "Signing":                  { warn: 2, wait: "client", owner: "Tina",  note: "borrower has to show up" },
   "Funded":                   { warn: 1, wait: "team",   owner: "Tina" },
@@ -263,7 +263,7 @@ export const FIXED_CLOCKS = {
   "Under Contract":          { warn: 1,  late: 2,  owner: "LO", gate: "GATE_1" },
 
   // Contract → funding lives in STAGE_WEIGHTS above; owners only here.
-  "Recorded":                { warn: 2,  late: 3,  owner: "Marta" },
+  "Recorded":                { warn: 2,  late: 3,  owner: "Martha" },
   "Keys Delivered":          { warn: 1,  late: 2,  owner: "LO" },
 
   "Welcome Sent":            { warn: 3,  late: 7,  owner: "Laura" },
@@ -274,10 +274,10 @@ export const FIXED_CLOCKS = {
 
 export const STAGE_OWNERS = {
   "Under Contract": "LO", "Full Application": "Tina", "Initial Disclosures Sent": "Tina",
-  "Doc Collection": "Laura", "Title Ordered": "Marta", "Appraisal Ordered": "Marta",
-  "Insurance Ordered": "Marta", "Submitted to UW": "Marta", "UW Review": "Marta",
+  "Doc Collection": "Laura", "Title Ordered": "Martha", "Appraisal Ordered": "Martha",
+  "Insurance Ordered": "Martha", "Submitted to UW": "Martha", "UW Review": "Martha",
   "Conditional Approval": "Tina", "Condition Clearing": "Tina", "Clear to Close": "Tina",
-  "CD Issued": "Tina", "Closing Scheduled": "Tina", "Final Verifications": "Marta",
+  "CD Issued": "Tina", "Closing Scheduled": "Tina", "Final Verifications": "Martha",
   "Closing Docs Drawn": "Tina", "Signing": "Tina", "Funded": "Tina",
 };
 
@@ -2806,7 +2806,7 @@ export function compGivenUpDollars(file) {
 // ─── 8A. SELLOS DE ETAPA ───────────────────────────────────────────
 // stampStage pisaba stageEnteredAt en cada avance. Eso significa que la
 // fecha en que un archivo entro a "Submitted to UW" se perdia en cuanto
-// pasaba a la etapa siguiente, y la hoja de Marta pide NUEVE de esas
+// pasaba a la etapa siguiente, y la hoja de Martha pide NUEVE de esas
 // fechas. stageLog las guarda: etapa -> dia de PRIMERA entrada. Se
 // escribe una sola vez por etapa y no se pisa nunca.
 //
