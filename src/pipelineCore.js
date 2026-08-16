@@ -1643,11 +1643,72 @@ export function payrollPeriod(iso) {
   const y = iso.slice(0, 4), m = iso.slice(5, 7), d = Number(iso.slice(8, 10));
   return d <= 15 ? `${y}-${m}-A` : `${y}-${m}-B`;
 }
-export function payrollPeriodLabel(id) {
+// La fecha en que el dinero llega de verdad. Barrett paga con un periodo de
+// atraso: lo fondeado del 1 al 15 de agosto se deposita el 1 de SEPTIEMBRE,
+// no el 15 de agosto. El sistema decía "corte del 15" y el equipo esperaba el
+// dinero dos semanas y media antes de tiempo.
+export function payrollPayDate(id) {
+  if (!id) return null;
+  const [y, m, h] = id.split("-");
+  const d = new Date(Date.UTC(Number(y), Number(m) - 1 + 1, h === "A" ? 1 : 15));
+  return localISO(d);
+}
+
+export function payrollPeriodLabel(id, lang = "es") {
   if (!id) return "—";
   const [y, m, h] = id.split("-");
-  return `${m}/${y} · ${h === "A" ? "corte del 15" : "corte del 1"}`;
+  const rango = h === "A" ? `${m}/01–${m}/15` : `${m}/16–${m}/fin`;
+  const pago = payrollPayDate(id);
+  return lang === "en"
+    ? `Funded ${rango}/${y} · paid ${pago}`
+    : `Fondeado ${rango}/${y} · se paga ${pago}`;
 }
+
+// Etiqueta corta, para tablas donde no cabe la larga.
+export function payrollPeriodShort(id, lang = "es") {
+  if (!id) return "—";
+  const [, m, h] = id.split("-");
+  return `${m}${h === "A" ? "A" : "B"} → ${payrollPayDate(id)}`;
+}
+
+// ─── REQUISITOS DE BARRETT PARA PAGAR ──────────────────────────────
+// Fondear no basta. Barrett paga cuando además recibió el cheque y los
+// documentos están en Arive. Un archivo fondeado sin cheque no entra al
+// corte, y el pipeline lo daba por cobrable.
+export const PAYROLL_DOCS = [
+  { id: "commission_worksheet", es: "Commission Worksheet",            en: "Commission Worksheet" },
+  { id: "initial_disclosures",  es: "Initial Disclosures firmadas",     en: "Signed Initial Disclosures" },
+  { id: "closing_package",      es: "Closing Package firmado",          en: "Signed Closing Package" },
+  { id: "barrett_disclosures",  es: "Barrett Disclosures firmadas",     en: "Signed Barrett Disclosures" },
+  { id: "lender_docs",          es: "Documentos que pide el lender",    en: "Lender-required documents" },
+];
+
+// Tolerante a lo que venga: la casilla guarda booleano, pero un backup viejo
+// o una importación pueden traer 1, "true" o "x". Un requisito de pago no
+// debería fallar por el formato del dato.
+const marcado = v => v === true || v === 1 || v === "1" ||
+  (typeof v === "string" && ["true","x","yes","si","sí"].includes(v.trim().toLowerCase()));
+
+export const checkReceived = file => marcado(file?.brokerCheckReceived);
+export const docsDone = file => {
+  const c = file?.compliance || {};
+  return PAYROLL_DOCS.filter(d => marcado(c[d.id])).length;
+};
+export const docsMissing = file => {
+  const c = file?.compliance || {};
+  return PAYROLL_DOCS.filter(d => !marcado(c[d.id]));
+};
+
+// Qué le falta a un archivo fondeado para poder cobrarse.
+export function payrollBlockers(file) {
+  const out = [];
+  if (!checkReceived(file))
+    out.push({ id: "check", es: "Falta el cheque de Barrett", en: "Broker check not received" });
+  for (const d of docsMissing(file))
+    out.push({ id: d.id, es: "Falta " + d.es, en: "Missing " + d.en });
+  return out;
+}
+export const payrollReady = file => payrollBlockers(file).length === 0;
 export function currentPayrollPeriod() { return payrollPeriod(today()); }
 
 export const CLAIM_STATES = {
@@ -1701,7 +1762,12 @@ export function unclaimedFiles(files, ctx = {}) {
       const per = payrollPeriod(fundedDate(f));
       const enriched = withLoContext(f, files, ctx.roster || {});
       const hit = rosterLookup(f.lo, ctx.roster || {});
+      // Un archivo fondeado sin cheque o sin documentos no entra al corte de
+      // Barrett. Se muestra igual —hay que ver qué está trabado— pero no se
+      // puede meter en el request.
+      const blockers = payrollBlockers(f);
       return { file: f, period: per, kind: "loan", rosterMissing: enriched.rosterMissing,
+        blockers, ready: blockers.length === 0,
         split: loanSplit(enriched, { ...ctx, trainerAssigned: !!hit?.entry?.trainer }),
         stale: per < now };
     })
@@ -1724,7 +1790,7 @@ export function unclaimedFiles(files, ctx = {}) {
           toBM, floorApplied: false, margin: 0, checksum: 1,
         };
         return { file: f, period: per, kind: "referral", referral: r, branchPct,
-          rosterMissing: false, split, stale: per < now };
+          rosterMissing: false, blockers: [], ready: true, split, stale: per < now };
       }))
     .sort((a, b) => String(a.kind === "referral" ? a.referral.date : fundedDate(a.file))
       .localeCompare(String(b.kind === "referral" ? b.referral.date : fundedDate(b.file))));
@@ -1795,8 +1861,11 @@ export function payrollSummary(files, ctx = {}) {
   const rows = unclaimedFiles(files, ctx);
   const sum = k => rows.reduce((a, r) => a + (k === "toBM" ? r.split.toBM : r.split.dollars[k]), 0);
   const stale = rows.filter(r => r.stale);
+  const blocked = rows.filter(r => !r.ready);
   return {
     period: currentPayrollPeriod(), rows, count: rows.length,
+    blocked, blockedCount: blocked.length,
+    blockedDollars: blocked.reduce((a, r) => a + r.split.toBM, 0),
     staleCount: stale.length,
     staleDollars: stale.reduce((a, r) => a + r.split.toBM, 0),
     branch: sum("branch"), lo: sum("lo"), trainer: sum("trainer"), paulo: sum("paulo"),
