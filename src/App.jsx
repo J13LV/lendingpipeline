@@ -5087,6 +5087,9 @@ function AddModal({profile, onClose, onAdd}){
               stage,
               daysInStage:0,
               stageEnteredAt: today(),
+              // Un archivo nuevo no pasa por stampStage, asi que su etapa
+              // inicial nunca se sellaba. Se siembra aqui.
+              stageLog: { [stage]: today() },
               fileOpenedAt: today(),
               closing,
               note:(note||"").trim(),
