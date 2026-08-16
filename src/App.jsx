@@ -42,6 +42,7 @@ import {
   DPA_STRUCTURES, dpaStructure, specDetail, setSpecDetail, specDetailCoverage,
   specDetailSummary, emptySpecDetail,
   noteEntries, latestNote, noteCount, addNoteEntry,
+  duplicateMatches, DUP_REASONS,
   LO_STAGES, STAGE_THRESHOLDS, teamLeadShare, branchCostPerFile, ladderCeiling,
   loanSplit, lendersHiddenByChannel, OTHER_LENDER_ID, lenderNameOf, payrollPeriodLabel, currentPayrollPeriod, payrollSummary, fundedDate,
   losWithoutCompRule, BARRETT_CUTOVER, referralFunded, referralBranchPct,
@@ -73,6 +74,9 @@ const auth = getAuth(firebaseApp);
 const PIPELINE_DOC = doc(db, "pipeline", "main");
 
 // ─── TEAM ROSTER ───
+// `lang` decide en que idioma aterriza cada persona en su primer login.
+// Martha no lee espanol: sin este campo entraria a una pantalla que no
+// entiende, buscando un boton que tampoco entiende para cambiarla.
 const TEAM = {
   // Jose has two accounts during the PRMG → Barrett transition. Both point to
   // the same person and the same admin rights. The PRMG one gets disabled in
@@ -87,7 +91,7 @@ const TEAM = {
   "qMVqzjs59yMIcZfvsWACpjm1o4F2": { name: "Tina",              short: "Tina",     role: "assistant", nmls: null, color: "#7EC8A4" },
   "Hj0KI0wmGfTHinHxxx8mrdLx5jw2": { name: "Laura de Armas",     short: "Laura",    role: "assistant", nmls: "",        color: "#F5A623" },
 };
-function getProfile(uid){ return TEAM[uid] || { name:"Unknown User", short:"Unknown", role:"assistant", nmls:"", color:"#8B949E" }; }
+function getProfile(uid){ return TEAM[uid] || { name:"Unknown User", short:"Unknown", role:"assistant", nmls:"", color:"#8B949E", lang:"es" }; }
 
 const BPS_RATE = 150;
 const OVERRIDE_RATE = 0.0025;
@@ -301,6 +305,7 @@ function LoginScreen() {
           }}>DV</div>
           <div style={{fontFamily:"Syne", fontWeight:800, fontSize:25, color:"#E6EDF3",
             letterSpacing:"-0.7px", lineHeight:1.15}}>Del Valle Lending Co.</div>
+            <div style={{fontFamily:"DM Mono",fontSize:10,color:"#6E7681",letterSpacing:"0.5px",marginTop:4}}>powered by Barrett Financial Group</div>
           <div style={{fontSize:10.5, color:"#484F58", letterSpacing:"2.5px", marginTop:8}}>
             PIPELINE · BARRETT FINANCIAL GROUP
           </div>
@@ -710,7 +715,7 @@ export default function App() {
     const payload = {
       exportedAt: new Date().toISOString(),
       version: "1.0",
-      branch: "Del Valle Lending Co.",
+      branch: "Del Valle Lending Co. powered by Barrett Financial Group",
       fileCount: files.length,
       files: files,
     };
@@ -1536,7 +1541,7 @@ export default function App() {
         onContinuePrep={()=>continueFromPrep(detail.id)}
         isClosed={detail.stage===CLOSED_STAGE}
       />}
-      {showAdd&&<AddModal profile={profile} onClose={()=>setShowAdd(false)} onAdd={f=>{
+      {showAdd&&<AddModal profile={profile} existingFiles={files} onClose={()=>setShowAdd(false)} onAdd={f=>{
         const stamped = stampEdit(f, profile, "created");
         setFiles(p=>[...p, {...stamped, createdBy:{uid:profile.uid,name:profile.name}, createdAt:new Date().toISOString()}]);
         setShowAdd(false);
@@ -4763,7 +4768,7 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
             placeholder={isReferredOut ? L("noteFromBanker") : L("notePlaceholder")}
             style={{background:"#0D1117",border:`1px solid ${newNote.length>200?"#E85D75":"#30363D"}`,borderRadius:6,color:"#E6EDF3",padding:"8px 10px",fontSize:12,fontFamily:"DM Mono",width:"100%",resize:"none"}}/>
           <button className="hov" disabled={!newNote.trim()}
-            onClick={()=>{ onSave({noteLog:addNoteEntry(file,newNote,profile?.name||null).noteLog}); setNewNote(""); }}
+            onClick={()=>{ onSave({noteLog:addNoteEntry(file,newNote,profile?.name||null,file.stage).noteLog}); setNewNote(""); }}
             style={{marginTop:6,width:"100%",background:newNote.trim()?"rgba(126,200,164,.1)":"#161B22",
               color:newNote.trim()?"#7EC8A4":"#30363D",borderRadius:6,padding:"7px 0",fontFamily:"DM Mono",
               fontSize:11,border:`1px solid ${newNote.trim()?"#7EC8A4":"#21262D"}`,
@@ -4778,6 +4783,9 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
                       ? L("noteLegacy")
                       : `${String(n.at).slice(0,10)} · ${timeAgo(n.at)}${n.by?` · ${n.by}`:""}`}
                   </div>
+                  {n.stage&&(
+                    <div style={{fontSize:9,color:"#6E7681",letterSpacing:".5px",marginTop:1}}>{n.stage}</div>
+                  )}
                   <div style={{fontSize:11.5,color:i===0?"#E6EDF3":"#8B949E",lineHeight:1.5,marginTop:2,whiteSpace:"pre-wrap"}}>{n.text}</div>
                 </div>
               ))}
@@ -4792,6 +4800,9 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
           )}
           <div style={{fontSize:9,color:"#484F58",marginTop:6,letterSpacing:"0.5px"}}>
             {L("noteHint")}
+          </div>
+          <div style={{fontSize:9,color:"#F5A623",marginTop:3,letterSpacing:"0.5px"}}>
+            {L("notesEnglishOnly")}
           </div>
         </div>
 
@@ -4954,7 +4965,7 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
   );
 }
 
-function AddModal({profile, onClose, onAdd}){
+function AddModal({profile, onClose, onAdd, existingFiles}){
   const [borrower,setBorrower]=useState("");
   const [loan,setLoan]=useState("");
   const [type,setType]=useState("Conventional");
@@ -5103,8 +5114,22 @@ function AddModal({profile, onClose, onAdd}){
         <div style={{padding:"14px 24px",borderTop:"1px solid #21262D",background:"#161B22",flexShrink:0,display:"flex",gap:8}}>
           <button className="hov" onClick={()=>{
             if(!borrower.trim()){
-              alert("Borrower name is required.");
+              alert(TX("borrowerRequired"));
               return;
+            }
+            // Se dejo entrar dos veces a la misma clienta porque lo unico
+            // que se validaba era que el nombre no estuviera vacio. El
+            // aviso NO bloquea: un cliente puede tener un segundo prestamo,
+            // y dos familiares pueden compartir telefono. Pero ahora hay
+            // que confirmarlo a proposito en vez de por descuido.
+            const dups = duplicateMatches(
+              {borrower:borrower.trim(), phone:phone.trim(), email:email.trim()}, existingFiles||[]);
+            if(dups.length){
+              const motivo = {email:"dupEmail", phone:"dupPhone", name:"dupName"};
+              const lista = dups.slice(0,3).map(d=>
+                `· ${d.file.borrower} — ${d.reasons.map(r=>TX(motivo[r])).join(", ")}`
+              ).join("\n");
+              if(!window.confirm(TX("dupWarn",{n:dups.length})+"\n\n"+lista+"\n\n"+TX("dupAsk"))) return;
             }
             const newFile = {
               id:`f${Date.now()}`,

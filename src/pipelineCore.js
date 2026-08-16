@@ -1343,9 +1343,29 @@ export function noteEntries(file) {
   return [{ at: null, by: null, text: legacy, legacy: true }];
 }
 export const latestNote = file => noteEntries(file)[0] || null;
+
+// El hilo agrupado por fase, en el orden en que ocurrieron. Las notas
+// viejas sin sello caen en un grupo aparte en vez de inventarles etapa.
+export function notesByStage(file) {
+  const out = new Map();
+  for (const n of [...noteEntries(file)].reverse()) {
+    const k = n.stage || null;
+    if (!out.has(k)) out.set(k, []);
+    out.get(k).push(n);
+  }
+  return [...out.entries()].map(([stage, notes]) => ({ stage, notes: notes.reverse() }));
+}
 export const noteCount = file => noteEntries(file).length;
 
-export function addNoteEntry(file, text, by) {
+// La nota se sella con la ETAPA en que se escribio, no se guarda una nota
+// por etapa. Un campo por etapa se fragmenta y envejece; un hilo sellado
+// deja leer la historia por fase sin partir el dato.
+//
+// Las notas van SIEMPRE en ingles, por regla de la sucursal: Martha no
+// lee espanol y el 1003, Arive, los lenders y las condiciones del
+// underwriter estan todos en ingles. El sistema traduce SU propio texto,
+// nunca el que escribe la gente.
+export function addNoteEntry(file, text, by, stage) {
   const t = String(text || "").trim();
   if (!t) return file;
   // Seed the log with whatever was already in the old field, so the first
@@ -1356,7 +1376,10 @@ export function addNoteEntry(file, text, by) {
     : [];
   return {
     ...file,
-    noteLog: [...seed, ...existing, { at: new Date().toISOString(), by: by || null, text: t }],
+    noteLog: [...seed, ...existing, {
+      at: new Date().toISOString(), by: by || null, text: t,
+      stage: stage || file?.stage || null,
+    }],
   };
 }
 
@@ -2799,6 +2822,84 @@ export function compDollars(file, branchDefault = 150) {
 }
 export function compGivenUpDollars(file) {
   return Math.round((file?.loan || 0) * (file?.bpsGivenUp || 0) / 10000);
+}
+
+// ─── 7Z. DUPLICADOS ────────────────────────────────────────────────
+// El sistema dejo entrar dos veces a la misma clienta: "YANET ARAFET
+// CALDERIN" y "YANET ARAFET", con montos distintos y el telefono escrito
+// de dos formas. Lo unico identico era el correo.
+//
+// Por eso el chequeo NO es por nombre. Un nombre hispano de dos
+// apellidos se escribe de cuatro maneras distintas y ninguna coincide
+// por igualdad. El correo y el telefono normalizados son estables.
+
+export function normPhone(v) {
+  const d = String(v || "").replace(/\D/g, "");
+  // 1 al frente en numeros de 11 digitos: es el codigo de pais de EE.UU.
+  return d.length === 11 && d.startsWith("1") ? d.slice(1) : d;
+}
+
+export const normEmail = v => String(v || "").trim().toLowerCase();
+
+// Nombre sin acentos, sin puntuacion y sin orden: "Zamora Cordova, Katia"
+// y "KATIA ZAMORA CORDOVA" producen el mismo conjunto de palabras.
+export function nameTokens(v) {
+  return new Set(String(v || "")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase().replace(/[^A-Z0-9 ]/g, " ")
+    .split(/\s+/).filter(w => w.length > 1));
+}
+
+// Un nombre contenido en el otro cuenta como sospecha: a "Yanet Arafet"
+// le falta el apellido que si trae "Yanet Arafet Calderin".
+export function nameOverlap(a, b) {
+  const A = nameTokens(a), B = nameTokens(b);
+  if (!A.size || !B.size) return false;
+  const chico = A.size <= B.size ? A : B;
+  const grande = A.size <= B.size ? B : A;
+  let hits = 0;
+  for (const w of chico) if (grande.has(w)) hits += 1;
+  return hits === chico.size && chico.size >= 2;
+}
+
+export const DUP_REASONS = {
+  email: { es: "mismo correo",   en: "same email",   strong: true  },
+  phone: { es: "mismo teléfono", en: "same phone",   strong: true  },
+  name:  { es: "mismo nombre",   en: "same name",    strong: false },
+};
+
+// Que otros archivos parecen ser esta misma persona. Devuelve el motivo
+// para que quien decida vea POR QUE se parecen, no solo que se parecen.
+export function duplicateMatches(candidate, files) {
+  const em = normEmail(candidate?.email);
+  const ph = normPhone(candidate?.phone);
+  const out = [];
+  for (const f of files || []) {
+    if (!f || f.id === candidate?.id) continue;
+    if (f.archived) continue;                       // archivado ya se decidio
+    const reasons = [];
+    if (em && normEmail(f.email) === em) reasons.push("email");
+    if (ph && ph.length >= 10 && normPhone(f.phone) === ph) reasons.push("phone");
+    if (nameOverlap(candidate?.borrower, f.borrower)) reasons.push("name");
+    if (reasons.length) out.push({ file: f, reasons, strong: reasons.some(r => DUP_REASONS[r].strong) });
+  }
+  // Primero los que coinciden por correo o telefono, que son los seguros.
+  return out.sort((a, b) => (b.strong ? 1 : 0) - (a.strong ? 1 : 0) || b.reasons.length - a.reasons.length);
+}
+
+// Barrido de todo el pipeline. Para encontrar los que YA entraron.
+export function findDuplicates(files) {
+  const seen = new Set();
+  const grupos = [];
+  for (const f of files || []) {
+    if (!f || seen.has(f.id)) continue;
+    const m = duplicateMatches(f, files).filter(x => !seen.has(x.file.id));
+    if (!m.length) continue;
+    seen.add(f.id);
+    for (const x of m) seen.add(x.file.id);
+    grupos.push({ files: [f, ...m.map(x => x.file)], reasons: [...new Set(m.flatMap(x => x.reasons))] });
+  }
+  return grupos;
 }
 
 // ─── 8. STAMPING ───────────────────────────────────────────────────

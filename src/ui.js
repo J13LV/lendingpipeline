@@ -140,7 +140,17 @@ export const UI = {
   unsaved:     { es:" · sin guardar", en:" · unsaved" },
   unassigned:  { es:"— sin asignar —", en:"— unassigned —" },
   typingYear:  { es:"escribiendo el año…", en:"typing the year…" },
-  branchLending:{ es:"Del Valle Lending", en:"Del Valle Lending" },
+  branchLending:{ es:"Del Valle Lending Co.", en:"Del Valle Lending Co." },
+  branchPowered:{ es:"powered by Barrett Financial Group", en:"powered by Barrett Financial Group" },
+  borrowerRequired:{ es:"El nombre del prestatario es obligatorio.", en:"Borrower name is required." },
+  dupWarn:{ es:"Ya hay {n} archivo(s) que parecen ser esta misma persona:",
+            en:"There are already {n} file(s) that look like this same person:" },
+  dupAsk:{ es:"¿Crear el archivo de todas formas?", en:"Create the file anyway?" },
+  dupEmail:{ es:"mismo correo",   en:"same email" },
+  dupPhone:{ es:"mismo teléfono", en:"same phone" },
+  dupName:{ es:"mismo nombre",    en:"same name" },
+  notesEnglishOnly:{ es:"Las notas van en inglés — regla de la sucursal",
+                     en:"Notes go in English — branch rule" },
 
   // contingencias
   anchorHint:  { es:"Todo se cuenta desde aquí. Si el archivo pasó días en Under Contract, ya se gastaron.",
@@ -533,4 +543,8 @@ export function tr(key, lang = "es", vars) {
 
 // Idioma por defecto según el rol. El equipo trabaja en español; quien
 // administra puede cambiarlo y queda guardado en su perfil.
-export const defaultLang = profile => profile?.lang || "es";
+// El idioma sale del roster, no de un default unico. Martha no lee
+// espanol: si aterriza en una pantalla en espanol tiene que buscar un
+// boton que no sabe leer para poder cambiarla. Cada quien entra en el
+// suyo desde el primer login.
+export const defaultLang = profile => (profile?.lang === "en" ? "en" : "es");
