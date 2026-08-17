@@ -3968,6 +3968,14 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
         <span style={{marginLeft:"auto",fontSize:9,color:"#484F58"}}>{TX("savesWithSave")}</span>
       </div>
 
+
+      {/* Dos columnas dentro del panel: a la izquierda lo que ESCOGES
+          —canal, lender, compensacion—; a la derecha lo que el sistema
+          calcula de esa eleccion: tasa, lock, respaldo y viabilidad.
+          Antes era una sola columna y a 1240px dejaba media pantalla
+          vacia al lado. */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,alignItems:"start"}}>
+        <div style={{display:"flex",flexDirection:"column",gap:12}}>
       {/* CHANNEL — chosen first, everything filters from it */}
       <div>
         <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{TX("channel")}</div>
@@ -4093,6 +4101,8 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
           )}
         </div>
       )}
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:12}}>
 
       {/* RATE + LOCK */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
@@ -4180,6 +4190,8 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
           border:`1px solid ${c.sev==="critical"?"#E85D7544":"#F5A62344"}`,borderRadius:5,
           padding:"7px 9px",lineHeight:1.45}}>{P(c)}</div>
       ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -4244,6 +4256,14 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
         <span style={{marginLeft:"auto",fontSize:9,color:"#484F58"}}>{TX("savesWithSave")}</span>
       </div>
 
+
+      {/* Dos columnas: a la izquierda LO QUE DICE EL CONTRATO —lo que
+          se teclea del papel—; a la derecha LO QUE EL SISTEMA DERIVA:
+          conflictos, resultados, fechas tope e historial.
+          Revueltos en un solo scroll, un conflicto como el CTC que
+          empata con la fecha tope del CD pasaba desapercibido. */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,alignItems:"start"}}>
+        <div style={{display:"flex",flexDirection:"column",gap:12}}>
       {/* STATE — decides whether the contract counts calendar or business days */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 2fr",gap:10,alignItems:"end"}}>
         <div>
@@ -4296,8 +4316,8 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
         )}
       </div>
 
-
-
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:12}}>
       {/* CONFLICTS */}
       {conflicts.length>0&&(
         <div style={{display:"flex",flexDirection:"column",gap:6}}>
@@ -4423,6 +4443,8 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
         </div>
       )}
     </div>
+        </div>
+      </div>
   );
 }
 
@@ -4706,65 +4728,79 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
           en una columna angosta solo a costa de un scroll interminable;
           con ancho de verdad caben en dos columnas y cinco solapas. */}
       <div className="fi" style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:12,width:"100%",maxWidth:1240,height:"calc(100vh - 32px)",display:"flex",flexDirection:"column",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
-        {/* ENCABEZADO — no cambia al moverse entre solapas. Siempre sabes
-            en que archivo estas, en que etapa y cuanto tiempo queda. */}
-        <div style={{padding:"14px 22px",borderBottom:"1px solid #21262D",display:"flex",
-          justifyContent:"space-between",alignItems:"center",gap:16,flexWrap:"wrap",flexShrink:0}}>
+        {/* ENCABEZADO — cada dato con su etiqueta. Antes decia
+            "FHA $450,655 eLend Jose Martha" de corrido y habia que
+            adivinar quien era quien. */}
+        <div style={{padding:"14px 22px 12px",display:"flex",justifyContent:"space-between",
+          alignItems:"flex-start",gap:20,flexWrap:"wrap",flexShrink:0}}>
           <div style={{minWidth:0}}>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:17,color:"#E6EDF3",letterSpacing:"-0.3px"}}>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:19,color:"#E6EDF3",letterSpacing:"-0.4px"}}>
               {file.borrower}
-              {isInbound&&<span title="Inbound referral" style={{marginLeft:8,fontSize:11,color:"#FFD166"}}>🤝</span>}
+              {isInbound&&<span title="Inbound referral" style={{marginLeft:9,fontSize:12,color:"#FFD166"}}>🤝</span>}
             </div>
-            <div style={{fontSize:9.5,color:"#6E7681",marginTop:3,display:"flex",gap:7,flexWrap:"wrap"}}>
-              <span>{loanType}</span>
-              <span>${parseInt(loanAmt||0).toLocaleString()}</span>
-              {lenderNameOf(file)&&<span>{lenderNameOf(file)}</span>}
-              <span>{String(loAssigned||"").split(" ")[0]}</span>
-              {!inPrep&&!isReferredOut&&<span>{processorOf(file).name}</span>}
+            <div style={{display:"flex",gap:26,marginTop:11,flexWrap:"wrap"}}>
+              {[
+                [TX("hdProduct"), loanType, "#E6EDF3"],
+                [TX("hdAmount"),  "$"+parseInt(loanAmt||0).toLocaleString(), "#E6EDF3"],
+                ...(lenderNameOf(file)?[[TX("hdLender"), lenderNameOf(file), "#E6EDF3"]]:[]),
+                [TX("hdLo"), loAssigned||"—", "#8B949E"],
+                ...(!inPrep&&!isReferredOut?[[TX("hdProcessor"), processorOf(file).full, "#8B949E"]]:[]),
+              ].map(([lbl,val,col])=>(
+                <div key={lbl}>
+                  <div style={{fontSize:8,letterSpacing:"1.3px",color:"#484F58",marginBottom:3}}>{lbl}</div>
+                  <div style={{fontSize:11.5,color:col}}>{val}</div>
+                </div>
+              ))}
             </div>
           </div>
-          <div style={{display:"flex",gap:20,alignItems:"center"}}>
+          <div style={{display:"flex",gap:24,alignItems:"flex-start"}}>
             {!inPrep&&!isReferredOut&&(
               <div style={{textAlign:"right"}}>
-                <div style={{fontSize:10.5,color:ph.color}}>{stage}</div>
+                <div style={{fontSize:8,letterSpacing:"1.3px",color:"#484F58",marginBottom:3}}>{TX("hdStage")}</div>
+                <div style={{fontSize:12,color:ph.color}}>{stage}</div>
                 <div style={{fontSize:9,color:"#484F58",marginTop:2}}>
                   {daysInStage(file)===null?"—":`${daysInStage(file)}d`}
-                  {(()=>{const c=stageClock(file.stage,file);return c?` · techo ${c.late}d`:"";})()}
+                  {(()=>{const c=stageClock(file.stage,file);return c?` · ${TX("hdCeiling",{n:c.late})}`:"";})()}
                 </div>
               </div>
             )}
             {closing&&(
               <div style={{textAlign:"right"}}>
-                <div style={{fontSize:10.5,color:"#F5A623"}}>COE {md(closing)}</div>
+                <div style={{fontSize:8,letterSpacing:"1.3px",color:"#484F58",marginBottom:3}}>{TX("hdClosing")}</div>
+                <div style={{fontSize:12,color:"#F5A623"}}>{md(closing)}</div>
                 <div style={{fontSize:9,color:"#484F58",marginTop:2}}>
                   {(()=>{const d=daysTil(closing);
-                    return d===null?"":d===0?TX("closingToday"):d>0?TX("closeInDays",{n:d}):TX("pastDue");})()}
+                    return d===null?"":d===0?TX("closingToday"):d>0?TX("hdInDays",{n:d}):TX("pastDue");})()}
                 </div>
               </div>
             )}
             <button onClick={onClose} style={{background:"transparent",border:"none",color:"#484F58",
-              fontSize:19,cursor:"pointer",padding:"0 0 0 4px"}}>✕</button>
+              fontSize:18,cursor:"pointer",padding:"2px 0 0 4px",lineHeight:1}}>✕</button>
           </div>
         </div>
 
-        {/* SOLAPAS — el contador dice si hay algo ahi sin tener que entrar */}
-        <div style={{display:"flex",padding:"0 22px",borderBottom:"1px solid #21262D",
-          background:"#10141A",flexShrink:0,overflowX:"auto"}}>
+        {/* SOLAPAS — estiradas a todo el ancho, en cinco partes iguales.
+            La activa lleva fondo Y barra dorada: solo con el subrayado se
+            perdian entre el resto del texto. */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",
+          borderTop:"1px solid #21262D",borderBottom:"1px solid #21262D",
+          background:"#0A0E13",flexShrink:0}}>
           {[
             ["loan",  TX("tabLoan"),   0],
             ["lender",TX("tabLender"), lenderConflicts(file).length],
             ["dates", TX("tabDates"),  contingencyConflicts(file).length],
             ["money", TX("tabMoney"),  payrollBlockers(file).length],
             ["file",  TX("tabFile"),   openFindings(file).length],
-          ].map(([id,label,n])=>{
+          ].map(([id,label,n],i)=>{
             const on=tab===id;
             return (
               <button key={id} className="hov" onClick={()=>setTab(id)}
-                style={{background:"transparent",border:"none",cursor:"pointer",
-                  color:on?"#E6EDF3":"#484F58",fontSize:10,fontFamily:"DM Mono",
-                  letterSpacing:".8px",padding:"10px 0",marginRight:22,whiteSpace:"nowrap",
-                  borderBottom:`2px solid ${on?"#F5A623":"transparent"}`}}>
-                {label}{n>0&&<span style={{color:"#E85D75"}}> {n}</span>}
+                style={{background:on?"#171D26":"transparent",border:"none",cursor:"pointer",
+                  color:on?"#E6EDF3":"#484F58",fontSize:10.5,fontFamily:"DM Mono",
+                  letterSpacing:"1.4px",padding:"11px 0",textAlign:"center",
+                  borderRight:i<4?"1px solid #21262D":"none",
+                  boxShadow:on?"inset 0 -2px 0 #F5A623":"none"}}>
+                {label}{n>0&&<span style={{color:"#E85D75",marginLeft:5}}>{n}</span>}
               </button>
             );
           })}
@@ -4775,6 +4811,7 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
             móvil se apilan. */}
         <div style={{flex:1,overflowY:"auto",padding:"16px 22px",display:"grid",
           gridTemplateColumns:"53% 47%",gap:14,alignItems:"start",alignContent:"start"}}>
+        {/* ESTRUCTURA — lo que define el prestamo. Columna izquierda. */}
         <div style={{display:tab==="loan"?"grid":"none",gridTemplateColumns:"1fr 1fr",gap:10,alignSelf:"start"}}>
           <div>
             <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L("loanType")}</div>
@@ -4822,6 +4859,12 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
               </div>
             </div>
           )}
+        </div>
+
+        {/* EQUIPO Y CLIENTE — quien lo trabaja y como se le contacta.
+            Columna derecha, para que las dos se llenen en vez de dejar
+            media pantalla vacia al lado de un bloque estirado. */}
+        <div style={{display:tab==="loan"?"grid":"none",gridTemplateColumns:"1fr 1fr",gap:10,alignSelf:"start"}}>
           <div style={{gridColumn:"1/-1"}}>
             <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L("loanOfficer")}</div>
             <select value={loAssigned} onChange={e=>setLoAssigned(e.target.value)} style={fs2}>
@@ -4875,9 +4918,11 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
 
         {/* LENDER — chosen at Full Application; the channel gates the list */}
         {tab==="lender" && !inPrep && !isReferredOut && (atOrPastFullApp(stage) || hasLenderData(file)) && (
+          <div style={{gridColumn:"1/-1"}}>
           <LenderPanel file={file} profile={profile}
             onDraft={p=>{panelDrafts.current.lender=p; setPendingBps(p.bps ?? null);}}
             onChangeLender={()=>setShowChange(true)}/>
+          </div>
         )}
 
 
@@ -4885,7 +4930,8 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
             completa si faltan, pero la captura nace aqui. */}
         {tab==="file" && !inPrep && !isReferredOut && (
           <div style={{background:"rgba(189,101,232,.04)",border:"1px solid #BD65E833",
-            borderRadius:8,padding:14,display:"flex",flexDirection:"column",gap:10}}>
+            borderRadius:8,padding:14,display:"flex",flexDirection:"column",gap:10,
+            gridRow:"span 3"}}>
             <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#BD65E8",
               letterSpacing:"1px"}}>{L("intake")}</span>
             <IntakePane file={file} lang={lang} readOnly={isAssistant}
@@ -4896,6 +4942,12 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
         {/* HALLAZGOS — lo que alguien vio y sigue abierto */}
         {tab==="file" && !inPrep && !isReferredOut && (
           <FindingsPanel file={file} profile={profile} onSave={onSave}/>
+        )}
+
+        {/* COMPENSACIÓN — bruto, descuentos, neto y lo que cobra cada quien */}
+        {tab==="money" && !inPrep && !isReferredOut && (
+          <PayoutPanel file={file} profile={profile} allFiles={allFiles} pendingBps={pendingBps}
+            onDraft={p=>{panelDrafts.current.payout=p;}}/>
         )}
 
         {/* REQUISITOS PARA COBRAR — Barrett no paga solo por fondear */}
@@ -4935,16 +4987,12 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
           </div>
         )}
 
-        {/* COMPENSACIÓN — bruto, descuentos, neto y lo que cobra cada quien */}
-        {tab==="money" && !inPrep && !isReferredOut && (
-          <PayoutPanel file={file} profile={profile} allFiles={allFiles} pendingBps={pendingBps}
-            onDraft={p=>{panelDrafts.current.payout=p;}}/>
-        )}
-
         {/* CONTINGENCIES — captured at Full Application, anchored to the contract */}
         {tab==="dates" && !inPrep && !isReferredOut && (atOrPastFullApp(stage) || hasContingencies(file)) && (
-          <ContingencyPanel file={file} profile={profile} onSave={onSave}
-            onDraft={p=>{panelDrafts.current.dates=p;}}/>
+          <div style={{gridColumn:"1/-1"}}>
+            <ContingencyPanel file={file} profile={profile} onSave={onSave}
+              onDraft={p=>{panelDrafts.current.dates=p;}}/>
+          </div>
         )}
 
         {/* INBOUND REFERRAL SECTION — when file came from another banker */}
