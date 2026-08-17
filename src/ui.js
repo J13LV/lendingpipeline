@@ -206,6 +206,19 @@ export const UI = {
   closeInDays:{ es:"cierra en {n}d", en:"closes in {n}d" },
   stageDays:{ es:"{n}d en la etapa", en:"{n}d in stage" },
   openFullFile:{ es:"ABRIR EL ARCHIVO COMPLETO", en:"OPEN THE FULL FILE" },
+  orderNoteHint:{ es:"Qué contestó el vendor", en:"What the vendor said" },
+  orderNotePlaceholder:{ es:"Título dice 3 días más · el tasador necesita acceso",
+                         en:"Title says 3 more days · appraiser needs access" },
+  noDeadlines:{ es:"Sin fechas derivadas — falta capturar las contingencias.",
+                en:"No derived deadlines — the contingencies are not captured yet." },
+
+  // ─── admisión ───
+  intake:{ es:"ADMISIÓN", en:"INTAKE" },
+  intakeCoverage:{ es:"{f} de {t} capturados", en:"{f} of {t} captured" },
+  intakeHint:{ es:"Los marcados con ◆ deciden qué programa de DPA aplica. Se capturan una vez y sirven para el checklist y para el DPA.",
+               en:"The ones marked ◆ decide which DPA program applies. Captured once, they serve both the checklist and DPA." },
+  dpaReadyYes:{ es:"◆ listo para decidir DPA", en:"◆ ready to decide DPA" },
+  dpaReadyNo:{ es:"◆ faltan datos para decidir DPA", en:"◆ missing data to decide DPA" },
 
   // contingencias
   anchorHint:  { es:"Todo se cuenta desde aquí. Si el archivo pasó días en Under Contract, ya se gastaron.",

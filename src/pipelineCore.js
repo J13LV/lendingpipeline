@@ -3031,6 +3031,138 @@ export function worstFinding(file) {
   return [...abiertos].sort((a, b) => String(a.at).localeCompare(String(b.at)))[0];
 }
 
+// ─── 7U. CAMPOS DE ADMISION ────────────────────────────────────────
+// El checklist de Barrett tiene 51 campos. Veintiuno los sabe el sistema
+// y solo hay que imprimirlos; doce requieren que una persona abra un
+// documento y mire. Estos DIECIOCHO son los que faltaban: nadie los
+// escribe y la procesadora los reconstruye de los documentos en cada
+// archivo.
+//
+// Valen doble. Primer comprador, ocupacion, tipo de propiedad y
+// enganche son exactamente las preguntas que deciden que programa de
+// DPA aplica. Se capturan una vez y sirven para el checklist Y para el
+// sistema de decision de DPA.
+//
+// El LO ya hace estas preguntas para precalificar — las sabe antes del
+// contrato. Aqui solo se escriben.
+export const INTAKE_GROUPS = [
+  { id: "property", es: "Propiedad", en: "Property" },
+  { id: "borrower", es: "Prestatario", en: "Borrower" },
+  { id: "loan",     es: "Prestamo", en: "Loan" },
+];
+
+// `dpa` marca los que alimentan la decision de DPA. `only` los condiciona
+// a otro campo: el nombre del condominio no tiene sentido si no es condo.
+export const INTAKE_FIELDS = [
+  { id: "occupancy", group: "property", type: "pick", dpa: true,
+    es: "Ocupacion", en: "Occupancy",
+    opts: [
+      { v: "primary",    es: "Primaria",   en: "Primary" },
+      { v: "secondary",  es: "Segunda",    en: "Secondary" },
+      { v: "investment", es: "Inversion",  en: "Investment" },
+    ] },
+  { id: "propertyType", group: "property", type: "pick", dpa: true,
+    es: "Tipo de propiedad", en: "Property type",
+    opts: [
+      { v: "sfr",          es: "Casa sola",     en: "Single family" },
+      { v: "condo",        es: "Condominio",    en: "Condo" },
+      { v: "townhome",     es: "Townhome",      en: "Townhome" },
+      { v: "manufactured", es: "Manufacturada", en: "Manufactured" },
+      { v: "multi",        es: "2-4 unidades",  en: "2-4 units" },
+    ] },
+  { id: "condoName", group: "property", type: "text", only: { propertyType: "condo" },
+    es: "Nombre del condominio", en: "Condo name" },
+  { id: "condoUnit", group: "property", type: "text", only: { propertyType: "condo" },
+    es: "Unidad #", en: "Unit #" },
+  { id: "hoa", group: "property", type: "yesno",
+    es: "HOA", en: "HOA",
+    note_es: "Si tiene HOA, marcar PUD en el sistema",
+    note_en: "If it has an HOA, flag PUD in the system" },
+  { id: "address", group: "property", type: "text",
+    es: "Direccion", en: "Address" },
+  { id: "parcelNumber", group: "property", type: "text",
+    es: "Parcela #", en: "Parcel #" },
+
+  { id: "firstTimeBuyer", group: "borrower", type: "yesno", dpa: true,
+    es: "Primer comprador", en: "First-time buyer" },
+  { id: "coBorrower", group: "borrower", type: "text",
+    es: "Co-prestatario", en: "Co-borrower" },
+  { id: "creditFileNumber", group: "borrower", type: "text",
+    es: "Reporte de credito #", en: "Credit report file #" },
+
+  { id: "salesPrice", group: "loan", type: "money", dpa: true,
+    es: "Precio de compra", en: "Sales price" },
+  { id: "downPaymentPct", group: "loan", type: "pct", dpa: true,
+    es: "Enganche %", en: "Down payment %" },
+  { id: "loanTerm", group: "loan", type: "pick",
+    es: "Plazo", en: "Term",
+    opts: [{ v: "30", es: "30 años", en: "30 yr" },
+           { v: "20", es: "20 años", en: "20 yr" },
+           { v: "15", es: "15 años", en: "15 yr" }] },
+  { id: "sellerConcessions", group: "loan", type: "money",
+    es: "Concesiones del vendedor", en: "Seller concessions" },
+  { id: "earnestMoney", group: "loan", type: "money",
+    es: "Deposito de garantia", en: "Earnest money" },
+  { id: "miRequired", group: "loan", type: "yesno",
+    es: "MI requerido", en: "MI required" },
+  { id: "miPct", group: "loan", type: "pct", only: { miRequired: "yes" },
+    es: "MI %", en: "MI %" },
+  { id: "escrowWaiver", group: "loan", type: "yesno",
+    es: "Waiver de escrows", en: "Escrow waiver" },
+];
+export const intakeField = id => INTAKE_FIELDS.find(f => f.id === id) || null;
+
+export const intakeOf = file => (file?.intake && typeof file.intake === "object") ? file.intake : {};
+export const intakeValue = (file, id) => {
+  const v = intakeOf(file)[id];
+  return v === undefined || v === "" ? null : v;
+};
+
+// Un campo condicionado no aplica hasta que su condicion se cumple. Un
+// campo que no aplica NO cuenta como incompleto: pedir el nombre del
+// condominio en una casa sola es ruido, no un dato faltante.
+export function intakeApplies(file, id) {
+  const f = intakeField(id);
+  if (!f?.only) return true;
+  return Object.entries(f.only).every(([k, want]) => String(intakeValue(file, k)) === String(want));
+}
+export const intakeVisible = file => INTAKE_FIELDS.filter(f => intakeApplies(file, f.id));
+
+// Los numeros se guardan como numero, no como texto: "450000" y 450000
+// se comparan distinto y el dia que alguien filtre por precio se rompe.
+export function setIntake(file, id, value) {
+  const f = intakeField(id);
+  if (!f) return file;
+  let v = value;
+  if (v === "" || v === null || v === undefined) v = null;
+  else if (f.type === "money" || f.type === "pct") {
+    const n = Number(String(v).replace(/[^\d.]/g, ""));
+    v = Number.isFinite(n) ? n : null;
+  }
+  const next = { ...intakeOf(file), [id]: v };
+  // Al cambiar el campo que condiciona, se limpia lo que dejo de aplicar.
+  for (const c of INTAKE_FIELDS) {
+    if (!c.only || !(id in c.only)) continue;
+    if (String(v) !== String(c.only[id])) delete next[c.id];
+  }
+  return { ...file, intake: { ...next, updatedAt: today() } };
+}
+
+export function intakeCompleteness(file) {
+  const aplican = intakeVisible(file);
+  const llenos = aplican.filter(f => intakeValue(file, f.id) !== null);
+  return { total: aplican.length, filled: llenos.length,
+    pct: aplican.length ? Math.round(100 * llenos.length / aplican.length) : 0 };
+}
+
+// Lo que el sistema de DPA necesita saber. Se separa porque un archivo
+// puede tener admision a medias y aun asi poder decidir el programa.
+export const dpaReady = file =>
+  INTAKE_FIELDS.filter(f => f.dpa && intakeApplies(file, f.id))
+    .every(f => intakeValue(file, f.id) !== null);
+
+export const isCondo = file => intakeValue(file, "propertyType") === "condo";
+
 // ─── 7W. PEDIDOS A VENDORS ─────────────────────────────────────────
 // Martha ordena titulo, HOI y tasacion el MISMO DIA que recibe el
 // archivo — su "one day, one shot". En sus ocho archivos, la fecha de
@@ -3070,6 +3202,7 @@ export function orderState(file, id) {
     // Cuantos dias lleva esperando al vendor, o cuantos tardo en llegar.
     days: req ? (rec ? daysBetween(req, rec) : daysBetween(req)) : null,
     by: o.by || null, recBy: o.recBy || null,
+    note: o.note || null, noteAt: o.noteAt || null, noteBy: o.noteBy || null,
   };
 }
 export const allOrderStates = file => ORDERS.map(o => orderState(file, o.id));
@@ -3090,6 +3223,20 @@ export function stampOrder(file, id, which, by) {
     ? { ...prev, req: okDate(prev.req) || hoy, rec: hoy, recBy: by || null }
     : { ...prev, req: hoy, by: by || null };
   return { ...file, orders: { ...ordersOf(file), [id]: next } };
+}
+
+// Lo que el vendor contesto. "Titulo dice tres dias mas" no cabe en una
+// fecha, y sin este campo termina en un correo o en la cabeza de nadie —
+// que es el mismo agujero que tapamos con los hallazgos.
+export function setOrderNote(file, id, texto, by) {
+  if (!orderById(id)) return file;
+  const prev = ordersOf(file)[id] || {};
+  // `txt` y no `t`: la letra t es el helper bilingue del final del archivo.
+  const txt = String(texto || "").trim();
+  return { ...file, orders: { ...ordersOf(file), [id]: {
+    ...prev, note: txt || null, noteAt: txt ? today() : null,
+    noteBy: txt ? (by || null) : null,
+  } } };
 }
 
 // Quitar un sello puesto por error. Solo el ultimo: si se borra el

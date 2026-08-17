@@ -21,7 +21,7 @@
 import {
   okDate, today, addDays, lenderNameOf, baseProductOf,
   productKeyForLoanType, stageLogOf, latestNote, lockStatus, STAGE_DAYS,
-  processorId, processorOf, DEFAULT_PROCESSOR, orderState,
+  processorId, processorOf, DEFAULT_PROCESSOR, orderState, isCondo,
 } from "./pipelineCore";
 
 const EXCELJS_CDN = "https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js";
@@ -270,7 +270,9 @@ export function marthaRow(file) {
     17: asDate(reg),
     18: asDate(log["Initial Disclosures Sent"]),
     20: orderText(file, "appraisal")  || reqText(log["Appraisal Ordered"]),
-    21: orderText(file, "condo_docs"),
+    // Ella escribe N/A cuando no es condominio — en sus ocho archivos
+    // esa columna dice N/A en todos. Ahora el sistema lo sabe.
+    21: orderText(file, "condo_docs") || (isCondo(file) ? null : "N/A"),
     22: asDate(log["Submitted to UW"]),
     23: asDate(log["Conditional Approval"]),
     26: asDate(log["CD Issued"]),

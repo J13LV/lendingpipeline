@@ -26,7 +26,9 @@ import {
   processorOf, DEFAULT_PROCESSOR, GATE1_ITEMS, gate1Item, FINDING_WAITING,
   WAITING_IDS, waitingMeta, openFindings, addFinding, resolveFinding, findingAge,
   lenderNameOf, daysBetween, daysInStage, stageClock, today, okDate,
-  latestNote, noteEntries, addNoteEntry, contingencyHeadline, upcomingDeadlines,
+  noteEntries, addNoteEntry, contingencyHeadline, upcomingDeadlines,
+  setOrderNote, INTAKE_GROUPS, INTAKE_FIELDS, intakeValue, intakeApplies,
+  setIntake, intakeCompleteness, dpaReady, allOrderStates, pendingOrders,
 } from "./pipelineCore";
 
 // Autocontenido a proposito: recibe `lang` y traduce solo. Asi no
@@ -90,19 +92,147 @@ function OrderRow({ file, def, lang, onSave, readOnly }) {
   };
 
   const tarde = o.state === "ordered" && o.days >= 7;
+  const [nota, setNota] = useState(o.note || "");
+  const [abierta, setAbierta] = useState(false);
+
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: 7,
-      alignItems: "center", background: C.card, padding: "8px 11px", borderRadius: 5 }}>
-      <span style={{ color: C.text, fontSize: 11 }}>
-        {P(def)}
-        {o.state === "ordered" && (
-          <span style={{ color: tarde ? C.red : C.dim, fontSize: 9, marginLeft: 7 }}>
-            {T("orderWaiting", { n: o.days })}
-          </span>
+    <div style={{ background: C.card, padding: "8px 11px", borderRadius: 5 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto auto", gap: 7, alignItems: "center" }}>
+        <span style={{ color: C.text, fontSize: 11 }}>
+          {P(def)}
+          {o.state === "ordered" && (
+            <span style={{ color: tarde ? C.red : C.dim, fontSize: 9, marginLeft: 7 }}>
+              {T("orderWaiting", { n: o.days })}
+            </span>
+          )}
+        </span>
+        {chip("req", !!o.req, o.req)}
+        {chip("rec", !!o.rec, o.rec)}
+        {!readOnly && (
+          <button className="hov" onClick={() => setAbierta(v => !v)}
+            title={T("orderNoteHint")}
+            style={{ background: "transparent", border: "none", cursor: "pointer",
+              color: o.note ? C.gold : C.dim, fontSize: 12, padding: "0 2px" }}>
+            {o.note ? "✎" : "+"}
+          </button>
         )}
-      </span>
-      {chip("req", !!o.req, o.req)}
-      {chip("rec", !!o.rec, o.rec)}
+      </div>
+
+      {o.note && !abierta && (
+        <div style={{ fontSize: 10, color: C.gold, lineHeight: 1.45, marginTop: 5,
+          borderLeft: `2px solid ${C.gold}`, paddingLeft: 7 }}>
+          {o.note}
+          <span style={{ color: C.dim, fontSize: 9 }}>
+            {o.noteAt ? `  ${o.noteAt}` : ""}{o.noteBy ? ` · ${String(o.noteBy).split(" ")[0]}` : ""}
+          </span>
+        </div>
+      )}
+
+      {abierta && !readOnly && (
+        <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+          <input value={nota} onChange={e => setNota(e.target.value)}
+            placeholder={T("orderNotePlaceholder")}
+            style={{ flex: 1, background: C.bg, border: `1px solid ${C.edge}`, borderRadius: 4,
+              color: C.text, padding: "5px 8px", fontSize: 10.5, fontFamily: "DM Mono" }} />
+          <button className="hov"
+            onClick={() => { onSave(setOrderNote(file, def.id, nota, null)); setAbierta(false); }}
+            style={{ background: C.gold, color: C.bg, border: "none", borderRadius: 4,
+              padding: "5px 11px", fontSize: 10, fontFamily: "DM Mono", cursor: "pointer" }}>
+            {T("save")}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── ADMISION ──────────────────────────────────────────────────────
+// Dieciocho campos que nadie escribia y la procesadora reconstruia de
+// los documentos en cada archivo. Los marcados con ◆ alimentan tambien
+// la decision de DPA — se capturan una vez y sirven para las dos cosas.
+function IntakePane({ file, lang, onSave, readOnly }) {
+  const { T, P } = mk(lang);
+  const cov = intakeCompleteness(file);
+  const listoDpa = dpaReady(file);
+  const fs = { background: C.bg, border: `1px solid ${C.edge}`, borderRadius: 5,
+    color: C.text, padding: "6px 8px", fontSize: 11, fontFamily: "DM Mono", width: "100%" };
+
+  const campo = f => {
+    const v = intakeValue(file, f.id);
+    const set = val => onSave(setIntake(file, f.id, val));
+    if (readOnly) {
+      const txt = f.type === "pick" ? P(f.opts.find(o => o.v === v)) || "—"
+        : f.type === "yesno" ? (v === "yes" ? T("yesShort") : v === "no" ? T("noShort") : "—")
+        : v === null ? "—" : f.type === "money" ? "$" + Number(v).toLocaleString()
+        : f.type === "pct" ? v + "%" : String(v);
+      return <div style={{ fontSize: 11, color: v === null ? C.dim : C.text }}>{txt}</div>;
+    }
+    if (f.type === "pick") {
+      return (
+        <select value={v ?? ""} onChange={e => set(e.target.value || null)} style={fs}>
+          <option value="">—</option>
+          {f.opts.map(o => <option key={o.v} value={o.v}>{P(o)}</option>)}
+        </select>
+      );
+    }
+    if (f.type === "yesno") {
+      return (
+        <div style={{ display: "flex", gap: 5 }}>
+          {[["yes", T("yesShort")], ["no", T("noShort")]].map(([val, lbl]) => (
+            <button key={val} className="hov" onClick={() => set(v === val ? null : val)}
+              style={{ flex: 1, background: v === val ? C.green : "transparent",
+                color: v === val ? C.bg : C.mid, border: `1px solid ${v === val ? C.green : C.edge}`,
+                borderRadius: 4, padding: "5px 0", fontSize: 10, fontFamily: "DM Mono",
+                cursor: "pointer" }}>{lbl}</button>
+          ))}
+        </div>
+      );
+    }
+    return (
+      <input value={v ?? ""} onChange={e => set(e.target.value)}
+        inputMode={f.type === "money" || f.type === "pct" ? "decimal" : undefined}
+        style={fs} />
+    );
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 10, color: cov.pct === 100 ? C.green : C.soft }}>
+          {T("intakeCoverage", { f: cov.filled, t: cov.total })}
+        </span>
+        <span style={{ fontSize: 9.5, color: listoDpa ? C.green : C.gold, marginLeft: "auto" }}>
+          {listoDpa ? T("dpaReadyYes") : T("dpaReadyNo")}
+        </span>
+      </div>
+
+      {INTAKE_GROUPS.map(g => {
+        const campos = INTAKE_FIELDS.filter(f => f.group === g.id && intakeApplies(file, f.id));
+        if (!campos.length) return null;
+        return (
+          <div key={g.id}>
+            <div style={{ fontSize: 9, color: C.soft, letterSpacing: "1px", marginBottom: 7 }}>
+              {P(g).toUpperCase()}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 9 }}>
+              {campos.map(f => (
+                <div key={f.id}>
+                  <div style={{ fontSize: 9, color: C.dim, marginBottom: 3 }}>
+                    {P(f)}{f.dpa ? <span style={{ color: C.gold }}> ◆</span> : ""}
+                  </div>
+                  {campo(f)}
+                  {f.note_es && (
+                    <div style={{ fontSize: 8.5, color: C.dim, marginTop: 2, lineHeight: 1.4 }}>
+                      {lang === "en" ? f.note_en : f.note_es}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+      <div style={{ fontSize: 9, color: C.dim, lineHeight: 1.5 }}>{T("intakeHint")}</div>
     </div>
   );
 }
@@ -196,6 +326,7 @@ function Findings({ file, lang, onSave, who, readOnly }) {
 // ─── EL ARCHIVO ABIERTO ────────────────────────────────────────────
 function FilePane({ file, lang, onSave, who, readOnly, onOpenFull }) {
   const { T } = mk(lang);
+  const [tab, setTab] = useState("orders");
   const [note, setNote] = useState("");
   const coe = okDate(file?.contingencies?.coe) || okDate(file?.closing);
   const faltan = coe ? daysBetween(today(), coe) : null;
@@ -203,7 +334,6 @@ function FilePane({ file, lang, onSave, who, readOnly, onOpenFull }) {
   const dias = daysInStage(file);
   const head = contingencyHeadline(file);
   const proximos = upcomingDeadlines(file, 3);
-  const ultima = latestNote(file);
 
   return (
     <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 14 }}>
@@ -227,84 +357,116 @@ function FilePane({ file, lang, onSave, who, readOnly, onOpenFull }) {
         <div style={{ fontSize: 10, color: C.mid, marginTop: 6 }}>{file.stage}</div>
       </div>
 
-      <div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 9.5, color: C.soft, letterSpacing: "1px" }}>{T("orders")}</span>
-          {!readOnly && !oneShotDone(file) && (
-            <button className="hov" onClick={() => onSave(stampOneShot(file, who))}
-              title={T("oneShotHint")}
-              style={{ marginLeft: "auto", background: C.gold, color: C.bg, border: "none",
-                borderRadius: 5, padding: "5px 11px", fontFamily: "DM Mono", fontSize: 10,
-                fontWeight: 500, cursor: "pointer" }}>{T("oneShot")}</button>
-          )}
-        </div>
-        <div style={{ display: "grid", gap: 4 }}>
-          {ORDERS.map(def => (
-            <OrderRow key={def.id} file={file} def={def} lang={lang}
-              onSave={onSave} readOnly={readOnly} />
-          ))}
-        </div>
-        <div style={{ fontSize: 9, color: C.dim, marginTop: 6, lineHeight: 1.5 }}>{T("ordersHint")}</div>
+      {/* SOLAPAS — un archivo se trabaja por partes, y la procesadora
+          no deberia hacer scroll por cinco bloques para llegar al que
+          necesita. El contador en la solapa dice si hay algo ahi sin
+          tener que entrar. */}
+      <div style={{ display: "flex", gap: 14, borderBottom: `1px solid ${C.line}`, paddingBottom: 7 }}>
+        {[
+          ["orders",   T("orders"),      pendingOrders(file).length],
+          ["intake",   T("intake"),      intakeCompleteness(file).total - intakeCompleteness(file).filled],
+          ["findings", T("findings"),    openFindings(file).length],
+          ["dates",    T("derivedDates"), proximos.filter(r => r.overdue).length],
+          ["notes",    T("notes"),       noteEntries(file).length],
+        ].map(([id, label, n]) => {
+          const on = tab === id;
+          return (
+            <button key={id} className="hov" onClick={() => setTab(id)}
+              style={{ background: "transparent", border: "none", cursor: "pointer",
+                color: on ? C.text : C.dim, fontSize: 10, fontFamily: "DM Mono",
+                letterSpacing: ".5px", padding: "0 0 5px",
+                borderBottom: `2px solid ${on ? C.gold : "transparent"}` }}>
+              {String(label).replace(/^[^A-Za-zÁ-ú]+/, "")}
+              {n > 0 && <span style={{ color: id === "findings" || id === "dates" ? C.red : C.gold }}> {n}</span>}
+            </button>
+          );
+        })}
       </div>
 
-      <div>
-        <div style={{ fontSize: 9.5, color: C.soft, letterSpacing: "1px", marginBottom: 7 }}>
-          {T("findings")}
-        </div>
-        <Findings file={file} lang={lang} onSave={onSave} who={who} readOnly={readOnly} />
-      </div>
-
-      {proximos.length > 0 && (
+      {tab === "orders" && (
         <div>
-          <div style={{ fontSize: 9.5, color: C.soft, letterSpacing: "1px", marginBottom: 6 }}>
-            {T("derivedDates")}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 9.5, color: C.soft, letterSpacing: "1px" }}>{T("orders")}</span>
+            {!readOnly && !oneShotDone(file) && (
+              <button className="hov" onClick={() => onSave(stampOneShot(file, who))}
+                title={T("oneShotHint")}
+                style={{ marginLeft: "auto", background: C.gold, color: C.bg, border: "none",
+                  borderRadius: 5, padding: "5px 11px", fontFamily: "DM Mono", fontSize: 10,
+                  fontWeight: 500, cursor: "pointer" }}>{T("oneShot")}</button>
+            )}
           </div>
-          {proximos.map(r => (
-            <div key={r.stage} style={{ display: "flex", gap: 8, fontSize: 10,
-              fontFamily: "DM Mono", color: r.overdue ? C.red : C.soft, marginBottom: 3 }}>
-              <span style={{ minWidth: 52, color: r.overdue ? C.red : C.text }}>{md(r.startBy)}</span>
-              <span style={{ flex: 1 }}>{r.stage}</span>
-              <span style={{ color: C.dim, fontSize: 9 }}>{r.owner || ""}</span>
-            </div>
-          ))}
-          {head && (
-            <div style={{ fontSize: 9.5, color: C.dim, marginTop: 5 }}>
-              {head.short} {md(head.date)}
-            </div>
-          )}
+          <div style={{ display: "grid", gap: 4 }}>
+            {ORDERS.map(def => (
+              <OrderRow key={def.id} file={file} def={def} lang={lang}
+                onSave={onSave} readOnly={readOnly} />
+            ))}
+          </div>
+          <div style={{ fontSize: 9, color: C.dim, marginTop: 6, lineHeight: 1.5 }}>{T("ordersHint")}</div>
         </div>
       )}
 
-      <div>
-        <div style={{ fontSize: 9.5, color: C.soft, letterSpacing: "1px", marginBottom: 6 }}>
-          {T("notes")} · {noteEntries(file).length}
-        </div>
-        {ultima && (
-          <div style={{ borderLeft: `2px solid ${C.line}`, paddingLeft: 9, marginBottom: 8 }}>
-            <div style={{ fontSize: 9, color: C.dim }}>
-              {ultima.legacy ? T("noteLegacy")
-                : `${String(ultima.at).slice(0, 10)}${ultima.by ? " · " + ultima.by : ""}`}
+      {tab === "intake" && (
+        <IntakePane file={file} lang={lang} onSave={onSave} readOnly={readOnly} />
+      )}
+
+      {tab === "findings" && (
+        <Findings file={file} lang={lang} onSave={onSave} who={who} readOnly={readOnly} />
+      )}
+
+      {tab === "dates" && (
+        proximos.length === 0
+          ? <div style={{ fontSize: 10.5, color: C.dim }}>{T("noDeadlines")}</div>
+          : (
+            <div>
+              {proximos.map(r => (
+                <div key={r.stage} style={{ display: "flex", gap: 8, fontSize: 10,
+                  fontFamily: "DM Mono", color: r.overdue ? C.red : C.soft, marginBottom: 4 }}>
+                  <span style={{ minWidth: 52, color: r.overdue ? C.red : C.text }}>{md(r.startBy)}</span>
+                  <span style={{ flex: 1 }}>{r.stage}</span>
+                  <span style={{ color: C.dim, fontSize: 9 }}>{r.owner || ""}</span>
+                </div>
+              ))}
+              {head && (
+                <div style={{ fontSize: 9.5, color: C.dim, marginTop: 6 }}>
+                  {head.short} {md(head.date)}
+                </div>
+              )}
             </div>
-            <div style={{ fontSize: 11, color: C.soft, lineHeight: 1.5, marginTop: 2 }}>{ultima.text}</div>
-          </div>
-        )}
-        {!readOnly && (
-          <>
-            <input value={note} onChange={e => setNote(e.target.value)}
-              placeholder={T("notePlaceholder")}
-              style={{ background: C.bg, border: `1px solid ${C.edge}`, borderRadius: 5,
-                color: C.text, padding: "7px 9px", fontSize: 11, fontFamily: "DM Mono", width: "100%" }} />
-            <div style={{ fontSize: 9, color: C.gold, marginTop: 4 }}>{T("notesEnglishOnly")}</div>
-            <button className="hov" disabled={!note.trim()}
-              onClick={() => { onSave(addNoteEntry(file, note, who, file.stage)); setNote(""); }}
-              style={{ marginTop: 6, width: "100%", background: note.trim() ? "rgba(126,200,164,.1)" : C.card,
-                color: note.trim() ? C.green : C.edge, borderRadius: 5, padding: "6px 0",
-                fontFamily: "DM Mono", fontSize: 10.5,
-                border: `1px solid ${note.trim() ? C.green : C.line}`,
-                cursor: note.trim() ? "pointer" : "not-allowed" }}>{T("addUpdate")}</button>
-          </>
-        )}
-      </div>
+          )
+      )}
+
+      {tab === "notes" && (
+        <div>
+          {noteEntries(file).slice(0, 4).map((n, i) => (
+            <div key={i} style={{ borderLeft: `2px solid ${i === 0 ? C.green : C.line}`,
+              paddingLeft: 9, marginBottom: 9 }}>
+              <div style={{ fontSize: 9, color: C.dim }}>
+                {n.legacy ? T("noteLegacy")
+                  : `${String(n.at).slice(0, 10)}${n.by ? " · " + n.by : ""}`}
+                {n.stage ? ` · ${n.stage}` : ""}
+              </div>
+              <div style={{ fontSize: 11, color: i === 0 ? C.text : C.soft,
+                lineHeight: 1.5, marginTop: 2 }}>{n.text}</div>
+            </div>
+          ))}
+          {!readOnly && (
+            <>
+              <input value={note} onChange={e => setNote(e.target.value)}
+                placeholder={T("notePlaceholder")}
+                style={{ background: C.bg, border: `1px solid ${C.edge}`, borderRadius: 5,
+                  color: C.text, padding: "7px 9px", fontSize: 11, fontFamily: "DM Mono", width: "100%" }} />
+              <div style={{ fontSize: 9, color: C.gold, marginTop: 4 }}>{T("notesEnglishOnly")}</div>
+              <button className="hov" disabled={!note.trim()}
+                onClick={() => { onSave(addNoteEntry(file, note, who, file.stage)); setNote(""); }}
+                style={{ marginTop: 6, width: "100%", background: note.trim() ? "rgba(126,200,164,.1)" : C.card,
+                  color: note.trim() ? C.green : C.edge, borderRadius: 5, padding: "6px 0",
+                  fontFamily: "DM Mono", fontSize: 10.5,
+                  border: `1px solid ${note.trim() ? C.green : C.line}`,
+                  cursor: note.trim() ? "pointer" : "not-allowed" }}>{T("addUpdate")}</button>
+            </>
+          )}
+        </div>
+      )}
 
       {onOpenFull && (
         <button className="hov" onClick={() => onOpenFull(file)}
