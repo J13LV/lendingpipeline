@@ -256,6 +256,8 @@ export const UI = {
   sigIdle:{ es:"Estancado", en:"Idle" },
 
   // ─── ritmo del archivo ───
+  langHint:{ es:"Cambia tu idioma en todo el sistema, no solo en este archivo",
+             en:"Changes your language across the whole system, not just this file" },
   hdPace:{ es:"RITMO", en:"PACE" },
   paceDays:{ es:"{n}d", en:"{n}d" },
   paceAhead:{ es:"adelantado", en:"ahead" },

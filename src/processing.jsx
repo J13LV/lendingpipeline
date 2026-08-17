@@ -502,7 +502,7 @@ function FilePane({ file, lang, onSave, who, readOnly, onOpenFull }) {
 }
 
 // ─── LA PANTALLA ───────────────────────────────────────────────────
-export default function ProcessingView({ files, profile, lang, onSaveFile, onOpenFull }) {
+export default function ProcessingView({ files, profile, lang, onSetLang, onSaveFile, onOpenFull }) {
   const { T, P } = mk(lang);
   const esAdmin = profile?.role === "admin";
   // Una procesadora ve SU cola y nada mas. El admin puede pararse en
@@ -529,7 +529,7 @@ export default function ProcessingView({ files, profile, lang, onSaveFile, onOpe
         {/* COLA */}
         <div style={{ borderRight: `1px solid ${C.line}`, background: C.card,
           padding: "12px 10px", maxHeight: 620, overflowY: "auto" }}>
-          <div style={{ display: "flex", gap: 5, marginBottom: 12, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 5, marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
             {PROCESSOR_IDS.map(id => {
               const on = quien === id, puede = esAdmin || id === propia;
               if (!puede) return null;
@@ -542,6 +542,20 @@ export default function ProcessingView({ files, profile, lang, onSaveFile, onOpe
                 </button>
               );
             })}
+            {/* Martha y Tina entran directo a su cola: sin esto tendrian
+                que salir de la pantalla para cambiar de idioma. */}
+            {onSetLang && (
+              <div style={{ marginLeft: "auto", display: "flex",
+                border: `1px solid ${C.edge}`, borderRadius: 5, overflow: "hidden" }}>
+                {["es", "en"].map(l => (
+                  <button key={l} className="hov" onClick={() => onSetLang(l)}
+                    style={{ background: lang === l ? C.gold : "transparent",
+                      color: lang === l ? C.bg : C.mid, border: "none",
+                      padding: "4px 8px", fontSize: 9, fontFamily: "DM Mono", cursor: "pointer" }}>
+                    {l.toUpperCase()}
+                  </button>))}
+              </div>
+            )}
           </div>
 
           {cola.length === 0 && (

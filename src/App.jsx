@@ -1113,7 +1113,7 @@ export default function App() {
       <div style={{padding:"20px 24px"}}>
 
         {view==="processing"&&(isAdmin||isProcessor)&&<ProcessingView
-          files={files} profile={profile} lang={lang}
+          files={files} profile={profile} lang={lang} onSetLang={setLang}
           onSaveFile={(id,next)=>updateFile(id,next)}
           onOpenFull={f=>setDetail(f)}
         />}
@@ -1569,7 +1569,7 @@ export default function App() {
         </div>}
       </div>
 
-      {detail&&<DetailModal file={detail} profile={profile} allFiles={files} L={L} lang={lang} onClose={()=>setDetail(null)}
+      {detail&&<DetailModal file={detail} profile={profile} allFiles={files} L={L} lang={lang} onSetLang={setLang} onClose={()=>setDetail(null)}
         onSave={p=>{updateFile(detail.id,p);setDetail(f=>({...f,...p}));}}
         onDelete={()=>deleteFile(detail.id)}
         onAdvance={()=>{advance(detail.id);setDetail(f=>{const i=ALL_STAGES.findIndex(s=>s.stage===f.stage);const n=ALL_STAGES[i+1];return n?{...f,stage:n.stage,daysInStage:0}:f;});}}
@@ -4704,7 +4704,7 @@ function FindingsPanel({file,profile,onSave}){
   );
 }
 
-function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdvance,onCloseFile,onReopen,onPrep,onArchive,onRestore,onContinuePrep,isClosed}){
+function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDelete,onAdvance,onCloseFile,onReopen,onPrep,onArchive,onRestore,onContinuePrep,isClosed}){
   const isAdmin = profile?.role === "admin";
   const isAssistant = profile?.role === "assistant";
   const [showHistory, setShowHistory] = useState(false);
@@ -4847,9 +4847,17 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
         {/* ETAPA — el campo que mas se toca. Estaba al fondo de la solapa
             PRÉSTAMO, despues del DPA y del BPS. Aqui se cambia desde
             cualquier solapa sin ir a buscarlo. */}
+        {/* A la DERECHA, en la misma columna del ojo que la etapa del
+            encabezado: ves el estado arriba y lo corriges abajo sin
+            cruzar la pantalla. Y la izquierda, que ya carga nombre,
+            producto, monto, lender, LO y procesadora, se descarga. */}
         {!isClosed&&!inPrep&&!isReferredOut&&(
           <div style={{padding:"9px 22px",borderTop:"1px solid #21262D",
-            display:"flex",alignItems:"center",gap:11,flexShrink:0}}>
+            display:"flex",alignItems:"center",gap:11,flexShrink:0,justifyContent:"flex-end"}}>
+            <span style={{fontSize:9,color:"#484F58"}}>
+              {daysInStage(file)===null?"—":`${daysInStage(file)}d`}
+              {(()=>{const c=stageClock(file.stage,file);return c?` · ${TX("hdCeiling",{n:c.late})}`:"";})()}
+            </span>
             <span style={{fontSize:8,letterSpacing:"1.3px",color:"#484F58"}}>{TX("hdStage")}</span>
             <select value={stage} onChange={e=>{setStage(e.target.value);
                 onSave({stage:e.target.value, stageEnteredAt:today(), daysInStage:0});}}
@@ -4861,10 +4869,6 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
                 <option value={REFERRED_OUT_STAGE} style={{color:"#A78BFA",background:"#0D1117"}}>🔀 REFERRED OUT — EXTERNAL BANK</option>
               </optgroup>
             </select>
-            <span style={{fontSize:9,color:"#484F58"}}>
-              {daysInStage(file)===null?"—":`${daysInStage(file)}d`}
-              {(()=>{const c=stageClock(file.stage,file);return c?` · ${TX("hdCeiling",{n:c.late})}`:"";})()}
-            </span>
           </div>
         )}
 
@@ -5491,8 +5495,28 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
                 {btn("arch",TX("archBtn"),"#8B949E",onArchive,A.archive)}
               </>)}
 
+              <div style={{flex:1,minWidth:12}}/>
+
+              {/* IDIOMA — el toggle vivia solo en la barra principal, que
+                  el archivo tapa por completo. Martha y Tina abrian su
+                  cola y no tenian como cambiarlo sin cerrar todo.
+                  Cambia la preferencia de quien lo toca, no del archivo:
+                  un archivo en ingles y el siguiente en espanol confunde
+                  mas de lo que ayuda. */}
+              {onSetLang&&(
+                <div style={{display:"flex",border:"1px solid #30363D",borderRadius:6,overflow:"hidden"}}>
+                  {["es","en"].map(l=>(
+                    <button key={l} className="hov" onClick={()=>onSetLang(l)}
+                      title={TX("langHint")}
+                      style={{background:lang===l?"#F5A623":"transparent",
+                        color:lang===l?"#0D1117":"#6E7681",border:"none",padding:"7px 11px",
+                        fontSize:10,fontFamily:"DM Mono",cursor:"pointer"}}>
+                      {l.toUpperCase()}
+                    </button>))}
+                </div>
+              )}
+
               {isAdmin&&(<>
-                <div style={{flex:1,minWidth:12}}/>
                 <div style={{width:1,height:22,background:"#21262D",margin:"0 4px"}}/>
                 <button className="hov"
                   onClick={()=>{if(confirm(TX("deleteAsk")))onDelete();}}
