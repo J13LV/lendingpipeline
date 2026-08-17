@@ -158,6 +158,36 @@ export const UI = {
                       en:"external · also processes for other branches" },
   processorSheet:{ es:"↓ HOJA DE {n}", en:"↓ {n}'S SHEET" },
 
+  // ─── hallazgos ───
+  findings:{ es:"⚑ HALLAZGOS", en:"⚑ FINDINGS" },
+  findingsHint:{ es:"Lo que alguien vio y todavía no está resuelto. Vive con el archivo, no en un correo — quien lo abra lo ve.",
+                 en:"What someone spotted and is not resolved yet. It lives with the file, not in an email — whoever opens it sees it." },
+  findingOpen:{ es:"{n} abierto(s)", en:"{n} open" },
+  findingNone:{ es:"Nada abierto en este archivo.", en:"Nothing open on this file." },
+  findingAdd:{ es:"+ LEVANTAR HALLAZGO", en:"+ RAISE A FINDING" },
+  findingItem:{ es:"PUNTO", en:"ITEM" },
+  findingWhat:{ es:"QUÉ PASA", en:"WHAT IS WRONG" },
+  findingWhatPlaceholder:{ es:"Hueco de 4 meses sin carta de explicación",
+                           en:"4-month gap with no letter of explanation" },
+  findingWaiting:{ es:"SE ESPERA", en:"WAITING ON" },
+  findingSave:{ es:"GUARDAR HALLAZGO", en:"SAVE FINDING" },
+  findingResolve:{ es:"RESOLVER", en:"RESOLVE" },
+  findingResolved:{ es:"resuelto {d} · {who}", en:"resolved {d} · {who}" },
+  findingDaysOpen:{ es:"{n}d abierto", en:"{n}d open" },
+  findingTookDays:{ es:"tardó {n}d", en:"took {n}d" },
+  findingHistory:{ es:"RESUELTOS", en:"RESOLVED" },
+  findingNeedsText:{ es:"Escribe qué pasa — un hallazgo sin descripción no le sirve a nadie.",
+                     en:"Write what is wrong — a finding with no description helps nobody." },
+
+  // ─── registro ───
+  register:{ es:"✓ REGISTRADO CON EL LENDER", en:"✓ REGISTERED WITH LENDER" },
+  registerHint:{ es:"Marca la fecha de registro, avanza la etapa y el archivo pasa a la procesadora asignada.",
+                 en:"Stamps the registration date, advances the stage, and hands the file to the assigned processor." },
+  registerConfirm:{ es:"¿Registrado con el lender? Se marca hoy y el archivo pasa a {p}.",
+                    en:"Registered with the lender? It stamps today and hands the file to {p}." },
+  registeredOn:{ es:"Registrado {d}", en:"Registered {d}" },
+  registeredBy:{ es:" por {who}", en:" by {who}" },
+
   // contingencias
   anchorHint:  { es:"Todo se cuenta desde aquí. Si el archivo pasó días en Under Contract, ya se gastaron.",
                  en:"Everything counts from here. Days the file spent in Under Contract are already spent." },
