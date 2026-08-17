@@ -191,6 +191,53 @@ export const UI = {
                      en:"⚠ Lender changed — it has to be registered again with {n}" },
   registerTimes:{ es:"registro {n} de este archivo", en:"registration {n} on this file" },
 
+  // ─── guarda del lender ───
+  registerNoLender:{ es:"ASIGNA UN LENDER PRIMERO", en:"ASSIGN A LENDER FIRST" },
+  registerNoLenderHint:{ es:"Registrar es registrar CON alguien. Escoge el lender en la solapa LENDER y este botón se enciende solo.",
+                         en:"Registering means registering WITH somebody. Pick the lender on the LENDER tab and this button turns on by itself." },
+
+  // ─── números del préstamo ───
+  loanNumbers:{ es:"NÚMEROS DEL PRÉSTAMO", en:"LOAN NUMBERS" },
+  loanNoInvestor:{ es:"LOAN # INVESTOR", en:"INVESTOR LOAN #" },
+  loanNoLender:{ es:"LOAN # LENDER", en:"LENDER LOAN #" },
+  loanNoHint:{ es:"Los devuelve Arive al registrar. Viven con este registro — si cambias de lender, el nuevo trae los suyos.",
+               en:"Arive returns them at registration. They live with this registration — change lender and the new one brings its own." },
+  loanNoOne:{ es:"En broker suele bastar uno", en:"In broker one is usually enough" },
+
+  // ─── divulgaciones ───
+  discSent:{ es:"Divulgaciones enviadas", en:"Disclosures sent" },
+  discEsigned:{ es:"Firmadas por el cliente", en:"Signed by the borrower" },
+  barrettDisc:{ es:"Barrett Disclosure en Arive", en:"Barrett Disclosure in Arive" },
+  discHint:{ es:"Salen el mismo día del registro. Solo la firma es un toque aparte — nadie más sabe cuándo firmó.",
+             en:"They go out the same day as registration. Only the signature is a separate tap — nobody else knows when they signed." },
+
+  // ─── hitos ───
+  milestones:{ es:"HITOS", en:"MILESTONES" },
+  milestonesHint:{ es:"Fechas de la forma de Barrett que ningún avance de etapa produce. Un toque sella hoy; el segundo lo quita.",
+                   en:"Dates on Barrett's form that no stage advance produces. One tap stamps today; a second one removes it." },
+  milestoneNone:{ es:"pendiente", en:"pending" },
+
+  // ─── resultado de underwriting ───
+  uwResult:{ es:"RESULTADO DE UNDERWRITING", en:"UNDERWRITING OUTCOME" },
+  uwResultHint:{ es:"Aprobado, suspendido o denegado no son la misma fecha. Suspendido enciende el rojo de la hoja de Martha.",
+                 en:"Approved, suspended and denied are not the same date. Suspended turns on the red on Martha's sheet." },
+  uwResultNone:{ es:"Sin resultado registrado todavía.", en:"No outcome recorded yet." },
+  uwResultOn:{ es:"{o} el {d}", en:"{o} on {d}" },
+  uwResultNote:{ es:"Qué dijo el underwriter", en:"What the underwriter said" },
+  uwClear:{ es:"QUITAR", en:"CLEAR" },
+
+  // ─── fecha prometida por el vendor ───
+  orderDue:{ es:"Prometida", en:"Due" },
+  orderDueHint:{ es:"La fecha que promete el vendor. Si pasa y no llegó, sale en rojo.",
+                 en:"The date the vendor promises. If it passes with nothing received, it turns red." },
+  orderLate:{ es:"pasó la fecha prometida", en:"past the promised date" },
+
+  // ─── contrato ───
+  contractSignal:{ es:"FIRMA DEL COMPRADOR", en:"CONTRACT SIGNAL DATE" },
+  contractSignalHint:{ es:"Cuándo firmó el comprador. El reloj sigue corriendo desde la aceptación del vendedor — esta no mueve ninguna fecha.",
+                       en:"When the buyer signed. The clock still runs from the seller's acceptance — this moves no deadline." },
+  signalGap:{ es:"{n}d entre la firma y la aceptación", en:"{n}d between signing and acceptance" },
+
   // ─── pantalla de procesamiento ───
   processingTab:{ es:"⚙ PROCESAMIENTO", en:"⚙ PROCESSING" },
   orders:{ es:"PEDIDOS", en:"ORDERS" },

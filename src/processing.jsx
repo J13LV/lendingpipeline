@@ -29,6 +29,11 @@ import {
   noteEntries, addNoteEntry, contingencyHeadline, upcomingDeadlines,
   setOrderNote, miLooksWrong, INTAKE_GROUPS, INTAKE_FIELDS, intakeValue, intakeApplies,
   setIntake, intakeCompleteness, dpaReady, allOrderStates, pendingOrders,
+  currentRegistration, stampRegistrationDate, setRegistrationField,
+  loanNumberInvestor, loanNumberLender, MILESTONES, visibleMilestones,
+  milestoneAt, stampMilestone, UW_OUTCOME_IDS, uwOutcomeMeta, uwOutcome,
+  uwOutcomeAt, setUwOutcome, clearUwOutcome, signalColor,
+  setOrderDue, orderDue, orderPastDue,
 } from "./pipelineCore";
 
 // Autocontenido a proposito: recibe `lang` y traduce solo. Asi no
@@ -40,6 +45,8 @@ const mk = lang => ({
 });
 
 const md = iso => iso ? `${iso.slice(5, 7)}/${iso.slice(8, 10)}` : "—";
+// Las notas del motor viven como note_es / note_en.
+const PN = (o, lang) => o ? (o["note_" + lang] ?? "") : "";
 const C = {
   bg: "#0D1117", card: "#161B22", line: "#21262D", edge: "#30363D",
   dim: "#484F58", mid: "#6E7681", soft: "#8B949E", text: "#E6EDF3",
@@ -91,7 +98,10 @@ function OrderRow({ file, def, lang, onSave, readOnly }) {
     );
   };
 
-  const tarde = o.state === "ordered" && o.days >= 7;
+  // Rojo si el vendor paso su PROPIA fecha prometida; dorado si solo lleva
+  // una semana esperando. La promesa rota pesa mas que la espera larga.
+  const vencido = orderPastDue(file, def.id);
+  const tarde = !vencido && o.state === "ordered" && o.days >= 7;
   const [nota, setNota] = useState(o.note || "");
   const [abierta, setAbierta] = useState(false);
 
@@ -101,8 +111,8 @@ function OrderRow({ file, def, lang, onSave, readOnly }) {
         <span style={{ color: C.text, fontSize: 11 }}>
           {P(def)}
           {o.state === "ordered" && (
-            <span style={{ color: tarde ? C.red : C.dim, fontSize: 9, marginLeft: 7 }}>
-              {T("orderWaiting", { n: o.days })}
+            <span style={{ color: vencido ? C.red : tarde ? C.gold : C.dim, fontSize: 9, marginLeft: 7 }}>
+              {vencido ? T("orderLate") : T("orderWaiting", { n: o.days })}
             </span>
           )}
         </span>
@@ -117,6 +127,18 @@ function OrderRow({ file, def, lang, onSave, readOnly }) {
           </button>
         )}
       </div>
+
+      {def.id === "appraisal" && !readOnly && o.req && (
+        <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 6 }}>
+          <span style={{ fontSize: 9, color: C.dim }}>{T("orderDue")}</span>
+          <input type="date" value={orderDue(file, def.id) || ""}
+            onChange={e => onSave(setOrderDue(file, def.id, e.target.value))}
+            title={T("orderDueHint")}
+            style={{ background: C.bg, border: `1px solid ${vencido ? C.red : C.edge}`,
+              borderRadius: 4, color: vencido ? C.red : C.text, padding: "3px 7px",
+              fontSize: 10, fontFamily: "DM Mono" }} />
+        </div>
+      )}
 
       {o.note && !abierta && (
         <div style={{ fontSize: 10, color: C.gold, lineHeight: 1.45, marginTop: 5,
@@ -259,6 +281,155 @@ export function IntakePane({ file, lang, onSave, readOnly }) {
   );
 }
 
+// ─── HITOS, DIVULGACIONES Y RESULTADO DE UW ────────────────────────
+// Los doce campos de la forma de Barrett que ningun avance de etapa
+// produce. Se exporta porque el mismo bloque tiene que verse en la
+// pantalla de procesamiento Y en el archivo completo: si Martha marca
+// algo y Jose no lo ve, volvemos a los tres correos por semana.
+//
+// Sin colores nuevos: gris sin sello, dorado se avecina, verde hecho,
+// rojo vencido. Los mismos seis de siempre.
+export function MilestonesPane({ file, lang, onSave, readOnly }) {
+  const { T, P } = mk(lang);
+  const [nota, setNota] = useState("");
+  const [inv, setInv] = useState(loanNumberInvestor(file) || "");
+  const [len, setLen] = useState(loanNumberLender(file) || "");
+  const reg = currentRegistration(file);
+  const res = uwOutcome(file);
+
+  const sello = (hecho, label, onClick, roto) => (
+    <button className="hov" disabled={readOnly}
+      onClick={readOnly ? undefined : onClick}
+      style={{ background: hecho ? "rgba(6,214,160,.12)" : "transparent",
+        color: hecho ? C.ok : roto ? C.red : C.soft,
+        border: `1px solid ${hecho ? C.ok : roto ? C.red : C.edge}`,
+        borderRadius: 4, padding: "4px 9px", fontSize: 10, fontFamily: "DM Mono",
+        cursor: readOnly ? "default" : "pointer", whiteSpace: "nowrap" }}>
+      {label}
+    </button>
+  );
+
+  const fs = { background: C.bg, border: `1px solid ${C.edge}`, borderRadius: 4,
+    color: C.text, padding: "5px 8px", fontSize: 10.5, fontFamily: "DM Mono", width: "100%" };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+      {/* DIVULGACIONES — el envio ya viene sellado del registro; la firma no */}
+      {reg && (
+        <div>
+          <div style={{ fontSize: 9, color: C.soft, letterSpacing: "1px", marginBottom: 7 }}>
+            {T("discSent").toUpperCase()}
+          </div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 10, padding: "4px 9px", borderRadius: 4, fontFamily: "DM Mono",
+              background: reg.discSentAt ? "rgba(6,214,160,.12)" : "transparent",
+              color: reg.discSentAt ? C.ok : C.dim,
+              border: `1px solid ${reg.discSentAt ? C.ok : C.edge}` }}>
+              {T("discSent")} {md(reg.discSentAt)}
+            </span>
+            {sello(!!reg.discEsignedAt,
+              `${T("discEsigned")} ${reg.discEsignedAt ? md(reg.discEsignedAt) : ""}`.trim(),
+              () => onSave(stampRegistrationDate(file, "discEsignedAt")))}
+            {sello(!!reg.barrettDiscSentAt,
+              `${T("barrettDisc")} ${reg.barrettDiscSentAt ? md(reg.barrettDiscSentAt) : ""}`.trim(),
+              () => onSave(stampRegistrationDate(file, "barrettDiscSentAt")))}
+          </div>
+          <div style={{ fontSize: 9, color: C.dim, marginTop: 5, lineHeight: 1.5 }}>{T("discHint")}</div>
+        </div>
+      )}
+
+      {/* NUMEROS DEL PRESTAMO — viven en el ciclo, no en el archivo */}
+      {reg && !readOnly && (
+        <div>
+          <div style={{ fontSize: 9, color: C.soft, letterSpacing: "1px", marginBottom: 7 }}>
+            {T("loanNumbers")}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <div>
+              <div style={{ fontSize: 9, color: C.dim, marginBottom: 3 }}>{T("loanNoInvestor")}</div>
+              <input value={inv} onChange={e => setInv(e.target.value)}
+                onBlur={() => onSave(setRegistrationField(file, { loanNumberInvestor: inv }))}
+                style={fs} />
+            </div>
+            <div>
+              <div style={{ fontSize: 9, color: C.dim, marginBottom: 3 }}>
+                {T("loanNoLender")} <span style={{ color: C.edge }}>· {T("loanNoOne")}</span>
+              </div>
+              <input value={len} onChange={e => setLen(e.target.value)}
+                onBlur={() => onSave(setRegistrationField(file, { loanNumberLender: len }))}
+                style={fs} />
+            </div>
+          </div>
+          <div style={{ fontSize: 9, color: C.dim, marginTop: 5, lineHeight: 1.5 }}>{T("loanNoHint")}</div>
+        </div>
+      )}
+
+      {/* RESULTADO DE UW — tres resultados, no una fecha */}
+      <div>
+        <div style={{ fontSize: 9, color: C.soft, letterSpacing: "1px", marginBottom: 7 }}>
+          {T("uwResult")}
+        </div>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+          {UW_OUTCOME_IDS.map(id => {
+            const m = uwOutcomeMeta(id), on = res === id;
+            const col = signalColor(m.signal);
+            return (
+              <button key={id} className="hov" disabled={readOnly}
+                onClick={readOnly ? undefined : () => onSave(setUwOutcome(file,
+                  { outcome: id, note: nota, by: file.__who || null }))}
+                style={{ background: on ? col : "transparent", color: on ? C.bg : col,
+                  border: `1px solid ${col}`, borderRadius: 4, padding: "4px 10px",
+                  fontSize: 10, fontFamily: "DM Mono",
+                  cursor: readOnly ? "default" : "pointer" }}>
+                {P(m)}
+              </button>
+            );
+          })}
+          {res && !readOnly && (
+            <button className="hov" onClick={() => onSave(clearUwOutcome(file))}
+              style={{ background: "transparent", border: "none", color: C.dim,
+                fontSize: 9.5, fontFamily: "DM Mono", cursor: "pointer" }}>
+              {T("uwClear")}
+            </button>
+          )}
+        </div>
+        {res ? (
+          <div style={{ fontSize: 10, color: signalColor(uwOutcomeMeta(res).signal), marginTop: 5 }}>
+            {T("uwResultOn", { o: P(uwOutcomeMeta(res)), d: md(uwOutcomeAt(file)) })}
+            {file.uwResult?.note ? ` · ${file.uwResult.note}` : ""}
+            {PN(uwOutcomeMeta(res), lang) ? (
+              <div style={{ fontSize: 9, color: C.dim, marginTop: 2 }}>{PN(uwOutcomeMeta(res), lang)}</div>
+            ) : null}
+          </div>
+        ) : (
+          <div style={{ fontSize: 10, color: C.dim, marginTop: 5 }}>{T("uwResultNone")}</div>
+        )}
+        {!readOnly && !res && (
+          <input value={nota} onChange={e => setNota(e.target.value)}
+            placeholder={T("uwResultNote")} style={{ ...fs, marginTop: 6 }} />
+        )}
+        <div style={{ fontSize: 9, color: C.dim, marginTop: 5, lineHeight: 1.5 }}>{T("uwResultHint")}</div>
+      </div>
+
+      {/* HITOS SUELTOS */}
+      <div>
+        <div style={{ fontSize: 9, color: C.soft, letterSpacing: "1px", marginBottom: 7 }}>
+          {T("milestones")}
+        </div>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {visibleMilestones(file).map(m => {
+            const at = milestoneAt(file, m.id);
+            return sello(!!at, `${P(m)} ${at ? md(at) : ""}`.trim(),
+              () => onSave(stampMilestone(file, m.id)));
+          })}
+        </div>
+        <div style={{ fontSize: 9, color: C.dim, marginTop: 5, lineHeight: 1.5 }}>{T("milestonesHint")}</div>
+      </div>
+    </div>
+  );
+}
+
 // ─── HALLAZGOS, VERSION COMPACTA ───────────────────────────────────
 function Findings({ file, lang, onSave, who, readOnly }) {
   const { T, P } = mk(lang);
@@ -388,6 +559,7 @@ function FilePane({ file, lang, onSave, who, readOnly, onOpenFull }) {
           ["orders",   T("orders"),      pendingOrders(file).length],
           ["intake",   T("intake"),      intakeCompleteness(file).total - intakeCompleteness(file).filled],
           ["findings", T("findings"),    openFindings(file).length],
+          ["checklist", T("milestones"),  0],
           ["dates",    T("derivedDates"), proximos.filter(r => r.overdue).length],
           ["notes",    T("notes"),       noteEntries(file).length],
         ].map(([id, label, n]) => {
@@ -433,6 +605,11 @@ function FilePane({ file, lang, onSave, who, readOnly, onOpenFull }) {
 
       {tab === "findings" && (
         <Findings file={file} lang={lang} onSave={onSave} who={who} readOnly={readOnly} />
+      )}
+
+      {tab === "checklist" && (
+        <MilestonesPane file={{ ...file, __who: who }} lang={lang}
+          onSave={onSave} readOnly={readOnly} />
       )}
 
       {tab === "dates" && (

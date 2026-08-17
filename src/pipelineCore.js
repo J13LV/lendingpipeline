@@ -555,6 +555,27 @@ export const CONTINGENCIES = [
 export const contingencyById = id => CONTINGENCIES.find(c => c.id === id) || null;
 export const CONTINGENCY_ANCHOR_FIELD = "contractAccepted";
 
+// ─── LA FECHA QUE VA ANTES DEL ANCLA ───────────────────────────────
+// En la forma de Barrett, Contract Signal Date abre el bloque RPA Review,
+// antes de Contract Date. Es cuando el comprador FIRMO la oferta; el ancla
+// sigue siendo cuando el vendedor la ACEPTO.
+//
+// NO mueve ningun calculo. Todas las contingencias siguen contando desde
+// la aceptacion, que es la fecha con consecuencia legal y de la que depende
+// el deposito. Esta se guarda porque la distancia entre las dos es tiempo
+// que el archivo ya gasto antes de que arrancara nuestro reloj — y si esa
+// distancia crece de forma sistematica, es una conversacion con el agente.
+export const CONTRACT_SIGNAL_FIELD = "contractSignal";
+export const contractSignalDate = file =>
+  okDate(file?.contingencies?.[CONTRACT_SIGNAL_FIELD]);
+
+// Dias entre la firma del comprador y la aceptacion del vendedor.
+export function signalToAcceptDays(file) {
+  const s = contractSignalDate(file);
+  const a = okDate(file?.contingencies?.[CONTINGENCY_ANCHOR_FIELD]);
+  return s && a ? daysBetween(s, a) : null;
+}
+
 // ─── OUTCOMES ──────────────────────────────────────────────────────
 // A contingency without a recorded result is a contingency nobody
 // closed out. `pending` is the honest default and it is not neutral —
@@ -801,7 +822,8 @@ const ALL_STAGE_ORDER = [
 // while the file sat in Under Contract.
 export function setContingencyDates(file, dates) {
   const clean = {};
-  for (const k of ["contractAccepted", ...CONTINGENCIES.map(c => c.field)])
+  for (const k of [CONTINGENCY_ANCHOR_FIELD, CONTRACT_SIGNAL_FIELD,
+                   ...CONTINGENCIES.map(c => c.field)])
     clean[k] = okDate(dates[k]);
   return {
     ...file,
@@ -3262,6 +3284,17 @@ export const INTAKE_FIELDS = [
     es: "MI requerido", en: "MI required" },
   { id: "miPct", group: "loan", type: "pct", only: { miRequired: "yes" },
     es: "MI %", en: "MI %" },
+  { id: "purposeOfLoan", group: "loan", type: "pick",
+    es: "Proposito del prestamo", en: "Purpose of loan",
+    note_es: "Decide si la hoja de procesamiento dice PURCHASE o REFINANCE",
+    note_en: "Decides whether the processing sheet says PURCHASE or REFINANCE",
+    opts: [
+      { v: "purchase",     es: "Compra",              en: "Purchase" },
+      { v: "cashout",      es: "Refi con retiro",     en: "Cash-out refi" },
+      { v: "rateterm",     es: "Refi sin retiro R/T", en: "No cash-out refi R/T" },
+      { v: "construction", es: "Construccion",        en: "Construction" },
+      { v: "other",        es: "Otro",                en: "Other" },
+    ] },
   { id: "escrowWaiver", group: "loan", type: "yesno",
     es: "Waiver de escrows", en: "Escrow waiver" },
 ];
@@ -3365,6 +3398,7 @@ export function orderState(file, id) {
     // Cuantos dias lleva esperando al vendor, o cuantos tardo en llegar.
     days: req ? (rec ? daysBetween(req, rec) : daysBetween(req)) : null,
     by: o.by || null, recBy: o.recBy || null,
+    due: okDate(o.due) || null,
     note: o.note || null, noteAt: o.noteAt || null, noteBy: o.noteBy || null,
   };
 }
@@ -3386,6 +3420,23 @@ export function stampOrder(file, id, which, by) {
     ? { ...prev, req: okDate(prev.req) || hoy, rec: hoy, recBy: by || null }
     : { ...prev, req: hoy, by: by || null };
   return { ...file, orders: { ...ordersOf(file), [id]: next } };
+}
+
+// La fecha que PROMETE el vendor, en el futuro. No es un toque de hoy: sale
+// del correo del tasador y hay que escogerla. Una vez capturada, el sistema
+// puede decir que el tasador se paso de su propia promesa — hoy nadie lo mide.
+export function setOrderDue(file, id, iso) {
+  if (!orderById(id)) return file;
+  const prev = ordersOf(file)[id] || {};
+  return { ...file, orders: { ...ordersOf(file), [id]: { ...prev, due: okDate(iso) || null } } };
+}
+export const orderDue = (file, id) => okDate(ordersOf(file)[id]?.due) || null;
+
+// El vendor prometio una fecha y no llego. Rojo, no dorado: se rompio.
+export function orderPastDue(file, id) {
+  const o = orderState(file, id);
+  const d = orderDue(file, id);
+  return !!(d && !o.rec && d < today());
 }
 
 // Lo que el vendor contesto. "Titulo dice tres dias mas" no cabe en una
@@ -3489,10 +3540,18 @@ export function isRegistered(file) {
   return !!r && (r.lenderId || null) === (file?.lenderId || null);
 }
 
+// Un ciclo abierto SIN lender no es "otro lender": es un dato que falta.
+// Sin esta salvedad, el archivo de prueba que se registro en blanco
+// gritaria "cambio de lender" el dia que se le asigne uno de verdad.
+export const registrationLenderUnknown = file => {
+  const r = currentRegistration(file);
+  return !!r && !r.lenderId;
+};
+
 // Hubo registro antes, pero con otro lender. Es el estado que la pantalla
 // tiene que gritar: el archivo retrocedio y espera a Tina.
 export const needsReRegistration = file =>
-  registrationCount(file) > 0 && !isRegistered(file);
+  registrationCount(file) > 0 && !isRegistered(file) && !registrationLenderUnknown(file);
 
 export const registeredAt = file => okDate(currentRegistration(file)?.at) || null;
 export const registeredBy = file => currentRegistration(file)?.by || null;
@@ -3501,6 +3560,118 @@ export const discEsignedAt = file => okDate(currentRegistration(file)?.discEsign
 
 export const canRegister = file =>
   file?.stage === REGISTRATION_STAGE && !isRegistered(file) && !file?.archived;
+
+// Registrar es registrar CON ALGUIEN. Sin lender el ciclo nace con
+// lenderId null, y el dia que se asigne el lender de verdad el sistema
+// gritaria "cambio de lender" sobre un archivo que solo llenaba un campo
+// vacio. El boton no se esconde: se queda apagado diciendo que falta.
+export function hasLender(file) {
+  const id = file?.lenderId;
+  if (!id) return false;
+  if (id === OTHER_LENDER_ID) return !!String(file?.lenderOther || "").trim();
+  return true;
+}
+export const registerBlocked = file => canRegister(file) && !hasLender(file);
+export const registerReady = file => canRegister(file) && hasLender(file);
+
+// Los numeros que Arive devuelve al registrar. Viven DENTRO del ciclo: el
+// lender nuevo asigna numeros nuevos, y los del lender viejo se quedan en
+// su ciclo sin ensuciar al vigente. En mini correspondent son dos —investor
+// y lender—; en broker suele bastar uno.
+export function setRegistrationField(file, patch) {
+  const a = registrationsOf(file);
+  if (!a.length) return file;
+  const i = a.length - 1;
+  const limpio = {};
+  for (const [k, v] of Object.entries(patch || {})) {
+    if (k === "discEsignedAt" || k === "barrettDiscSentAt") limpio[k] = okDate(v) || null;
+    else limpio[k] = String(v ?? "").trim() || null;
+  }
+  return { ...file, registrations: a.map((r, j) => j === i ? { ...r, ...limpio } : r) };
+}
+export const loanNumberInvestor = file => currentRegistration(file)?.loanNumberInvestor || null;
+export const loanNumberLender   = file => currentRegistration(file)?.loanNumberLender || null;
+export const barrettDiscSentAt  = file => okDate(currentRegistration(file)?.barrettDiscSentAt) || null;
+
+// Un toque sella hoy en el ciclo vigente. Segundo toque lo quita.
+export function stampRegistrationDate(file, campo) {
+  const cur = currentRegistration(file);
+  if (!cur) return file;
+  return setRegistrationField(file, { [campo]: cur[campo] ? null : today() });
+}
+
+// ─── 7X2. HITOS SUELTOS ────────────────────────────────────────────
+// Cuatro fechas de la forma de Barrett que ningun avance de etapa produce
+// y que tampoco son un pedido a un vendor. Son sellos: paso o no paso.
+//
+// `only` los condiciona igual que en admision — pedir el numero de caso FHA
+// en un Conventional es ruido, no un dato faltante.
+export const MILESTONES = [
+  { id: "fha_case",     es: "Numero de caso FHA pedido", en: "FHA case number requested",
+    only: f => baseProductOf(f?.type) === "fha" },
+  { id: "icd_task",     es: "Task de ICD",               en: "File task for ICD" },
+  { id: "resubmit_ctc", es: "Re-sometido para CTC",      en: "File resubmitted for CTC",
+    note_es: "Enciende el NARANJA de la leyenda de Martha",
+    note_en: "Turns on the ORANGE in Martha's legend" },
+  { id: "vvoe",         es: "VVOE",                      en: "VVOE",
+    note_es: "Verbal, justo antes de fondear", note_en: "Verbal, right before funding" },
+];
+export const milestoneById = id => MILESTONES.find(m => m.id === id) || null;
+export const milestonesOf = file =>
+  (file?.milestones && typeof file.milestones === "object") ? file.milestones : {};
+export const milestoneAt = (file, id) => okDate(milestonesOf(file)[id]) || null;
+export const milestoneApplies = (file, id) => {
+  const m = milestoneById(id);
+  return !!m && (!m.only || m.only(file));
+};
+export const visibleMilestones = file => MILESTONES.filter(m => milestoneApplies(file, m.id));
+
+// Un toque sella hoy; el segundo lo quita. Marcar por error es inevitable y
+// no puede costar una llamada.
+export function stampMilestone(file, id) {
+  if (!milestoneById(id)) return file;
+  const cur = milestoneAt(file, id);
+  return { ...file, milestones: { ...milestonesOf(file), [id]: cur ? null : today() } };
+}
+
+// ─── 7X3. RESULTADO DE UNDERWRITING ────────────────────────────────
+// La forma dice "File Approved / Denied or Suspended Date" en un solo
+// renglon, pero son TRES resultados distintos y una sola fecha no los
+// distingue. Guardarlos como fecha suelta perderia justo lo que importa.
+//
+// Y aqui se encienden los dos colores que la leyenda de Martha traia
+// muertos: suspendido es su ROJO, y el re-sometido para CTC su NARANJA.
+export const UW_OUTCOMES = {
+  approved:  { es: "Aprobado",   en: "Approved",  signal: "done" },
+  suspended: { es: "Suspendido", en: "Suspended", signal: "broken",
+               note_es: "Es el rojo de la hoja de Martha — el archivo esta detenido",
+               note_en: "This is the red on Martha's sheet — the file is on hold" },
+  denied:    { es: "Denegado",   en: "Denied",    signal: "broken",
+               note_es: "Salida: este archivo va a cambio de lender",
+               note_en: "An exit: this file is heading to a lender change" },
+};
+export const UW_OUTCOME_IDS = Object.keys(UW_OUTCOMES);
+export const uwOutcomeMeta = id => UW_OUTCOMES[id] || null;
+export const uwOutcome = file => {
+  const o = file?.uwResult?.outcome;
+  return UW_OUTCOMES[o] ? o : null;
+};
+export const uwOutcomeAt = file => okDate(file?.uwResult?.at) || null;
+
+// Se guarda con su fecha, su nota y su autor, y queda historial: un archivo
+// suspendido que despues se aprueba tuvo las dos cosas, y el post-mortem
+// necesita las dos.
+export function setUwOutcome(file, { outcome, at, note, by }) {
+  if (!UW_OUTCOMES[outcome]) return file;
+  const cuando = okDate(at) || today();
+  const entry = { outcome, at: cuando, note: String(note || "").trim() || null, by: by || null };
+  return {
+    ...file,
+    uwResult: entry,
+    uwLog: [...(file?.uwLog || []), entry],
+  };
+}
+export const clearUwOutcome = file => ({ ...file, uwResult: null });
 
 // Un toque: abre el ciclo, estampa la fecha, avanza la etapa, y con eso el
 // turno pasa solo a la procesadora asignada. Tina no captura nada extra —
@@ -3522,6 +3693,9 @@ export function stampRegistration(file, by) {
       by: by || null,
       discSentAt: hoy,
       discEsignedAt: null,
+      barrettDiscSentAt: null,
+      loanNumberInvestor: null,
+      loanNumberLender: null,
     }],
     // Espejo plano del ultimo ciclo. No es la fuente de verdad — se
     // mantiene para que nada que todavia lea el campo viejo se rompa.

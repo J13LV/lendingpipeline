@@ -4,7 +4,7 @@ import { getFirestore, doc, setDoc, onSnapshot } from "firebase/firestore";
 import { helpSections, searchHelp } from "./helpContent";
 import { tr, defaultLang } from "./ui";
 import { downloadMarthaSheet } from "./marthaExport";
-import ProcessingView, { IntakePane } from "./processing";
+import ProcessingView, { IntakePane, MilestonesPane } from "./processing";
 
 // Idioma vigente, a nivel de módulo. El motor devuelve {es, en} en 84 lugares
 // y la interfaz leía siempre `.es`. Pasar `lang` por props a los seis paneles
@@ -52,6 +52,7 @@ import {
   openFindings, resolvedFindings, hasOpenFindings, addFinding, resolveFinding,
   findingAge, worstFinding, canRegister, isRegistered, stampRegistration,
   registeredAt, registeredBy, registrationCount, needsReRegistration,
+  registerReady, registerBlocked, CONTRACT_SIGNAL_FIELD, signalToAcceptDays,
   LO_STAGES, STAGE_THRESHOLDS, teamLeadShare, branchCostPerFile, ladderCeiling,
   loanSplit, lendersHiddenByChannel, OTHER_LENDER_ID, lenderNameOf, payrollPeriodLabel, currentPayrollPeriod, payrollSummary, fundedDate,
   losWithoutCompRule, BARRETT_CUTOVER, referralFunded, referralBranchPct,
@@ -4235,6 +4236,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
   const box = file.contingencies||{};
   const [state,setState]=useState(file.state||"NV");
   const [d,setD]=useState({
+    contractSignal:box.contractSignal||"",
     contractAccepted:box.contractAccepted||"", appraisalContingency:box.appraisalContingency||"",
     loanContingency:box.loanContingency||"", ctcTarget:box.ctcTarget||"",
     coe:box.coe||file.closing||"", fundingDate:box.fundingDate||"",
@@ -4311,6 +4313,16 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
             ? TX("businessDays")
             : TX("calendarDays",{s:state})}
         </div>
+      </div>
+
+      {/* LA FIRMA DEL COMPRADOR — dato del contrato, NO el ancla. El reloj
+          sigue corriendo desde la aceptacion del vendedor. */}
+      <div>
+        {field("contractSignal",TX("contractSignal"),TX("contractSignalHint"))}
+        {(()=>{const n=signalToAcceptDays(draft);
+          return n===null?null:(
+            <div style={{fontSize:9,color:"#6E7681",marginTop:3}}>{TX("signalGap",{n})}</div>
+          );})()}
       </div>
 
       {/* THE ANCHOR */}
@@ -5024,7 +5036,20 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
                   tanda del registro, pero ningún componente lo renderizaba:
                   `registeredAt` estaba vacío en TODOS los archivos y las
                   columnas 13 y 17 de Martha vivían del respaldo de stageLog. */}
-              {canRegister(file)&&(isAdmin||isAssistant)&&(
+              {/* Sin lender el boton NO se esconde: se queda apagado diciendo
+                  que falta. Registrar es registrar CON alguien — no es una
+                  accion desaconsejable, es imposible, asi que tampoco pregunta
+                  "de todas formas". El boton es el mensaje. */}
+              {registerBlocked(file)&&(isAdmin||isAssistant)&&(
+                <div title={TX("registerNoLenderHint")}
+                  style={{marginTop:7,width:"100%",background:"transparent",
+                    color:"#F5A623",borderRadius:6,padding:"8px 0",fontFamily:"DM Mono",
+                    fontSize:11,border:"1px dashed #F5A62366",textAlign:"center",
+                    cursor:"default"}}>
+                  {TX("registerNoLender")}
+                </div>
+              )}
+              {registerReady(file)&&(isAdmin||isAssistant)&&(
                 <button className="hov"
                   onClick={()=>{
                     if(!confirm(TX("registerConfirm",{p:processorOf(file).full}))) return;
@@ -5095,6 +5120,19 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
         {/* HALLAZGOS — lo que alguien vio y sigue abierto */}
         {tab==="file" && !inPrep && !isReferredOut && (
           <FindingsPanel file={file} profile={profile} onSave={onSave}/>
+        )}
+
+        {/* HITOS Y RESULTADO DE UW — el mismo bloque que ve la procesadora.
+            Si Martha marca algo y aqui no se ve, volvemos a los correos. */}
+        {tab==="file" && !inPrep && !isReferredOut && (
+          <div style={{background:"rgba(126,200,164,.04)",border:"1px solid #7EC8A433",
+            borderRadius:8,padding:14}}>
+            <MilestonesPane file={{...file,__who:profile?.name||null}} lang={lang}
+              readOnly={isAssistant}
+              onSave={next=>onSave({registrations:next.registrations,
+                milestones:next.milestones, uwResult:next.uwResult, uwLog:next.uwLog,
+                orders:next.orders})}/>
+          </div>
         )}
 
         {/* COMPENSACIÓN — bruto, descuentos, neto y lo que cobra cada quien */}

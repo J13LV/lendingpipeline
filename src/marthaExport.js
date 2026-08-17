@@ -22,7 +22,8 @@ import {
   okDate, today, addDays, lenderNameOf, baseProductOf,
   productKeyForLoanType, stageLogOf, latestNote, lockStatus, STAGE_DAYS,
   processorId, processorOf, DEFAULT_PROCESSOR, orderState, isCondo,
-  registeredAt, discSentAt,
+  registeredAt, discSentAt, discEsignedAt, intakeValue, orderDue,
+  uwOutcome, uwOutcomeAt, milestoneAt,
 } from "./pipelineCore";
 
 const EXCELJS_CDN = "https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js";
@@ -70,18 +71,20 @@ const CANAL_FILL = {
 // dejo fuera seis y esos archivos salieron en crema, que en su sistema
 // no significa nada — parece un archivo que nadie ha tocado.
 //
-// Dos colores de su leyenda quedan sin usar a proposito:
+// Sus dos colores muertos ya no lo estan. Ninguno de los dos es una
+// ETAPA —por eso la primera version no podia pintarlos— pero los dos son
+// hechos que ella ya lleva a mano en su checklist de papel:
 //
-//   NARANJA "re-sometido a U/W"  — es un EVENTO, no una etapa. El
-//     archivo vuelve a underwriting y sigue en Condition Clearing. El
-//     pipeline no observa ese momento, y pintarlo naranja seria afirmar
-//     algo que no sabemos. Se queda amarillo y ella lo cambia cuando
-//     resomete, que es cuando de verdad ocurre.
+//   NARANJA "re-sometido a U/W"  — el hito `resubmit_ctc`. El archivo
+//     vuelve a underwriting y sigue en Condition Clearing, asi que la
+//     etapa no cambia. El hito si.
 //
-//   ROJO "hold / suspendido"     — no existe como etapa. Un archivo
-//     detenido aqui sigue marcado donde estaba.
+//   ROJO "hold / suspendido"     — el resultado de UW `suspended`. No
+//     existe como etapa porque un archivo detenido sigue marcado donde
+//     estaba; existe como resultado.
 //
-// Los dos son suyos para marcar. Nosotros no se los quitamos.
+// El color lo sigue decidiendo ELLA: sale de lo que alguien registro,
+// no de una inferencia nuestra.
 const ESTADO_FILL = {
   // Antes de someter: para ella todo esto es "archivo nuevo".
   "Full Application":         "FFCCECFF",
@@ -105,6 +108,17 @@ const ESTADO_FILL = {
   "Signing":                  "FF92F694",
   "Funded":                   "FF92F694",
 };
+
+// El color de la columna Status. La ETAPA es el caso normal, pero dos
+// hechos la pisan porque describen algo que la etapa no puede decir:
+// suspendido detiene el archivo sin moverlo, y re-sometido lo devuelve a
+// underwriting sin cambiarle la etapa.
+export function estadoFill(file) {
+  if (uwOutcome(file) === "suspended") return "FFFF0000";       // su rojo
+  if (uwOutcome(file) === "denied")    return "FFFF0000";
+  if (milestoneAt(file, "resubmit_ctc")) return "FFFF9900";     // su naranja
+  return ESTADO_FILL[file?.stage] || CREMA;
+}
 
 // ─── PALETA DE LA TABLA ────────────────────────────────────────────
 // Estos no son colores de ella: son el marco. Salen de su propio tema de
@@ -156,7 +170,18 @@ const PROGRAMA = {
 };
 
 // Su "Loan Type" es compra o refinanciamiento, no el producto.
+//
+// Antes se adivinaba con una expresión regular sobre el tipo de préstamo:
+// un cash-out de un FHA salía como PURCHASE porque el tipo no dice nada del
+// propósito. Ahora sale del campo de admisión y solo cae en la adivinanza
+// cuando nadie lo capturó todavía.
+const PROPOSITO = {
+  purchase: "PURCHASE ", cashout: "REFINANCE ", rateterm: "REFINANCE ",
+  construction: "CONSTRUCTION ", other: "",
+};
 function loanType(file) {
+  const p = intakeValue(file, "purposeOfLoan");
+  if (p && PROPOSITO[p] !== undefined) return PROPOSITO[p];
   return productKeyForLoanType(file?.type) === "refi" ? "REFINANCE " : "PURCHASE ";
 }
 
@@ -234,6 +259,16 @@ function orderText(file, id) {
 
 const asDate = iso => (okDate(iso) ? new Date(iso + "T12:00:00") : null);
 
+// "Appraisal Ordered & Due" lleva las dos fechas. Sin la prometida se
+// comporta igual que cualquier otro pedido.
+function appraisalText(file) {
+  const t = orderText(file, "appraisal");
+  const due = orderDue(file, "appraisal");
+  const o = orderState(file, "appraisal");
+  if (!t) return null;
+  return (due && !o.rec) ? `${t} · DUE ${mmdd(due)}` : t;
+}
+
 // ─── 4. UNA FILA ───────────────────────────────────────────────────
 // Devuelve un mapa columna(1-29) → valor. Con los pedidos sellados en la
 // pantalla de procesamiento, HOI Binder y Condo Docs ya se llenan solos.
@@ -269,12 +304,21 @@ export function marthaRow(file) {
     // Las divulgaciones salen el mismo dia del registro y viajan en el
     // ciclo. stageLog queda de respaldo para los archivos anteriores.
     18: asDate(discSentAt(file) || log["Initial Disclosures Sent"]),
-    20: orderText(file, "appraisal")  || reqText(log["Appraisal Ordered"]),
+    // La columna huérfana original. Ningún avance de etapa sabe que el
+    // prestatario firmó; ahora sale del toque en la pantalla.
+    19: asDate(discEsignedAt(file)),
+    // Su encabezado dice "Appraisal Ordered & Due": las dos cosas en una
+    // celda, que es como ella la escribe.
+    20: appraisalText(file) || reqText(log["Appraisal Ordered"]),
     // Ella escribe N/A cuando no es condominio — en sus ocho archivos
     // esa columna dice N/A en todos. Ahora el sistema lo sabe.
     21: orderText(file, "condo_docs") || (isCondo(file) ? null : "N/A"),
     22: asDate(log["Submitted to UW"]),
-    23: asDate(log["Conditional Approval"]),
+    // "Approved" en su hoja es el resultado del underwriter. Un archivo
+    // suspendido NO está aprobado, aunque haya pasado por la etapa.
+    23: asDate(uwOutcome(file) === "approved"
+      ? (uwOutcomeAt(file) || log["Conditional Approval"])
+      : (uwOutcome(file) ? null : log["Conditional Approval"])),
     26: asDate(log["CD Issued"]),
     27: asDate(log["Clear to Close"]),
     28: asDate(log["Closing Docs Drawn"]),
@@ -389,7 +433,7 @@ export async function buildMarthaWorkbook(files, quien = DEFAULT_PROCESSOR) {
     const data = marthaRow(file);
     const canalId = file?.channel === "correspondent" ? "correspondent" : "broker";
     const canal = CANAL_FILL[canalId];
-    const estado = ESTADO_FILL[file?.stage] || CREMA;
+    const estado = estadoFill(file);
     porCanal[canalId] += 1;
     porEstado[estado] = (porEstado[estado] || 0) + 1;
 
