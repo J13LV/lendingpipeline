@@ -44,6 +44,9 @@ import {
   noteEntries, latestNote, noteCount, addNoteEntry,
   duplicateMatches, DUP_REASONS,
   PROCESSORS, PROCESSOR_IDS, processorId, processorOf, DEFAULT_PROCESSOR,
+  GATE1_ITEMS, gate1Item, FINDING_WAITING, WAITING_IDS, waitingMeta,
+  openFindings, resolvedFindings, hasOpenFindings, addFinding, resolveFinding,
+  findingAge, worstFinding, canRegister, isRegistered, stampRegistration,
   LO_STAGES, STAGE_THRESHOLDS, teamLeadShare, branchCostPerFile, ladderCeiling,
   loanSplit, lendersHiddenByChannel, OTHER_LENDER_ID, lenderNameOf, payrollPeriodLabel, currentPayrollPeriod, payrollSummary, fundedDate,
   losWithoutCompRule, BARRETT_CUTOVER, referralFunded, referralBranchPct,
@@ -1472,6 +1475,22 @@ export default function App() {
                             </span>}
                           </div>
                           <LenderStrip file={f}/>
+                          {(()=>{ const w=worstFinding(f); if(!w) return null;
+                            const m=waitingMeta(w.waitingOn), edad=findingAge(w);
+                            return (
+                              <div style={{background:"rgba(232,93,117,.08)",border:"1px solid #E85D7544",
+                                borderLeft:"2px solid #E85D75",borderRadius:"0 5px 5px 0",
+                                padding:"6px 8px",marginTop:7}}>
+                                <div style={{fontSize:10,color:"#E85D75",lineHeight:1.4,
+                                  display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>
+                                  ⚑ {w.text}
+                                </div>
+                                <div style={{fontSize:9,color:"#8B949E",marginTop:2}}>
+                                  {P(m)}{edad!==null?" · "+TX("findingDaysOpen",{n:edad}):""}
+                                  {openFindings(f).length>1?" · "+TX("nMore",{n:openFindings(f).length-1}):""}
+                                </div>
+                              </div>
+                            );})()}
                           <ContingencyStrip file={f}/>
                           {(()=>{const n=latestNote(f); if(!n) return null; const c=noteCount(f);
                             return (
@@ -4341,6 +4360,137 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
   );
 }
 
+// ─── HALLAZGOS ───
+// Se guardan de inmediato, no con el SAVE del pie. Un hallazgo que se
+// pierde porque alguien cerro el modal sin guardar es exactamente el
+// fallo que este bloque existe para evitar.
+function FindingsPanel({file,profile,onSave}){
+  const [open,setOpen]=useState(false);
+  const [item,setItem]=useState("employment_2y");
+  const [text,setText]=useState("");
+  const [waiting,setWaiting]=useState("lo");
+  const abiertos=openFindings(file);
+  const cerrados=resolvedFindings(file);
+  const fs={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",
+    padding:"7px 9px",fontSize:12,fontFamily:"'DM Mono','Courier New',monospace",width:"100%"};
+
+  return (
+    <div style={{background:abiertos.length?"rgba(232,93,117,.05)":"rgba(126,200,164,.04)",
+      border:`1px solid ${abiertos.length?"#E85D7544":"#7EC8A433"}`,borderRadius:8,
+      padding:14,display:"flex",flexDirection:"column",gap:10}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,
+          color:abiertos.length?"#E85D75":"#7EC8A4",letterSpacing:"1px"}}>{TX("findings")}</span>
+        {abiertos.length>0&&(
+          <span style={{background:"#E85D75",color:"#0D1117",borderRadius:10,padding:"1px 8px",
+            fontSize:10,fontWeight:500}}>{TX("findingOpen",{n:abiertos.length})}</span>
+        )}
+      </div>
+
+      {abiertos.length===0&&<div style={{fontSize:11,color:"#484F58"}}>{TX("findingNone")}</div>}
+
+      {abiertos.map(f=>{
+        const w=waitingMeta(f.waitingOn), edad=findingAge(f);
+        return (
+          <div key={f.id} style={{background:"#0D1117",borderLeft:"2px solid #E85D75",
+            borderRadius:"0 5px 5px 0",padding:"8px 10px"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8,flexWrap:"wrap"}}>
+              <span style={{fontSize:10,color:"#8B949E"}}>{P(gate1Item(f.item))}</span>
+              <span style={{fontSize:9.5,color:w?.color||"#8B949E"}}>{P(w)}</span>
+            </div>
+            <div style={{fontSize:11.5,color:"#E6EDF3",lineHeight:1.5,margin:"3px 0"}}>{f.text}</div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
+              <span style={{fontSize:9,color:edad>=7?"#E85D75":"#484F58"}}>
+                {f.at}{f.by?" · "+String(f.by).split(" ")[0]:""}
+                {edad!==null?" · "+TX("findingDaysOpen",{n:edad}):""}
+              </span>
+              <button className="hov" onClick={()=>{
+                  const n=resolveFinding(file,f.id,{by:profile?.name||null});
+                  onSave({findings:n.findings});
+                }}
+                style={{background:"#21262D",border:"1px solid #7EC8A4",borderRadius:4,color:"#7EC8A4",
+                  fontSize:9,padding:"3px 9px",cursor:"pointer",fontFamily:"DM Mono"}}>
+                {TX("findingResolve")}
+              </button>
+            </div>
+          </div>
+        );
+      })}
+
+      {!open?(
+        <button className="hov" onClick={()=>setOpen(true)}
+          style={{background:"transparent",border:"1px dashed #30363D",borderRadius:5,color:"#8B949E",
+            fontSize:10.5,fontFamily:"DM Mono",padding:"7px 0",width:"100%",cursor:"pointer"}}>
+          {TX("findingAdd")}
+        </button>
+      ):(
+        <div style={{background:"#0D1117",border:"1px solid #21262D",borderRadius:6,
+          padding:"10px 11px",display:"flex",flexDirection:"column",gap:8}}>
+          <div>
+            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>{TX("findingItem")}</div>
+            <select value={item} onChange={e=>setItem(e.target.value)} style={fs}>
+              {GATE1_ITEMS.map(g=><option key={g.id} value={g.id}>{P(g)}</option>)}
+            </select>
+          </div>
+          <div>
+            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>{TX("findingWhat")}</div>
+            <input value={text} onChange={e=>setText(e.target.value)}
+              placeholder={TX("findingWhatPlaceholder")} style={fs}/>
+          </div>
+          <div>
+            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>{TX("findingWaiting")}</div>
+            <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+              {WAITING_IDS.map(id=>{
+                const on=waiting===id,m=FINDING_WAITING[id];
+                return (
+                  <button key={id} className="hov" onClick={()=>setWaiting(id)}
+                    style={{background:on?m.color:"transparent",color:on?"#0D1117":m.color,
+                      border:`1px solid ${m.color}`,borderRadius:5,padding:"4px 9px",fontSize:10,
+                      fontFamily:"DM Mono",cursor:"pointer"}}>{P(m)}</button>
+                );
+              })}
+            </div>
+          </div>
+          {!text.trim()&&<div style={{fontSize:9,color:"#F5A623"}}>{TX("findingNeedsText")}</div>}
+          <div style={{display:"flex",gap:7}}>
+            <button className="hov" disabled={!text.trim()}
+              onClick={()=>{
+                const n=addFinding(file,{item,text,waitingOn:waiting,by:profile?.name||null});
+                onSave({findings:n.findings});
+                setText(""); setOpen(false);
+              }}
+              style={{flex:2,background:text.trim()?"#E85D75":"#161B22",
+                color:text.trim()?"#0D1117":"#30363D",borderRadius:6,padding:"8px 0",
+                fontFamily:"DM Mono",fontSize:11,fontWeight:500,border:"none",
+                cursor:text.trim()?"pointer":"not-allowed"}}>{TX("findingSave")}</button>
+            <button className="hov" onClick={()=>{setOpen(false);setText("");}}
+              style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:6,padding:"8px 0",
+                fontFamily:"DM Mono",fontSize:11,border:"none",cursor:"pointer"}}>{TX("cancel")}</button>
+          </div>
+        </div>
+      )}
+
+      {cerrados.length>0&&(
+        <div style={{borderTop:"1px solid #21262D",paddingTop:8}}>
+          <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>
+            {TX("findingHistory")} · {cerrados.length}
+          </div>
+          {cerrados.slice().reverse().map(f=>(
+            <div key={f.id} style={{fontSize:10,color:"#6E7681",marginBottom:4,lineHeight:1.5}}>
+              <span style={{color:"#484F58"}}>{P(gate1Item(f.item))}</span> · {f.text}
+              <div style={{fontSize:9,color:"#484F58"}}>
+                {TX("findingResolved",{d:f.resolvedAt,who:String(f.resolvedBy||"").split(" ")[0]})}
+                {findingAge(f)!==null?" · "+TX("findingTookDays",{n:findingAge(f)}):""}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      <div style={{fontSize:9,color:"#484F58",lineHeight:1.5}}>{TX("findingsHint")}</div>
+    </div>
+  );
+}
+
 function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdvance,onCloseFile,onReopen,onPrep,onArchive,onRestore,onContinuePrep,isClosed}){
   const isAdmin = profile?.role === "admin";
   const isAssistant = profile?.role === "assistant";
@@ -4479,6 +4629,12 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
               ):(
                 <div style={{fontSize:12.5,color:processorOf(file).color}}>{processorOf(file).full}</div>
               )}
+              {isRegistered(file)&&(
+                <div style={{fontSize:10,color:"#7EC8A4",marginTop:4}}>
+                  {L("registeredOn",{d:file.registeredAt})}
+                  {file.registeredBy?L("registeredBy",{who:String(file.registeredBy).split(" ")[0]}):""}
+                </div>
+              )}
               <div style={{fontSize:9,color:"#484F58",marginTop:4,lineHeight:1.5}}>
                 {L("processorHint")}
                 {PROCESSORS[processor]?.external?" · "+L("processorExternal"):""}
@@ -4513,6 +4669,11 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
             onChangeLender={()=>setShowChange(true)}/>
         )}
 
+
+        {/* HALLAZGOS — lo que alguien vio y sigue abierto */}
+        {!inPrep && !isReferredOut && (
+          <FindingsPanel file={file} profile={profile} onSave={onSave}/>
+        )}
 
         {/* REQUISITOS PARA COBRAR — Barrett no paga solo por fondear */}
         {!inPrep && !isReferredOut && (
@@ -4945,8 +5106,23 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
               style={{flex:2,background:"#21262D",color:"#A78BFA",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"1px solid #A78BFA",cursor:"pointer"}}>↩ PULL BACK</button>
           ):(
             <>
-              <button className="hov" onClick={onAdvance}
-                style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"none",cursor:"pointer"}}>{L("advance")} →</button>
+              {canRegister(file)?(
+                <button className="hov" onClick={()=>{
+                    if(!confirm(TX("registerConfirm",{p:processorOf(file).full}))) return;
+                    const n=stampRegistration(file,profile?.name||null);
+                    onSave({stage:n.stage,stageEnteredAt:n.stageEnteredAt,daysInStage:0,
+                      stageLog:n.stageLog,registeredAt:n.registeredAt,
+                      registeredBy:n.registeredBy,processor:n.processor});
+                    onClose();
+                  }}
+                  title={TX("registerHint")}
+                  style={{flex:2,background:"rgba(126,200,164,.12)",color:"#7EC8A4",borderRadius:7,
+                    padding:"10px 0",fontFamily:"DM Mono",fontSize:11.5,fontWeight:500,
+                    border:"1px solid #7EC8A4",cursor:"pointer"}}>{TX("register")}</button>
+              ):(
+                <button className="hov" onClick={onAdvance}
+                  style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"none",cursor:"pointer"}}>{L("advance")} →</button>
+              )}
               <button className="hov" onClick={()=>{if(confirm(`Close ${file.borrower}?`))onCloseFile();}}
                 style={{flex:1,background:"rgba(6,214,160,.1)",color:"#06D6A0",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"1px solid #06D6A0",cursor:"pointer"}}>{L("closeFile")} ✓</button>
               <button className="hov" onClick={()=>{
