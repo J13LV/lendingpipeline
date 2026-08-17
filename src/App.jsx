@@ -43,7 +43,7 @@ import {
   DPA_STRUCTURES, dpaStructure, specDetail, setSpecDetail, specDetailCoverage,
   specDetailSummary, emptySpecDetail,
   noteEntries, latestNote, noteCount, addNoteEntry,
-  duplicateMatches, DUP_REASONS,
+  duplicateMatches, DUP_REASONS, fileActions,
   PROCESSORS, PROCESSOR_IDS, processorId, processorOf, DEFAULT_PROCESSOR,
   DPA_PCTS, DPA_FORMS, dpaForm, dpaOf, hasDpa, miLooksWrong,
   setDpa, dpaLabel, dpaComplete, productionByDpa, productionByState,
@@ -4637,6 +4637,14 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
   const isAdmin = profile?.role === "admin";
   const isAssistant = profile?.role === "assistant";
   const [showHistory, setShowHistory] = useState(false);
+  // ─── SOLAPAS ───
+  // Dieciocho bloques en una columna de 480px con scroll infinito. El
+  // campo que mas se toca —la etapa— quedaba en la pantalla once de doce.
+  //
+  // Cinco solapas en el orden en que se trabaja un archivo, y una regla
+  // que no se rompe en ninguna: IZQUIERDA lo que capturas, DERECHA lo
+  // que el sistema deriva. El ojo lo aprende una vez.
+  const [tab, setTab] = useState("loan");
   // Whatever the sub-panels are currently showing, ready for the single SAVE.
   const panelDrafts = useRef({});
   // Los bps que el bloque de lender tiene escritos pero aún no guardados. Con
@@ -4693,43 +4701,81 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
   const lostComp = wouldHaveEarned - feeEarned;
 
   return(
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
-      <div className="fi" style={{background:"#161B22",border:"1px solid #30363D",borderRadius:12,width:"100%",maxWidth:480,maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
-        {/* HEADER */}
-        <div style={{padding:"20px 24px 16px",borderBottom:"1px solid #21262D",display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexShrink:0}}>
-          <div>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:18,color:"#E6EDF3"}}>
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.8)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={onClose}>
+      {/* De 480px a casi toda la pantalla. Los dieciocho bloques cabian
+          en una columna angosta solo a costa de un scroll interminable;
+          con ancho de verdad caben en dos columnas y cinco solapas. */}
+      <div className="fi" style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:12,width:"100%",maxWidth:1240,height:"calc(100vh - 32px)",display:"flex",flexDirection:"column",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
+        {/* ENCABEZADO — no cambia al moverse entre solapas. Siempre sabes
+            en que archivo estas, en que etapa y cuanto tiempo queda. */}
+        <div style={{padding:"14px 22px",borderBottom:"1px solid #21262D",display:"flex",
+          justifyContent:"space-between",alignItems:"center",gap:16,flexWrap:"wrap",flexShrink:0}}>
+          <div style={{minWidth:0}}>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:17,color:"#E6EDF3",letterSpacing:"-0.3px"}}>
               {file.borrower}
-              {isInbound && <span title="Inbound referral" style={{marginLeft:8,fontSize:12,color:"#FFD166"}}>🤝 INBOUND</span>}
+              {isInbound&&<span title="Inbound referral" style={{marginLeft:8,fontSize:11,color:"#FFD166"}}>🤝</span>}
             </div>
-            <div style={{fontSize:12,color:"#8B949E"}}>{loanType} · ${parseInt(loanAmt||0).toLocaleString()}</div>
-            {isClosed&&<div style={{marginTop:4,fontSize:11,color:"#06D6A0",fontWeight:500}}>✓ CLOSED — {file.closedAt}</div>}
-            {isReferredOut&&<div style={{marginTop:4,fontSize:11,color:"#A78BFA",fontWeight:500}}>🔀 REFERRED OUT — {ro.bankerCompany||"external bank"}</div>}
-            {(phone || email) && (
-              <div style={{marginTop:8,display:"flex",gap:6,flexWrap:"wrap"}}>
-                {phone && (
-                  <a href={`tel:${phone.replace(/[^\d+]/g,"")}`} className="hov"
-                    title="Tap to call"
-                    style={{background:"rgba(74,144,217,.1)",border:"1px solid #4A90D955",borderRadius:5,padding:"4px 9px",color:"#4A90D9",fontSize:11,fontFamily:"DM Mono",textDecoration:"none",display:"inline-flex",alignItems:"center",gap:5}}>
-                    📱 {phone}
-                  </a>
-                )}
-                {email && (
-                  <a href={`mailto:${email}`} className="hov"
-                    title="Tap to email"
-                    style={{background:"rgba(189,101,232,.1)",border:"1px solid #BD65E855",borderRadius:5,padding:"4px 9px",color:"#BD65E8",fontSize:11,fontFamily:"DM Mono",textDecoration:"none",display:"inline-flex",alignItems:"center",gap:5}}>
-                    ✉ {email}
-                  </a>
-                )}
+            <div style={{fontSize:9.5,color:"#6E7681",marginTop:3,display:"flex",gap:7,flexWrap:"wrap"}}>
+              <span>{loanType}</span>
+              <span>${parseInt(loanAmt||0).toLocaleString()}</span>
+              {lenderNameOf(file)&&<span>{lenderNameOf(file)}</span>}
+              <span>{String(loAssigned||"").split(" ")[0]}</span>
+              {!inPrep&&!isReferredOut&&<span>{processorOf(file).name}</span>}
+            </div>
+          </div>
+          <div style={{display:"flex",gap:20,alignItems:"center"}}>
+            {!inPrep&&!isReferredOut&&(
+              <div style={{textAlign:"right"}}>
+                <div style={{fontSize:10.5,color:ph.color}}>{stage}</div>
+                <div style={{fontSize:9,color:"#484F58",marginTop:2}}>
+                  {daysInStage(file)===null?"—":`${daysInStage(file)}d`}
+                  {(()=>{const c=stageClock(file.stage,file);return c?` · techo ${c.late}d`:"";})()}
+                </div>
               </div>
             )}
+            {closing&&(
+              <div style={{textAlign:"right"}}>
+                <div style={{fontSize:10.5,color:"#F5A623"}}>COE {md(closing)}</div>
+                <div style={{fontSize:9,color:"#484F58",marginTop:2}}>
+                  {(()=>{const d=daysTil(closing);
+                    return d===null?"":d===0?TX("closingToday"):d>0?TX("closeInDays",{n:d}):TX("pastDue");})()}
+                </div>
+              </div>
+            )}
+            <button onClick={onClose} style={{background:"transparent",border:"none",color:"#484F58",
+              fontSize:19,cursor:"pointer",padding:"0 0 0 4px"}}>✕</button>
           </div>
-          <button onClick={onClose} style={{background:"transparent",border:"none",color:"#484F58",fontSize:20,cursor:"pointer",padding:"0 0 0 12px"}}>✕</button>
         </div>
 
-        {/* SCROLLABLE BODY */}
-        <div style={{flex:1,overflowY:"auto",padding:"16px 24px",display:"flex",flexDirection:"column",gap:14}}>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+        {/* SOLAPAS — el contador dice si hay algo ahi sin tener que entrar */}
+        <div style={{display:"flex",padding:"0 22px",borderBottom:"1px solid #21262D",
+          background:"#10141A",flexShrink:0,overflowX:"auto"}}>
+          {[
+            ["loan",  TX("tabLoan"),   0],
+            ["lender",TX("tabLender"), lenderConflicts(file).length],
+            ["dates", TX("tabDates"),  contingencyConflicts(file).length],
+            ["money", TX("tabMoney"),  payrollBlockers(file).length],
+            ["file",  TX("tabFile"),   openFindings(file).length],
+          ].map(([id,label,n])=>{
+            const on=tab===id;
+            return (
+              <button key={id} className="hov" onClick={()=>setTab(id)}
+                style={{background:"transparent",border:"none",cursor:"pointer",
+                  color:on?"#E6EDF3":"#484F58",fontSize:10,fontFamily:"DM Mono",
+                  letterSpacing:".8px",padding:"10px 0",marginRight:22,whiteSpace:"nowrap",
+                  borderBottom:`2px solid ${on?"#F5A623":"transparent"}`}}>
+                {label}{n>0&&<span style={{color:"#E85D75"}}> {n}</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* CUERPO — retícula fija 53/47. Los bloques se reparten por
+            solapa; dentro de cada una, las columnas se llenan solas y en
+            móvil se apilan. */}
+        <div style={{flex:1,overflowY:"auto",padding:"16px 22px",display:"grid",
+          gridTemplateColumns:"53% 47%",gap:14,alignItems:"start",alignContent:"start"}}>
+        <div style={{display:tab==="loan"?"grid":"none",gridTemplateColumns:"1fr 1fr",gap:10,alignSelf:"start"}}>
           <div>
             <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L("loanType")}</div>
             <select value={loanType} onChange={e=>setLoanType(e.target.value)} style={fs2}>
@@ -4828,7 +4874,7 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
         </div>
 
         {/* LENDER — chosen at Full Application; the channel gates the list */}
-        {!inPrep && !isReferredOut && (atOrPastFullApp(stage) || hasLenderData(file)) && (
+        {tab==="lender" && !inPrep && !isReferredOut && (atOrPastFullApp(stage) || hasLenderData(file)) && (
           <LenderPanel file={file} profile={profile}
             onDraft={p=>{panelDrafts.current.lender=p; setPendingBps(p.bps ?? null);}}
             onChangeLender={()=>setShowChange(true)}/>
@@ -4837,7 +4883,7 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
 
         {/* ADMISION — el LO las sabe al precalificar. La procesadora las
             completa si faltan, pero la captura nace aqui. */}
-        {!inPrep && !isReferredOut && (
+        {tab==="file" && !inPrep && !isReferredOut && (
           <div style={{background:"rgba(189,101,232,.04)",border:"1px solid #BD65E833",
             borderRadius:8,padding:14,display:"flex",flexDirection:"column",gap:10}}>
             <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#BD65E8",
@@ -4848,12 +4894,12 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
         )}
 
         {/* HALLAZGOS — lo que alguien vio y sigue abierto */}
-        {!inPrep && !isReferredOut && (
+        {tab==="file" && !inPrep && !isReferredOut && (
           <FindingsPanel file={file} profile={profile} onSave={onSave}/>
         )}
 
         {/* REQUISITOS PARA COBRAR — Barrett no paga solo por fondear */}
-        {!inPrep && !isReferredOut && (
+        {tab==="money" && !inPrep && !isReferredOut && (
           <div style={{background:"rgba(74,144,217,.05)",border:"1px solid #4A90D933",borderRadius:8,
             padding:14,display:"flex",flexDirection:"column",gap:9}}>
             <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
@@ -4890,19 +4936,19 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
         )}
 
         {/* COMPENSACIÓN — bruto, descuentos, neto y lo que cobra cada quien */}
-        {!inPrep && !isReferredOut && (
+        {tab==="money" && !inPrep && !isReferredOut && (
           <PayoutPanel file={file} profile={profile} allFiles={allFiles} pendingBps={pendingBps}
             onDraft={p=>{panelDrafts.current.payout=p;}}/>
         )}
 
         {/* CONTINGENCIES — captured at Full Application, anchored to the contract */}
-        {!inPrep && !isReferredOut && (atOrPastFullApp(stage) || hasContingencies(file)) && (
+        {tab==="dates" && !inPrep && !isReferredOut && (atOrPastFullApp(stage) || hasContingencies(file)) && (
           <ContingencyPanel file={file} profile={profile} onSave={onSave}
             onDraft={p=>{panelDrafts.current.dates=p;}}/>
         )}
 
         {/* INBOUND REFERRAL SECTION — when file came from another banker */}
-        {isInbound && (
+        {tab==="loan" && isInbound && (
           <div style={{background:"rgba(255,209,102,.06)",border:"1px solid #FFD16644",borderRadius:8,padding:14,display:"flex",flexDirection:"column",gap:10}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:2}}>
               <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#FFD166",letterSpacing:"1px"}}>🤝 INBOUND — REFERRING BANKER</span>
@@ -4945,7 +4991,7 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
           </div>
         )}
 
-        {inPrep&&(()=>{
+        {tab==="loan" && inPrep&&(()=>{
           const p=file.prep||{}; const r=prepReasonById(p.reason);
           const dtr=prepDaysToReview(file); const age=prepAge(file); const locked=prepLocked(file);
           return(
@@ -4964,7 +5010,7 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
           );
         })()}
 
-        {!isClosed&&!inPrep&&<div>
+        {tab==="loan" && !isClosed&&!inPrep&&<div style={{alignSelf:"start"}}>
           <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L("stage")}</div>
           <select value={stage} onChange={e=>{setStage(e.target.value);onSave({stage:e.target.value, stageEnteredAt:today(), daysInStage:0});}}
             style={{background:"#0D1117",border:`1px solid ${ph.color}`,borderRadius:6,color:ph.color,padding:"8px 10px",fontSize:13,fontFamily:"DM Mono",width:"100%"}}>
@@ -4976,7 +5022,7 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
         </div>}
 
         {/* OUTBOUND REFERRAL SECTION — when stage = REFERRED OUT */}
-        {isReferredOut && (
+        {tab==="loan" && isReferredOut && (
           <div style={{background:"rgba(167,139,250,.06)",border:"1px solid #A78BFA44",borderRadius:8,padding:14,display:"flex",flexDirection:"column",gap:10}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:2}}>
               <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#A78BFA",letterSpacing:"1px"}}>🔀 OUTBOUND — RECEIVING BANKER</span>
@@ -5060,7 +5106,7 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
           </div>
         )}
 
-        {isClosed && isAdmin ? (
+        {tab==="dates" && (isClosed && isAdmin ? (
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
             <div style={{background:"rgba(6,214,160,.06)",border:"1px solid #06D6A044",borderRadius:8,padding:12}}>
               <div style={{fontSize:10,color:"#06D6A0",letterSpacing:"1px",marginBottom:5,fontWeight:500}}>ACTUAL CLOSE DATE <span style={{color:"#484F58"}}>· editable</span></div>
@@ -5106,9 +5152,10 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
               );})()}
             </div>
           </div>
-        ) : null}
+        ) : null)}
 
-        <div>
+        {/* NOTAS → EXPEDIENTE */}
+        <div style={{display:tab==="file"?"block":"none"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:5}}>
             <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px"}}>
               NOTES <span style={{color:"#30363D"}}>· STATUS · BLOCKER · NEXT</span>
@@ -5164,7 +5211,7 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
           </div>
         </div>
 
-        {(file.lastEditedBy || (file.history && file.history.length > 0)) && (
+        {tab==="file" && (file.lastEditedBy || (file.history && file.history.length > 0)) && (
           <div style={{background:"#0D1117",borderRadius:8,padding:12,border:"1px solid #21262D"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px"}}>{L("activity")}</div>
@@ -5205,124 +5252,130 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
         </div>
         {/* END SCROLLABLE BODY */}
 
-        {/* FOOTER */}
-        <div style={{padding:"14px 24px",borderTop:"1px solid #21262D",background:"#161B22",flexShrink:0,display:"flex",gap:8,flexWrap:"wrap"}}>
-          <button className="hov" onClick={()=>{
-            const patch = {
-              // Notes are entries now. Writing the old string back on every
-              // save kept resurrecting text the team had already replaced.
-              note: file.note ?? null,
-              closing,
-              type: loanType,
-              loan: parseInt(loanAmt) || file.loan,
-              lo: (loAssigned || JOSE_LO).trim(),
-              referralPartner: (referralPartner||"").trim() || null,
-              brokerCheckReceived: chkDraft,
-              compliance: compDraft,
-              phone: (phone||"").trim() || null,
-              email: (email||"").trim() || null,
-            };
-            if(isAdmin) patch.bps = parseInt(bps)||null;
-            // La asignacion es decision de entrenamiento, no de operacion.
-            if(isAdmin) patch.processor = processor;
-            if(isAdmin && isClosed && closedAt) patch.closedAt = closedAt;
-            // Persist outbound referral data when stage is REFERRED_OUT
-            if(isReferredOut){
-              patch.referredOut = {
-                bankerName: (outBankerName||"").trim(),
-                bankerCompany: (outBankerCompany||"").trim(),
-                bankerPhone: (outBankerPhone||"").trim(),
-                bankerEmail: (outBankerEmail||"").trim(),
-                reason: outReason,
-                status: outStatus,
-                finalLoanAmount: parseInt(outFinalLoan) || null,
-                closeDate: outCloseDate || null,
-                referredDate: ro.referredDate || today(),
+        {/* BARRA DE ACCIONES — fija, visible en las cinco solapas. La
+            decision de referir o archivar nace donde uno la piensa, no
+            en una solapa aparte a la que haya que ir a buscarla.
+            Los botones NUNCA cambian de sitio: solo cambia cual esta
+            encendido. Si cambiaran de posicion habria que leer la barra
+            cada vez en vez de ir con el dedo. */}
+        <div style={{padding:"11px 22px",borderTop:"1px solid #21262D",background:"#10141A",
+          flexShrink:0,display:"flex",gap:7,alignItems:"center",flexWrap:"wrap"}}>
+          {(()=>{
+            const A=fileActions(file,{isAdmin});
+            const salvar=()=>{
+              const patch = {
+                note: file.note ?? null,
+                closing,
+                type: loanType,
+                loan: parseInt(loanAmt) || file.loan,
+                lo: (loAssigned || JOSE_LO).trim(),
+                referralPartner: (referralPartner||"").trim() || null,
+                brokerCheckReceived: chkDraft,
+                compliance: compDraft,
+                phone: (phone||"").trim() || null,
+                email: (email||"").trim() || null,
               };
-            }
-            // Persist inbound referring banker
-            if(isInbound){
-              patch.referringBanker = {
-                bankerName: (inBankerName||"").trim(),
-                bankerCompany: (inBankerCompany||"").trim(),
-                bankerPhone: (inBankerPhone||"").trim(),
-                bankerEmail: (inBankerEmail||"").trim(),
-              };
-            }
-            // Merge whatever the lender and contingency panels are showing.
-            // Without this the obvious gold button threw their work away.
-            Object.assign(patch, panelDrafts.current.lender||{}, panelDrafts.current.dates||{},
-              panelDrafts.current.payout||{});
-            onSave(patch);
-            onClose();
-          }}
-            style={{flex:2,background:"#F5A623",color:"#0D1117",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,fontWeight:500,border:"none",cursor:"pointer"}}>{L("save")}</button>
-          {archivedFile?(
-            <button className="hov" onClick={onRestore}
-              style={{flex:2,background:"#21262D",color:"#7EC8A4",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"1px solid #7EC8A4",cursor:"pointer"}}>↩ RESTORE</button>
-          ):inPrep?(
-            <>
-              <button className="hov" onClick={onContinuePrep}
-                style={{flex:1,background:"rgba(74,144,217,.1)",color:"#4A90D9",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"1px solid #4A90D9",cursor:"pointer"}}>✓ CONTINUE</button>
-              <button className="hov" disabled={prepLocked(file)} onClick={onPrep}
-                title={prepLocked(file)?`Locked at ${PREP_MAX_DAYS} days — return it or archive it`:"Set a new review date"}
-                style={{flex:1,background:prepLocked(file)?"#161B22":"rgba(245,166,35,.1)",color:prepLocked(file)?"#30363D":"#F5A623",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:`1px solid ${prepLocked(file)?"#21262D":"#F5A623"}`,cursor:prepLocked(file)?"not-allowed":"pointer"}}>↻ RESCHEDULE</button>
-              <button className="hov" onClick={onArchive}
-                style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"1px solid #30363D",cursor:"pointer"}}>🗄 ARCHIVE</button>
-            </>
-          ):isClosed?(
-            <button className="hov" onClick={onReopen}
-              style={{flex:2,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"none",cursor:"pointer"}}>REOPEN FILE</button>
-          ):isReferredOut?(
-            <button className="hov" onClick={()=>{
-              if(confirm(`Bring ${file.borrower} back into the pipeline? This will reset stage to Lead Inquiry and clear outbound banker data.`)){
-                onSave({stage:"Lead Inquiry", stageEnteredAt:today(), daysInStage:0, referredOut: null});
-                onClose();
+              if(isAdmin) patch.bps = parseInt(bps)||null;
+              if(isAdmin) patch.processor = processor;
+              if(isAdmin && isClosed && closedAt) patch.closedAt = closedAt;
+              if(isReferredOut){
+                patch.referredOut = {
+                  bankerName: (outBankerName||"").trim(),
+                  bankerCompany: (outBankerCompany||"").trim(),
+                  bankerPhone: (outBankerPhone||"").trim(),
+                  bankerEmail: (outBankerEmail||"").trim(),
+                  reason: outReason,
+                  status: outStatus,
+                  finalLoanAmount: parseInt(outFinalLoan) || null,
+                  closeDate: outCloseDate || null,
+                  referredDate: ro.referredDate || today(),
+                };
               }
-            }}
-              style={{flex:2,background:"#21262D",color:"#A78BFA",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"1px solid #A78BFA",cursor:"pointer"}}>↩ PULL BACK</button>
-          ):(
-            <>
-              {canRegister(file)?(
-                <button className="hov" onClick={()=>{
-                    if(!confirm(TX("registerConfirm",{p:processorOf(file).full}))) return;
-                    const n=stampRegistration(file,profile?.name||null);
-                    onSave({stage:n.stage,stageEnteredAt:n.stageEnteredAt,daysInStage:0,
-                      stageLog:n.stageLog,registeredAt:n.registeredAt,
-                      registeredBy:n.registeredBy,processor:n.processor});
-                    onClose();
+              if(isInbound){
+                patch.referringBanker = {
+                  bankerName: (inBankerName||"").trim(),
+                  bankerCompany: (inBankerCompany||"").trim(),
+                  bankerPhone: (inBankerPhone||"").trim(),
+                  bankerEmail: (inBankerEmail||"").trim(),
+                };
+              }
+              Object.assign(patch, panelDrafts.current.lender||{}, panelDrafts.current.dates||{},
+                panelDrafts.current.payout||{});
+              onSave(patch);
+              onClose();
+            };
+            // Un boton apagado sigue funcionando: pregunta y dice por que
+            // no era el momento. La decision sigue siendo del usuario.
+            const btn=(id,label,color,accion,meta)=>{
+              const on=meta?.on!==false;
+              return (
+                <button key={id} className="hov"
+                  onClick={()=>{
+                    if(!on){
+                      const why=lang==="en"?meta.why_en:meta.why_es;
+                      if(why&&!window.confirm(why+"\n\n"+TX("actionAnyway"))) return;
+                    }
+                    accion();
                   }}
-                  title={TX("registerHint")}
-                  style={{flex:2,background:"rgba(126,200,164,.12)",color:"#7EC8A4",borderRadius:7,
-                    padding:"10px 0",fontFamily:"DM Mono",fontSize:11.5,fontWeight:500,
-                    border:"1px solid #7EC8A4",cursor:"pointer"}}>{TX("register")}</button>
-              ):(
-                <button className="hov" onClick={onAdvance}
-                  style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"none",cursor:"pointer"}}>{L("advance")} →</button>
-              )}
-              <button className="hov" onClick={()=>{if(confirm(`Close ${file.borrower}?`))onCloseFile();}}
-                style={{flex:1,background:"rgba(6,214,160,.1)",color:"#06D6A0",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"1px solid #06D6A0",cursor:"pointer"}}>{L("closeFile")} ✓</button>
-              <button className="hov" onClick={()=>{
-                if(confirm(`Refer ${file.borrower} to another bank?\n\nThe file moves to REFERRED OUT. You'll fill in the receiving banker's details next.`)){
-                  setStage(REFERRED_OUT_STAGE);
-                  onSave({stage:REFERRED_OUT_STAGE, stageEnteredAt:today(), daysInStage:0});
-                }
-              }}
-                title="Refer this file out to another banker"
-                style={{flex:1,background:"rgba(167,139,250,.1)",color:"#A78BFA",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"1px solid #A78BFA",cursor:"pointer"}}>🔀 REFER</button>
-              <button className="hov" onClick={onPrep}
-                title="Client is alive but not ready to buy yet — park it with a review date"
-                style={{flex:1,background:"rgba(126,200,164,.1)",color:"#7EC8A4",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"1px solid #7EC8A4",cursor:"pointer"}}>⏸ PREP</button>
-              <button className="hov" onClick={onArchive}
-                title="File is dead — remove it from counts and averages without deleting it"
-                style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"1px solid #30363D",cursor:"pointer"}}>🗄 ARCH</button>
-            </>
-          )}
-          {isAdmin && (
-            <button className="hov" onClick={()=>{if(confirm("Delete permanently? This cannot be undone."))onDelete();}}
-              title="Admin only — permanently delete this file"
-              style={{flex:1,background:"#21262D",color:"#E85D75",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"none",cursor:"pointer"}}>✕ DEL</button>
-          )}
+                  title={!on&&meta?(lang==="en"?meta.why_en:meta.why_es):""}
+                  style={{background:"transparent",color:on?color:"#2B323B",
+                    border:`1px solid ${on?color:"#1A1F26"}`,borderRadius:6,
+                    padding:"8px 14px",fontFamily:"DM Mono",fontSize:10.5,
+                    cursor:"pointer",whiteSpace:"nowrap"}}>{label}</button>
+              );
+            };
+
+            return (<>
+              <button className="hov" onClick={salvar}
+                style={{background:"#F5A623",color:"#0D1117",borderRadius:6,padding:"8px 22px",
+                  fontFamily:"DM Mono",fontSize:10.5,fontWeight:500,border:"none",cursor:"pointer"}}>
+                {L("save")}
+              </button>
+
+              {archivedFile?(
+                btn("restore",TX("restoreBtn"),"#7EC8A4",onRestore,{on:true})
+              ):isClosed?(
+                btn("reopen",TX("reopenBtn"),"#8B949E",onReopen,{on:true})
+              ):isReferredOut?(
+                btn("pull",TX("pullBack"),"#A78BFA",()=>{
+                  if(confirm(TX("pullBackAsk",{n:file.borrower}))){
+                    onSave({stage:"Lead Inquiry", stageEnteredAt:today(), daysInStage:0, referredOut:null});
+                    onClose();
+                  }
+                },{on:true})
+              ):inPrep?(<>
+                {btn("continue",TX("continueBtn"),"#4A90D9",onContinuePrep,{on:true})}
+                {btn("resched",TX("reschedBtn"),"#F5A623",onPrep,{on:!prepLocked(file),
+                  why_es:`Pasó el tope de ${PREP_MAX_DAYS} días — devuélvelo o archívalo`,
+                  why_en:`Past the ${PREP_MAX_DAYS}-day cap — return it or archive it`})}
+                {btn("arch",TX("archBtn"),"#8B949E",onArchive,{on:true})}
+              </>):(<>
+                {btn("advance",L("advance")+" →","#8B949E",onAdvance,A.advance)}
+                {btn("close",L("closeFile")+" ✓","#06D6A0",
+                  ()=>{if(confirm(TX("closeAsk",{n:file.borrower})))onCloseFile();},A.close)}
+                {btn("refer",TX("referBtn"),"#A78BFA",()=>{
+                  if(confirm(TX("referAsk",{n:file.borrower}))){
+                    setStage(REFERRED_OUT_STAGE);
+                    onSave({stage:REFERRED_OUT_STAGE, stageEnteredAt:today(), daysInStage:0});
+                  }
+                },A.refer)}
+                {btn("prep",TX("prepBtn"),"#7EC8A4",onPrep,A.prep)}
+                {btn("arch",TX("archBtn"),"#8B949E",onArchive,A.archive)}
+              </>)}
+
+              {isAdmin&&(<>
+                <div style={{flex:1,minWidth:12}}/>
+                <div style={{width:1,height:22,background:"#21262D",margin:"0 4px"}}/>
+                <button className="hov"
+                  onClick={()=>{if(confirm(TX("deleteAsk")))onDelete();}}
+                  title={TX("deleteHint")}
+                  style={{background:"transparent",color:"#E85D75",border:"none",borderRadius:6,
+                    padding:"8px 14px",fontFamily:"DM Mono",fontSize:10.5,cursor:"pointer"}}>
+                  {TX("delBtn")}
+                </button>
+              </>)}
+            </>);
+          })()}
         </div>
       </div>
       {showChange&&(

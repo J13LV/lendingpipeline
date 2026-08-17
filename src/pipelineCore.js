@@ -3445,6 +3445,53 @@ export function stampRegistration(file, by) {
   };
 }
 
+// ─── 7S. QUE ACCIONES APLICAN EN CADA FASE ─────────────────────────
+// Los siete botones del pie estaban todos iguales: mismo tamaño, mismo
+// peso, siempre disponibles. BORRAR —el unico que no se deshace— al
+// lado de GUARDAR, que se toca veinte veces al dia.
+//
+// La regla que ordena esto: mientras el archivo AVANZA, las salidas se
+// CIERRAN. Al principio caben todas —puede irse a preparacion, referirse,
+// archivarse. Cerca del cierre solo queda una: cerrarlo.
+//
+// Apagado NO es prohibido. El boton sigue ahi, en el mismo sitio y del
+// mismo tamaño, y si se toca pregunta con la razon. Que no se muevan de
+// posicion es lo que deja ir con el dedo sin leer la barra cada vez.
+export function fileActions(file, { isAdmin = false } = {}) {
+  const s = file?.stage;
+  const idx = ALL_STAGE_ORDER.indexOf(s);
+  const bajoContrato = idx >= ALL_STAGE_ORDER.indexOf("Under Contract");
+  const enUW = idx >= ALL_STAGE_ORDER.indexOf("Submitted to UW");
+  const alCierre = idx >= ALL_STAGE_ORDER.indexOf("Clear to Close");
+  const cerrado = !!okDate(file?.closedAt);
+  const archivado = !!file?.archived;
+
+  return {
+    save:    { on: true },
+    advance: { on: !cerrado && !archivado && idx > -1 && idx < ALL_STAGE_ORDER.length - 1 },
+    // Cerrar solo se ilumina cuando de verdad esta cerca. Antes lucia
+    // igual en Lead Inquiry que en Funded.
+    close:   { on: alCierre && !cerrado && !archivado,
+               why_es: "Se ilumina desde Clear to Close",
+               why_en: "Lights up from Clear to Close" },
+    // Referir despues de underwriting ya no llega: el lender nuevo
+    // suscribe desde cero y no alcanza la fecha del CD.
+    refer:   { on: !enUW && !cerrado && !archivado,
+               why_es: "Después de someter a UW un traslado ya no llega al cierre",
+               why_en: "After UW submission a transfer no longer reaches closing" },
+    // Preparacion es para clientes vivos que aun no compran. Un archivo
+    // bajo contrato no se estaciona.
+    prep:    { on: !bajoContrato && !cerrado && !archivado,
+               why_es: "Un archivo bajo contrato no se estaciona esperando al cliente",
+               why_en: "A file under contract is not parked waiting on the client" },
+    // Archivar algo que va a fondear seria un error caro.
+    archive: { on: !alCierre && !cerrado && !archivado,
+               why_es: "Un archivo camino al cierre no se archiva",
+               why_en: "A file heading to closing does not get archived" },
+    del:     { on: isAdmin, admin: true },
+  };
+}
+
 // ─── 7V. LA COLA DE LA PROCESADORA ─────────────────────────────────
 // Un LO abre el sistema y piensa "mis archivos". Una procesadora abre y
 // piensa "que hago hoy". Son dos productos distintos sobre el mismo dato.
