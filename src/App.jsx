@@ -222,6 +222,27 @@ function stampEdit(file, profile, action, extra={}){
   };
 }
 
+// Un cambio de etapa SIEMPRE tiene que pasar por stampStage. Cuando no pasa,
+// stageLog no se sella — y de stageLog salen SEIS columnas de la hoja de
+// Martha: divulgaciones enviadas, file to underwriting, approved, CD out,
+// CTC y docs out. Se perdian para siempre en ese archivo, sin error y sin
+// aviso, cada vez que alguien movia la etapa desde el desplegable en vez de
+// usar ADVANCE.
+//
+// stampStage necesita el archivo entero y onSave solo acepta un parche, asi
+// que aqui se sella contra el archivo y se extraen los campos resultantes.
+function stagePatch(file, newStage, extra = {}){
+  const s = stampStage(file, newStage);
+  return {
+    stage: s.stage,
+    stageEnteredAt: s.stageEnteredAt,
+    daysInStage: 0,
+    stageLog: s.stageLog,
+    fileOpenedAt: s.fileOpenedAt,
+    ...extra,
+  };
+}
+
 function timeAgo(iso){
   if(!iso) return "";
   const diff = Date.now() - new Date(iso).getTime();
@@ -4865,7 +4886,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
             </span>
             <span style={{fontSize:8,letterSpacing:"1.3px",color:"#484F58"}}>{TX("hdStage")}</span>
             <select value={stage} onChange={e=>{setStage(e.target.value);
-                onSave({stage:e.target.value, stageEnteredAt:today(), daysInStage:0});}}
+                onSave(stagePatch(file, e.target.value));}}
               style={{background:"#0D1117",border:`1px solid ${ph.color}`,borderRadius:6,
                 color:ph.color,padding:"7px 11px",fontSize:12,fontFamily:"DM Mono",
                 minWidth:280,cursor:"pointer"}}>
@@ -5477,7 +5498,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
               ):isReferredOut?(
                 btn("pull",TX("pullBack"),"#A78BFA",()=>{
                   if(confirm(TX("pullBackAsk",{n:file.borrower}))){
-                    onSave({stage:"Lead Inquiry", stageEnteredAt:today(), daysInStage:0, referredOut:null});
+                    onSave(stagePatch(file, "Lead Inquiry", {referredOut:null}));
                     onClose();
                   }
                 },{on:true})
@@ -5494,7 +5515,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
                 {btn("refer",TX("referBtn"),"#A78BFA",()=>{
                   if(confirm(TX("referAsk",{n:file.borrower}))){
                     setStage(REFERRED_OUT_STAGE);
-                    onSave({stage:REFERRED_OUT_STAGE, stageEnteredAt:today(), daysInStage:0});
+                    onSave(stagePatch(file, REFERRED_OUT_STAGE));
                   }
                 },A.refer)}
                 {btn("prep",TX("prepBtn"),"#7EC8A4",onPrep,A.prep)}
@@ -5541,7 +5562,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
           onConfirm={payload=>{
             const next=applyLenderChange(file,payload);
             onSave({lenderId:next.lenderId,lenderSince:next.lenderSince,lenderHistory:next.lenderHistory,
-              stage:next.stage,stageEnteredAt:next.stageEnteredAt,daysInStage:0,
+              ...stagePatch(file, next.stage),
               lockState:next.lockState,lockedAt:null,lockTermDays:null,lockExpires:null,
               comp:null,backupLenderId:next.backupLenderId});
             setShowChange(false); onClose();
