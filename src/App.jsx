@@ -45,6 +45,8 @@ import {
   noteEntries, latestNote, noteCount, addNoteEntry,
   duplicateMatches, DUP_REASONS,
   PROCESSORS, PROCESSOR_IDS, processorId, processorOf, DEFAULT_PROCESSOR,
+  DPA_PRODUCTS, DPA_PCTS, DPA_FORMS, dpaProduct, dpaForm, dpaOf, hasDpa,
+  setDpa, dpaLabel, dpaComplete, productionByDpa, productionByState,
   GATE1_ITEMS, gate1Item, FINDING_WAITING, WAITING_IDS, waitingMeta,
   openFindings, resolvedFindings, hasOpenFindings, addFinding, resolveFinding,
   findingAge, worstFinding, canRegister, isRegistered, stampRegistration,
@@ -106,7 +108,7 @@ const JOSE_LO = "Jose Del Valle";
 const EXCLUDED_TYPES = ["Lightning Equity Hybrid HELOC","Symmetry HELOC","CE Second Elite",
   "CE Second Expanded Access (ITIN)","CE Second Classic Elite (Piggyback)",
   "FHA Streamline","FHA Streamline High Balance","VA IRRRL","VA IRRRL High Balance",
-  "Fannie RefiNow","Freddie Refi Possible","USDA Streamlined Assist","CO CHFA FHA Streamline"];
+  "Fannie RefiNow","Freddie Refi Possible","USDA Streamlined Assist"];
 
 // ─── BANK-TO-BANK REFERRAL CONSTANTS ───
 // Cuando la sucursal no puede colocar un archivo (producto, crédito, nicho), se refiere
@@ -447,32 +449,25 @@ const PHASES = [
 
 const CLOSED_STAGE = "CLOSED — FUNDED";
 const ALL_STAGES = PHASES.flatMap(p => p.stages.map(s => ({ stage: s, phase: p })));
+// El catalogo bajo de 58 tipos a 26. Salieron 39 productos de DPA
+// estatal —NV HIP, FL Hometown Heroes, TX TSAHC, AZ Home in Five,
+// CO CHFA— que eran de la epoca de PRMG como direct lender. El DPA ya
+// no vive aqui: se describe con sus propias casillas en el archivo, y
+// asi un FHA con asistencia sigue contando como FHA.
+//
+// Y entraron los Non-QM POR NOMBRE. Antes solo habia "Non-QM", un
+// generico: si Ana cerraba un DSCR, el reporte de mezcla nunca podia
+// decir cuanto DSCR se hizo. El motor ya los distinguia y el catalogo
+// de lenders tambien — solo el menu no.
 const LOAN_TYPE_GROUPS = [
-  { group: "Standard", types: ["Conventional","FHA","VA","USDA","Non-QM","Jumbo"] },
-  { group: "NV — DPA", types: [
-    "NV HIP Conventional","NV HIP FHA","NV Rural Home at Last FHA","NV Rural Home at Last Conv","Chenoa Fund FHA","NHF Grant FHA","NHF Grant Conv","NHF Grant VA","NHF Grant USDA"
-  ]},
-  { group: "FL — DPA", types: [
-    "FL Housing FHA","FL Housing Conventional","FL Housing VA",
-    "FL Hometown Heroes FHA","FL Hometown Heroes Conv","FL Hometown Heroes VA",
-    "FL County HFA FHA","FL County HFA Conv","FL County HFA VA","FL County HFA USDA"
-  ]},
-  { group: "TX — DPA", types: [
-    "TX TSAHC Heroes FHA","TX TSAHC Heroes Conv","TX TSAHC Heroes VA",
-    "TX TDHCA FHA + MCC","TX TDHCA Conventional",
-    "TX SETH FHA","TX SETH Conv (No Income Cap)","TX Veterans Land Board (TVLB)"
-  ]},
-  { group: "AZ — DPA", types: [
-    "AZ Home in Five Conv","AZ Home in Five FHA","AZ Home in Five Platinum",
-    "AZ IDA Pima FHA","AZ IDA Pima Conv"
-  ]},
-  { group: "CO — DPA", types: [
-    "CO CHFA FirstGen Plus FHA","CO CHFA FirstStep Plus FHA","CO CHFA SmartStep Plus FHA",
-    "CO CHFA Preferred Plus Conv","CO Denver MetroDPA FHA","CO Denver MetroDPA Conv"
+  { group: "Standard", types: ["Conventional","FHA","VA","USDA","Jumbo"] },
+  { group: "Non-QM", types: [
+    "DSCR","Bank Statement","P&L Only","1099 Only","ITIN",
+    "Foreign National","Asset Depletion","WVOE","Non-QM (other)"
   ]},
   { group: "Refi", types: [
     "FHA Streamline","FHA Streamline High Balance","VA IRRRL","VA IRRRL High Balance",
-    "Fannie RefiNow","Freddie Refi Possible","USDA Streamlined Assist","CO CHFA FHA Streamline"
+    "Fannie RefiNow","Freddie Refi Possible","USDA Streamlined Assist"
   ]},
   { group: "HELOC & Second", types: [
     "Lightning Equity Hybrid HELOC","Symmetry HELOC",
@@ -2490,6 +2485,61 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
             </div>
 
             <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
+              <div style={{background:"#0D1117",padding:"9px 14px",fontSize:10,color:"#7EC8A4",
+                letterSpacing:"1px",borderBottom:"1px solid #30363D"}}>{TX("byDpaMix")}</div>
+              {(()=>{const rows=productionByDpa(files,{cutover:BARRETT_CUTOVER,bpsDefault:BPS_RATE});
+                if(!rows.length) return (
+                  <div style={{padding:"18px 14px",color:"#484F58",fontSize:11.5}}>{TX("noDpaYet")}</div>
+                );
+                return (
+                  <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+                    <thead><tr style={{borderBottom:"1px solid #21262D"}}>
+                      {th(TX("dpaProduct"),"left")}{th(TX("hPct"))}{th(TX("hForm"))}
+                      {th(TX("hClosed"))}{th(TX("hVolume"))}{th(TX("hShare"))}
+                      {th(TX("hDays"))}{th(TX("hActive"))}
+                    </tr></thead>
+                    <tbody>
+                      {rows.map((r,i)=>(
+                        <tr key={r.key} style={{borderBottom:"1px solid #21262D",background:i%2?"#161B22":"#0D1117"}}>
+                          <td style={{padding:"10px 12px",color:"#E6EDF3"}}>{P(dpaProduct(r.product))||"—"}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:"#F5A623",fontFamily:"DM Mono"}}>{r.pct?r.pct+"%":"—"}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:"#7EC8A4",fontSize:11}}>{P(dpaForm(r.form))||"—"}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>{r.funded||"—"}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:"#8B949E",fontFamily:"DM Mono"}}>{r.fundedVolume?money(r.fundedVolume):"—"}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,fontSize:13,color:"#F5A623"}}>{r.unitShare?r.unitShare+"%":"—"}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:"#6E7681",fontFamily:"DM Mono",fontSize:11}}>{r.avgDays??"—"}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:"#4A90D9",fontFamily:"DM Mono"}}>{r.active||"—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                );})()}
+            </div>
+
+            <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
+              <div style={{background:"#0D1117",padding:"9px 14px",fontSize:10,color:"#4A90D9",
+                letterSpacing:"1px",borderBottom:"1px solid #30363D"}}>{TX("byState")}</div>
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+                <thead><tr style={{borderBottom:"1px solid #21262D"}}>
+                  {th(TX("byState"),"left")}{th(TX("hClosed"))}{th(TX("hVolume"))}
+                  {th(TX("hShare"))}{th(TX("hAvg"))}{th(TX("hActive"))}
+                </tr></thead>
+                <tbody>
+                  {productionByState(files,{cutover:BARRETT_CUTOVER,bpsDefault:BPS_RATE}).map((r,i)=>(
+                    <tr key={r.key} style={{borderBottom:"1px solid #21262D",background:i%2?"#161B22":"#0D1117"}}>
+                      <td style={{padding:"10px 12px",color:"#E6EDF3"}}>{r.key}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>{r.funded||"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"#8B949E",fontFamily:"DM Mono"}}>{r.fundedVolume?money(r.fundedVolume):"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,fontSize:13,color:"#F5A623"}}>{r.unitShare}%</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"#6E7681",fontFamily:"DM Mono",fontSize:11}}>{r.avgLoan?money(r.avgLoan):"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"#4A90D9",fontFamily:"DM Mono"}}>{r.active||"—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
               <div style={{background:"#0D1117",padding:"9px 14px",fontSize:10,color:"#BD65E8",
                 letterSpacing:"1px",borderBottom:"1px solid #30363D"}}>{TX("byOriginator")}</div>
               <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
@@ -4376,6 +4426,91 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
   );
 }
 
+// ─── DPA ───
+// Cuatro casillas en escala. El primer "no" corta y no aparece nada mas.
+// Los años de perdon solo salen en la forma perdonable, porque 3.5%
+// perdonable a 3 años y a 10 son la misma etiqueta y decisiones
+// distintas para el cliente.
+function DpaPanel({file,lang,onSave,readOnly}){
+  const d=dpaOf(file);
+  const on=hasDpa(file);
+  const L2=(k,v)=>tr(k,lang,v);
+  const P2=o=>(o&&typeof o==="object")?(o[lang]??o.es??o.en??""):o;
+  const chip=(activo,label,onClick,color)=>(
+    <button key={label} className="hov" disabled={readOnly} onClick={onClick}
+      style={{background:activo?(color||"#7EC8A4"):"transparent",
+        color:activo?"#0D1117":(color||"#8B949E"),
+        border:`1px solid ${activo?(color||"#7EC8A4"):"#30363D"}`,borderRadius:5,
+        padding:"5px 11px",fontSize:10.5,fontFamily:"DM Mono",
+        cursor:readOnly?"default":"pointer"}}>{label}</button>
+  );
+
+  return (
+    <div style={{background:on?"rgba(126,200,164,.05)":"transparent",
+      border:`1px solid ${on?"#7EC8A433":"#21262D"}`,borderRadius:8,padding:14,
+      display:"flex",flexDirection:"column",gap:on?11:0}}>
+      <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,
+          color:on?"#7EC8A4":"#6E7681",letterSpacing:"1px"}}>{L2("dpaBlock")}</span>
+        <div style={{display:"flex",gap:5,marginLeft:"auto"}}>
+          {chip(on,L2("yesShort"),()=>onSave(setDpa(file,{on:true})))}
+          {chip(!on,L2("noShort"),()=>onSave(setDpa(file,{on:false})),"#8B949E")}
+        </div>
+      </div>
+
+      {on&&(<>
+        <div>
+          <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L2("dpaProduct")}</div>
+          <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+            {DPA_PRODUCTS.map(p=>chip(d.product===p.id,P2(p),
+              ()=>onSave(setDpa(file,{product:p.id})),"#BD65E8"))}
+          </div>
+        </div>
+
+        <div>
+          <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L2("dpaPctLabel")}</div>
+          <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+            {DPA_PCTS.map(p=>chip(d.pct===p,p+"%",()=>onSave(setDpa(file,{pct:p})),"#F5A623"))}
+          </div>
+        </div>
+
+        <div>
+          <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L2("dpaForm")}</div>
+          <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+            {DPA_FORMS.map(f=>chip(d.form===f.id,P2(f),()=>onSave(setDpa(file,{form:f.id}))))}
+          </div>
+          {d.form&&(
+            <div style={{fontSize:9,color:"#484F58",marginTop:4}}>
+              {lang==="en"?dpaForm(d.form)?.note_en:dpaForm(d.form)?.note_es}
+            </div>
+          )}
+        </div>
+
+        {d.form==="forgivable"&&(
+          <div>
+            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L2("dpaYears")}</div>
+            <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+              {[3,5,10].map(y=>chip(d.forgivenessYears===y,y+"",
+                ()=>onSave(setDpa(file,{forgivenessYears:y})),"#4A90D9"))}
+            </div>
+          </div>
+        )}
+
+        <div style={{borderTop:"1px solid #21262D",paddingTop:8,display:"flex",
+          justifyContent:"space-between",alignItems:"baseline",gap:8,flexWrap:"wrap"}}>
+          <span style={{fontSize:11.5,color:"#7EC8A4",fontFamily:"DM Mono"}}>
+            {dpaLabel(file,lang)}
+          </span>
+          {!dpaComplete(file)&&(
+            <span style={{fontSize:9,color:"#F5A623"}}>{L2("dpaIncomplete")}</span>
+          )}
+        </div>
+        <div style={{fontSize:9,color:"#484F58",lineHeight:1.5}}>{L2("dpaBlockHint")}</div>
+      </>)}
+    </div>
+  );
+}
+
 // ─── HALLAZGOS ───
 // Se guardan de inmediato, no con el SAVE del pie. Un hallazgo que se
 // pierde porque alguien cerro el modal sin guardar es exactamente el
@@ -4608,7 +4743,21 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
             <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L("loanType")}</div>
             <select value={loanType} onChange={e=>setLoanType(e.target.value)} style={fs2}>
               {LOAN_TYPE_GROUPS.map(g=><optgroup key={g.group} label={g.group}>{g.types.map(lt=><option key={lt}>{lt}</option>)}</optgroup>)}
+              {/* Un archivo viejo puede traer un tipo que ya no esta en el
+                  catalogo — los 39 DPA estatales de PRMG. Sin esta opcion el
+                  select saldria en blanco y guardar encima le cambiaria el
+                  producto en silencio. */}
+              {loanType&&!LOAN_TYPES.includes(loanType)&&(
+                <optgroup label={TX("legacyType")}>
+                  <option value={loanType}>{loanType}</option>
+                </optgroup>
+              )}
             </select>
+            {loanType&&!LOAN_TYPES.includes(loanType)&&(
+              <div style={{fontSize:9,color:"#F5A623",marginTop:4,lineHeight:1.5}}>
+                {TX("legacyTypeHint")}
+              </div>
+            )}
           </div>
           <div>
             <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L("loanAmount")}</div>
@@ -4696,6 +4845,13 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
             <IntakePane file={file} lang={lang} readOnly={isAssistant}
               onSave={next=>onSave({intake:next.intake})}/>
           </div>
+        )}
+
+        {/* DPA — cuatro casillas, sin catalogo que mantener. El lender ya
+            esta en el archivo; esto describe la asistencia. */}
+        {!inPrep && !isReferredOut && (
+          <DpaPanel file={file} lang={lang} readOnly={isAssistant}
+            onSave={next=>onSave({dpa:next.dpa})}/>
         )}
 
         {/* HALLAZGOS — lo que alguien vio y sigue abierto */}

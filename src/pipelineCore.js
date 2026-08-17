@@ -3031,6 +3031,138 @@ export function worstFinding(file) {
   return [...abiertos].sort((a, b) => String(a.at).localeCompare(String(b.at)))[0];
 }
 
+// ─── 7T. ASISTENCIA AL ENGANCHE (DPA) ──────────────────────────────
+// El catalogo viejo tenia 39 tipos de prestamo que eran DPA estatales:
+// NV HIP, Home at Last, FL Hometown Heroes, TX TSAHC, AZ Home in Five,
+// CO CHFA. Eso era de la epoca de PRMG como direct lender. Hoy la
+// sucursal coloca DPA in-house de los lenders mayoristas.
+//
+// El error de fondo de aquel diseño: metia el DPA DENTRO del tipo de
+// prestamo. Un "NV HIP FHA" dejaba de contar como FHA en los reportes,
+// porque el tipo solo puede tener un valor.
+//
+// Un prestamo pertenece a DOS dimensiones a la vez: es FHA y lleva DPA.
+// Por eso el tipo vuelve a ser lo que es —FHA, Conventional, VA— y el
+// DPA se describe con atributos propios. Asi el mismo archivo cuenta en
+// los dos lados y se puede preguntar "cuanto 3.5% perdonable cerre",
+// que con nombres de programa no se puede.
+//
+// Y por atributos NO hay catalogo que mantener: el lender ya esta en el
+// archivo, y el dia que aparezca un programa nuevo se describe con las
+// mismas cuatro casillas sin registrar nada de antemano.
+
+// Conventional DPA no es "un DPA sobre convencional". Es un producto
+// aparte y estrategico: segundos compradores, permiso de trabajo sin
+// green card, un solo año de taxes. Barrett tambien lo separa —
+// conventional_dpa es su propia etiqueta en el catalogo de lenders.
+export const DPA_PRODUCTS = [
+  { id: "fha_dpa",  es: "FHA DPA",          en: "FHA DPA" },
+  { id: "conv_dpa", es: "Conventional DPA", en: "Conventional DPA" },
+];
+export const dpaProduct = id => DPA_PRODUCTS.find(p => p.id === id) || null;
+
+// Los porcentajes que se ofrecen de verdad. 3.5 existe porque cubre el
+// enganche completo de FHA; 5 cubre enganche mas parte de los costos.
+export const DPA_PCTS = [1, 2, 3, 3.5, 5];
+
+// Como se devuelve. Es el eje que decide para que cliente sirve.
+export const DPA_FORMS = [
+  { id: "grant",      es: "Grant",              en: "Grant",
+    note_es: "No se devuelve", note_en: "Never repaid" },
+  { id: "forgivable", es: "Segunda perdonable", en: "Forgivable second",
+    needsYears: true,
+    note_es: "Se perdona al cumplir el plazo de pagos",
+    note_en: "Forgiven once the payment term is met" },
+  { id: "repayable",  es: "Segunda pagadera",   en: "Repayable second",
+    note_es: "El cliente la paga cada mes", note_en: "The borrower repays it monthly" },
+];
+export const dpaForm = id => DPA_FORMS.find(f => f.id === id) || null;
+
+export const dpaOf = file => (file?.dpa && typeof file.dpa === "object") ? file.dpa : {};
+export const hasDpa = file => !!dpaOf(file).on;
+
+export function setDpa(file, patch) {
+  const cur = dpaOf(file);
+  const next = { ...cur, ...patch };
+  if (patch.on === false) return { ...file, dpa: { on: false } };
+  next.on = true;
+  if (patch.pct !== undefined) {
+    const n = Number(String(patch.pct).replace(/[^\d.]/g, ""));
+    next.pct = Number.isFinite(n) && n > 0 ? n : null;
+  }
+  // Los años de perdon solo existen en la forma perdonable.
+  if (next.form !== "forgivable") delete next.forgivenessYears;
+  if (patch.forgivenessYears !== undefined) {
+    const n = Number(patch.forgivenessYears);
+    next.forgivenessYears = Number.isFinite(n) && n > 0 ? n : null;
+  }
+  return { ...file, dpa: next };
+}
+
+// La linea que se lee de un vistazo: "Conventional DPA 5% forgivable".
+// El lender no va aqui — ya esta en el archivo.
+export function dpaLabel(file, lang = "es") {
+  if (!hasDpa(file)) return null;
+  const d = dpaOf(file);
+  const p = dpaProduct(d.product), f = dpaForm(d.form);
+  const bits = [];
+  if (p) bits.push(lang === "en" ? p.en : p.es);
+  if (d.pct) bits.push(d.pct + "%");
+  if (f) bits.push((lang === "en" ? f.en : f.es).toLowerCase());
+  if (d.form === "forgivable" && d.forgivenessYears)
+    bits.push(lang === "en" ? `${d.forgivenessYears}yr` : `${d.forgivenessYears} años`);
+  return bits.length ? bits.join(" · ") : "DPA";
+}
+
+// Que tan descrito esta. Producto y forma son lo minimo para poder
+// contar; el porcentaje afina.
+export const dpaComplete = file => {
+  const d = dpaOf(file);
+  return !!(d.on && d.product && d.form && d.pct);
+};
+
+// ─── PRODUCCION POR DPA ────────────────────────────────────────────
+// La pregunta que contesta: que se esta vendiendo mas. No cuantos
+// programas existen — cuales cierras tu.
+export function productionByDpa(files, { cutover = null, bpsDefault = 150 } = {}) {
+  const m = new Map();
+  for (const f of files || []) {
+    if (!hasDpa(f)) continue;
+    const d = dpaOf(f);
+    const key = [d.product || "?", d.pct ?? "?", d.form || "?"].join("|");
+    if (!m.has(key)) m.set(key, {
+      key, product: d.product || null, pct: d.pct ?? null, form: d.form || null,
+      funded: 0, fundedVolume: 0, comp: 0, active: 0, activeVolume: 0, days: [],
+    });
+    const r = m.get(key);
+    const amt = Number(f.loan) || 0;
+    const fecha = fundedDate(f);
+    if (fecha) {
+      if (cutover && fecha < cutover) continue;
+      r.funded++; r.fundedVolume += amt;
+      r.comp += fileCompDollars(f, bpsDefault);
+      if (okDate(f.lenderSince)) r.days.push(daysBetween(f.lenderSince, fecha));
+    } else if (f.stage) { r.active++; r.activeVolume += amt; }
+  }
+  const tot = [...m.values()].reduce((a, r) => a + r.funded, 0);
+  return [...m.values()].map(r => ({
+    ...r,
+    avgDays: r.days.length ? Math.round(r.days.reduce((a, b) => a + b, 0) / r.days.length) : null,
+    unitShare: tot ? Math.round(100 * r.funded / tot) : 0,
+  })).sort((a, b) => b.funded - a.funded || b.fundedVolume - a.fundedVolume);
+}
+
+// Solo por forma, sin partir por porcentaje. Grant contra perdonable
+// contra pagadera — la mezcla gruesa.
+export const productionByDpaForm = (files, opts = {}) =>
+  tally(files.filter(hasDpa), f => dpaOf(f).form || null, opts);
+
+// Por estado. El dato ya se captura para el calculo de contingencias
+// (NV y TX cuentan calendario, FL cuenta habiles), asi que esta vista
+// no cuesta captura nueva.
+export const productionByState = (files, opts = {}) =>
+  tally(files, f => f?.state || "NV", opts);
+
 // ─── 7U. CAMPOS DE ADMISION ────────────────────────────────────────
 // El checklist de Barrett tiene 51 campos. Veintiuno los sabe el sistema
 // y solo hay que imprimirlos; doce requieren que una persona abra un
