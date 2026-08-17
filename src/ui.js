@@ -246,6 +246,14 @@ export const UI = {
   hdClosing:{ es:"CIERRE", en:"CLOSING" },
   hdCeiling:{ es:"techo {n}d", en:"ceiling {n}d" },
   hdInDays:{ es:"en {n} días", en:"in {n} days" },
+
+  // ─── código de color ───
+  sigBroken:{ es:"Vencido o roto", en:"Overdue or broken" },
+  sigSoon:{ es:"Se avecina", en:"Coming up" },
+  sigDone:{ es:"Hecho", en:"Done" },
+  sigInfo:{ es:"Dato del sistema", en:"System data" },
+  sigLegal:{ es:"Legal", en:"Legal" },
+  sigIdle:{ es:"Estancado", en:"Idle" },
   closingToday:{ es:"cierra hoy", en:"closing today" },
   pastDue:{ es:"pasado de fecha", en:"past due" },
 

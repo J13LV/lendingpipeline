@@ -44,6 +44,7 @@ import {
   specDetailSummary, emptySpecDetail,
   noteEntries, latestNote, noteCount, addNoteEntry,
   duplicateMatches, DUP_REASONS, fileActions,
+  SIGNALS, signalColor, deadlineSignal, contingencySignal, SOON_DAYS,
   PROCESSORS, PROCESSOR_IDS, processorId, processorOf, DEFAULT_PROCESSOR,
   DPA_PCTS, DPA_FORMS, dpaForm, dpaOf, hasDpa, miLooksWrong,
   setDpa, dpaLabel, dpaComplete, productionByDpa, productionByState,
@@ -3361,7 +3362,10 @@ const mon = iso => iso ? `${MONTHS[Number(iso.slice(5,7))-1]} ${Number(iso.slice
 // The verb that belongs to each derived stage, so the card reads as an instruction.
 const ACTION_VERB={"Appraisal Ordered":"order","Submitted to UW":"submit","Condition Clearing":"clear",
   "Clear to Close":"CTC","CD Issued":"CD","Closing Scheduled":"schedule","Signing":"sign","Funded":"fund"};
-const LEVEL_COLOR = { critical:"#E85D75", warn:"#F5A623", normal:"#7EC8A4", done:"#484F58", missing:"#30363D" };
+// Los niveles de contingencia hablan el mismo idioma que el resto: rojo
+// roto, dorado se avecina, verde hecho, gris estancado. Antes "done"
+// era gris y "normal" verde — al reves de lo que el ojo espera.
+const LEVEL_COLOR = { critical:"#E85D75", warn:"#F5A623", normal:"#4A90D9", done:"#7EC8A4", missing:"#6E7681" };
 
 // ─── CARD STRIP (design A) ───
 // Two contract contingencies on one line, the delivery date and its legal
@@ -4406,14 +4410,28 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
           </button>
           {showDerived&&(
             <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:3}}>
-              <div style={{fontSize:9,color:"#30363D",marginBottom:3,lineHeight:1.5}}>
+              <div style={{fontSize:9,color:"#30363D",marginBottom:5,lineHeight:1.5}}>
                 {TX("derivedHint")}</div>
+              {/* La leyenda va donde se usa el color, no en una pantalla
+                  de ayuda que nadie abre. */}
+              <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:7}}>
+                {["done","soon","broken"].map(id=>(
+                  <span key={id} style={{fontSize:8.5,color:signalColor(id),letterSpacing:".4px"}}>
+                    ● {P(SIGNALS[id])}
+                  </span>
+                ))}
+              </div>
+              {/* El color sale de deadlineSignal, no de "la fecha ya paso".
+                  Una tasacion YA ORDENADA salia en rojo porque el
+                  calendario habia quedado atras — el rojo decia "tarde"
+                  sobre algo hecho. Si la etapa se alcanzo, va en verde. */}
               {derived.map(r=>{
-                const late=r.startBy<today();
+                const sig=deadlineSignal(r,file);
+                const col=r.legal?signalColor("legal"):signalColor(sig);
                 return (
                   <div key={r.stage} style={{display:"flex",gap:8,fontSize:10,fontFamily:"DM Mono",
-                    color:late?"#E85D75":"#8B949E",alignItems:"baseline"}}>
-                    <span style={{minWidth:70,color:late?"#E85D75":"#E6EDF3"}}>{r.startBy}</span>
+                    color:col,alignItems:"baseline"}}>
+                    <span style={{minWidth:70}}>{r.startBy}</span>
                     <span style={{flex:1}}>{r.stage}{r.legal?" ⚖":""}</span>
                     <span style={{color:"#484F58",fontSize:9}}>{r.owner||""}</span>
                   </div>
@@ -4779,19 +4797,45 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
           </div>
         </div>
 
+        {/* ETAPA — el campo que mas se toca. Estaba al fondo de la solapa
+            PRÉSTAMO, despues del DPA y del BPS. Aqui se cambia desde
+            cualquier solapa sin ir a buscarlo. */}
+        {!isClosed&&!inPrep&&!isReferredOut&&(
+          <div style={{padding:"9px 22px",borderTop:"1px solid #21262D",
+            display:"flex",alignItems:"center",gap:11,flexShrink:0}}>
+            <span style={{fontSize:8,letterSpacing:"1.3px",color:"#484F58"}}>{TX("hdStage")}</span>
+            <select value={stage} onChange={e=>{setStage(e.target.value);
+                onSave({stage:e.target.value, stageEnteredAt:today(), daysInStage:0});}}
+              style={{background:"#0D1117",border:`1px solid ${ph.color}`,borderRadius:6,
+                color:ph.color,padding:"7px 11px",fontSize:12,fontFamily:"DM Mono",
+                minWidth:280,cursor:"pointer"}}>
+              {ALL_STAGES.map((s,i)=><option key={i} value={s.stage} style={{color:s.phase.color,background:"#0D1117"}}>[{s.phase.short}] {s.stage}</option>)}
+              <optgroup label="── Bank-to-Bank Referral ──">
+                <option value={REFERRED_OUT_STAGE} style={{color:"#A78BFA",background:"#0D1117"}}>🔀 REFERRED OUT — EXTERNAL BANK</option>
+              </optgroup>
+            </select>
+            <span style={{fontSize:9,color:"#484F58"}}>
+              {daysInStage(file)===null?"—":`${daysInStage(file)}d`}
+              {(()=>{const c=stageClock(file.stage,file);return c?` · ${TX("hdCeiling",{n:c.late})}`:"";})()}
+            </span>
+          </div>
+        )}
+
         {/* SOLAPAS — estiradas a todo el ancho, en cinco partes iguales.
             La activa lleva fondo Y barra dorada: solo con el subrayado se
             perdian entre el resto del texto. */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",
           borderTop:"1px solid #21262D",borderBottom:"1px solid #21262D",
           background:"#0A0E13",flexShrink:0}}>
+          {/* Sin contadores. Un numero rojo sin explicacion asusta pero no
+              informa — vuelven cuando la guia enseñe que significan. */}
           {[
-            ["loan",  TX("tabLoan"),   0],
-            ["lender",TX("tabLender"), lenderConflicts(file).length],
-            ["dates", TX("tabDates"),  contingencyConflicts(file).length],
-            ["money", TX("tabMoney"),  payrollBlockers(file).length],
-            ["file",  TX("tabFile"),   openFindings(file).length],
-          ].map(([id,label,n],i)=>{
+            ["loan",  TX("tabLoan")],
+            ["lender",TX("tabLender")],
+            ["dates", TX("tabDates")],
+            ["money", TX("tabMoney")],
+            ["file",  TX("tabFile")],
+          ].map(([id,label],i)=>{
             const on=tab===id;
             return (
               <button key={id} className="hov" onClick={()=>setTab(id)}
@@ -4800,7 +4844,7 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
                   letterSpacing:"1.4px",padding:"11px 0",textAlign:"center",
                   borderRight:i<4?"1px solid #21262D":"none",
                   boxShadow:on?"inset 0 -2px 0 #F5A623":"none"}}>
-                {label}{n>0&&<span style={{color:"#E85D75",marginLeft:5}}>{n}</span>}
+                {label}
               </button>
             );
           })}
@@ -5057,17 +5101,6 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
             </div>
           );
         })()}
-
-        {tab==="loan" && !isClosed&&!inPrep&&<div style={{alignSelf:"start"}}>
-          <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L("stage")}</div>
-          <select value={stage} onChange={e=>{setStage(e.target.value);onSave({stage:e.target.value, stageEnteredAt:today(), daysInStage:0});}}
-            style={{background:"#0D1117",border:`1px solid ${ph.color}`,borderRadius:6,color:ph.color,padding:"8px 10px",fontSize:13,fontFamily:"DM Mono",width:"100%"}}>
-            {ALL_STAGES.map((s,i)=><option key={i} value={s.stage} style={{color:s.phase.color,background:"#0D1117"}}>[{s.phase.short}] {s.stage}</option>)}
-            <optgroup label="── Bank-to-Bank Referral ──">
-              <option value={REFERRED_OUT_STAGE} style={{color:"#A78BFA",background:"#0D1117"}}>🔀 REFERRED OUT — EXTERNAL BANK</option>
-            </optgroup>
-          </select>
-        </div>}
 
         {/* OUTBOUND REFERRAL SECTION — when stage = REFERRED OUT */}
         {tab==="loan" && isReferredOut && (

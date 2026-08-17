@@ -3445,6 +3445,69 @@ export function stampRegistration(file, by) {
   };
 }
 
+// ─── 7R. CODIGO DE COLOR ───────────────────────────────────────────
+// El color se acumulo sin decidirse. Hoy el rojo dice cinco cosas
+// distintas: urgencia, conflicto, hallazgo abierto, borrar y contingencia
+// vencida. Y el caso que lo delato: una tasacion YA ORDENADA salia en
+// rojo porque la fecha derivada habia pasado — el rojo decia "tarde"
+// sobre algo que ya estaba hecho.
+//
+// Un color que significa cinco cosas no significa ninguna. Y cuando
+// alguien nuevo entra al pipeline, el color es lo primero que su cerebro
+// lee, antes que el texto.
+//
+// SEIS COLORES, UN SIGNIFICADO CADA UNO, SIN EXCEPCION:
+//
+//   ROJO    · vencido o roto. Ya paso y sigue sin hacerse, o dos datos
+//             se contradicen y el plan no se sostiene. Hay daño.
+//   DORADO  · se avecina. Falta poco, falta un dato, hay que decidir.
+//             Nada se rompio todavia.
+//   VERDE   · hecho y correcto. Cumplido, recibido, cerrado, resuelto.
+//   AZUL    · dato del sistema. Lo que el pipeline calculo o trajo.
+//             Ni bueno ni malo — informacion.
+//   MORADO  · legal. Solo TRID, el CD y los plazos de ley. Un solo uso,
+//             por eso siempre se reconoce.
+//   GRIS    · estancado o sin funcion. No aplica, no hay dato, o nadie
+//             lo esta moviendo.
+//
+// Reservar el rojo lo vuelve raro, y por eso creible.
+export const SIGNALS = {
+  broken:  { id: "broken",  color: "#E85D75", es: "Vencido o roto",   en: "Overdue or broken" },
+  soon:    { id: "soon",    color: "#F5A623", es: "Se avecina",       en: "Coming up" },
+  done:    { id: "done",    color: "#7EC8A4", es: "Hecho",            en: "Done" },
+  info:    { id: "info",    color: "#4A90D9", es: "Dato del sistema", en: "System data" },
+  legal:   { id: "legal",   color: "#BD65E8", es: "Legal",            en: "Legal" },
+  idle:    { id: "idle",    color: "#6E7681", es: "Estancado",        en: "Idle" },
+};
+export const signalColor = id => (SIGNALS[id] || SIGNALS.idle).color;
+
+// Cuantos dias antes empieza a avisar. Menos de esto es dorado; mas,
+// gris — todavia no le toca a nadie.
+export const SOON_DAYS = 7;
+
+// La señal de una fecha derivada. Este es el caso que rompio el sistema
+// viejo: si la etapa YA se alcanzo, la fecha se cumplio y va en verde,
+// aunque el calendario haya quedado atras. Rojo solo si paso Y sigue
+// sin hacerse.
+export function deadlineSignal(row, file) {
+  if (!row?.startBy) return "idle";
+  const alcanzada = ALL_STAGE_ORDER.indexOf(file?.stage) >= ALL_STAGE_ORDER.indexOf(row.stage);
+  if (alcanzada) return "done";
+  // `hoy` y no `t`: la letra t es el helper bilingue del final del archivo.
+  const hoy = today();
+  if (row.startBy < hoy) return "broken";
+  return daysBetween(hoy, row.startBy) <= SOON_DAYS ? "soon" : "idle";
+}
+
+// La señal de una contingencia, con la misma vara.
+export function contingencySignal(st) {
+  if (!st?.date) return "idle";
+  if (st.outcome === "missed") return "broken";
+  if (st.outcomeMeta?.terminal) return "done";
+  if (st.daysLeft < 0) return "broken";
+  return st.daysLeft <= SOON_DAYS ? "soon" : "idle";
+}
+
 // ─── 7S. QUE ACCIONES APLICAN EN CADA FASE ─────────────────────────
 // Los siete botones del pie estaban todos iguales: mismo tamaño, mismo
 // peso, siempre disponibles. BORRAR —el unico que no se deshace— al
