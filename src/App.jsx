@@ -44,7 +44,7 @@ import {
   specDetailSummary, emptySpecDetail,
   noteEntries, latestNote, noteCount, addNoteEntry,
   duplicateMatches, DUP_REASONS, fileActions,
-  SIGNALS, signalColor, deadlineSignal, contingencySignal, SOON_DAYS,
+  SIGNALS, signalColor, deadlineSignal, contingencySignal, SOON_DAYS, filePace,
   PROCESSORS, PROCESSOR_IDS, processorId, processorOf, DEFAULT_PROCESSOR,
   DPA_PCTS, DPA_FORMS, dpaForm, dpaOf, hasDpa, miLooksWrong,
   setDpa, dpaLabel, dpaComplete, productionByDpa, productionByState,
@@ -1484,6 +1484,14 @@ export default function App() {
                             </span>
                             {f.closing&&<span style={{color:cd!==null&&cd<=3?"#E85D75":cd!==null&&cd<=7?"#F5A623":"#484F58"}}>
                               {cd===0?"CLOSING TODAY":cd!==null&&cd>0?`Close in ${cd}d`:cd!==null?"PAST DUE":f.closing}
+                              {/* El ritmo se lee sin abrir el archivo: de un
+                                  vistazo se ve cual va adelantado y cual
+                                  arrastrado en todo el tablero. */}
+                              {(()=>{const p=filePace(f);
+                                if(!p.ready||p.state==="onplan") return null;
+                                return <span style={{color:signalColor(p.signal),marginLeft:6}}>
+                                  {p.state==="ahead"?"▲":"▼"}{p.days}
+                                </span>;})()}
                             </span>}
                           </div>
                           <LenderStrip file={f}/>
@@ -4322,6 +4330,29 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
 
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
+      {/* RITMO — aviso, nunca accion. Adelantar el cierre necesita
+          addendum firmado por comprador y vendedor. */}
+      {(()=>{const p=filePace(draft);
+        if(!p.ready||p.state==="onplan") return null;
+        const col=signalColor(p.signal);
+        return (
+          <div style={{background:p.state==="ahead"?"rgba(126,200,164,.07)":"rgba(232,93,117,.07)",
+            border:`1px solid ${col}44`,borderRadius:6,padding:"10px 12px"}}>
+            <div style={{fontSize:11,color:col,lineHeight:1.45}}>
+              {p.state==="ahead"?TX("paceAheadFull",{n:p.days}):TX("paceBehindFull",{n:p.days})}
+            </div>
+            <div style={{fontSize:9,color:"#8B949E",marginTop:4,lineHeight:1.5}}>
+              {TX("paceBasis",{s:file.stage,d:p.shouldStartBy})}
+              {p.couldCloseBy?" · "+TX("paceCould",{d:p.couldCloseBy}):""}
+            </div>
+            {p.state==="ahead"&&(
+              <div style={{fontSize:9,color:"#484F58",marginTop:4,lineHeight:1.5}}>
+                {TX("paceAddendum")}
+              </div>
+            )}
+          </div>
+        );})()}
+
       {/* CONFLICTS */}
       {conflicts.length>0&&(
         <div style={{display:"flex",flexDirection:"column",gap:6}}>
@@ -4792,6 +4823,22 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
                 </div>
               </div>
             )}
+            {/* RITMO — el sistema ya sabia que iba adelantado y no lo
+                decia. Solo hablaba cuando algo se atrasaba. */}
+            {(()=>{const p=filePace(file);
+              if(!p.ready||p.state==="onplan") return null;
+              const col=signalColor(p.signal);
+              return (
+                <div style={{textAlign:"right"}}>
+                  <div style={{fontSize:8,letterSpacing:"1.3px",color:"#484F58",marginBottom:3}}>{TX("hdPace")}</div>
+                  <div style={{fontSize:12,color:col}}>
+                    {p.state==="ahead"?"▲":"▼"} {TX("paceDays",{n:p.days})}
+                  </div>
+                  <div style={{fontSize:9,color:"#484F58",marginTop:2}}>
+                    {p.state==="ahead"?TX("paceAhead"):TX("paceBehind")}
+                  </div>
+                </div>
+              );})()}
             <button onClick={onClose} style={{background:"transparent",border:"none",color:"#484F58",
               fontSize:18,cursor:"pointer",padding:"2px 0 0 4px",lineHeight:1}}>✕</button>
           </div>

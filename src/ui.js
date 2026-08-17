@@ -254,6 +254,18 @@ export const UI = {
   sigInfo:{ es:"Dato del sistema", en:"System data" },
   sigLegal:{ es:"Legal", en:"Legal" },
   sigIdle:{ es:"Estancado", en:"Idle" },
+
+  // ─── ritmo del archivo ───
+  hdPace:{ es:"RITMO", en:"PACE" },
+  paceDays:{ es:"{n}d", en:"{n}d" },
+  paceAhead:{ es:"adelantado", en:"ahead" },
+  paceBehind:{ es:"atrasado", en:"behind" },
+  paceAheadFull:{ es:"Este archivo va {n} días adelantado", en:"This file is running {n} days ahead" },
+  paceBehindFull:{ es:"Este archivo va {n} días atrasado", en:"This file is running {n} days behind" },
+  paceBasis:{ es:"{s} debía empezar el {d}", en:"{s} was due to start {d}" },
+  paceCould:{ es:"a este ritmo podría cerrar el {d}", en:"at this pace it could close {d}" },
+  paceAddendum:{ es:"Adelantar el cierre necesita addendum firmado por comprador y vendedor. El sistema no mueve el COE.",
+                 en:"Moving the closing up needs an addendum signed by buyer and seller. The system does not move the COE." },
   closingToday:{ es:"cierra hoy", en:"closing today" },
   pastDue:{ es:"pasado de fecha", en:"past due" },
 

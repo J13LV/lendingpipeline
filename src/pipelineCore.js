@@ -3508,6 +3508,48 @@ export function contingencySignal(st) {
   return st.daysLeft <= SOON_DAYS ? "soon" : "idle";
 }
 
+// ─── 7Q. RITMO · ADELANTADO O ATRASADO ─────────────────────────────
+// El sistema ya sabia que un archivo iba adelantado —ocho de doce fechas
+// derivadas en verde— pero no lo decia. Solo hablaba cuando algo se
+// atrasaba, y eso deja al equipo sin la mitad de la informacion.
+//
+// La medida NO es proyectado contra COE. Ese numero no se mueve nunca:
+// es el mismo el dia del contrato que hoy, porque los dos lados son
+// fechas fijas. Mide el plan contra el plan.
+//
+// La medida buena es DONDE ESTAS contra DONDE DEBERIAS ESTAR: la etapa
+// actual tiene su fecha derivada, y la distancia contra hoy es el ritmo
+// real. Ese numero SI se mueve cada vez que el archivo avanza.
+//
+// Adelantado NO mueve el COE. Cerrar antes necesita addendum firmado por
+// comprador y vendedor — el sistema avisa, la llamada al agente la hace
+// una persona.
+export function filePace(file) {
+  const mapa = derivedStageDeadlines(file);
+  const fila = mapa[file?.stage];
+  if (!fila?.startBy) return { ready: false };
+
+  const hoy = today();
+  // Positivo = adelantado. Si la etapa debia empezar el 27 y hoy es 17,
+  // el archivo llego diez dias antes de lo planeado.
+  const dias = fila.startBy >= hoy
+    ? daysBetween(hoy, fila.startBy)
+    : -daysBetween(fila.startBy, hoy);
+
+  // Un dia de diferencia no es ritmo, es ruido de calendario.
+  const estado = dias >= 2 ? "ahead" : dias <= -2 ? "behind" : "onplan";
+  return {
+    ready: true, days: Math.abs(dias), raw: dias, state: estado,
+    shouldStartBy: fila.startBy,
+    signal: estado === "ahead" ? "done" : estado === "behind" ? "broken" : "idle",
+    // Cuanto se PODRIA adelantar el cierre si mantiene el ritmo. Solo se
+    // calcula; nadie mueve nada sin addendum.
+    couldCloseBy: estado === "ahead"
+      ? addDays(okDate(file?.contingencies?.coe) || okDate(file?.closing), -dias)
+      : null,
+  };
+}
+
 // ─── 7S. QUE ACCIONES APLICAN EN CADA FASE ─────────────────────────
 // Los siete botones del pie estaban todos iguales: mismo tamaño, mismo
 // peso, siempre disponibles. BORRAR —el unico que no se deshace— al
