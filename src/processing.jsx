@@ -146,11 +146,29 @@ function OrderRow({ file, def, lang, onSave, readOnly }) {
   );
 }
 
+// Un campo numerico NO puede convertir en cada tecla. Al escribir "3.5"
+// la cadena pasa por "3." y Number("3.") es 3, asi que el punto se
+// borraba solo y nunca se podia llegar al 5. Se guarda el texto mientras
+// se escribe y se convierte al salir del campo.
+function NumField({ value, onCommit, style }) {
+  const [txt, setTxt] = useState(value === null || value === undefined ? "" : String(value));
+  const [editing, setEditing] = useState(false);
+  const mostrado = editing ? txt : (value === null || value === undefined ? "" : String(value));
+  return (
+    <input value={mostrado} inputMode="decimal"
+      onFocus={() => { setTxt(value === null || value === undefined ? "" : String(value)); setEditing(true); }}
+      onChange={e => setTxt(e.target.value.replace(/[^\d.]/g, ""))}
+      onBlur={() => { setEditing(false); onCommit(txt); }}
+      onKeyDown={e => { if (e.key === "Enter") e.currentTarget.blur(); }}
+      style={style} />
+  );
+}
+
 // ─── ADMISION ──────────────────────────────────────────────────────
 // Dieciocho campos que nadie escribia y la procesadora reconstruia de
 // los documentos en cada archivo. Los marcados con ◆ alimentan tambien
 // la decision de DPA — se capturan una vez y sirven para las dos cosas.
-function IntakePane({ file, lang, onSave, readOnly }) {
+export function IntakePane({ file, lang, onSave, readOnly }) {
   const { T, P } = mk(lang);
   const cov = intakeCompleteness(file);
   const listoDpa = dpaReady(file);
@@ -188,11 +206,10 @@ function IntakePane({ file, lang, onSave, readOnly }) {
         </div>
       );
     }
-    return (
-      <input value={v ?? ""} onChange={e => set(e.target.value)}
-        inputMode={f.type === "money" || f.type === "pct" ? "decimal" : undefined}
-        style={fs} />
-    );
+    if (f.type === "money" || f.type === "pct") {
+      return <NumField value={v} onCommit={set} style={fs} />;
+    }
+    return <input value={v ?? ""} onChange={e => set(e.target.value)} style={fs} />;
   };
 
   return (
@@ -202,7 +219,7 @@ function IntakePane({ file, lang, onSave, readOnly }) {
           {T("intakeCoverage", { f: cov.filled, t: cov.total })}
         </span>
         <span style={{ fontSize: 9.5, color: listoDpa ? C.green : C.gold, marginLeft: "auto" }}>
-          {listoDpa ? T("dpaReadyYes") : T("dpaReadyNo")}
+          {listoDpa ? T("dpaDataYes") : T("dpaDataNo")}
         </span>
       </div>
 
@@ -232,7 +249,7 @@ function IntakePane({ file, lang, onSave, readOnly }) {
           </div>
         );
       })}
-      <div style={{ fontSize: 9, color: C.dim, lineHeight: 1.5 }}>{T("intakeHint")}</div>
+      <div style={{ fontSize: 9, color: C.dim, lineHeight: 1.5 }}>{T("intakeHintLo")}</div>
     </div>
   );
 }

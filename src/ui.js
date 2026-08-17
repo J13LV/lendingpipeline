@@ -217,8 +217,10 @@ export const UI = {
   intakeCoverage:{ es:"{f} de {t} capturados", en:"{f} of {t} captured" },
   intakeHint:{ es:"Los marcados con ◆ deciden qué programa de DPA aplica. Se capturan una vez y sirven para el checklist y para el DPA.",
                en:"The ones marked ◆ decide which DPA program applies. Captured once, they serve both the checklist and DPA." },
-  dpaReadyYes:{ es:"◆ listo para decidir DPA", en:"◆ ready to decide DPA" },
-  dpaReadyNo:{ es:"◆ faltan datos para decidir DPA", en:"◆ missing data to decide DPA" },
+  dpaDataYes:{ es:"◆ datos completos para DPA", en:"◆ DPA data complete" },
+  dpaDataNo:{ es:"◆ faltan datos para DPA", en:"◆ DPA data missing" },
+  intakeHintLo:{ es:"El LO los sabe al precalificar. Los marcados con ◆ deciden qué programa de DPA aplica — la elección del programa es del LO, no de procesamiento.",
+                 en:"The LO knows these at pre-qual. The ones marked ◆ decide which DPA program applies — picking the program is the LO's call, not processing's." },
 
   // contingencias
   anchorHint:  { es:"Todo se cuenta desde aquí. Si el archivo pasó días en Under Contract, ya se gastaron.",

@@ -4,7 +4,7 @@ import { getFirestore, doc, setDoc, onSnapshot } from "firebase/firestore";
 import { helpSections, searchHelp } from "./helpContent";
 import { tr, defaultLang } from "./ui";
 import { downloadMarthaSheet } from "./marthaExport";
-import ProcessingView from "./processing";
+import ProcessingView, { IntakePane } from "./processing";
 
 // Idioma vigente, a nivel de módulo. El motor devuelve {es, en} en 84 lugares
 // y la interfaz leía siempre `.es`. Pasar `lang` por props a los seis paneles
@@ -4685,6 +4685,18 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
             onChangeLender={()=>setShowChange(true)}/>
         )}
 
+
+        {/* ADMISION — el LO las sabe al precalificar. La procesadora las
+            completa si faltan, pero la captura nace aqui. */}
+        {!inPrep && !isReferredOut && (
+          <div style={{background:"rgba(189,101,232,.04)",border:"1px solid #BD65E833",
+            borderRadius:8,padding:14,display:"flex",flexDirection:"column",gap:10}}>
+            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#BD65E8",
+              letterSpacing:"1px"}}>{L("intake")}</span>
+            <IntakePane file={file} lang={lang} readOnly={isAssistant}
+              onSave={next=>onSave({intake:next.intake})}/>
+          </div>
+        )}
 
         {/* HALLAZGOS — lo que alguien vio y sigue abierto */}
         {!inPrep && !isReferredOut && (
