@@ -2932,6 +2932,137 @@ export function findDuplicates(files) {
   return grupos;
 }
 
+// ─── 7Y. HALLAZGOS ─────────────────────────────────────────────────
+// El problema real: las cosas salen al final cuando no debian. Tina
+// encuentra un hueco de empleo sin carta, decide registrar igual porque
+// el resto esta completo, y ese hallazgo se queda en su cabeza. El
+// mensaje que le manda a la procesadora dice "listo". Tres semanas
+// despues reaparece como condicion del underwriter.
+//
+// El hallazgo no falta por comunicacion. Falta porque NO TIENE DONDE
+// VIVIR. Aqui vive: pegado al archivo, con quien lo vio, de quien se
+// espera, y cuando se resolvio.
+//
+// Con cuatro personas mirando el mismo archivo, mas ojos NO reducen
+// fallas por si solos — cada uno supone que otro ya lo levanto. Los ojos
+// sirven solo si cada hallazgo tiene dueño con nombre. Por eso
+// `waitingOn` nunca queda vacio.
+
+// Los doce puntos de la pagina 2 del checklist de Barrett. Son los
+// unicos que requieren que una persona abra un documento y mire; el
+// resto de la forma son datos que el sistema ya sabe o captura una vez.
+export const GATE1_ITEMS = [
+  { id: "form_1003",     es: "1003 revisado y completo",       en: "1003 reviewed and completed" },
+  { id: "residence",     es: "Residencia actual",              en: "Current residence" },
+  { id: "residence_2y",  es: "Historial de vivienda · 2 años",  en: "Residence history · 2 years" },
+  { id: "employment",    es: "Empleo completo",                en: "Employment completed" },
+  { id: "employment_2y", es: "Historial de empleo · 2 años",    en: "Employment history · 2 years" },
+  { id: "income",        es: "Ingresos completos",             en: "Income completed" },
+  { id: "assets",        es: "Activos completos",              en: "Assets completed" },
+  { id: "gift_letter",   es: "Carta de regalo",                en: "Gift letter" },
+  { id: "donor_ability", es: "Capacidad del donante",          en: "Proof of donor ability" },
+  { id: "declarations",  es: "Declaraciones completas",        en: "Declarations completed" },
+  { id: "liabilities",   es: "Pasivos completos",              en: "Liabilities completed" },
+  { id: "mi_verified",   es: "MI / MIP verificado",            en: "MI / MIP verified" },
+  { id: "other",         es: "Otro",                           en: "Other" },
+];
+export const gate1Item = id => GATE1_ITEMS.find(x => x.id === id) || null;
+
+// De quien se espera la solucion. Un hallazgo sin dueño es una queja.
+export const FINDING_WAITING = {
+  lo:        { es: "del LO",           en: "on the LO",        color: "#4A90D9" },
+  borrower:  { es: "del prestatario",  en: "on the borrower",  color: "#F5A623" },
+  processor: { es: "de procesamiento", en: "on processing",    color: "#BD65E8" },
+  lender:    { es: "del lender",       en: "on the lender",    color: "#E85D75" },
+  title:     { es: "de titulo",        en: "on title",         color: "#7EC8A4" },
+};
+export const WAITING_IDS = Object.keys(FINDING_WAITING);
+export const waitingMeta = id => FINDING_WAITING[id] || null;
+
+export const findingsOf = file => Array.isArray(file?.findings) ? file.findings : [];
+export const openFindings = file => findingsOf(file).filter(f => !f.resolvedAt);
+export const resolvedFindings = file => findingsOf(file).filter(f => !!f.resolvedAt);
+export const hasOpenFindings = file => openFindings(file).length > 0;
+
+// Un hallazgo se agrega, nunca se edita. Corregir el texto de ayer borra
+// lo que de verdad se penso ayer, que es justo lo que sirve al revisar.
+export function addFinding(file, { item, text, waitingOn, by }) {
+  // `txt` y no `t`: la letra t ya es el helper bilingue al final del
+  // archivo, y taparla aqui dispara no-shadow.
+  const txt = String(text || "").trim();
+  if (!txt) return file;
+  return {
+    ...file,
+    findings: [...findingsOf(file), {
+      id: "fd_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+      item: gate1Item(item) ? item : "other",
+      text: txt,
+      waitingOn: FINDING_WAITING[waitingOn] ? waitingOn : "lo",
+      stage: file?.stage || null,
+      at: today(), by: by || null,
+      resolvedAt: null, resolvedBy: null, resolutionNote: null,
+    }],
+  };
+}
+
+// Resolver tampoco borra: marca. El hallazgo sigue en el archivo con su
+// fecha de apertura y de cierre, que es lo que deja medir cuanto tardo.
+export function resolveFinding(file, id, opts) {
+  const o = opts || {};
+  return {
+    ...file,
+    findings: findingsOf(file).map(f => (f.id !== id || f.resolvedAt) ? f : {
+      ...f, resolvedAt: today(), resolvedBy: o.by || null,
+      resolutionNote: String(o.note || "").trim() || null,
+    }),
+  };
+}
+
+// Cuantos dias lleva abierto, o cuantos tardo en cerrarse.
+export const findingAge = f =>
+  f?.resolvedAt ? daysBetween(f.at, f.resolvedAt) : (f?.at ? daysBetween(f.at) : null);
+
+// El peor hallazgo abierto es el mas VIEJO. La antiguedad es la señal:
+// uno de ayer es trabajo normal, uno de dos semanas es un archivo parado
+// que nadie esta mirando.
+export function worstFinding(file) {
+  const abiertos = openFindings(file);
+  if (!abiertos.length) return null;
+  return [...abiertos].sort((a, b) => String(a.at).localeCompare(String(b.at)))[0];
+}
+
+// ─── 7X. REGISTRO CON EL LENDER ────────────────────────────────────
+// Tina registra en Arive y Arive asigna la procesadora en ese mismo
+// acto. En la hoja de Martha, "File Assigned to LOA/Processor" y "Loan
+// Registered Date" son la MISMA fecha en las ocho filas, sin excepcion.
+// Un evento, no dos.
+//
+// El registro no es una etapa: un archivo no se queda "en registrado" ni
+// un dia. Es una marca dentro de Full Application, igual que en su hoja
+// es una columna de fecha y no una columna de estado.
+export const REGISTRATION_STAGE = "Full Application";
+export const AFTER_REGISTRATION_STAGE = "Initial Disclosures Sent";
+
+export const isRegistered = file => !!okDate(file?.registeredAt);
+
+export const canRegister = file =>
+  file?.stage === REGISTRATION_STAGE && !isRegistered(file) && !file?.archived;
+
+// Un toque: estampa la fecha, avanza la etapa, y con eso el turno pasa
+// solo a la procesadora asignada. Tina no captura nada extra — cierra su
+// tramo, que es lo que ya hace en Arive.
+export function stampRegistration(file, by) {
+  const next = stampStage(file, AFTER_REGISTRATION_STAGE);
+  return {
+    ...next,
+    registeredAt: today(),
+    registeredBy: by || null,
+    // La procesadora queda congelada: despues del registro Arive ya
+    // asigno, y cambiarla aqui no cambiaria nada alla.
+    processor: processorId(file),
+  };
+}
+
 // ─── 8. STAMPING ───────────────────────────────────────────────────
 
 // ─── 8A. SELLOS DE ETAPA ───────────────────────────────────────────
