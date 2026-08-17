@@ -3051,15 +3051,19 @@ export function worstFinding(file) {
 // archivo, y el dia que aparezca un programa nuevo se describe con las
 // mismas cuatro casillas sin registrar nada de antemano.
 
-// Conventional DPA no es "un DPA sobre convencional". Es un producto
-// aparte y estrategico: segundos compradores, permiso de trabajo sin
-// green card, un solo año de taxes. Barrett tambien lo separa —
-// conventional_dpa es su propia etiqueta en el catalogo de lenders.
-export const DPA_PRODUCTS = [
-  { id: "fha_dpa",  es: "FHA DPA",          en: "FHA DPA" },
-  { id: "conv_dpa", es: "Conventional DPA", en: "Conventional DPA" },
-];
-export const dpaProduct = id => DPA_PRODUCTS.find(p => p.id === id) || null;
+// El DPA NO lleva producto propio. Ese campo repetia el tipo de
+// prestamo que ya esta arriba en el archivo, y el dia que los dos no
+// coincidian —Conventional arriba, FHA DPA abajo— el reporte mentia sin
+// que nadie se enterara.
+//
+// El producto base vive en un solo lugar: el tipo de prestamo. El DPA
+// solo describe CUANTO y COMO SE DEVUELVE. El reporte los cruza, asi
+// que "Conventional 5% pagadera" sigue saliendo identificado y contado
+// aparte — sin una casilla que lo diga dos veces.
+//
+// De paso esto abre lo que antes no cabia: VA con DPA, USDA con DPA, o
+// un Non-QM con asistencia. Con la casilla de producto solo existian
+// dos opciones y todo lo demas quedaba fuera.
 
 // Los porcentajes que se ofrecen de verdad. 3.5 existe porque cubre el
 // enganche completo de FHA; 5 cubre enganche mas parte de los costos.
@@ -3086,6 +3090,9 @@ export function setDpa(file, patch) {
   const next = { ...cur, ...patch };
   if (patch.on === false) return { ...file, dpa: { on: false } };
   next.on = true;
+  // Los archivos de prueba pueden traer `product` de la version anterior.
+  // Se retira para que no quede un campo huerfano contradiciendo al tipo.
+  delete next.product;
   if (patch.pct !== undefined) {
     const n = Number(String(patch.pct).replace(/[^\d.]/g, ""));
     next.pct = Number.isFinite(n) && n > 0 ? n : null;
@@ -3104,21 +3111,20 @@ export function setDpa(file, patch) {
 export function dpaLabel(file, lang = "es") {
   if (!hasDpa(file)) return null;
   const d = dpaOf(file);
-  const p = dpaProduct(d.product), f = dpaForm(d.form);
-  const bits = [];
-  if (p) bits.push(lang === "en" ? p.en : p.es);
+  const f = dpaForm(d.form);
+  const bits = ["DPA"];
   if (d.pct) bits.push(d.pct + "%");
   if (f) bits.push((lang === "en" ? f.en : f.es).toLowerCase());
   if (d.form === "forgivable" && d.forgivenessYears)
     bits.push(lang === "en" ? `${d.forgivenessYears}yr` : `${d.forgivenessYears} años`);
-  return bits.length ? bits.join(" · ") : "DPA";
+  return bits.join(" · ");
 }
 
 // Que tan descrito esta. Producto y forma son lo minimo para poder
 // contar; el porcentaje afina.
 export const dpaComplete = file => {
   const d = dpaOf(file);
-  return !!(d.on && d.product && d.form && d.pct);
+  return !!(d.on && d.form && d.pct);
 };
 
 // ─── PRODUCCION POR DPA ────────────────────────────────────────────
@@ -3127,11 +3133,15 @@ export const dpaComplete = file => {
 export function productionByDpa(files, { cutover = null, bpsDefault = 150 } = {}) {
   const m = new Map();
   for (const f of files || []) {
-    if (!hasDpa(f)) continue;
-    const d = dpaOf(f);
-    const key = [d.product || "?", d.pct ?? "?", d.form || "?"].join("|");
+    const d = dpaOf(f), con = hasDpa(f);
+    // El producto sale del TIPO, no de una casilla del DPA. Y los
+    // archivos SIN asistencia tambien salen en la tabla: "FHA sin DPA"
+    // contra "FHA con 3.5% perdonable" es justo la comparacion util.
+    const base = baseProductOf(f?.type);
+    const key = [base, con ? (d.pct ?? "?") : "-", con ? (d.form || "?") : "-"].join("|");
     if (!m.has(key)) m.set(key, {
-      key, product: d.product || null, pct: d.pct ?? null, form: d.form || null,
+      key, base, dpa: con, pct: con ? (d.pct ?? null) : null,
+      form: con ? (d.form || null) : null,
       funded: 0, fundedVolume: 0, comp: 0, active: 0, activeVolume: 0, days: [],
     });
     const r = m.get(key);
@@ -3294,6 +3304,14 @@ export const dpaReady = file =>
     .every(f => intakeValue(file, f.id) !== null);
 
 export const isCondo = file => intakeValue(file, "propertyType") === "condo";
+
+// Un MI de 55 es un decimal que se cayo: 0.55 se convirtio en 55. El
+// seguro hipotecario nunca pasa de un dígito, asi que cualquier cosa
+// arriba de 10 es error de tecleo, no un caso raro.
+export const miLooksWrong = file => {
+  const v = intakeValue(file, "miPct");
+  return v !== null && Number(v) > 10;
+};
 
 // ─── 7W. PEDIDOS A VENDORS ─────────────────────────────────────────
 // Martha ordena titulo, HOI y tasacion el MISMO DIA que recibe el

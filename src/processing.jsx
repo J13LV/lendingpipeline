@@ -27,7 +27,7 @@ import {
   WAITING_IDS, waitingMeta, openFindings, addFinding, resolveFinding, findingAge,
   lenderNameOf, daysBetween, daysInStage, stageClock, today, okDate,
   noteEntries, addNoteEntry, contingencyHeadline, upcomingDeadlines,
-  setOrderNote, INTAKE_GROUPS, INTAKE_FIELDS, intakeValue, intakeApplies,
+  setOrderNote, miLooksWrong, INTAKE_GROUPS, INTAKE_FIELDS, intakeValue, intakeApplies,
   setIntake, intakeCompleteness, dpaReady, allOrderStates, pendingOrders,
 } from "./pipelineCore";
 
@@ -241,6 +241,11 @@ export function IntakePane({ file, lang, onSave, readOnly }) {
                   {f.note_es && (
                     <div style={{ fontSize: 8.5, color: C.dim, marginTop: 2, lineHeight: 1.4 }}>
                       {lang === "en" ? f.note_en : f.note_es}
+                    </div>
+                  )}
+                  {f.id === "miPct" && miLooksWrong(file) && (
+                    <div style={{ fontSize: 8.5, color: C.red, marginTop: 2, lineHeight: 1.4 }}>
+                      {T("miWrong", { n: intakeValue(file, "miPct") })}
                     </div>
                   )}
                 </div>

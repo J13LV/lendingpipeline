@@ -45,7 +45,7 @@ import {
   noteEntries, latestNote, noteCount, addNoteEntry,
   duplicateMatches, DUP_REASONS,
   PROCESSORS, PROCESSOR_IDS, processorId, processorOf, DEFAULT_PROCESSOR,
-  DPA_PRODUCTS, DPA_PCTS, DPA_FORMS, dpaProduct, dpaForm, dpaOf, hasDpa,
+  DPA_PCTS, DPA_FORMS, dpaForm, dpaOf, hasDpa, miLooksWrong,
   setDpa, dpaLabel, dpaComplete, productionByDpa, productionByState,
   GATE1_ITEMS, gate1Item, FINDING_WAITING, WAITING_IDS, waitingMeta,
   openFindings, resolvedFindings, hasOpenFindings, addFinding, resolveFinding,
@@ -2494,16 +2494,16 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 return (
                   <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
                     <thead><tr style={{borderBottom:"1px solid #21262D"}}>
-                      {th(TX("dpaProduct"),"left")}{th(TX("hPct"))}{th(TX("hForm"))}
+                      {th(TX("byBaseProduct"),"left")}{th(TX("hPct"))}{th(TX("hForm"))}
                       {th(TX("hClosed"))}{th(TX("hVolume"))}{th(TX("hShare"))}
                       {th(TX("hDays"))}{th(TX("hActive"))}
                     </tr></thead>
                     <tbody>
                       {rows.map((r,i)=>(
                         <tr key={r.key} style={{borderBottom:"1px solid #21262D",background:i%2?"#161B22":"#0D1117"}}>
-                          <td style={{padding:"10px 12px",color:"#E6EDF3"}}>{P(dpaProduct(r.product))||"—"}</td>
-                          <td style={{padding:"10px 12px",textAlign:"center",color:"#F5A623",fontFamily:"DM Mono"}}>{r.pct?r.pct+"%":"—"}</td>
-                          <td style={{padding:"10px 12px",textAlign:"center",color:"#7EC8A4",fontSize:11}}>{P(dpaForm(r.form))||"—"}</td>
+                          <td style={{padding:"10px 12px",color:"#E6EDF3"}}>{P(baseProductLabel(r.base))}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:r.dpa?"#F5A623":"#30363D",fontFamily:"DM Mono"}}>{r.pct?r.pct+"%":"—"}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:r.dpa?"#7EC8A4":"#30363D",fontSize:11}}>{r.dpa?(P(dpaForm(r.form))||"—"):TX("noDpaRow")}</td>
                           <td style={{padding:"10px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>{r.funded||"—"}</td>
                           <td style={{padding:"10px 12px",textAlign:"center",color:"#8B949E",fontFamily:"DM Mono"}}>{r.fundedVolume?money(r.fundedVolume):"—"}</td>
                           <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,fontSize:13,color:"#F5A623"}}>{r.unitShare?r.unitShare+"%":"—"}</td>
@@ -4427,10 +4427,13 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
 }
 
 // ─── DPA ───
-// Cuatro casillas en escala. El primer "no" corta y no aparece nada mas.
-// Los años de perdon solo salen en la forma perdonable, porque 3.5%
-// perdonable a 3 años y a 10 son la misma etiqueta y decisiones
-// distintas para el cliente.
+// Tres casillas en escala, no cuatro. El producto NO va aqui: ya vive
+// en el tipo de prestamo, y tenerlo en dos lugares era lo que producia
+// "Conventional arriba, FHA DPA abajo" sin que nadie lo notara.
+//
+// Cuando esta en No se queda en un renglon apagado. No todo prestamo
+// lleva asistencia, y un bloque abierto pidiendo datos que no aplican
+// se siente como un campo pendiente.
 function DpaPanel({file,lang,onSave,readOnly}){
   const d=dpaOf(file);
   const on=hasDpa(file);
@@ -4447,11 +4450,13 @@ function DpaPanel({file,lang,onSave,readOnly}){
 
   return (
     <div style={{background:on?"rgba(126,200,164,.05)":"transparent",
-      border:`1px solid ${on?"#7EC8A433":"#21262D"}`,borderRadius:8,padding:14,
+      border:`1px solid ${on?"#7EC8A433":"#21262D"}`,borderRadius:8,
+      padding:on?"12px 14px":"9px 14px",
       display:"flex",flexDirection:"column",gap:on?11:0}}>
       <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,
+        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:on?13:11.5,
           color:on?"#7EC8A4":"#6E7681",letterSpacing:"1px"}}>{L2("dpaBlock")}</span>
+        {on&&<span style={{fontSize:11,color:"#7EC8A4",fontFamily:"DM Mono"}}>{dpaLabel(file,lang)}</span>}
         <div style={{display:"flex",gap:5,marginLeft:"auto"}}>
           {chip(on,L2("yesShort"),()=>onSave(setDpa(file,{on:true})))}
           {chip(!on,L2("noShort"),()=>onSave(setDpa(file,{on:false})),"#8B949E")}
@@ -4459,14 +4464,6 @@ function DpaPanel({file,lang,onSave,readOnly}){
       </div>
 
       {on&&(<>
-        <div>
-          <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L2("dpaProduct")}</div>
-          <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-            {DPA_PRODUCTS.map(p=>chip(d.product===p.id,P2(p),
-              ()=>onSave(setDpa(file,{product:p.id})),"#BD65E8"))}
-          </div>
-        </div>
-
         <div>
           <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L2("dpaPctLabel")}</div>
           <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
@@ -4496,15 +4493,9 @@ function DpaPanel({file,lang,onSave,readOnly}){
           </div>
         )}
 
-        <div style={{borderTop:"1px solid #21262D",paddingTop:8,display:"flex",
-          justifyContent:"space-between",alignItems:"baseline",gap:8,flexWrap:"wrap"}}>
-          <span style={{fontSize:11.5,color:"#7EC8A4",fontFamily:"DM Mono"}}>
-            {dpaLabel(file,lang)}
-          </span>
-          {!dpaComplete(file)&&(
-            <span style={{fontSize:9,color:"#F5A623"}}>{L2("dpaIncomplete")}</span>
-          )}
-        </div>
+        {!dpaComplete(file)&&(
+          <div style={{fontSize:9,color:"#F5A623"}}>{L2("dpaIncomplete")}</div>
+        )}
         <div style={{fontSize:9,color:"#484F58",lineHeight:1.5}}>{L2("dpaBlockHint")}</div>
       </>)}
     </div>
@@ -4763,6 +4754,15 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
             <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L("loanAmount")}</div>
             <input value={loanAmt} onChange={e=>setLoanAmt(e.target.value)} placeholder="350000" style={fs2}/>
           </div>
+          {/* El DPA es parte de COMO ESTA ARMADO el prestamo, igual que el
+              tipo y el monto. Pegado al tipo, la contradiccion salta a la
+              vista; separado por media pantalla, no. */}
+          {!inPrep && !isReferredOut && (
+            <div style={{gridColumn:"1/-1"}}>
+              <DpaPanel file={file} lang={lang} readOnly={isAssistant}
+                onSave={next=>onSave({dpa:next.dpa})}/>
+            </div>
+          )}
           {isAdmin && (
             <div>
               <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>BPS COMP <span style={{color:"#F5A623"}}>{TX("reportedByDash")}</span></div>
@@ -4845,13 +4845,6 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
             <IntakePane file={file} lang={lang} readOnly={isAssistant}
               onSave={next=>onSave({intake:next.intake})}/>
           </div>
-        )}
-
-        {/* DPA — cuatro casillas, sin catalogo que mantener. El lender ya
-            esta en el archivo; esto describe la asistencia. */}
-        {!inPrep && !isReferredOut && (
-          <DpaPanel file={file} lang={lang} readOnly={isAssistant}
-            onSave={next=>onSave({dpa:next.dpa})}/>
         )}
 
         {/* HALLAZGOS — lo que alguien vio y sigue abierto */}
