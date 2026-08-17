@@ -20,6 +20,7 @@
 
 import { useState } from "react";
 import { tr } from "./ui";
+import { downloadChecklist } from "./barrettChecklist";
 import {
   ORDERS, ONE_SHOT_ORDERS, orderState, stampOrder, clearOrder, stampOneShot,
   oneShotDone, processingQueue, queueCounts, PROCESSORS, PROCESSOR_IDS,
@@ -293,6 +294,9 @@ export function IntakePane({ file, lang, onSave, readOnly }) {
 export function MilestonesPane({ file, lang, onSave, readOnly }) {
   const { T, P } = mk(lang);
   const [nota, setNota] = useState("");
+  // pdf-lib pesa ~400 KB y se baja al primer clic. Sin aviso, el boton
+  // parece muerto en conexion lenta.
+  const [imprimiendo, setImprimiendo] = useState(false);
   const [inv, setInv] = useState(loanNumberInvestor(file) || "");
   const [len, setLen] = useState(loanNumberLender(file) || "");
   const reg = currentRegistration(file);
@@ -426,6 +430,27 @@ export function MilestonesPane({ file, lang, onSave, readOnly }) {
           })}
         </div>
         <div style={{ fontSize: 9, color: C.dim, marginTop: 5, lineHeight: 1.5 }}>{T("milestonesHint")}</div>
+      </div>
+
+      {/* EL PAPEL. Sale de salida, no de entrada: se trabaja en pantalla y
+          se imprime para respaldo. Con la forma de Barrett tal cual, sin
+          nuestra marca, porque quien lo revisa es Barrett. */}
+      <div style={{ borderTop: `1px solid ${C.line}`, paddingTop: 12 }}>
+        <button className="hov" disabled={imprimiendo}
+          onClick={async () => {
+            setImprimiendo(true);
+            try { await downloadChecklist(file); }
+            catch { alert(T("chkFailed")); }
+            finally { setImprimiendo(false); }
+          }}
+          title={T("chkHint")}
+          style={{ width: "100%", background: "#21262D",
+            color: imprimiendo ? C.dim : C.soft, borderRadius: 5,
+            padding: "8px 0", fontFamily: "DM Mono", fontSize: 10.5,
+            border: `1px solid ${C.edge}`, cursor: imprimiendo ? "wait" : "pointer" }}>
+          {imprimiendo ? T("chkBusy") : T("chkPrint")}
+        </button>
+        <div style={{ fontSize: 9, color: C.dim, marginTop: 5, lineHeight: 1.5 }}>{T("chkHint")}</div>
       </div>
     </div>
   );

@@ -211,6 +211,14 @@ export const UI = {
   discHint:{ es:"Salen el mismo día del registro. Solo la firma es un toque aparte — nadie más sabe cuándo firmó.",
              en:"They go out the same day as registration. Only the signature is a separate tap — nobody else knows when they signed." },
 
+  // ─── checklist en PDF ───
+  chkPrint:{ es:"↓ CHECKLIST DE BARRETT", en:"↓ BARRETT CHECKLIST" },
+  chkBusy:{ es:"↓ GENERANDO…", en:"↓ BUILDING…" },
+  chkHint:{ es:"La forma de Barrett con lo que el sistema ya sabe. Lo que falta sale en blanco, para escribirlo a mano. Va al expediente y a payroll.",
+            en:"Barrett's own form with what the system already knows. What is missing prints blank, to fill in by hand. It goes to the file and to payroll." },
+  chkFailed:{ es:"No se pudo generar el PDF. Revisa la conexión e intenta de nuevo.",
+              en:"Could not build the PDF. Check your connection and try again." },
+
   // ─── hitos ───
   milestones:{ es:"HITOS", en:"MILESTONES" },
   milestonesHint:{ es:"Fechas de la forma de Barrett que ningún avance de etapa produce. Un toque sella hoy; el segundo lo quita.",
