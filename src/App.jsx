@@ -51,6 +51,7 @@ import {
   GATE1_ITEMS, gate1Item, FINDING_WAITING, WAITING_IDS, waitingMeta,
   openFindings, resolvedFindings, hasOpenFindings, addFinding, resolveFinding,
   findingAge, worstFinding, canRegister, isRegistered, stampRegistration,
+  registeredAt, registeredBy, registrationCount, needsReRegistration,
   LO_STAGES, STAGE_THRESHOLDS, teamLeadShare, branchCostPerFile, ladderCeiling,
   loanSplit, lendersHiddenByChannel, OTHER_LENDER_ID, lenderNameOf, payrollPeriodLabel, currentPayrollPeriod, payrollSummary, fundedDate,
   losWithoutCompRule, BARRETT_CUTOVER, referralFunded, referralBranchPct,
@@ -5007,9 +5008,39 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
               )}
               {isRegistered(file)&&(
                 <div style={{fontSize:10,color:"#7EC8A4",marginTop:4}}>
-                  {L("registeredOn",{d:file.registeredAt})}
-                  {file.registeredBy?L("registeredBy",{who:String(file.registeredBy).split(" ")[0]}):""}
+                  {L("registeredOn",{d:registeredAt(file)})}
+                  {registeredBy(file)?L("registeredBy",{who:String(registeredBy(file)).split(" ")[0]}):""}
+                  {registrationCount(file)>1?` · ${L("registerTimes",{n:registrationCount(file)})}`:""}
                 </div>
+              )}
+              {/* El lender cambió y el archivo volvió a Tina. Dorado: se
+                  avecina un trabajo, nada está roto todavía. */}
+              {needsReRegistration(file)&&(
+                <div style={{fontSize:10,color:"#F5A623",marginTop:4,lineHeight:1.5}}>
+                  {L("reRegisterNeeded",{n:lenderNameOf(file)||"—"})}
+                </div>
+              )}
+              {/* El botón existía en el motor y en el diccionario desde la
+                  tanda del registro, pero ningún componente lo renderizaba:
+                  `registeredAt` estaba vacío en TODOS los archivos y las
+                  columnas 13 y 17 de Martha vivían del respaldo de stageLog. */}
+              {canRegister(file)&&(isAdmin||isAssistant)&&(
+                <button className="hov"
+                  onClick={()=>{
+                    if(!confirm(TX("registerConfirm",{p:processorOf(file).full}))) return;
+                    const n=stampRegistration(file,profile?.name||null);
+                    setStage(n.stage);
+                    onSave({stage:n.stage, stageEnteredAt:n.stageEnteredAt, daysInStage:0,
+                      stageLog:n.stageLog, fileOpenedAt:n.fileOpenedAt,
+                      registrations:n.registrations, registeredAt:n.registeredAt,
+                      registeredBy:n.registeredBy, processor:n.processor});
+                  }}
+                  title={TX("registerHint")}
+                  style={{marginTop:7,width:"100%",background:"rgba(126,200,164,.1)",
+                    color:"#7EC8A4",borderRadius:6,padding:"8px 0",fontFamily:"DM Mono",
+                    fontSize:11,border:"1px solid #7EC8A4",cursor:"pointer"}}>
+                  {TX("register")}
+                </button>
               )}
               <div style={{fontSize:9,color:"#484F58",marginTop:4,lineHeight:1.5}}>
                 {L("processorHint")}
@@ -5562,6 +5593,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
           onConfirm={payload=>{
             const next=applyLenderChange(file,payload);
             onSave({lenderId:next.lenderId,lenderSince:next.lenderSince,lenderHistory:next.lenderHistory,
+              registrations:next.registrations,
               ...stagePatch(file, next.stage),
               lockState:next.lockState,lockedAt:null,lockTermDays:null,lockExpires:null,
               comp:null,backupLenderId:next.backupLenderId});

@@ -1233,13 +1233,22 @@ export function hasLenderData(file) {
 //   · The rate lock. It is released and re-locked at that day's market.
 //     If rates moved, the borrower pays the difference — a cost that
 //     never appears in a comparison of lender compensation.
+// Empieza en Full Application, no en las divulgaciones. El lender nuevo hay
+// que REGISTRARLO —Tina lo hace de nuevo en Arive— y ese tramo cuesta dias
+// que la primera version no contaba. El resultado es una fecha tope para
+// decidir un cambio de lender DOS DIAS mas temprana que la que el sistema
+// decia. Es un numero peor y es el verdadero.
 export const REREGISTRATION_CHAIN = [
-  "Initial Disclosures Sent", "Submitted to UW", "UW Review",
+  "Full Application", "Initial Disclosures Sent", "Submitted to UW", "UW Review",
   "Conditional Approval", "Condition Clearing", "Clear to Close",
 ];
 // Transfer out plus registration in, counted at both ends.
 export const TRANSFER_DAYS = { best: 2, worst: 4 };
-export const LENDER_CHANGE_LANDING_STAGE = "Initial Disclosures Sent";
+// El archivo aterriza donde Tina puede volver a registrarlo. Aterrizar en
+// las divulgaciones dejaba el boton de REGISTRADO fuera de alcance y la
+// obligaba a retroceder la etapa a mano — que es justo el movimiento que
+// borraba stageLog.
+export const LENDER_CHANGE_LANDING_STAGE = "Full Application";
 
 export function reregistrationCost(file) {
   let best = TRANSFER_DAYS.best, worst = TRANSFER_DAYS.worst;
@@ -1329,6 +1338,10 @@ export function applyLenderChange(file, { lenderId, reasonId, notes, by, newClos
     lenderId,
     lenderSince: today(),
     lenderHistory: [...(file.lenderHistory || []), entry],
+    // Los ciclos se MATERIALIZAN antes de soltar el lender viejo. Si se
+    // dejaran sin escribir, la siembra los reconstruiria despues con el
+    // lender NUEVO y el archivo se daria por registrado sin estarlo.
+    registrations: registrationsOf(file),
     stage: LENDER_CHANGE_LANDING_STAGE,
     stageEnteredAt: today(),
     daysInStage: 0,
@@ -3425,19 +3438,94 @@ export const oneShotDone = file =>
 export const REGISTRATION_STAGE = "Full Application";
 export const AFTER_REGISTRATION_STAGE = "Initial Disclosures Sent";
 
-export const isRegistered = file => !!okDate(file?.registeredAt);
+// ─── EL REGISTRO NO ES UNO SOLO ────────────────────────────────────
+// Un archivo que cambia de lender vuelve a Tina y se registra OTRA VEZ:
+// lender nuevo, fecha de registro nueva, divulgaciones nuevas que el
+// prestatario tiene que volver a firmar. Con un campo plano
+// `registeredAt` la segunda vez pisaba a la primera —o peor, no se
+// escribia nunca— y tres columnas de la hoja de Martha se quedaban
+// describiendo un lender que ya no esta en el archivo.
+//
+// Por eso es una SERIE: una entrada por cada vez que se registra. La
+// hoja lee siempre la ultima; el historial completo queda para saber
+// cuantas veces se re-registro y con quien.
+export function registrationsOf(file) {
+  const arr = Array.isArray(file?.registrations) ? file.registrations : null;
+  if (arr && arr.length) return arr;
+  // Siembra para los archivos que ya existen, y SOLO para esos.
+  //
+  // Entrar a Full Application NO es haberse registrado: es la etapa donde
+  // Tina registra, no la prueba de que lo hizo. Sembrar desde ahi le daba
+  // por registrado a todo archivo nuevo y le escondia el boton — el mismo
+  // agujero que este bloque existe para tapar. La fecha de etapa solo vale
+  // como respaldo cuando el archivo YA PASO de Full Application, porque
+  // entonces el registro tuvo que ocurrir para poder avanzar.
+  const idx = ALL_STAGE_ORDER.indexOf(file?.stage);
+  const yaPaso = (idx > -1 && idx > ALL_STAGE_ORDER.indexOf(REGISTRATION_STAGE))
+    || !!okDate(file?.closedAt);
+  const at = okDate(file?.registeredAt)
+    || (yaPaso ? okDate(stageLogOf(file)[REGISTRATION_STAGE]) : null);
+  if (!at) return [];
+  return [{
+    lenderId: file?.lenderId || null,
+    lenderName: lenderNameOf(file),
+    at, by: file?.registeredBy || null,
+    discSentAt: okDate(stageLogOf(file)[AFTER_REGISTRATION_STAGE]) || null,
+    discEsignedAt: null,
+    seeded: true,
+  }];
+}
+
+export function currentRegistration(file) {
+  const a = registrationsOf(file);
+  return a.length ? a[a.length - 1] : null;
+}
+export const registrationCount = file => registrationsOf(file).length;
+
+// Registrado CON EL LENDER QUE TIENE HOY. Un archivo que cambio de lender
+// tiene ciclos viejos y NO esta registrado: le toca volver a Tina.
+export function isRegistered(file) {
+  const r = currentRegistration(file);
+  return !!r && (r.lenderId || null) === (file?.lenderId || null);
+}
+
+// Hubo registro antes, pero con otro lender. Es el estado que la pantalla
+// tiene que gritar: el archivo retrocedio y espera a Tina.
+export const needsReRegistration = file =>
+  registrationCount(file) > 0 && !isRegistered(file);
+
+export const registeredAt = file => okDate(currentRegistration(file)?.at) || null;
+export const registeredBy = file => currentRegistration(file)?.by || null;
+export const discSentAt = file => okDate(currentRegistration(file)?.discSentAt) || null;
+export const discEsignedAt = file => okDate(currentRegistration(file)?.discEsignedAt) || null;
 
 export const canRegister = file =>
   file?.stage === REGISTRATION_STAGE && !isRegistered(file) && !file?.archived;
 
-// Un toque: estampa la fecha, avanza la etapa, y con eso el turno pasa
-// solo a la procesadora asignada. Tina no captura nada extra — cierra su
-// tramo, que es lo que ya hace en Arive.
+// Un toque: abre el ciclo, estampa la fecha, avanza la etapa, y con eso el
+// turno pasa solo a la procesadora asignada. Tina no captura nada extra —
+// cierra su tramo, que es lo que ya hace en Arive.
+//
+// Las divulgaciones se sellan en el MISMO toque: registrar en Arive las
+// emite en el acto, igual que registrar y asignar procesadora son un solo
+// evento. Pedirle un toque aparte seria pedirle que registre un dato que
+// el sistema ya sabe.
 export function stampRegistration(file, by) {
   const next = stampStage(file, AFTER_REGISTRATION_STAGE);
+  const hoy = today();
   return {
     ...next,
-    registeredAt: today(),
+    registrations: [...registrationsOf(file), {
+      lenderId: file?.lenderId || null,
+      lenderName: lenderNameOf(file),
+      at: hoy,
+      by: by || null,
+      discSentAt: hoy,
+      discEsignedAt: null,
+    }],
+    // Espejo plano del ultimo ciclo. No es la fuente de verdad — se
+    // mantiene para que nada que todavia lea el campo viejo se rompa.
+    registeredAt: hoy,
     registeredBy: by || null,
     // La procesadora queda congelada: despues del registro Arive ya
     // asigno, y cambiarla aqui no cambiaria nada alla.

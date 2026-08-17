@@ -187,6 +187,9 @@ export const UI = {
                     en:"Registered with the lender? It stamps today and hands the file to {p}." },
   registeredOn:{ es:"Registrado {d}", en:"Registered {d}" },
   registeredBy:{ es:" por {who}", en:" by {who}" },
+  reRegisterNeeded:{ es:"⚠ Cambió de lender — hay que registrarlo otra vez con {n}",
+                     en:"⚠ Lender changed — it has to be registered again with {n}" },
+  registerTimes:{ es:"registro {n} de este archivo", en:"registration {n} on this file" },
 
   // ─── pantalla de procesamiento ───
   processingTab:{ es:"⚙ PROCESAMIENTO", en:"⚙ PROCESSING" },

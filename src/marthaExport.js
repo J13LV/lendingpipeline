@@ -22,6 +22,7 @@ import {
   okDate, today, addDays, lenderNameOf, baseProductOf,
   productKeyForLoanType, stageLogOf, latestNote, lockStatus, STAGE_DAYS,
   processorId, processorOf, DEFAULT_PROCESSOR, orderState, isCondo,
+  registeredAt, discSentAt,
 } from "./pipelineCore";
 
 const EXCELJS_CDN = "https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js";
@@ -171,13 +172,10 @@ export function criticalDocOut(coeISO) {
 // lo recibe. En SU hoja, "File Assigned to LOA/Processor" y "Loan
 // Registered Date" son la misma fecha en las ocho filas, sin excepción.
 //
-// El campo dedicado todavía no existe. Mientras tanto se deriva de
-// cuándo el archivo entró a Full Application, que es la etapa donde Tina
-// registra. Cuando exista `registeredAt`, este código lo prefiere solo
-// y no hay que tocar nada aquí.
-export function registeredAt(file) {
-  return okDate(file?.registeredAt) || okDate(stageLogOf(file)["Full Application"]);
-}
+// Ahora sale del CICLO VIGENTE, no de un campo plano. Un archivo que
+// cambió de lender se registra de nuevo, y la hoja tiene que describir
+// ese registro — no el primero. `registeredAt` del motor ya cae de vuelta
+// a Full Application para los archivos que nunca se sellaron.
 
 // ─── QUE ARCHIVOS SALEN EN SU HOJA ─────────────────────────────────
 // La primera version filtraba por fecha de registro y la hoja salio
@@ -268,7 +266,9 @@ export function marthaRow(file) {
     15: orderText(file, "hoi_quote")  || reqText(log["Insurance Ordered"]),
     16: orderText(file, "hoi_binder"),
     17: asDate(reg),
-    18: asDate(log["Initial Disclosures Sent"]),
+    // Las divulgaciones salen el mismo dia del registro y viajan en el
+    // ciclo. stageLog queda de respaldo para los archivos anteriores.
+    18: asDate(discSentAt(file) || log["Initial Disclosures Sent"]),
     20: orderText(file, "appraisal")  || reqText(log["Appraisal Ordered"]),
     // Ella escribe N/A cuando no es condominio — en sus ocho archivos
     // esa columna dice N/A en todos. Ahora el sistema lo sabe.
