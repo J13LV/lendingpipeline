@@ -185,22 +185,52 @@ export function targetsFor(file) {
 //            these; the client does not set the pace.
 export const CEILING_BY_WAIT = { team: 1.35, vendor: 1.6, client: 2.0, legal: 1.0 };
 
+// ─── 2B-0. PROCESADORAS ────────────────────────────────────────────
+// Siete etapas decian owner: "Martha" escrito a mano. Con una sola
+// procesadora eso funcionaba; con dos, un archivo de Laura decia que el
+// dueño era Martha y el tablero mentia.
+//
+// Ahora esas etapas llevan el simbolo PROCESSOR y se resuelven POR
+// ARCHIVO. Quien procesa no es una propiedad de la etapa, es una
+// propiedad del archivo.
+//
+// Por defecto Martha, que es lo que Arive hace solo al registrar. El
+// campo no asigna nada en Arive — registra la decision que ya se tomo.
+export const PROCESSOR_TOKEN = "PROCESSOR";
+
+export const PROCESSORS = {
+  martha: { id: "martha", name: "Martha", full: "Martha Samaniego", color: "#BD65E8", external: true },
+  laura:  { id: "laura",  name: "Laura",  full: "Laura de Armas",   color: "#F5A623", external: false },
+};
+export const PROCESSOR_IDS = Object.keys(PROCESSORS);
+export const DEFAULT_PROCESSOR = "martha";
+
+export const processorId = file =>
+  (PROCESSORS[file?.processor] ? file.processor : DEFAULT_PROCESSOR);
+export const processorOf = file => PROCESSORS[processorId(file)];
+
+// Traduce el simbolo al nombre de quien procesa ESTE archivo. Cualquier
+// otro dueño (LO, Tina, Laura en Doc Collection) pasa sin tocarse.
+export function resolveOwner(owner, file) {
+  return owner === PROCESSOR_TOKEN ? processorOf(file).name : owner;
+}
+
 export const STAGE_DAYS = {
   "Under Contract":           { warn: 1, wait: "team",   owner: "LO",    note: "verify Gate 1" },
   "Full Application":         { warn: 2, wait: "team",   owner: "Tina",  note: "register with lender" },
   "Initial Disclosures Sent": { warn: 2, wait: "legal",  owner: "Tina",  note: "borrower must sign within 3 business days", legalBusinessDays: 3 },
   "Doc Collection":           { warn: 4, wait: "client", owner: "Laura", note: "exceptions only — done at Gate 1", offPath: true },
-  "Title Ordered":            { warn: 2, wait: "vendor", owner: "Martha" },
-  "Appraisal Ordered":        { warn: 6, wait: "vendor", owner: "Martha", note: "5-7 in Las Vegas, plus borrower payment" },
-  "Insurance Ordered":        { warn: 2, wait: "client", owner: "Martha", note: "borrower picks the policy" },
-  "Submitted to UW":          { warn: 1, wait: "team",   owner: "Martha" },
-  "UW Review":                { warn: 3, wait: "vendor", owner: "Martha", dpa: { warn: 5 } },
+  "Title Ordered":            { warn: 2, wait: "vendor", owner: PROCESSOR_TOKEN },
+  "Appraisal Ordered":        { warn: 6, wait: "vendor", owner: PROCESSOR_TOKEN, note: "5-7 in Las Vegas, plus borrower payment" },
+  "Insurance Ordered":        { warn: 2, wait: "client", owner: PROCESSOR_TOKEN, note: "borrower picks the policy" },
+  "Submitted to UW":          { warn: 1, wait: "team",   owner: PROCESSOR_TOKEN },
+  "UW Review":                { warn: 3, wait: "vendor", owner: PROCESSOR_TOKEN, dpa: { warn: 5 } },
   "Conditional Approval":     { warn: 1, wait: "team",   owner: "Tina" },
   "Condition Clearing":       { warn: 4, wait: "client", owner: "Tina",  dpa: { warn: 7 } },
   "Clear to Close":           { warn: 1, wait: "team",   owner: "Tina" },
   "CD Issued":                { warn: 2, wait: "legal",  owner: "Tina",  note: "TRID: received 3 business days before closing", legalBusinessDays: 3 },
   "Closing Scheduled":        { warn: 2, wait: "team",   owner: "Tina" },
-  "Final Verifications":      { warn: 1, wait: "team",   owner: "Martha" },
+  "Final Verifications":      { warn: 1, wait: "team",   owner: PROCESSOR_TOKEN },
   "Closing Docs Drawn":       { warn: 1, wait: "team",   owner: "Tina" },
   "Signing":                  { warn: 2, wait: "client", owner: "Tina",  note: "borrower has to show up" },
   "Funded":                   { warn: 1, wait: "team",   owner: "Tina" },
@@ -227,7 +257,7 @@ export function stageBudget(stage, file) {
     ? businessToCalendarWorst(s.legalBusinessDays)
     : Math.max(warn + 1, Math.round(warn * CEILING_BY_WAIT[s.wait]));
   return {
-    warn, late, wait: s.wait, owner: s.owner, note: s.note,
+    warn, late, wait: s.wait, owner: resolveOwner(s.owner, file), note: s.note,
     offPath: !!s.offPath, legal: !!s.legalBusinessDays,
     legalBusinessDays: s.legalBusinessDays || null,
   };
@@ -263,7 +293,7 @@ export const FIXED_CLOCKS = {
   "Under Contract":          { warn: 1,  late: 2,  owner: "LO", gate: "GATE_1" },
 
   // Contract → funding lives in STAGE_WEIGHTS above; owners only here.
-  "Recorded":                { warn: 2,  late: 3,  owner: "Martha" },
+  "Recorded":                { warn: 2,  late: 3,  owner: PROCESSOR_TOKEN },
   "Keys Delivered":          { warn: 1,  late: 2,  owner: "LO" },
 
   "Welcome Sent":            { warn: 3,  late: 7,  owner: "Laura" },
@@ -274,18 +304,18 @@ export const FIXED_CLOCKS = {
 
 export const STAGE_OWNERS = {
   "Under Contract": "LO", "Full Application": "Tina", "Initial Disclosures Sent": "Tina",
-  "Doc Collection": "Laura", "Title Ordered": "Martha", "Appraisal Ordered": "Martha",
-  "Insurance Ordered": "Martha", "Submitted to UW": "Martha", "UW Review": "Martha",
+  "Doc Collection": "Laura", "Title Ordered": PROCESSOR_TOKEN, "Appraisal Ordered": PROCESSOR_TOKEN,
+  "Insurance Ordered": PROCESSOR_TOKEN, "Submitted to UW": PROCESSOR_TOKEN, "UW Review": PROCESSOR_TOKEN,
   "Conditional Approval": "Tina", "Condition Clearing": "Tina", "Clear to Close": "Tina",
-  "CD Issued": "Tina", "Closing Scheduled": "Tina", "Final Verifications": "Martha",
+  "CD Issued": "Tina", "Closing Scheduled": "Tina", "Final Verifications": PROCESSOR_TOKEN,
   "Closing Docs Drawn": "Tina", "Signing": "Tina", "Funded": "Tina",
 };
 
 export function stageClock(stage, file) {
   const fixed = FIXED_CLOCKS[stage];
-  if (fixed) return fixed;
+  if (fixed) return { ...fixed, owner: resolveOwner(fixed.owner, file) };
   const b = stageBudget(stage, file);
-  return b ? { ...b, owner: STAGE_OWNERS[stage] || null } : null;
+  return b ? { ...b, owner: resolveOwner(STAGE_OWNERS[stage], file) || null } : null;
 }
 
 // ─── 2C. PROJECTED CLOSE AND SLACK ─────────────────────────────────
@@ -581,7 +611,7 @@ function chainBackward(file, completeByISO, stages) {
     const startBy = addDays(deadline, -days);
     out.unshift({
       stage: stages[i], startBy, completeBy: deadline, days,
-      owner: b?.owner || STAGE_OWNERS[stages[i]] || null,
+      owner: b?.owner || resolveOwner(STAGE_OWNERS[stages[i]], file) || null,
       atTargetStartBy: addDays(deadline, -(b ? b.warn : 1)),
     });
     deadline = startBy;

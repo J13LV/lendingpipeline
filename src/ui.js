@@ -151,6 +151,12 @@ export const UI = {
   dupName:{ es:"mismo nombre",    en:"same name" },
   notesEnglishOnly:{ es:"Las notas van en inglés — regla de la sucursal",
                      en:"Notes go in English — branch rule" },
+  processor:{ es:"PROCESADORA", en:"PROCESSOR" },
+  processorHint:{ es:"Quién procesa este archivo. Se decide antes de registrar — al registrar, Arive asigna y ya no se cambia aquí.",
+                  en:"Who processes this file. Decided before registration — once registered, Arive assigns it and this no longer changes it." },
+  processorExternal:{ es:"externa · también procesa para otras sucursales",
+                      en:"external · also processes for other branches" },
+  processorSheet:{ es:"↓ HOJA DE {n}", en:"↓ {n}'S SHEET" },
 
   // contingencias
   anchorHint:  { es:"Todo se cuenta desde aquí. Si el archivo pasó días en Under Contract, ya se gastaron.",

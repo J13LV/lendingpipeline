@@ -21,6 +21,7 @@
 import {
   okDate, today, addDays, lenderNameOf, baseProductOf,
   productKeyForLoanType, stageLogOf, latestNote, lockStatus, STAGE_DAYS,
+  processorId, processorOf, DEFAULT_PROCESSOR,
 } from "./pipelineCore";
 
 const EXCELJS_CDN = "https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js";
@@ -201,8 +202,12 @@ export function stageRank(stage) {
 export const stagesWithoutColor = () =>
   PROCESSING_STAGES.filter(s => stageRank(s) >= stageRank(FIRST_STAGE) && !ESTADO_FILL[s]);
 
-export function inMarthaSheet(file) {
+// `quien` filtra por procesadora asignada. Sin dos colas, la hoja de
+// Martha saldria con los archivos de Laura adentro — y ella preguntaria
+// por prestatarios que nunca ha visto.
+export function inMarthaSheet(file, quien = DEFAULT_PROCESSOR) {
   if (file?.archived || okDate(file?.closedAt) || file?.prep) return false;
+  if (quien && processorId(file) !== quien) return false;
   const rank = stageRank(file?.stage);
   // -1 son las etapas de antes del contrato y las de despues del cierre.
   // Ni unas ni otras estan en su hoja.
@@ -238,7 +243,7 @@ export function marthaRow(file) {
     2:  PROGRAMA[baseProductOf(file?.type)] ?? "",
     3:  loanType(file),
     4:  String(file?.lo || "").split(" ")[0].toUpperCase(),
-    5:  "Martha",
+    5:  processorOf(file).name,
     6:  lenderNameOf(file) || "",
     8:  asDate(c.contractAccepted),
     9:  asDate(coe),
@@ -309,7 +314,7 @@ export function fileName(iso = today()) {
 
 const solid = argb => ({ type: "pattern", pattern: "solid", fgColor: { argb } });
 
-export async function buildMarthaWorkbook(files) {
+export async function buildMarthaWorkbook(files, quien = DEFAULT_PROCESSOR) {
   const ExcelJS = await loadExcelJS();
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet("Barrett Financial", {
@@ -349,7 +354,7 @@ export async function buildMarthaWorkbook(files) {
 
   // El que cierra primero va arriba. Sin COE se va al final, no al
   // principio: un archivo sin fecha de cierre no es urgente, es incompleto.
-  const rows = files.filter(inMarthaSheet).sort((a, b) => {
+  const rows = files.filter(f => inMarthaSheet(f, quien)).sort((a, b) => {
     const ca = okDate(a?.contingencies?.coe) || okDate(a?.closing) || "9999-12-31";
     const cb = okDate(b?.contingencies?.coe) || okDate(b?.closing) || "9999-12-31";
     return ca.localeCompare(cb) || String(a?.borrower || "").localeCompare(String(b?.borrower || ""));
@@ -443,8 +448,8 @@ export async function buildMarthaWorkbook(files) {
 }
 
 // ─── 7. DESCARGA ───────────────────────────────────────────────────
-export async function downloadMarthaSheet(files) {
-  const { wb, count } = await buildMarthaWorkbook(files);
+export async function downloadMarthaSheet(files, quien = DEFAULT_PROCESSOR) {
+  const { wb, count } = await buildMarthaWorkbook(files, quien);
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

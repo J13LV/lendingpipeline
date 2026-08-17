@@ -43,6 +43,7 @@ import {
   specDetailSummary, emptySpecDetail,
   noteEntries, latestNote, noteCount, addNoteEntry,
   duplicateMatches, DUP_REASONS,
+  PROCESSORS, PROCESSOR_IDS, processorId, processorOf, DEFAULT_PROCESSOR,
   LO_STAGES, STAGE_THRESHOLDS, teamLeadShare, branchCostPerFile, ladderCeiling,
   loanSplit, lendersHiddenByChannel, OTHER_LENDER_ID, lenderNameOf, payrollPeriodLabel, currentPayrollPeriod, payrollSummary, fundedDate,
   losWithoutCompRule, BARRETT_CUTOVER, referralFunded, referralBranchPct,
@@ -702,7 +703,7 @@ export default function App() {
     if(marthaBusy) return;
     setMarthaBusy(true);
     try{
-      const n = await downloadMarthaSheet(files);
+      const n = await downloadMarthaSheet(files, DEFAULT_PROCESSOR);
       if(n === 0) alert(TX("marthaEmpty"));
     }catch(err){
       alert(TX("marthaFailed"));
@@ -4361,6 +4362,7 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
   const [bps,setBps]=useState(String(file.bps||""));
   const [loAssigned,setLoAssigned]=useState(file.lo||"Jose Del Valle");
   const [referralPartner,setReferralPartner]=useState(file.referralPartner||"");
+  const [processor,setProcessor]=useState(processorId(file));
   const [chkDraft,setChkDraft]=useState(!!file.brokerCheckReceived);
   const [compDraft,setCompDraft]=useState(()=>({...(file.compliance||{})}));
   const [phone,setPhone]=useState(file.phone||"");
@@ -4465,6 +4467,24 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
               {LO_LIST.map(lo=><option key={lo.name} value={lo.name}>{lo.name} · {lo.role}</option>)}
             </select>
           </div>
+          {!inPrep && !isReferredOut && (
+            <div style={{gridColumn:"1/-1"}}>
+              <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L("processor")}</div>
+              {isAdmin?(
+                <select value={processor} onChange={e=>setProcessor(e.target.value)} style={fs2}>
+                  {PROCESSOR_IDS.map(id=>(
+                    <option key={id} value={id}>{PROCESSORS[id].full}</option>
+                  ))}
+                </select>
+              ):(
+                <div style={{fontSize:12.5,color:processorOf(file).color}}>{processorOf(file).full}</div>
+              )}
+              <div style={{fontSize:9,color:"#484F58",marginTop:4,lineHeight:1.5}}>
+                {L("processorHint")}
+                {PROCESSORS[processor]?.external?" · "+L("processorExternal"):""}
+              </div>
+            </div>
+          )}
           <div style={{gridColumn:"1/-1"}}>
             <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L("referralPartner")}</div>
             <input value={referralPartner} onChange={e=>setReferralPartner(e.target.value)}
@@ -4865,6 +4885,8 @@ function DetailModal({file,profile,allFiles,L,lang,onClose,onSave,onDelete,onAdv
               email: (email||"").trim() || null,
             };
             if(isAdmin) patch.bps = parseInt(bps)||null;
+            // La asignacion es decision de entrenamiento, no de operacion.
+            if(isAdmin) patch.processor = processor;
             if(isAdmin && isClosed && closedAt) patch.closedAt = closedAt;
             // Persist outbound referral data when stage is REFERRED_OUT
             if(isReferredOut){
