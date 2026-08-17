@@ -34,6 +34,7 @@ import {
   milestoneAt, stampMilestone, UW_OUTCOME_IDS, uwOutcomeMeta, uwOutcome,
   uwOutcomeAt, setUwOutcome, clearUwOutcome, signalColor,
   setOrderDue, orderDue, orderPastDue,
+  GATE1_VERIFY_IDS, GATE1_STATES, gate1State, gate1At, cycleGate1, gate1Coverage,
 } from "./pipelineCore";
 
 // Autocontenido a proposito: recibe `lang` y traduce solo. Asi no
@@ -431,6 +432,61 @@ export function MilestonesPane({ file, lang, onSave, readOnly }) {
 }
 
 // ─── HALLAZGOS, VERSION COMPACTA ───────────────────────────────────
+// ─── HALLAZGOS, VERSION COMPACTA ───────────────────────────────────
+// Arriba, los doce puntos con su estado. Abajo, lo que salio mal. Es el
+// mismo tema —la pagina 2 del checklist de Barrett— y por eso vive en una
+// sola solapa: marcar limpio y levantar un problema son la misma revision
+// con dos resultados.
+function Gate1Grid({ file, lang, onSave, who, readOnly }) {
+  const { T, P } = mk(lang);
+  const cov = gate1Coverage(file);
+  const TONO = { pending: C.mid, verified: C.ok, na: C.dim, finding: C.red };
+
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 7, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 9, color: C.soft, letterSpacing: "1px" }}>{T("gate1Title")}</span>
+        <span style={{ fontSize: 9.5, color: cov.pending === 0 ? C.ok : C.soft, marginLeft: "auto" }}>
+          {cov.pending === 0 && cov.findings === 0
+            ? T("gate1AllDone", { t: cov.total })
+            : T("gate1Coverage", { d: cov.done, t: cov.total, p: cov.pending })}
+        </span>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(168px,1fr))", gap: 4 }}>
+        {GATE1_VERIFY_IDS.map(id => {
+          const st = gate1State(file, id);
+          const col = TONO[st];
+          const at = gate1At(file, id);
+          const bloqueado = st === "finding";
+          return (
+            <button key={id} className="hov" disabled={readOnly}
+              onClick={readOnly || bloqueado ? undefined : () => onSave(cycleGate1(file, id, who))}
+              title={bloqueado ? T("gate1Blocked") : ""}
+              style={{
+                background: st === "verified" ? "rgba(6,214,160,.10)"
+                  : st === "finding" ? "rgba(232,93,117,.10)" : "transparent",
+                border: `1px solid ${st === "pending" ? C.edge : col}`,
+                borderRadius: 4, padding: "5px 8px", textAlign: "left",
+                cursor: readOnly || bloqueado ? "default" : "pointer",
+                fontFamily: "DM Mono", display: "flex", flexDirection: "column", gap: 1,
+              }}>
+              <span style={{ fontSize: 10, color: st === "na" ? C.dim : C.text, lineHeight: 1.3 }}>
+                {P(gate1Item(id))}
+              </span>
+              <span style={{ fontSize: 8.5, color: col }}>
+                {P(GATE1_STATES[st])}
+                {at && st !== "finding" ? ` · ${md(at)}` : ""}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      <div style={{ fontSize: 9, color: C.dim, marginTop: 6, lineHeight: 1.5 }}>{T("gate1Hint")}</div>
+    </div>
+  );
+}
+
 function Findings({ file, lang, onSave, who, readOnly }) {
   const { T, P } = mk(lang);
   const [open, setOpen] = useState(false);
@@ -443,6 +499,7 @@ function Findings({ file, lang, onSave, who, readOnly }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <Gate1Grid file={file} lang={lang} onSave={onSave} who={who} readOnly={readOnly} />
       {abiertos.map(f => {
         const w = waitingMeta(f.waitingOn), edad = findingAge(f);
         return (
@@ -558,7 +615,8 @@ function FilePane({ file, lang, onSave, who, readOnly, onOpenFull }) {
         {[
           ["orders",   T("orders"),      pendingOrders(file).length],
           ["intake",   T("intake"),      intakeCompleteness(file).total - intakeCompleteness(file).filled],
-          ["findings", T("findings"),    openFindings(file).length],
+          ["findings", T("findings"),
+            openFindings(file).length + gate1Coverage(file).pending],
           ["checklist", T("milestones"),  0],
           ["dates",    T("derivedDates"), proximos.filter(r => r.overdue).length],
           ["notes",    T("notes"),       noteEntries(file).length],

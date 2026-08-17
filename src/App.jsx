@@ -49,6 +49,7 @@ import {
   DPA_PCTS, DPA_FORMS, dpaForm, dpaOf, hasDpa, miLooksWrong,
   setDpa, dpaLabel, dpaComplete, productionByDpa, productionByState,
   GATE1_ITEMS, gate1Item, FINDING_WAITING, WAITING_IDS, waitingMeta,
+  GATE1_VERIFY_IDS, GATE1_STATES, gate1State, gate1At, cycleGate1, gate1Coverage,
   openFindings, resolvedFindings, hasOpenFindings, addFinding, resolveFinding,
   findingAge, worstFinding, canRegister, isRegistered, stampRegistration,
   registeredAt, registeredBy, registrationCount, needsReRegistration,
@@ -4634,6 +4635,48 @@ function FindingsPanel({file,profile,onSave}){
         )}
       </div>
 
+      {/* Los doce puntos con su estado. Marcar limpio no es un hallazgo:
+          el rojo se reserva para lo que está roto, que es lo que lo hace
+          creíble cuando aparece. */}
+      {(()=>{const cov=gate1Coverage(file);
+        const TONO={pending:"#6E7681",verified:"#06D6A0",na:"#484F58",finding:"#E85D75"};
+        return (
+          <div style={{borderBottom:"1px solid #21262D",paddingBottom:11,marginBottom:2}}>
+            <div style={{display:"flex",alignItems:"baseline",gap:8,marginBottom:7,flexWrap:"wrap"}}>
+              <span style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px"}}>{TX("gate1Title")}</span>
+              <span style={{fontSize:9.5,marginLeft:"auto",
+                color:cov.pending===0&&cov.findings===0?"#7EC8A4":"#8B949E"}}>
+                {cov.pending===0&&cov.findings===0
+                  ? TX("gate1AllDone",{t:cov.total})
+                  : TX("gate1Coverage",{d:cov.done,t:cov.total,p:cov.pending})}
+              </span>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:4}}>
+              {GATE1_VERIFY_IDS.map(id=>{
+                const st=gate1State(file,id), col=TONO[st], at=gate1At(file,id);
+                const bloqueado=st==="finding";
+                return (
+                  <button key={id} className="hov"
+                    onClick={bloqueado?undefined:()=>onSave(cycleGate1(file,id,profile?.name||null))}
+                    title={bloqueado?TX("gate1Blocked"):""}
+                    style={{background:st==="verified"?"rgba(6,214,160,.10)":
+                      st==="finding"?"rgba(232,93,117,.10)":"transparent",
+                      border:`1px solid ${st==="pending"?"#30363D":col}`,borderRadius:4,
+                      padding:"5px 8px",textAlign:"left",cursor:bloqueado?"default":"pointer",
+                      fontFamily:"DM Mono",display:"flex",flexDirection:"column",gap:1}}>
+                    <span style={{fontSize:10,color:st==="na"?"#484F58":"#E6EDF3",lineHeight:1.3}}>
+                      {P(gate1Item(id))}
+                    </span>
+                    <span style={{fontSize:8.5,color:col}}>
+                      {P(GATE1_STATES[st])}{at&&st!=="finding"?` · ${md(at)}`:""}
+                    </span>
+                  </button>
+                );})}
+            </div>
+            <div style={{fontSize:9,color:"#484F58",marginTop:6,lineHeight:1.5}}>{TX("gate1Hint")}</div>
+          </div>
+        );})()}
+
       {abiertos.length===0&&<div style={{fontSize:11,color:"#484F58"}}>{TX("findingNone")}</div>}
 
       {abiertos.map(f=>{
@@ -4703,7 +4746,7 @@ function FindingsPanel({file,profile,onSave}){
             <button className="hov" disabled={!text.trim()}
               onClick={()=>{
                 const n=addFinding(file,{item,text,waitingOn:waiting,by:profile?.name||null});
-                onSave({findings:n.findings});
+                onSave({findings:n.findings, gate1:n.gate1});
                 setText(""); setOpen(false);
               }}
               style={{flex:2,background:text.trim()?"#E85D75":"#161B22",

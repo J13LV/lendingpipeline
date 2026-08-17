@@ -232,6 +232,16 @@ export const UI = {
                  en:"The date the vendor promises. If it passes with nothing received, it turns red." },
   orderLate:{ es:"pasó la fecha prometida", en:"past the promised date" },
 
+  // ─── verificación de los puntos del 1003 ───
+  gate1Title:{ es:"VERIFICACIÓN DEL 1003", en:"1003 VERIFICATION" },
+  gate1Hint:{ es:"Un toque gira: pendiente → verificado → no aplica. Marcar que revisaste y salió bien no es un hallazgo — el rojo se reserva para lo que está roto.",
+              en:"One tap cycles: pending → verified → N/A. Recording that you checked and it was clean is not a finding — red is reserved for what is broken." },
+  gate1Coverage:{ es:"{d} de {t} · {p} sin revisar", en:"{d} of {t} · {p} unchecked" },
+  gate1AllDone:{ es:"✓ Los {t} puntos revisados", en:"✓ All {t} items checked" },
+  gate1Blocked:{ es:"Hay un hallazgo abierto en este punto — resuélvelo primero",
+                 en:"There is an open finding on this item — resolve it first" },
+  gate1StampedBy:{ es:"{d} · {who}", en:"{d} · {who}" },
+
   // ─── contrato ───
   contractSignal:{ es:"FIRMA DEL COMPRADOR", en:"CONTRACT SIGNAL DATE" },
   contractSignalHint:{ es:"Cuándo firmó el comprador. El reloj sigue corriendo desde la aceptación del vendedor — esta no mueve ninguna fecha.",

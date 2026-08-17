@@ -3003,6 +3003,77 @@ export const GATE1_ITEMS = [
 ];
 export const gate1Item = id => GATE1_ITEMS.find(x => x.id === id) || null;
 
+// ─── 7Y2. VERIFICADO, NO SOLO ROTO ─────────────────────────────────
+// La pagina 2 del checklist de Barrett son doce revisiones. Hasta aqui
+// solo se les podia colgar un HALLAZGO — o sea que el sistema sabia
+// registrar cuando algo salia mal y no tenia donde anotar que alguien
+// reviso y salio bien.
+//
+// Y eso empujaba a usar el rojo al reves: se levantaba un "hallazgo" que
+// decia "Done" para dejar constancia, el archivo caia en BLOQUEADO, y la
+// procesadora abria un problema que no existia. Un rojo que a veces
+// significa "listo" deja de significar nada.
+//
+// Cuatro estados, ningun color nuevo:
+//   pendiente  gris    nadie lo ha mirado
+//   verificado verde   se reviso y salio limpio
+//   no aplica  gris    no hay regalo, no hay co-prestatario — el gris ya
+//                      significa "estancado o SIN FUNCION"
+//   hallazgo   rojo    hay algo abierto en ese punto
+//
+// El estado de hallazgo NO se guarda: se deriva de los hallazgos abiertos.
+// Dos fuentes para el mismo hecho es como se desincronizan los datos.
+export const GATE1_VERIFY_IDS = GATE1_ITEMS.filter(i => i.id !== "other").map(i => i.id);
+
+export const GATE1_STATES = {
+  pending:  { id: "pending",  es: "Pendiente",  en: "Pending",  signal: "idle" },
+  verified: { id: "verified", es: "Verificado", en: "Verified", signal: "done" },
+  na:       { id: "na",       es: "No aplica",  en: "N/A",      signal: "idle" },
+  finding:  { id: "finding",  es: "Hallazgo",   en: "Finding",  signal: "broken" },
+};
+export const gate1Of = file =>
+  (file?.gate1 && typeof file.gate1 === "object") ? file.gate1 : {};
+
+export function gate1State(file, id) {
+  // Un hallazgo abierto gana sobre cualquier marca: alguien reviso, salio
+  // mal, y eso es lo que hay que ver.
+  if (openFindings(file).some(f => f.item === id)) return "finding";
+  const e = gate1Of(file)[id];
+  if (!e) return "pending";
+  return e.na ? "na" : "verified";
+}
+export const gate1StateMeta = file => id => GATE1_STATES[gate1State(file, id)];
+export const gate1At = (file, id) => okDate(gate1Of(file)[id]?.at) || null;
+export const gate1By = (file, id) => gate1Of(file)[id]?.by || null;
+
+// Un toque gira: pendiente -> verificado -> no aplica -> pendiente. Tres
+// estados en un boton, sin menu, porque la procesadora marca de a doce.
+// Con un hallazgo abierto no se puede marcar: primero se resuelve.
+export function cycleGate1(file, id, by) {
+  if (!gate1Item(id) || id === "other") return file;
+  if (gate1State(file, id) === "finding") return file;
+  const cur = gate1Of(file)[id];
+  const next = { ...gate1Of(file) };
+  if (!cur) next[id] = { at: today(), by: by || null, na: false };
+  else if (!cur.na) next[id] = { at: today(), by: by || null, na: true };
+  else delete next[id];
+  return { ...file, gate1: next };
+}
+
+export function gate1Coverage(file) {
+  const s = GATE1_VERIFY_IDS.map(id => gate1State(file, id));
+  return {
+    total: GATE1_VERIFY_IDS.length,
+    verified: s.filter(x => x === "verified").length,
+    na: s.filter(x => x === "na").length,
+    findings: s.filter(x => x === "finding").length,
+    pending: s.filter(x => x === "pending").length,
+    done: s.filter(x => x === "verified" || x === "na").length,
+  };
+}
+export const gate1Complete = file => gate1Coverage(file).pending === 0
+  && gate1Coverage(file).findings === 0;
+
 // De quien se espera la solucion. Un hallazgo sin dueño es una queja.
 export const FINDING_WAITING = {
   lo:        { es: "del LO",           en: "on the LO",        color: "#4A90D9" },
@@ -3026,11 +3097,18 @@ export function addFinding(file, { item, text, waitingOn, by }) {
   // archivo, y taparla aqui dispara no-shadow.
   const txt = String(text || "").trim();
   if (!txt) return file;
+  const id = gate1Item(item) ? item : "other";
+  // Si ese punto estaba marcado como verificado, la marca se retira: quien
+  // levanta un hallazgo esta diciendo que la revision anterior fallo. Dejar
+  // las dos cosas seria el archivo afirmando que algo esta bien y mal a la vez.
+  const g = { ...gate1Of(file) };
+  delete g[id];
   return {
     ...file,
+    gate1: g,
     findings: [...findingsOf(file), {
       id: "fd_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
-      item: gate1Item(item) ? item : "other",
+      item: id,
       text: txt,
       waitingOn: FINDING_WAITING[waitingOn] ? waitingOn : "lo",
       stage: file?.stage || null,
