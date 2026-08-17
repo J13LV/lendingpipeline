@@ -323,10 +323,10 @@ export function dibujarPagina1(page, fonts, PDFLib, file) {
   p.campo("Funding Date:", mmddyy(log["Funded"] || file?.closedAt), M + t3, t3 - 10, { bold: false });
   p.campo("VVOE:", mmddyy(milestoneAt(file, "vvoe")), M + t3 * 2, t3, { bold: false });
 
-  // Pie discreto: de dónde salió el papel y cuándo. Sin esto, dos
-  // impresiones del mismo archivo en semanas distintas son indistinguibles.
-  p.texto(`Del Valle Lending Co. · powered by Barrett Financial Group · printed ${mmddyy(today())}`,
-    M, 38, { size: 6.5, color: p.GRIS });
+  // Solo el número de página. NADA de marca nuestra: este papel es la forma
+  // de Barrett y va a su expediente, así que tiene que poder auditarse sin
+  // un logo ajeno encima. La fecha de impresión vive en el nombre del
+  // archivo descargado, que ya la lleva.
   p.texto("1", PAGE.w / 2, 38, { size: 7.5, color: p.GRIS });
 }
 

@@ -28,6 +28,7 @@ import {
   WAITING_IDS, waitingMeta, openFindings, addFinding, resolveFinding, findingAge,
   lenderNameOf, daysBetween, daysInStage, stageClock, today, okDate,
   noteEntries, addNoteEntry, contingencyHeadline, upcomingDeadlines,
+  derivedStageDeadlines, deadlineSignal, SIGNALS,
   setOrderNote, miLooksWrong, INTAKE_GROUPS, INTAKE_FIELDS, intakeValue, intakeApplies,
   setIntake, intakeCompleteness, dpaReady, allOrderStates, pendingOrders,
   currentRegistration, stampRegistrationDate, setRegistrationField,
@@ -600,7 +601,7 @@ function Findings({ file, lang, onSave, who, readOnly }) {
 
 // ─── EL ARCHIVO ABIERTO ────────────────────────────────────────────
 function FilePane({ file, lang, onSave, who, readOnly, onOpenFull }) {
-  const { T } = mk(lang);
+  const { T, P } = mk(lang);
   const [tab, setTab] = useState("orders");
   const [note, setNote] = useState("");
   const coe = okDate(file?.contingencies?.coe) || okDate(file?.closing);
@@ -608,7 +609,16 @@ function FilePane({ file, lang, onSave, who, readOnly, onOpenFull }) {
   const clock = stageClock(file?.stage, file);
   const dias = daysInStage(file);
   const head = contingencyHeadline(file);
-  const proximos = upcomingDeadlines(file, 3);
+  // La cadena COMPLETA hasta el fondeo, ordenada por fecha. Pedir solo las
+  // tres primeras devolvia siempre las mas viejas —o sea, lo que ya se
+  // hizo— y dejaba fuera todo lo que viene. La procesadora abria la solapa
+  // y veia su pasado.
+  const derivadas = Object.values(derivedStageDeadlines(file))
+    .filter(r => r.startBy)
+    .sort((a, b) => a.startBy < b.startBy ? -1 : 1);
+  // Roto es lo que dice `deadlineSignal`, no "la fecha quedo atras". Una
+  // etapa ya alcanzada esta HECHA aunque el calendario haya pasado.
+  const rotas = derivadas.filter(r => deadlineSignal(r, file) === "broken").length;
 
   return (
     <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 14 }}>
@@ -643,7 +653,7 @@ function FilePane({ file, lang, onSave, who, readOnly, onOpenFull }) {
           ["findings", T("findings"),
             openFindings(file).length + gate1Coverage(file).pending],
           ["checklist", T("milestones"),  0],
-          ["dates",    T("derivedDates"), proximos.filter(r => r.overdue).length],
+          ["dates",    T("derivedDates"), rotas],
           ["notes",    T("notes"),       noteEntries(file).length],
         ].map(([id, label, n]) => {
           const on = tab === id;
@@ -696,20 +706,37 @@ function FilePane({ file, lang, onSave, who, readOnly, onOpenFull }) {
       )}
 
       {tab === "dates" && (
-        proximos.length === 0
+        derivadas.length === 0
           ? <div style={{ fontSize: 10.5, color: C.dim }}>{T("noDeadlines")}</div>
           : (
             <div>
-              {proximos.map(r => (
-                <div key={r.stage} style={{ display: "flex", gap: 8, fontSize: 10,
-                  fontFamily: "DM Mono", color: r.overdue ? C.red : C.soft, marginBottom: 4 }}>
-                  <span style={{ minWidth: 52, color: r.overdue ? C.red : C.text }}>{md(r.startBy)}</span>
-                  <span style={{ flex: 1 }}>{r.stage}</span>
-                  <span style={{ color: C.dim, fontSize: 9 }}>{r.owner || ""}</span>
-                </div>
-              ))}
+              {/* La leyenda va donde se usa el color, no en una pantalla de
+                  ayuda que nadie abre. Es la misma del archivo completo. */}
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 8 }}>
+                {["done", "soon", "broken"].map(id => (
+                  <span key={id} style={{ fontSize: 8.5, color: signalColor(id), letterSpacing: ".4px" }}>
+                    ● {P(SIGNALS[id])}
+                  </span>
+                ))}
+              </div>
+              {derivadas.map(r => {
+                // El CD no se budgeta, se legisla. Morado, que es SU color y
+                // el unico lugar donde se usa.
+                const col = r.legal ? signalColor("legal") : signalColor(deadlineSignal(r, file));
+                return (
+                  <div key={r.stage} style={{ display: "flex", gap: 8, fontSize: 10,
+                    fontFamily: "DM Mono", color: col, marginBottom: 4, alignItems: "baseline" }}>
+                    <span style={{ minWidth: 52 }}>{md(r.startBy)}</span>
+                    <span style={{ flex: 1 }}>{r.stage}{r.legal ? " ⚖" : ""}</span>
+                    <span style={{ color: C.dim, fontSize: 9 }}>{r.owner || ""}</span>
+                  </div>
+                );
+              })}
+              <div style={{ fontSize: 9, color: C.dim, marginTop: 7, lineHeight: 1.5 }}>
+                {T("derivedHint")}
+              </div>
               {head && (
-                <div style={{ fontSize: 9.5, color: C.dim, marginTop: 6 }}>
+                <div style={{ fontSize: 9.5, color: C.dim, marginTop: 4 }}>
                   {head.short} {md(head.date)}
                 </div>
               )}
