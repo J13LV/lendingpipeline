@@ -21,7 +21,7 @@
 import {
   okDate, today, addDays, lenderNameOf, baseProductOf,
   productKeyForLoanType, stageLogOf, latestNote, lockStatus, STAGE_DAYS,
-  processorId, processorOf, DEFAULT_PROCESSOR,
+  processorId, processorOf, DEFAULT_PROCESSOR, orderState,
 } from "./pipelineCore";
 
 const EXCELJS_CDN = "https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js";
@@ -214,22 +214,33 @@ export function inMarthaSheet(file, quien = DEFAULT_PROCESSOR) {
   return rank >= stageRank(FIRST_STAGE);
 }
 
-// Su formato de texto para pedidos: "REQ 07/17". No es fecha de Excel,
-// es texto, y hay que respetarlo o la columna se le desalinea.
+// Su formato de texto para pedidos: "REQ 07/17", y cuando llega lo
+// cambia a "RECEIVED 07/28". No son fechas de Excel, es texto, y hay que
+// respetarlo o la columna se le desalinea.
+const mmdd = iso => { const [, m, d] = String(iso).split("-"); return `${m}/${d}`; };
+
 function reqText(iso) {
   const d = okDate(iso);
-  if (!d) return null;
-  const [, m, day] = d.split("-");
-  return `REQ ${m}/${day}`;
+  return d ? `REQ ${mmdd(d)}` : null;
+}
+
+// El estado de un pedido en SU vocabulario. Los sellos que pone la
+// procesadora en la pantalla de procesamiento salen aqui — estas son
+// las columnas que stageLog nunca iba a poder llenar.
+function orderText(file, id) {
+  const o = orderState(file, id);
+  if (o.rec) return `RECEIVED ${mmdd(o.rec)}`;
+  if (o.req) return `REQ ${mmdd(o.req)}`;
+  return null;
 }
 
 const asDate = iso => (okDate(iso) ? new Date(iso + "T12:00:00") : null);
 
 // ─── 4. UNA FILA ───────────────────────────────────────────────────
-// Devuelve un mapa columna(1-29) → valor. Las columnas que solo ella
-// conoce se quedan fuera del mapa y salen vacías: HOI Binder recibido,
-// Investor Disc firmado, Condo Docs, y el texto de Status, que es su
-// juicio y no nuestro.
+// Devuelve un mapa columna(1-29) → valor. Con los pedidos sellados en la
+// pantalla de procesamiento, HOI Binder y Condo Docs ya se llenan solos.
+// Lo que sigue siendo suyo: Investor Disc firmado, y el TEXTO de Status,
+// que es su juicio y no nuestro.
 export function marthaRow(file) {
   const c = file?.contingencies || {};
   const log = stageLogOf(file);
@@ -251,11 +262,15 @@ export function marthaRow(file) {
     11: asDate(c.loanContingency),
     12: asDate(c.appraisalContingency),
     13: asDate(reg),
-    14: reqText(log["Title Ordered"]),
-    15: reqText(log["Insurance Ordered"]),
+    // Los sellos de la procesadora mandan; stageLog queda de respaldo
+    // para los archivos que se movieron antes de que existieran.
+    14: orderText(file, "title")      || reqText(log["Title Ordered"]),
+    15: orderText(file, "hoi_quote")  || reqText(log["Insurance Ordered"]),
+    16: orderText(file, "hoi_binder"),
     17: asDate(reg),
     18: asDate(log["Initial Disclosures Sent"]),
-    20: reqText(log["Appraisal Ordered"]),
+    20: orderText(file, "appraisal")  || reqText(log["Appraisal Ordered"]),
+    21: orderText(file, "condo_docs"),
     22: asDate(log["Submitted to UW"]),
     23: asDate(log["Conditional Approval"]),
     26: asDate(log["CD Issued"]),

@@ -3031,6 +3031,91 @@ export function worstFinding(file) {
   return [...abiertos].sort((a, b) => String(a.at).localeCompare(String(b.at)))[0];
 }
 
+// ─── 7W. PEDIDOS A VENDORS ─────────────────────────────────────────
+// Martha ordena titulo, HOI y tasacion el MISMO DIA que recibe el
+// archivo — su "one day, one shot". En sus ocho archivos, la fecha de
+// titulo y la de HOI son la misma o van a un dia habil de distancia.
+//
+// Estos cinco pedidos son las unicas columnas de su Excel que stageLog
+// NUNCA va a poder saber. Un avance de etapa no sabe que llego el
+// binder de HOI, ni que se firmaron las divulgaciones del investor, ni
+// que se pidieron los docs del condominio. Si ella los toca aqui, esas
+// columnas se llenan solas y nadie las teclea.
+//
+// Dos fechas por pedido, no una: pedido y recibido. En su hoja escribe
+// "REQ 07/17" y despues lo cambia a "RECEIVED 07/28" — o sea que ya
+// distingue los dos momentos, solo que pisando el dato anterior.
+export const ORDERS = [
+  { id: "title",      col: 14, es: "Titulo y fees",     en: "Title and fees" },
+  { id: "hoi_quote",  col: 15, es: "HOI quote",         en: "HOI quote" },
+  { id: "hoi_binder", col: 16, es: "HOI binder",        en: "HOI binder" },
+  { id: "appraisal",  col: 20, es: "Tasacion",          en: "Appraisal" },
+  { id: "condo_docs", col: 21, es: "Docs de condominio",en: "Condo docs" },
+];
+export const orderById = id => ORDERS.find(o => o.id === id) || null;
+
+// Los tres que salen de un tiro el dia del registro. El binder llega
+// despues (lo manda la aseguradora) y los docs de condominio solo
+// aplican si la propiedad es condominio.
+export const ONE_SHOT_ORDERS = ["title", "hoi_quote", "appraisal"];
+
+export const ordersOf = file => (file?.orders && typeof file.orders === "object") ? file.orders : {};
+
+export function orderState(file, id) {
+  const o = ordersOf(file)[id] || {};
+  const req = okDate(o.req), rec = okDate(o.rec);
+  return {
+    id, req, rec,
+    state: rec ? "received" : req ? "ordered" : "pending",
+    // Cuantos dias lleva esperando al vendor, o cuantos tardo en llegar.
+    days: req ? (rec ? daysBetween(req, rec) : daysBetween(req)) : null,
+    by: o.by || null, recBy: o.recBy || null,
+  };
+}
+export const allOrderStates = file => ORDERS.map(o => orderState(file, o.id));
+
+// Los pedidos que ya se hicieron y siguen sin llegar. Es la cola de
+// "esperando vendor" de la procesadora.
+export const pendingOrders = file =>
+  allOrderStates(file).filter(o => o.state === "ordered");
+
+// Un toque estampa hoy. `which` es "req" o "rec". No se puede recibir
+// algo que no se pidio: marcar recibido tambien estampa el pedido, con
+// la misma fecha, porque un recibido sin pedido deja el dato cojo.
+export function stampOrder(file, id, which, by) {
+  if (!orderById(id)) return file;
+  const prev = ordersOf(file)[id] || {};
+  const hoy = today();
+  const next = which === "rec"
+    ? { ...prev, req: okDate(prev.req) || hoy, rec: hoy, recBy: by || null }
+    : { ...prev, req: hoy, by: by || null };
+  return { ...file, orders: { ...ordersOf(file), [id]: next } };
+}
+
+// Quitar un sello puesto por error. Solo el ultimo: si se borra el
+// pedido y queda el recibido, el dato queda imposible.
+export function clearOrder(file, id, which) {
+  const prev = ordersOf(file)[id];
+  if (!prev) return file;
+  const next = which === "rec"
+    ? { ...prev, rec: null, recBy: null }
+    : { req: null, by: null, rec: null, recBy: null };
+  return { ...file, orders: { ...ordersOf(file), [id]: next } };
+}
+
+// El "one shot": titulo, HOI y tasacion pedidos de un tiro. Es la
+// conducta de Martha convertida en boton — y lo que Laura tiene que
+// aprender de ella.
+export function stampOneShot(file, by) {
+  let out = file;
+  for (const id of ONE_SHOT_ORDERS) {
+    if (orderState(out, id).state === "pending") out = stampOrder(out, id, "req", by);
+  }
+  return out;
+}
+export const oneShotDone = file =>
+  ONE_SHOT_ORDERS.every(id => orderState(file, id).state !== "pending");
+
 // ─── 7X. REGISTRO CON EL LENDER ────────────────────────────────────
 // Tina registra en Arive y Arive asigna la procesadora en ese mismo
 // acto. En la hoja de Martha, "File Assigned to LOA/Processor" y "Loan
@@ -3061,6 +3146,101 @@ export function stampRegistration(file, by) {
     // asigno, y cambiarla aqui no cambiaria nada alla.
     processor: processorId(file),
   };
+}
+
+// ─── 7V. LA COLA DE LA PROCESADORA ─────────────────────────────────
+// Un LO abre el sistema y piensa "mis archivos". Una procesadora abre y
+// piensa "que hago hoy". Son dos productos distintos sobre el mismo dato.
+//
+// Por eso la cola NO se agrupa por etapa. Se agrupa por lo que hay que
+// HACER, y el orden de los grupos es el orden en que se atienden. Un
+// archivo cae en el PRIMER grupo que le toca, nunca en dos.
+export const QUEUE_GROUPS = [
+  { id: "blocked",  order: 1, color: "#E85D75",
+    es: "Bloqueado", en: "Blocked",
+    note_es: "Hay un hallazgo abierto — no avanza hasta resolverlo",
+    note_en: "There is an open finding — it does not move until it is resolved" },
+  { id: "new",      order: 2, color: "#F5A623",
+    es: "Nuevos · sin ordenar", en: "New · nothing ordered",
+    note_es: "Recien registrados. Titulo, HOI y tasacion de un tiro",
+    note_en: "Just registered. Title, HOI and appraisal in one shot" },
+  { id: "vendor",   order: 3, color: "#4A90D9",
+    es: "Esperando vendor", en: "Waiting on vendor",
+    note_es: "Pedido hecho, todavia no llega",
+    note_en: "Ordered, not received yet" },
+  { id: "ready_uw", order: 4, color: "#BD65E8",
+    es: "Listos para someter", en: "Ready to submit",
+    note_es: "Los pedidos llegaron y el archivo no se ha sometido",
+    note_en: "Orders are in and the file has not been submitted" },
+  { id: "in_uw",    order: 5, color: "#9999FF",
+    es: "En underwriting", en: "In underwriting",
+    note_es: "En manos del underwriter",
+    note_en: "With the underwriter" },
+  { id: "conditions", order: 6, color: "#FFD166",
+    es: "Condiciones abiertas", en: "Open conditions",
+    note_es: "Aprobado, esperando al prestatario",
+    note_en: "Approved, waiting on the borrower" },
+  { id: "closing",  order: 7, color: "#7EC8A4",
+    es: "Camino al cierre", en: "Heading to closing",
+    note_es: "CD, CTC, firma y fondeo",
+    note_en: "CD, CTC, signing and funding" },
+];
+export const queueGroup = id => QUEUE_GROUPS.find(g => g.id === id) || null;
+
+const UW_STAGES   = ["Submitted to UW", "UW Review"];
+const COND_STAGES = ["Conditional Approval", "Condition Clearing"];
+const CLOSE_STAGES = ["Clear to Close", "CD Issued", "Closing Scheduled",
+  "Final Verifications", "Closing Docs Drawn", "Signing", "Funded"];
+
+// A que grupo pertenece este archivo. El orden de los if ES el diseño:
+// un hallazgo abierto gana sobre todo lo demas, porque un archivo que
+// nadie puede mover no es "esperando vendor", es un archivo parado.
+export function queueGroupOf(file) {
+  if (hasOpenFindings(file)) return "blocked";
+  const s = file?.stage;
+  if (CLOSE_STAGES.includes(s)) return "closing";
+  if (COND_STAGES.includes(s))  return "conditions";
+  if (UW_STAGES.includes(s))    return "in_uw";
+  if (!oneShotDone(file))       return "new";
+  if (pendingOrders(file).length) return "vendor";
+  return "ready_uw";
+}
+
+// La cola completa de una procesadora, agrupada y ordenada. Dentro de
+// cada grupo, primero lo que cierra antes: el COE es la fecha que le
+// importa al cliente y al agente.
+export function processingQueue(files, quien = DEFAULT_PROCESSOR) {
+  const mios = (files || []).filter(f => {
+    if (!f || f.archived || okDate(f.closedAt) || f.prep) return false;
+    if (quien && processorId(f) !== quien) return false;
+    // Antes de Full Application el archivo todavia no es de nadie en
+    // procesamiento; despues del cierre ya salio.
+    return ALL_STAGE_ORDER.indexOf(f.stage) >= ALL_STAGE_ORDER.indexOf("Full Application");
+  });
+
+  const porGrupo = new Map();
+  for (const f of mios) {
+    const g = queueGroupOf(f);
+    if (!porGrupo.has(g)) porGrupo.set(g, []);
+    porGrupo.get(g).push(f);
+  }
+  return QUEUE_GROUPS
+    .filter(g => porGrupo.has(g.id))
+    .map(g => ({
+      ...g,
+      files: porGrupo.get(g.id).sort((a, b) => {
+        const ca = okDate(a?.contingencies?.coe) || okDate(a?.closing) || "9999-12-31";
+        const cb = okDate(b?.contingencies?.coe) || okDate(b?.closing) || "9999-12-31";
+        return ca.localeCompare(cb);
+      }),
+    }));
+}
+
+// Cuantos archivos tiene cada procesadora. Para el selector de cola.
+export function queueCounts(files) {
+  const out = {};
+  for (const id of PROCESSOR_IDS) out[id] = processingQueue(files, id).reduce((a, g) => a + g.files.length, 0);
+  return out;
 }
 
 // ─── 8. STAMPING ───────────────────────────────────────────────────

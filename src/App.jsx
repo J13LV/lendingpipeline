@@ -4,6 +4,7 @@ import { getFirestore, doc, setDoc, onSnapshot } from "firebase/firestore";
 import { helpSections, searchHelp } from "./helpContent";
 import { tr, defaultLang } from "./ui";
 import { downloadMarthaSheet } from "./marthaExport";
+import ProcessingView from "./processing";
 
 // Idioma vigente, a nivel de módulo. El motor devuelve {es, en} en 84 lugares
 // y la interfaz leía siempre `.es`. Pasar `lang` por props a los seis paneles
@@ -93,7 +94,9 @@ const TEAM = {
   "iXcEzyc2nTTy2CJirLUz1FJ1oye2": { name: "Ana M Plasencia",    short: "Ana",      role: "lo",        nmls: "2683283", color: "#BD65E8" },
   "0dpbvxe4RZUmCDhm03Zne6JSKE32": { name: "Marelis Pinales",    short: "Marelis",  role: "lo",        nmls: "",        color: "#06D6A0" },
   "qMVqzjs59yMIcZfvsWACpjm1o4F2": { name: "Tina",              short: "Tina",     role: "assistant", nmls: null, color: "#7EC8A4" },
-  "Hj0KI0wmGfTHinHxxx8mrdLx5jw2": { name: "Laura de Armas",     short: "Laura",    role: "assistant", nmls: "",        color: "#F5A623" },
+  // Laura pasa a procesar. `processorId` la amarra a su propia cola: ve
+  // la suya y no la de Martha. El rol sigue dandole lo de assistant.
+  "Hj0KI0wmGfTHinHxxx8mrdLx5jw2": { name: "Laura de Armas",     short: "Laura",    role: "processor", nmls: "",        color: "#F5A623", processorId: "laura" },
 };
 function getProfile(uid){ return TEAM[uid] || { name:"Unknown User", short:"Unknown", role:"assistant", nmls:"", color:"#8B949E", lang:"es" }; }
 
@@ -598,7 +601,8 @@ export default function App() {
     : null;
   const isAdmin     = profile?.role === "admin";
   const isLO        = profile?.role === "lo";
-  const isAssistant = profile?.role === "assistant";
+  const isAssistant = profile?.role === "assistant" || profile?.role === "processor";
+  const isProcessor = profile?.role === "processor";
 
   useEffect(()=>{
     if (!currentUser) return;
@@ -1063,6 +1067,12 @@ export default function App() {
             {l} · {c}
           </button>
         ))}
+        {(isAdmin||isProcessor)&&(
+          <button className="hov" onClick={()=>{setView("processing");setActivePhase(null);}}
+            style={{background:view==="processing"?"#F5A623":"#21262D",color:view==="processing"?"#0D1117":"#F5A623",borderRadius:6,padding:"6px 14px",fontSize:11,fontFamily:"DM Mono",fontWeight:500,whiteSpace:"nowrap"}}>
+            {TX("processingTab")}
+          </button>
+        )}
         <button className="hov" onClick={()=>{setView("production");setActivePhase(null);}}
           style={{background:view==="production"?"#BD65E8":"#21262D",color:view==="production"?"#0D1117":"#BD65E8",borderRadius:6,padding:"6px 14px",fontSize:11,fontFamily:"DM Mono",fontWeight:500,whiteSpace:"nowrap"}}>
           📊 PRODUCTION
@@ -1105,6 +1115,12 @@ export default function App() {
 
       {/* CONTENT */}
       <div style={{padding:"20px 24px"}}>
+
+        {view==="processing"&&(isAdmin||isProcessor)&&<ProcessingView
+          files={files} profile={profile} lang={lang}
+          onSaveFile={(id,next)=>updateFile(id,next)}
+          onOpenFull={f=>setDetail(f)}
+        />}
 
         {view==="production"&&<ProductionDashboard
           profile={profile}

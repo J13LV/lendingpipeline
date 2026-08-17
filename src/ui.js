@@ -188,6 +188,25 @@ export const UI = {
   registeredOn:{ es:"Registrado {d}", en:"Registered {d}" },
   registeredBy:{ es:" por {who}", en:" by {who}" },
 
+  // ─── pantalla de procesamiento ───
+  processingTab:{ es:"⚙ PROCESAMIENTO", en:"⚙ PROCESSING" },
+  orders:{ es:"PEDIDOS", en:"ORDERS" },
+  orderReq:{ es:"Pedido", en:"Ordered" },
+  orderRec:{ es:"Recibido", en:"Received" },
+  orderWaiting:{ es:"{n}d esperando", en:"{n}d waiting" },
+  orderUndo:{ es:"Toca otra vez para quitar el sello", en:"Tap again to remove the stamp" },
+  orderUndoAsk:{ es:"¿Quitar?", en:"Remove?" },
+  oneShot:{ es:"ORDENAR TODO", en:"ORDER ALL" },
+  oneShotHint:{ es:"Título, HOI y tasación de un tiro, con la fecha de hoy",
+                en:"Title, HOI and appraisal in one shot, stamped today" },
+  ordersHint:{ es:"Un toque estampa hoy. Estas fechas son las que llenan las columnas de pedidos en la hoja de procesamiento.",
+               en:"One tap stamps today. These dates fill the order columns on the processing sheet." },
+  queueEmpty:{ es:"Nada en esta cola ahora mismo.", en:"Nothing in this queue right now." },
+  queuePick:{ es:"Escoge un archivo de la cola.", en:"Pick a file from the queue." },
+  closeInDays:{ es:"cierra en {n}d", en:"closes in {n}d" },
+  stageDays:{ es:"{n}d en la etapa", en:"{n}d in stage" },
+  openFullFile:{ es:"ABRIR EL ARCHIVO COMPLETO", en:"OPEN THE FULL FILE" },
+
   // contingencias
   anchorHint:  { es:"Todo se cuenta desde aquí. Si el archivo pasó días en Under Contract, ya se gastaron.",
                  en:"Everything counts from here. Days the file spent in Under Contract are already spent." },
