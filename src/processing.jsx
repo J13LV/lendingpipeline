@@ -395,8 +395,8 @@ function FilePane({ file, lang, onSave, who, readOnly, onOpenFull }) {
           return (
             <button key={id} className="hov" onClick={() => setTab(id)}
               style={{ background: "transparent", border: "none", cursor: "pointer",
-                color: on ? C.text : C.dim, fontSize: 10, fontFamily: "DM Mono",
-                letterSpacing: ".5px", padding: "0 0 5px",
+                color: on ? C.gold : C.soft, fontSize: 10.5, fontFamily: "Syne",
+                fontWeight: on ? 800 : 500, letterSpacing: "1.2px", padding: "0 0 6px",
                 borderBottom: `2px solid ${on ? C.gold : "transparent"}` }}>
               {String(label).replace(/^[^A-Za-zÁ-ú]+/, "")}
               {n > 0 && <span style={{ color: id === "findings" || id === "dates" ? C.red : C.gold }}> {n}</span>}

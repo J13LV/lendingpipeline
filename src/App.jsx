@@ -4715,7 +4715,12 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
   // Cinco solapas en el orden en que se trabaja un archivo, y una regla
   // que no se rompe en ninguna: IZQUIERDA lo que capturas, DERECHA lo
   // que el sistema deriva. El ojo lo aprende una vez.
-  const [tab, setTab] = useState("loan");
+  // Abre en FILE: es donde estan las notas y lo primero que uno quiere
+  // leer al abrir un archivo — que paso, quien dijo que. El ORDEN de las
+  // solapas sigue contando la historia del prestamo (que es, con quien,
+  // contra que reloj, cuanto deja, y el expediente que lo acompaña),
+  // pero se aterriza en la ultima.
+  const [tab, setTab] = useState("file");
   // Whatever the sub-panels are currently showing, ready for the single SAVE.
   const panelDrafts = useRef({});
   // Los bps que el bloque de lender tiene escritos pero aún no guardados. Con
@@ -4891,10 +4896,11 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
             return (
               <button key={id} className="hov" onClick={()=>setTab(id)}
                 style={{background:on?"#171D26":"transparent",border:"none",cursor:"pointer",
-                  color:on?"#E6EDF3":"#484F58",fontSize:10.5,fontFamily:"DM Mono",
-                  letterSpacing:"1.4px",padding:"11px 0",textAlign:"center",
-                  borderRight:i<4?"1px solid #21262D":"none",
-                  boxShadow:on?"inset 0 -2px 0 #F5A623":"none"}}>
+                  color:on?"#F5A623":"#8B949E",fontSize:11.5,fontFamily:"Syne",
+                  fontWeight:on?800:500,letterSpacing:"1.6px",padding:"12px 0",
+                  textAlign:"center",borderRight:i<4?"1px solid #21262D":"none",
+                  boxShadow:on?"inset 0 -2px 0 #F5A623":"none",
+                  transition:"color .12s"}}>
                 {label}
               </button>
             );
