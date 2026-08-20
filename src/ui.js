@@ -211,6 +211,16 @@ export const UI = {
   discHint:{ es:"Salen el mismo día del registro. Solo la firma es un toque aparte — nadie más sabe cuándo firmó.",
              en:"They go out the same day as registration. Only the signature is a separate tap — nobody else knows when they signed." },
 
+  // ─── resumen de procesamiento, del lado del LO ───
+  procStatus:{ es:"⚙ ESTADO DE PROCESAMIENTO", en:"⚙ PROCESSING STATUS" },
+  procReadOnly:{ es:"solo lectura", en:"read only" },
+  procWhere:{ es:"Esto lo trabajan Tina y la procesadora. Se ve aquí para que nadie tenga que preguntar por correo; se toca en la pantalla de PROCESAMIENTO.",
+              en:"Tina and the processor work this. It shows here so nobody has to ask by email; it is edited on the PROCESSING screen." },
+  sumRegister:{ es:"REGISTRO", en:"REGISTRATION" },
+  sumNone:{ es:"—", en:"—" },
+  sumOf:{ es:"{a} de {b}", en:"{a} of {b}" },
+  findingNotYours:{ es:"se espera {w}", en:"waiting {w}" },
+
   // ─── checklist en PDF ───
   chkPrint:{ es:"↓ CHECKLIST DE BARRETT", en:"↓ BARRETT CHECKLIST" },
   chkBusy:{ es:"↓ GENERANDO…", en:"↓ BUILDING…" },

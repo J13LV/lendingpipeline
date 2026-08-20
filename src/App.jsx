@@ -4,7 +4,8 @@ import { getFirestore, doc, setDoc, onSnapshot } from "firebase/firestore";
 import { helpSections, searchHelp } from "./helpContent";
 import { tr, defaultLang } from "./ui";
 import { downloadMarthaSheet } from "./marthaExport";
-import ProcessingView, { IntakePane, MilestonesPane } from "./processing";
+import ProcessingView, { IntakePane } from "./processing";
+import { downloadChecklist } from "./barrettChecklist";
 
 // Idioma vigente, a nivel de módulo. El motor devuelve {es, en} en 84 lugares
 // y la interfaz leía siempre `.es`. Pasar `lang` por props a los seis paneles
@@ -49,7 +50,8 @@ import {
   DPA_PCTS, DPA_FORMS, dpaForm, dpaOf, hasDpa, miLooksWrong,
   setDpa, dpaLabel, dpaComplete, productionByDpa, productionByState,
   GATE1_ITEMS, gate1Item, FINDING_WAITING, WAITING_IDS, waitingMeta,
-  GATE1_VERIFY_IDS, GATE1_STATES, gate1State, gate1At, cycleGate1, gate1Coverage,
+  gate1Coverage, visibleMilestones, milestoneAt, uwOutcome, uwOutcomeAt,
+  uwOutcomeMeta, discEsignedAt,
   openFindings, resolvedFindings, hasOpenFindings, addFinding, resolveFinding,
   findingAge, worstFinding, canRegister, isRegistered, stampRegistration,
   registeredAt, registeredBy, registrationCount, needsReRegistration,
@@ -104,7 +106,7 @@ const TEAM = {
   // la suya y no la de Martha. El rol sigue dandole lo de assistant.
   "Hj0KI0wmGfTHinHxxx8mrdLx5jw2": { name: "Laura de Armas",     short: "Laura",    role: "processor", nmls: "",        color: "#F5A623", processorId: "laura" },
 };
-function getProfile(uid){ return TEAM[uid] || { name:"Unknown User", short:"Unknown", role:"assistant", nmls:"", color:"#ADBAC7", lang:"es" }; }
+function getProfile(uid){ return TEAM[uid] || { name:"Unknown User", short:"Unknown", role:"assistant", nmls:"", color:"#8B949E", lang:"es" }; }
 
 const BPS_RATE = 150;
 const OVERRIDE_RATE = 0.0025;
@@ -314,32 +316,10 @@ function LoginScreen() {
   return (
     <div style={{
       background:"#0D1117", minHeight:"100vh", display:"flex",
-      alignItems:"center", justifyContent:"center", fontFamily:"'IBM Plex Sans',system-ui,-apple-system,sans-serif", padding:20
+      alignItems:"center", justifyContent:"center", fontFamily:"'DM Mono','Courier New',monospace", padding:20
     }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
-        /* ─── TOKENS · una sola fuente de verdad ───────────────────
-           Todo tamano y todo color de texto sale de aqui. Para cambiar
-           la escala completa solo se toca --fs-scale: el resto se
-           recalcula solo. Los colores pasan WCAG AA sobre #0D1117. */
-        :root{
-          --fs-scale:1;
-          --fs-1:calc(11.5px * var(--fs-scale));
-          --fs-2:calc(12.5px * var(--fs-scale));
-          --fs-3:calc(13.5px * var(--fs-scale));
-          --fs-4:calc(14.5px * var(--fs-scale));
-          --fs-5:calc(15.5px * var(--fs-scale));
-          --fs-6:calc(17px   * var(--fs-scale));
-          --fs-7:calc(19px   * var(--fs-scale));
-          --fs-8:calc(21px   * var(--fs-scale));
-          --fs-9:calc(25px   * var(--fs-scale));
-          --fs-10:calc(30px  * var(--fs-scale));
-          --t1:#F0F6FC;
-          --t2:#ADBAC7;
-          --t3:#8B98A5;
-          --t4:#737F8C;
-        }
-        body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
         *{box-sizing:border-box;margin:0;padding:0;}
         @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
         .shake{animation:shake .5s ease;}
@@ -356,18 +336,18 @@ function LoginScreen() {
             width:62, height:62, borderRadius:16, margin:"0 auto 15px",
             background:"linear-gradient(140deg,#F5A623,#B87F1E)",
             display:"flex", alignItems:"center", justifyContent:"center",
-            fontFamily:"Syne", fontWeight:800, fontSize:"var(--fs-10)", color:"#0D1117",
+            fontFamily:"Syne", fontWeight:800, fontSize:24, color:"#0D1117",
             letterSpacing:"-1px", boxShadow:"0 10px 30px rgba(245,166,35,.16)"
           }}>DV</div>
-          <div style={{fontFamily:"Syne", fontWeight:800, fontSize:"var(--fs-10)", color:"var(--t1)",
+          <div style={{fontFamily:"Syne", fontWeight:800, fontSize:25, color:"#E6EDF3",
             letterSpacing:"-0.7px", lineHeight:1.15}}>Del Valle Lending Co.</div>
-            <div style={{fontFamily:"DM Mono",fontSize:"var(--fs-2)",color:"var(--t2)",letterSpacing:"0.5px",marginTop:4}}>powered by Barrett Financial Group</div>
-          <div style={{fontSize:"var(--fs-3)", color:"var(--t3)", letterSpacing:"2.5px", marginTop:8}}>
+            <div style={{fontFamily:"DM Mono",fontSize:10,color:"#6E7681",letterSpacing:"0.5px",marginTop:4}}>powered by Barrett Financial Group</div>
+          <div style={{fontSize:10.5, color:"#484F58", letterSpacing:"2.5px", marginTop:8}}>
             PIPELINE · BARRETT FINANCIAL GROUP
           </div>
           <div style={{width:34, height:2, background:"#F5A623", margin:"16px auto 13px",
             borderRadius:2, opacity:.7}}/>
-          <div style={{fontFamily:"Syne", fontWeight:700, fontSize:"var(--fs-4)", color:"#F5A623",
+          <div style={{fontFamily:"Syne", fontWeight:700, fontSize:12.5, color:"#F5A623",
             letterSpacing:"0.3px"}}>Trust the Numbers. Trust the Name.</div>
         </div>
 
@@ -376,23 +356,23 @@ function LoginScreen() {
 
         {resetSent ? (
           <div style={{width:"100%", display:"flex", flexDirection:"column", gap:12, textAlign:"center"}}>
-            <div style={{color:"#06D6A0", fontSize:"var(--fs-6)", lineHeight:1.5}}>
+            <div style={{color:"#06D6A0", fontSize:14, lineHeight:1.5}}>
               ✓ Reset email sent to:<br/>
-              <strong style={{color:"var(--t1)"}}>{email}</strong>
+              <strong style={{color:"#E6EDF3"}}>{email}</strong>
             </div>
-            <div style={{fontSize:"var(--fs-4)", color:"var(--t2)", lineHeight:1.5}}>
+            <div style={{fontSize:12, color:"#8B949E", lineHeight:1.5}}>
               Check your inbox (and spam folder). Click the link to set a new password, then come back and sign in.
             </div>
             <button onClick={()=>{setResetSent(false);setResetMode(false);setError("");}}
-              style={{background:"#21262D", color:"var(--t2)", borderRadius:8, padding:"10px 0",
-                fontFamily:"DM Mono", fontSize:"var(--fs-4)", border:"1px solid #30363D", cursor:"pointer", marginTop:4}}>
+              style={{background:"#21262D", color:"#8B949E", borderRadius:8, padding:"10px 0",
+                fontFamily:"DM Mono", fontSize:12, border:"1px solid #30363D", cursor:"pointer", marginTop:4}}>
               ← BACK TO SIGN IN
             </button>
           </div>
         ) : (
           <div className={shake ? "shake" : ""} style={{width:"100%", display:"flex", flexDirection:"column", gap:14}}>
             <div>
-              <div style={{fontSize:"var(--fs-3)", color:"var(--t3)", letterSpacing:"1px", marginBottom:6}}>EMAIL</div>
+              <div style={{fontSize:11, color:"#484F58", letterSpacing:"1px", marginBottom:6}}>EMAIL</div>
               <input
                 type="email"
                 value={email}
@@ -406,8 +386,8 @@ function LoginScreen() {
                   background:"#0D1117",
                   border: error ? "1px solid #E85D75" : "1px solid #30363D",
                   borderRadius:8, padding:"12px 14px",
-                  color:"var(--t1)", fontSize:"var(--fs-6)",
-                  fontFamily:"'IBM Plex Sans',system-ui,-apple-system,sans-serif",
+                  color:"#E6EDF3", fontSize:14,
+                  fontFamily:"'DM Mono','Courier New',monospace",
                   width:"100%", transition:"border .15s",
                   opacity: busy ? 0.6 : 1,
                 }}
@@ -416,10 +396,10 @@ function LoginScreen() {
 
             {!resetMode && (
               <div>
-                <div style={{fontSize:"var(--fs-3)", color:"var(--t3)", letterSpacing:"1px", marginBottom:6, display:"flex", justifyContent:"space-between"}}>
+                <div style={{fontSize:11, color:"#484F58", letterSpacing:"1px", marginBottom:6, display:"flex", justifyContent:"space-between"}}>
                   <span>PASSWORD</span>
                   <button onClick={()=>{setResetMode(true);setError("");}}
-                    style={{background:"transparent", border:"none", color:"#F5A623", fontSize:"var(--fs-3)", fontFamily:"DM Mono", cursor:"pointer", letterSpacing:"1px"}}>
+                    style={{background:"transparent", border:"none", color:"#F5A623", fontSize:11, fontFamily:"DM Mono", cursor:"pointer", letterSpacing:"1px"}}>
                     FORGOT?
                   </button>
                 </div>
@@ -435,8 +415,8 @@ function LoginScreen() {
                     background:"#0D1117",
                     border: error ? "1px solid #E85D75" : "1px solid #30363D",
                     borderRadius:8, padding:"12px 14px",
-                    color:"var(--t1)", fontSize:"var(--fs-6)",
-                    fontFamily:"'IBM Plex Sans',system-ui,-apple-system,sans-serif",
+                    color:"#E6EDF3", fontSize:14,
+                    fontFamily:"'DM Mono','Courier New',monospace",
                     width:"100%", transition:"border .15s",
                     opacity: busy ? 0.6 : 1,
                   }}
@@ -445,7 +425,7 @@ function LoginScreen() {
             )}
 
             {error && (
-              <div style={{fontSize:"var(--fs-4)", color:"#E85D75", lineHeight:1.4}}>{error}</div>
+              <div style={{fontSize:12, color:"#E85D75", lineHeight:1.4}}>{error}</div>
             )}
 
             <button
@@ -454,7 +434,7 @@ function LoginScreen() {
               style={{
                 width:"100%", background: busy ? "#8B6914" : "#C8922A", color:"#0D1117",
                 borderRadius:8, padding:"13px 0", fontFamily:"DM Mono",
-                fontSize:"var(--fs-5)", fontWeight:500, border:"none", cursor: busy ? "wait" : "pointer",
+                fontSize:13, fontWeight:500, border:"none", cursor: busy ? "wait" : "pointer",
                 transition:"opacity .15s", marginTop:4
               }}
               onMouseOver={e => !busy && (e.target.style.opacity=".85")}
@@ -465,7 +445,7 @@ function LoginScreen() {
 
             {resetMode && (
               <button onClick={()=>{setResetMode(false);setError("");}}
-                style={{background:"transparent", border:"none", color:"var(--t2)", fontSize:"var(--fs-3)", fontFamily:"DM Mono", cursor:"pointer", letterSpacing:"1px"}}>
+                style={{background:"transparent", border:"none", color:"#8B949E", fontSize:11, fontFamily:"DM Mono", cursor:"pointer", letterSpacing:"1px"}}>
                 ← BACK TO SIGN IN
               </button>
             )}
@@ -474,7 +454,7 @@ function LoginScreen() {
 
         </div>
 
-        <div style={{fontSize:"var(--fs-3)", color:"var(--t4)", textAlign:"center", lineHeight:1.6, marginTop:18}}>
+        <div style={{fontSize:10.5, color:"#30363D", textAlign:"center", lineHeight:1.6, marginTop:18}}>
           Solo personal autorizado · Authorized personnel only<br/>
           Toda la actividad queda registrada · All activity is logged
         </div>
@@ -590,7 +570,7 @@ function urgency(f) {
   return"normal";
 }
 
-const IS = { background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"var(--t1)",padding:"9px 12px",fontSize:"var(--fs-5)",fontFamily:"'IBM Plex Sans',system-ui,-apple-system,sans-serif",width:"100%" };
+const IS = { background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",padding:"9px 12px",fontSize:13,fontFamily:"'DM Mono','Courier New',monospace",width:"100%" };
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -815,32 +795,10 @@ export default function App() {
         background:"#0D1117", minHeight:"100vh",
         display:"flex", flexDirection:"column",
         alignItems:"center", justifyContent:"center",
-        fontFamily:"'IBM Plex Sans',system-ui,-apple-system,sans-serif", gap:18
+        fontFamily:"'DM Mono','Courier New',monospace", gap:18
       }}>
         <style>{`
-          @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
-        /* ─── TOKENS · una sola fuente de verdad ───────────────────
-           Todo tamano y todo color de texto sale de aqui. Para cambiar
-           la escala completa solo se toca --fs-scale: el resto se
-           recalcula solo. Los colores pasan WCAG AA sobre #0D1117. */
-        :root{
-          --fs-scale:1;
-          --fs-1:calc(11.5px * var(--fs-scale));
-          --fs-2:calc(12.5px * var(--fs-scale));
-          --fs-3:calc(13.5px * var(--fs-scale));
-          --fs-4:calc(14.5px * var(--fs-scale));
-          --fs-5:calc(15.5px * var(--fs-scale));
-          --fs-6:calc(17px   * var(--fs-scale));
-          --fs-7:calc(19px   * var(--fs-scale));
-          --fs-8:calc(21px   * var(--fs-scale));
-          --fs-9:calc(25px   * var(--fs-scale));
-          --fs-10:calc(30px  * var(--fs-scale));
-          --t1:#F0F6FC;
-          --t2:#ADBAC7;
-          --t3:#8B98A5;
-          --t4:#737F8C;
-        }
-        body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+          @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
           @keyframes spin{to{transform:rotate(360deg)}}
           .spinner{width:40px;height:40px;border:3px solid #21262D;border-top-color:#F5A623;border-radius:50%;animation:spin .8s linear infinite;}
         `}</style>
@@ -857,32 +815,10 @@ export default function App() {
         background:"#0D1117", minHeight:"100vh",
         display:"flex", flexDirection:"column",
         alignItems:"center", justifyContent:"center",
-        fontFamily:"'IBM Plex Sans',system-ui,-apple-system,sans-serif", gap:18
+        fontFamily:"'DM Mono','Courier New',monospace", gap:18
       }}>
         <style>{`
-          @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
-        /* ─── TOKENS · una sola fuente de verdad ───────────────────
-           Todo tamano y todo color de texto sale de aqui. Para cambiar
-           la escala completa solo se toca --fs-scale: el resto se
-           recalcula solo. Los colores pasan WCAG AA sobre #0D1117. */
-        :root{
-          --fs-scale:1;
-          --fs-1:calc(11.5px * var(--fs-scale));
-          --fs-2:calc(12.5px * var(--fs-scale));
-          --fs-3:calc(13.5px * var(--fs-scale));
-          --fs-4:calc(14.5px * var(--fs-scale));
-          --fs-5:calc(15.5px * var(--fs-scale));
-          --fs-6:calc(17px   * var(--fs-scale));
-          --fs-7:calc(19px   * var(--fs-scale));
-          --fs-8:calc(21px   * var(--fs-scale));
-          --fs-9:calc(25px   * var(--fs-scale));
-          --fs-10:calc(30px  * var(--fs-scale));
-          --t1:#F0F6FC;
-          --t2:#ADBAC7;
-          --t3:#8B98A5;
-          --t4:#737F8C;
-        }
-        body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+          @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
           @keyframes spin{to{transform:rotate(360deg)}}
           @keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
           .spinner{width:40px;height:40px;border:3px solid #21262D;border-top-color:#F5A623;border-radius:50%;animation:spin .8s linear infinite;}
@@ -890,10 +826,10 @@ export default function App() {
         `}</style>
         <div className="spinner"/>
         <div style={{textAlign:"center"}}>
-          <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:"var(--t1)",letterSpacing:"-0.5px"}}>
+          <div style={{fontFamily:"Syne",fontWeight:800,fontSize:18,color:"#E6EDF3",letterSpacing:"-0.5px"}}>
             LOADING PIPELINE
           </div>
-          <div className="pulse" style={{fontSize:"var(--fs-3)",color:"var(--t3)",letterSpacing:"2px",marginTop:6}}>
+          <div className="pulse" style={{fontSize:11,color:"#484F58",letterSpacing:"2px",marginTop:6}}>
             SYNCING WITH CLOUD DATABASE…
           </div>
         </div>
@@ -1020,31 +956,9 @@ export default function App() {
   const phaseCounts=PHASES.map(p=>({...p,count:active.filter(f=>getPhase(f.stage).id===p.id).length}));
 
   return(
-    <div style={{fontFamily:"'IBM Plex Sans',system-ui,-apple-system,sans-serif",background:"#0D1117",minHeight:"100vh",color:"var(--t1)"}}>
+    <div style={{fontFamily:"'DM Mono','Courier New',monospace",background:"#0D1117",minHeight:"100vh",color:"#E6EDF3"}}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
-        /* ─── TOKENS · una sola fuente de verdad ───────────────────
-           Todo tamano y todo color de texto sale de aqui. Para cambiar
-           la escala completa solo se toca --fs-scale: el resto se
-           recalcula solo. Los colores pasan WCAG AA sobre #0D1117. */
-        :root{
-          --fs-scale:1;
-          --fs-1:calc(11.5px * var(--fs-scale));
-          --fs-2:calc(12.5px * var(--fs-scale));
-          --fs-3:calc(13.5px * var(--fs-scale));
-          --fs-4:calc(14.5px * var(--fs-scale));
-          --fs-5:calc(15.5px * var(--fs-scale));
-          --fs-6:calc(17px   * var(--fs-scale));
-          --fs-7:calc(19px   * var(--fs-scale));
-          --fs-8:calc(21px   * var(--fs-scale));
-          --fs-9:calc(25px   * var(--fs-scale));
-          --fs-10:calc(30px  * var(--fs-scale));
-          --t1:#F0F6FC;
-          --t2:#ADBAC7;
-          --t3:#8B98A5;
-          --t4:#737F8C;
-        }
-        body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
         *{box-sizing:border-box;margin:0;padding:0;}
         ::-webkit-scrollbar{width:4px;height:4px;}::-webkit-scrollbar-track{background:#161B22;}::-webkit-scrollbar-thumb{background:#30363D;border-radius:2px;}
         .hov{transition:all .15s;cursor:pointer;border:none;}
@@ -1052,7 +966,7 @@ export default function App() {
         .card{transition:transform .15s,box-shadow .15s;cursor:pointer;}
         .card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.5)!important;}
         input,select,textarea{outline:none;}
-        input::placeholder,textarea::placeholder{color:var(--t3);}
+        input::placeholder,textarea::placeholder{color:#484F58;}
         @keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
         .fi{animation:fi .2s ease;}
         tr.row:hover td{background:rgba(255,255,255,.03)!important;}
@@ -1061,32 +975,32 @@ export default function App() {
       {/* HEADER */}
       <div style={{background:"#161B22",borderBottom:"1px solid #21262D",padding:"14px 24px",display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
         <div>
-          <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",letterSpacing:"-0.5px"}}>PIPELINE</div>
-          <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"2px",marginTop:1}}>MORTGAGE BY DELVALLE</div>
+          <div style={{fontFamily:"Syne",fontWeight:800,fontSize:20,letterSpacing:"-0.5px"}}>PIPELINE</div>
+          <div style={{fontSize:10,color:"#484F58",letterSpacing:"2px",marginTop:1}}>MORTGAGE BY DELVALLE</div>
         </div>
         <div style={{display:"flex",gap:20,marginLeft:8}}>
           {[["ACTIVE",active.length,"#4A90D9"],["CLOSED",closed.length,"#06D6A0"],["CRITICAL",crit,"#E85D75"],["VOLUME",`$${(vol/1e6).toFixed(1)}M`,"#F5A623"]].map(([l,v,c])=>(
             <div key={l} style={{textAlign:"center"}}>
-              <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:c}}>{v}</div>
-              <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px"}}>{l}</div>
+              <div style={{fontFamily:"Syne",fontWeight:800,fontSize:18,color:c}}>{v}</div>
+              <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px"}}>{l}</div>
             </div>
           ))}
           {/* Always visible. A hidden list never gets opened; a number up here does. */}
           <div className="hov" onClick={()=>{setView("review");setActivePhase(null);}}
             title="Preparation files whose review date has arrived"
             style={{textAlign:"center",cursor:"pointer",padding:"0 10px",borderLeft:"1px solid #30363D"}}>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:dueReview.length>0?"#E85D75":"var(--t3)"}}>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:18,color:dueReview.length>0?"#E85D75":"#484F58"}}>
               {dueReview.length}
             </div>
-            <div style={{fontSize:"var(--fs-1)",color:dueReview.length>0?"#E85D75":"var(--t3)",letterSpacing:"1px"}}>DUE REVIEW</div>
+            <div style={{fontSize:9,color:dueReview.length>0?"#E85D75":"#484F58",letterSpacing:"1px"}}>DUE REVIEW</div>
           </div>
         </div>
         <div style={{marginLeft:"auto",display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
           {saveStatus !== "idle" && (
             <div style={{
-              fontSize:"var(--fs-2)", letterSpacing:"1px", padding:"4px 10px", borderRadius:12,
+              fontSize:10, letterSpacing:"1px", padding:"4px 10px", borderRadius:12,
               background: saveStatus==="saving" ? "#21262D" : saveStatus==="saved" ? "rgba(6,214,160,.1)" : "rgba(232,93,117,.15)",
-              color: saveStatus==="saving" ? "var(--t2)" : saveStatus==="saved" ? "#06D6A0" : "#E85D75",
+              color: saveStatus==="saving" ? "#8B949E" : saveStatus==="saved" ? "#06D6A0" : "#E85D75",
               border: "1px solid " + (saveStatus==="saving" ? "#30363D" : saveStatus==="saved" ? "#06D6A0" : "#E85D75"),
               fontFamily:"DM Mono"
             }}>
@@ -1094,43 +1008,43 @@ export default function App() {
             </div>
           )}
           <input placeholder="Search borrower..." value={search} onChange={e=>setSearch(e.target.value)}
-            style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:6,padding:"7px 12px",color:"var(--t1)",fontSize:"var(--fs-4)",width:170}}/>
+            style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:6,padding:"7px 12px",color:"#E6EDF3",fontSize:12,width:170}}/>
           <button className="hov" onClick={exportBackup}
             title="Download a JSON backup of your entire pipeline. Save it to Google Drive weekly."
-            style={{background:"#21262D",color:"var(--t2)",borderRadius:6,padding:"8px 12px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",border:"1px solid #30363D"}}>
+            style={{background:"#21262D",color:"#8B949E",borderRadius:6,padding:"8px 12px",fontFamily:"DM Mono",fontSize:11,border:"1px solid #30363D"}}>
             ↓ BACKUP
           </button>
           {isAdmin && (
             <button className="hov" onClick={exportMarthaSheet} disabled={marthaBusy}
               title={TX("marthaHint")}
-              style={{background:"#21262D",color:marthaBusy?"var(--t3)":"var(--t2)",borderRadius:6,padding:"8px 12px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",border:"1px solid #30363D",cursor:marthaBusy?"wait":"pointer"}}>
+              style={{background:"#21262D",color:marthaBusy?"#484F58":"#8B949E",borderRadius:6,padding:"8px 12px",fontFamily:"DM Mono",fontSize:11,border:"1px solid #30363D",cursor:marthaBusy?"wait":"pointer"}}>
               {marthaBusy ? TX("marthaBusy") : TX("marthaBtn")}
             </button>
           )}
           {isAdmin && (
             <label className="hov"
               title="Admin only — restore your pipeline from a JSON backup file"
-              style={{background:"#21262D",color:"var(--t2)",borderRadius:6,padding:"8px 12px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",border:"1px solid #30363D",cursor:"pointer"}}>
+              style={{background:"#21262D",color:"#8B949E",borderRadius:6,padding:"8px 12px",fontFamily:"DM Mono",fontSize:11,border:"1px solid #30363D",cursor:"pointer"}}>
               ↑ RESTORE
               <input type="file" accept="application/json,.json" onChange={importBackup} style={{display:"none"}}/>
             </label>
           )}
           <button className="hov" onClick={()=>setShowAdd(true)}
-            style={{background:"#F5A623",color:"#0D1117",borderRadius:6,padding:"8px 16px",fontFamily:"DM Mono",fontSize:"var(--fs-4)",fontWeight:500}}>
+            style={{background:"#F5A623",color:"#0D1117",borderRadius:6,padding:"8px 16px",fontFamily:"DM Mono",fontSize:12,fontWeight:500}}>
             + NEW FILE
           </button>
 
           <div style={{display:"flex",border:"1px solid #30363D",borderRadius:6,overflow:"hidden",marginRight:2}}>
             {["es","en"].map(l=>(
               <button key={l} className="hov" onClick={()=>setLang(l)}
-                style={{background:lang===l?"#F5A623":"transparent",color:lang===l?"#0D1117":"var(--t2)",
-                  border:"none",padding:"6px 10px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",cursor:"pointer"}}>
+                style={{background:lang===l?"#F5A623":"transparent",color:lang===l?"#0D1117":"#6E7681",
+                  border:"none",padding:"6px 10px",fontSize:10.5,fontFamily:"DM Mono",cursor:"pointer"}}>
                 {l.toUpperCase()}
               </button>))}
           </div>
           <button className="hov" onClick={()=>setShowHelp(true)}
             title="Help & best practices"
-            style={{background:"transparent",color:"var(--t2)",borderRadius:6,padding:"8px 10px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",border:"1px solid #30363D",cursor:"pointer"}}>
+            style={{background:"transparent",color:"#8B949E",borderRadius:6,padding:"8px 10px",fontFamily:"DM Mono",fontSize:11,border:"1px solid #30363D",cursor:"pointer"}}>
             ❓ HELP
           </button>
 
@@ -1139,20 +1053,20 @@ export default function App() {
               width:32, height:32, borderRadius:"50%",
               background: profile.color, color:"#0D1117",
               display:"flex", alignItems:"center", justifyContent:"center",
-              fontFamily:"Syne", fontWeight:800, fontSize:"var(--fs-3)"
+              fontFamily:"Syne", fontWeight:800, fontSize:11
             }}>
               {profile.name.split(" ").map(n=>n[0]).join("").slice(0,2)}
             </div>
             <div style={{display:"flex",flexDirection:"column",lineHeight:1.2}}>
-              <span style={{fontSize:"var(--fs-3)",color:"var(--t1)",fontFamily:"Syne",fontWeight:700}}>{profile.short}</span>
-              <span style={{fontSize:"var(--fs-1)",color:profile.color,letterSpacing:"1px",textTransform:"uppercase"}}>{profile.role}</span>
+              <span style={{fontSize:11,color:"#E6EDF3",fontFamily:"Syne",fontWeight:700}}>{profile.short}</span>
+              <span style={{fontSize:9,color:profile.color,letterSpacing:"1px",textTransform:"uppercase"}}>{profile.role}</span>
             </div>
             <button className="hov"
               onClick={()=>{
                 if(confirm("Sign out?")) signOut(auth);
               }}
               title="Sign out"
-              style={{background:"transparent",color:"var(--t3)",borderRadius:6,padding:"6px 8px",fontFamily:"DM Mono",fontSize:"var(--fs-2)",border:"1px solid #30363D",cursor:"pointer"}}>
+              style={{background:"transparent",color:"#484F58",borderRadius:6,padding:"6px 8px",fontFamily:"DM Mono",fontSize:10,border:"1px solid #30363D",cursor:"pointer"}}>
               SIGN OUT
             </button>
           </div>
@@ -1167,54 +1081,54 @@ export default function App() {
           ["🔀 REFERRED OUT",referredOut.length,"referred","#A78BFA"],
           ["🤝 INBOUND",inbound.length,"inbound","#FFD166"],
           ["⏸ PREPARATION",prep.length,"prep","#7EC8A4"],
-          [`🔔 DUE REVIEW`,dueReview.length,"review",dueReview.length>0?"#E85D75":"var(--t3)"],
-          ["🗄 ARCHIVED",archived.length,"archived","var(--t2)"],
+          [`🔔 DUE REVIEW`,dueReview.length,"review",dueReview.length>0?"#E85D75":"#484F58"],
+          ["🗄 ARCHIVED",archived.length,"archived","#6E7681"],
         ].map(([l,c,v,col])=>(
           <button key={v} className="hov" onClick={()=>{setView(v);setActivePhase(null);}}
-            style={{background:view===v?col:"#21262D",color:view===v?"#0D1117":col,borderRadius:6,padding:"6px 14px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",fontWeight:500,whiteSpace:"nowrap"}}>
+            style={{background:view===v?col:"#21262D",color:view===v?"#0D1117":col,borderRadius:6,padding:"6px 14px",fontSize:11,fontFamily:"DM Mono",fontWeight:500,whiteSpace:"nowrap"}}>
             {l} · {c}
           </button>
         ))}
         {(isAdmin||isProcessor)&&(
           <button className="hov" onClick={()=>{setView("processing");setActivePhase(null);}}
-            style={{background:view==="processing"?"#F5A623":"#21262D",color:view==="processing"?"#0D1117":"#F5A623",borderRadius:6,padding:"6px 14px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",fontWeight:500,whiteSpace:"nowrap"}}>
+            style={{background:view==="processing"?"#F5A623":"#21262D",color:view==="processing"?"#0D1117":"#F5A623",borderRadius:6,padding:"6px 14px",fontSize:11,fontFamily:"DM Mono",fontWeight:500,whiteSpace:"nowrap"}}>
             {TX("processingTab")}
           </button>
         )}
         <button className="hov" onClick={()=>{setView("production");setActivePhase(null);}}
-          style={{background:view==="production"?"#BD65E8":"#21262D",color:view==="production"?"#0D1117":"#BD65E8",borderRadius:6,padding:"6px 14px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",fontWeight:500,whiteSpace:"nowrap"}}>
+          style={{background:view==="production"?"#BD65E8":"#21262D",color:view==="production"?"#0D1117":"#BD65E8",borderRadius:6,padding:"6px 14px",fontSize:11,fontFamily:"DM Mono",fontWeight:500,whiteSpace:"nowrap"}}>
           📊 PRODUCTION
         </button>
         {view==="active"&&<>
           <div style={{width:1,height:20,background:"#30363D",margin:"0 4px"}}/>
           <button className="hov" onClick={()=>setActivePhase(null)}
-            style={{background:!activePhase?"var(--t1)":"transparent",color:!activePhase?"#0D1117":"var(--t2)",borderRadius:20,padding:"4px 12px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",border:"1px solid #30363D",whiteSpace:"nowrap"}}>
+            style={{background:!activePhase?"#E6EDF3":"transparent",color:!activePhase?"#0D1117":"#8B949E",borderRadius:20,padding:"4px 12px",fontSize:11,fontFamily:"DM Mono",border:"1px solid #30363D",whiteSpace:"nowrap"}}>
             ALL · {active.length}
           </button>
           {phaseCounts.map(p=>(
             <button key={p.id} className="hov" onClick={()=>setActivePhase(activePhase===p.id?null:p.id)}
-              style={{background:activePhase===p.id?p.color:"transparent",color:activePhase===p.id?"#0D1117":p.color,borderRadius:20,padding:"4px 12px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",border:`1px solid ${p.color}`,whiteSpace:"nowrap"}}>
+              style={{background:activePhase===p.id?p.color:"transparent",color:activePhase===p.id?"#0D1117":p.color,borderRadius:20,padding:"4px 12px",fontSize:11,fontFamily:"DM Mono",border:`1px solid ${p.color}`,whiteSpace:"nowrap"}}>
               {p.short} · {p.count}
             </button>
           ))}
         </>}
-        <div style={{marginLeft:"auto",display:"flex",gap:12,fontSize:"var(--fs-2)",color:"var(--t3)",whiteSpace:"nowrap"}}>
+        <div style={{marginLeft:"auto",display:"flex",gap:12,fontSize:10,color:"#484F58",whiteSpace:"nowrap"}}>
           <span style={{color:"#E85D75"}}>● CRITICAL ≤3d</span>
           <span style={{color:"#F5A623"}}>● WARNING ≤7d</span>
-          <span style={{color:"var(--t3)"}}>● STALE 5d+</span>
+          <span style={{color:"#484F58"}}>● STALE 5d+</span>
         </div>
       </div>
 
       {idsBackfilled>0&&(
         <div style={{margin:"0 24px 10px",background:"rgba(74,144,217,.1)",border:"1px solid #4A90D9",
-          borderRadius:8,padding:"10px 14px",fontSize:"var(--fs-3)",color:"#4A90D9",lineHeight:1.6}}>
+          borderRadius:8,padding:"10px 14px",fontSize:11.5,color:"#4A90D9",lineHeight:1.6}}>
           {TX("idsBackfilledMsg",{n:idsBackfilled})}
         </div>
       )}
 
       {sizeAlert&&(
         <div style={{margin:"0 24px",background:"rgba(232,93,117,.1)",border:"1px solid #E85D75",
-          borderRadius:8,padding:"11px 14px",fontSize:"var(--fs-3)",color:"#E85D75",lineHeight:1.6}}>
+          borderRadius:8,padding:"11px 14px",fontSize:11.5,color:"#E85D75",lineHeight:1.6}}>
           {sizeAlert > 1000000
             ? TX("docTooBig",{mb:(sizeAlert/1048576).toFixed(2)})
             : TX("docNearLimit",{mb:(sizeAlert/1048576).toFixed(2)})}
@@ -1292,18 +1206,18 @@ export default function App() {
         {/* REFERRED OUT TABLE */}
         {view==="referred"&&<div className="fi">
           <div style={{marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#A78BFA"}}>🔀 REFERRED OUT — {referredOut.length} TOTAL</span>
-            <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>Files sent to external bankers. Click any row to view details + track outcome.</span>
+            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#A78BFA"}}>🔀 REFERRED OUT — {referredOut.length} TOTAL</span>
+            <span style={{fontSize:11,color:"#484F58"}}>Files sent to external bankers. Click any row to view details + track outcome.</span>
           </div>
-          {display.length===0?<div style={{padding:40,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-5)"}}>
+          {display.length===0?<div style={{padding:40,textAlign:"center",color:"#30363D",fontSize:13}}>
             No referred-out files yet.<br/><br/>
-            <span style={{fontSize:"var(--fs-3)"}}>To refer a file: open any active loan → change STAGE to "REFERRED OUT — EXTERNAL BANK" → fill in receiving banker details.</span>
+            <span style={{fontSize:11}}>To refer a file: open any active loan → change STAGE to "REFERRED OUT — EXTERNAL BANK" → fill in receiving banker details.</span>
           </div>:(
-            <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
               <thead>
                 <tr style={{background:"#161B22",borderBottom:"2px solid #A78BFA"}}>
                   {["BORROWER","LOAN TYPE","AMOUNT","REFERRED TO","REASON","STATUS","FEE EARNED"].map((h,i)=>(
-                    <th key={i} style={{padding:"10px 14px",textAlign:"left",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
+                    <th key={i} style={{padding:"10px 14px",textAlign:"left",fontSize:10,color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -1315,28 +1229,28 @@ export default function App() {
                   const feeEarned = isFunded ? Math.round(finalAmount * REFERRAL_FEE_BPS / 10000) : 0;
                   return (
                     <tr key={f.id} className="row" style={{borderBottom:"1px solid #21262D",cursor:"pointer"}} onClick={()=>setDetail(f)}>
-                      <td style={{padding:"11px 14px",fontFamily:"Syne",fontWeight:700,color:"var(--t1)",background:i%2===0?"#0D1117":"#161B22"}}>{f.borrower}</td>
-                      <td style={{padding:"11px 14px",color:"var(--t2)",background:i%2===0?"#0D1117":"#161B22"}}>{f.type}</td>
+                      <td style={{padding:"11px 14px",fontFamily:"Syne",fontWeight:700,color:"#E6EDF3",background:i%2===0?"#0D1117":"#161B22"}}>{f.borrower}</td>
+                      <td style={{padding:"11px 14px",color:"#8B949E",background:i%2===0?"#0D1117":"#161B22"}}>{f.type}</td>
                       <td style={{padding:"11px 14px",color:"#A78BFA",fontWeight:500,background:i%2===0?"#0D1117":"#161B22"}}>${(f.loan/1000).toFixed(0)}K</td>
-                      <td style={{padding:"11px 14px",color:"var(--t1)",background:i%2===0?"#0D1117":"#161B22"}}>
+                      <td style={{padding:"11px 14px",color:"#E6EDF3",background:i%2===0?"#0D1117":"#161B22"}}>
                         {ro.bankerName||"—"}<br/>
-                        <span style={{fontSize:"var(--fs-2)",color:"var(--t3)"}}>{ro.bankerCompany||""}</span>
+                        <span style={{fontSize:10,color:"#484F58"}}>{ro.bankerCompany||""}</span>
                       </td>
-                      <td style={{padding:"11px 14px",color:"var(--t2)",fontSize:"var(--fs-3)",background:i%2===0?"#0D1117":"#161B22"}}>{ro.reason||"—"}</td>
+                      <td style={{padding:"11px 14px",color:"#8B949E",fontSize:11,background:i%2===0?"#0D1117":"#161B22"}}>{ro.reason||"—"}</td>
                       <td style={{padding:"11px 14px",background:i%2===0?"#0D1117":"#161B22"}}>
                         <span style={{
-                          fontSize:"var(--fs-2)",padding:"3px 7px",borderRadius:4,
+                          fontSize:10,padding:"3px 7px",borderRadius:4,
                           background: ro.status==="Closed (Funded)" ? "rgba(6,214,160,.15)" :
                                       ro.status==="Fell Through" ? "rgba(232,93,117,.15)" :
                                       ro.status==="Withdrawn by Borrower" ? "rgba(139,148,158,.15)" :
                                       "rgba(245,166,35,.15)",
                           color: ro.status==="Closed (Funded)" ? "#06D6A0" :
                                  ro.status==="Fell Through" ? "#E85D75" :
-                                 ro.status==="Withdrawn by Borrower" ? "var(--t2)" :
+                                 ro.status==="Withdrawn by Borrower" ? "#8B949E" :
                                  "#F5A623",
                         }}>{ro.status||"Pending"}</span>
                       </td>
-                      <td style={{padding:"11px 14px",color:isFunded?"#06D6A0":"var(--t3)",fontWeight:500,background:i%2===0?"#0D1117":"#161B22"}}>
+                      <td style={{padding:"11px 14px",color:isFunded?"#06D6A0":"#484F58",fontWeight:500,background:i%2===0?"#0D1117":"#161B22"}}>
                         {feeEarned > 0 ? `$${feeEarned.toLocaleString()}` : "—"}
                       </td>
                     </tr>
@@ -1350,18 +1264,18 @@ export default function App() {
         {/* INBOUND VIEW */}
         {view==="inbound"&&<div className="fi">
           <div style={{marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#FFD166"}}>🤝 INBOUND REFERRALS — {inbound.length} TOTAL</span>
-            <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>Files sent TO us by external bankers. They follow normal pipeline stages.</span>
+            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#FFD166"}}>🤝 INBOUND REFERRALS — {inbound.length} TOTAL</span>
+            <span style={{fontSize:11,color:"#484F58"}}>Files sent TO us by external bankers. They follow normal pipeline stages.</span>
           </div>
-          {display.length===0?<div style={{padding:40,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-5)"}}>
+          {display.length===0?<div style={{padding:40,textAlign:"center",color:"#30363D",fontSize:13}}>
             No inbound referrals yet.<br/><br/>
-            <span style={{fontSize:"var(--fs-3)"}}>To add an inbound: click "+ NEW FILE" → check "This is an inbound referral" at the top.</span>
+            <span style={{fontSize:11}}>To add an inbound: click "+ NEW FILE" → check "This is an inbound referral" at the top.</span>
           </div>:(
-            <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
               <thead>
                 <tr style={{background:"#161B22",borderBottom:"2px solid #FFD166"}}>
                   {["BORROWER","LOAN TYPE","AMOUNT","REFERRED BY","STAGE","CLOSING"].map((h,i)=>(
-                    <th key={i} style={{padding:"10px 14px",textAlign:"left",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
+                    <th key={i} style={{padding:"10px 14px",textAlign:"left",fontSize:10,color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -1370,15 +1284,15 @@ export default function App() {
                   const rb = f.referringBanker || {};
                   return (
                     <tr key={f.id} className="row" style={{borderBottom:"1px solid #21262D",cursor:"pointer"}} onClick={()=>setDetail(f)}>
-                      <td style={{padding:"11px 14px",fontFamily:"Syne",fontWeight:700,color:"var(--t1)",background:i%2===0?"#0D1117":"#161B22"}}>{f.borrower}</td>
-                      <td style={{padding:"11px 14px",color:"var(--t2)",background:i%2===0?"#0D1117":"#161B22"}}>{f.type}</td>
+                      <td style={{padding:"11px 14px",fontFamily:"Syne",fontWeight:700,color:"#E6EDF3",background:i%2===0?"#0D1117":"#161B22"}}>{f.borrower}</td>
+                      <td style={{padding:"11px 14px",color:"#8B949E",background:i%2===0?"#0D1117":"#161B22"}}>{f.type}</td>
                       <td style={{padding:"11px 14px",color:"#FFD166",fontWeight:500,background:i%2===0?"#0D1117":"#161B22"}}>${(f.loan/1000).toFixed(0)}K</td>
-                      <td style={{padding:"11px 14px",color:"var(--t1)",background:i%2===0?"#0D1117":"#161B22"}}>
+                      <td style={{padding:"11px 14px",color:"#E6EDF3",background:i%2===0?"#0D1117":"#161B22"}}>
                         {rb.bankerName||"—"}<br/>
-                        <span style={{fontSize:"var(--fs-2)",color:"var(--t3)"}}>{rb.bankerCompany||""}</span>
+                        <span style={{fontSize:10,color:"#484F58"}}>{rb.bankerCompany||""}</span>
                       </td>
-                      <td style={{padding:"11px 14px",color:getPhase(f.stage).color,fontWeight:500,fontSize:"var(--fs-3)",background:i%2===0?"#0D1117":"#161B22"}}>{f.stage}</td>
-                      <td style={{padding:"11px 14px",color:"var(--t2)",background:i%2===0?"#0D1117":"#161B22"}}>{f.closedAt||f.closing||"—"}</td>
+                      <td style={{padding:"11px 14px",color:getPhase(f.stage).color,fontWeight:500,fontSize:11,background:i%2===0?"#0D1117":"#161B22"}}>{f.stage}</td>
+                      <td style={{padding:"11px 14px",color:"#8B949E",background:i%2===0?"#0D1117":"#161B22"}}>{f.closedAt||f.closing||"—"}</td>
                     </tr>
                   );
                 })}
@@ -1390,29 +1304,29 @@ export default function App() {
         {/* CLOSED TABLE */}
         {view==="closed"&&<div className="fi">
           <div style={{marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#06D6A0"}}>CLOSED FILES — {closed.length} TOTAL</span>
-            <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>All funded loans. Click any row to view or reopen.</span>
+            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#06D6A0"}}>CLOSED FILES — {closed.length} TOTAL</span>
+            <span style={{fontSize:11,color:"#484F58"}}>All funded loans. Click any row to view or reopen.</span>
           </div>
-          {display.length===0?<div style={{padding:40,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-5)"}}>No closed files yet.</div>:(
-            <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
+          {display.length===0?<div style={{padding:40,textAlign:"center",color:"#30363D",fontSize:13}}>No closed files yet.</div>:(
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
               <thead>
                 <tr style={{background:"#161B22",borderBottom:"2px solid #06D6A0"}}>
                   {["BORROWER","TYPE","LOAN AMOUNT","CLOSED DATE","NOTES",""].map((h,i)=>(
-                    <th key={i} style={{padding:"10px 14px",textAlign:"left",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
+                    <th key={i} style={{padding:"10px 14px",textAlign:"left",fontSize:10,color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {display.map((f,i)=>(
                   <tr key={f.id} className="row" style={{borderBottom:"1px solid #21262D",cursor:"pointer"}} onClick={()=>setDetail(f)}>
-                    <td style={{padding:"11px 14px",fontFamily:"Syne",fontWeight:700,color:"var(--t1)",background:i%2===0?"#0D1117":"#161B22"}}>{f.borrower}</td>
-                    <td style={{padding:"11px 14px",color:"var(--t2)",background:i%2===0?"#0D1117":"#161B22"}}>{f.type}</td>
+                    <td style={{padding:"11px 14px",fontFamily:"Syne",fontWeight:700,color:"#E6EDF3",background:i%2===0?"#0D1117":"#161B22"}}>{f.borrower}</td>
+                    <td style={{padding:"11px 14px",color:"#8B949E",background:i%2===0?"#0D1117":"#161B22"}}>{f.type}</td>
                     <td style={{padding:"11px 14px",color:"#06D6A0",fontWeight:500,background:i%2===0?"#0D1117":"#161B22"}}>${f.loan.toLocaleString()}</td>
-                    <td style={{padding:"11px 14px",color:"var(--t2)",background:i%2===0?"#0D1117":"#161B22"}}>{f.closedAt||f.closing}</td>
-                    <td style={{padding:"11px 14px",color:"var(--t3)",fontStyle:"italic",maxWidth:220,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",background:i%2===0?"#0D1117":"#161B22"}}>{f.note||"—"}</td>
+                    <td style={{padding:"11px 14px",color:"#8B949E",background:i%2===0?"#0D1117":"#161B22"}}>{f.closedAt||f.closing}</td>
+                    <td style={{padding:"11px 14px",color:"#484F58",fontStyle:"italic",maxWidth:220,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",background:i%2===0?"#0D1117":"#161B22"}}>{f.note||"—"}</td>
                     <td style={{padding:"11px 14px",background:i%2===0?"#0D1117":"#161B22"}}>
                       <button className="hov" onClick={e=>{e.stopPropagation();reopenFile(f.id);}}
-                        style={{background:"#21262D",color:"var(--t2)",borderRadius:5,padding:"4px 10px",fontSize:"var(--fs-2)",fontFamily:"DM Mono"}}>REOPEN</button>
+                        style={{background:"#21262D",color:"#8B949E",borderRadius:5,padding:"4px 10px",fontSize:10,fontFamily:"DM Mono"}}>REOPEN</button>
                     </td>
                   </tr>
                 ))}
@@ -1424,20 +1338,20 @@ export default function App() {
         {/* PREPARATION + DUE REVIEW */}
         {(view==="prep"||view==="review")&&<div className="fi">
           <div style={{marginBottom:14,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:view==="review"?"#E85D75":"#7EC8A4"}}>
+            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:view==="review"?"#E85D75":"#7EC8A4"}}>
               {view==="review" ? `🔔 DUE REVIEW — ${dueReview.length}` : `⏸ PREPARATION — ${prep.length}`}
             </span>
-            <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>
+            <span style={{fontSize:11,color:"#484F58"}}>
               {view==="review"
                 ? "The review date arrived. Decide: continue, reschedule, or archive."
                 : "Alive but not buyable yet. No stage clock — these wait against a review date."}
             </span>
           </div>
           {display.length===0?(
-            <div style={{padding:40,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-5)"}}>
+            <div style={{padding:40,textAlign:"center",color:"#30363D",fontSize:13}}>
               {view==="review"
                 ? "Nothing due today. ✓"
-                : <>No files in Preparation.<br/><br/><span style={{fontSize:"var(--fs-3)"}}>To send one here: open any active file → ⏸ PREP → pick a reason and a review date.</span></>}
+                : <>No files in Preparation.<br/><br/><span style={{fontSize:11}}>To send one here: open any active file → ⏸ PREP → pick a reason and a review date.</span></>}
             </div>
           ):(
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:12}}>
@@ -1454,52 +1368,52 @@ export default function App() {
                     style={{background:"#0D1117",border:`1px solid ${edge}`,borderRadius:8,padding:"12px 14px",display:"flex",flexDirection:"column",gap:8}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:6}}>
                       <div>
-                        <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--t1)",lineHeight:1.2}}>{f.borrower}</div>
-                        <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{f.type} · ${(f.loan/1000).toFixed(0)}k</div>
-                        {f.lo&&<div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:1}}>{f.lo.split(" ")[0]}</div>}
+                        <div style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#E6EDF3",lineHeight:1.2}}>{f.borrower}</div>
+                        <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>{f.type} · ${(f.loan/1000).toFixed(0)}k</div>
+                        {f.lo&&<div style={{fontSize:10,color:"#484F58",marginTop:1}}>{f.lo.split(" ")[0]}</div>}
                       </div>
                       {locked
-                        ? <span style={{background:"#E85D75",color:"#0D1117",borderRadius:4,padding:"2px 6px",fontSize:"var(--fs-1)",fontWeight:500,whiteSpace:"nowrap"}}>DECIDE NOW</span>
-                        : due && <span style={{background:"#F5A623",color:"#0D1117",borderRadius:4,padding:"2px 6px",fontSize:"var(--fs-2)",fontWeight:500}}>DUE</span>}
+                        ? <span style={{background:"#E85D75",color:"#0D1117",borderRadius:4,padding:"2px 6px",fontSize:9,fontWeight:500,whiteSpace:"nowrap"}}>DECIDE NOW</span>
+                        : due && <span style={{background:"#F5A623",color:"#0D1117",borderRadius:4,padding:"2px 6px",fontSize:10,fontWeight:500}}>DUE</span>}
                     </div>
 
                     <div style={{background:"rgba(126,200,164,.07)",border:"1px solid #7EC8A433",borderRadius:6,padding:"7px 9px"}}>
-                      <div style={{fontSize:"var(--fs-3)",color:"#7EC8A4",fontWeight:500}}>{r.label}</div>
-                      <div style={{fontSize:"var(--fs-2)",color:"var(--t2)",marginTop:3}}>
+                      <div style={{fontSize:11,color:"#7EC8A4",fontWeight:500}}>{r.label}</div>
+                      <div style={{fontSize:10,color:"#8B949E",marginTop:3}}>
                         Review {p.reviewOn||"—"}
                         {" · "}
-                        <span style={{color:due?"#E85D75":"var(--t3)"}}>
+                        <span style={{color:due?"#E85D75":"#484F58"}}>
                           {dtr>0?`in ${dtr}d`:dtr===0?"today":`${Math.abs(dtr)}d overdue`}
                         </span>
                       </div>
                     </div>
 
-                    <div style={{fontSize:"var(--fs-2)",color:locked?"#E85D75":"var(--t3)"}}>
+                    <div style={{fontSize:10,color:locked?"#E85D75":"#484F58"}}>
                       {age}d in preparation
-                      <span style={{color:"var(--t4)"}}> / {PREP_MAX_DAYS} max</span>
-                      {(p.reschedules>0)&&<span style={{color:"var(--t4)"}}> · rescheduled {p.reschedules}×</span>}
+                      <span style={{color:"#30363D"}}> / {PREP_MAX_DAYS} max</span>
+                      {(p.reschedules>0)&&<span style={{color:"#30363D"}}> · rescheduled {p.reschedules}×</span>}
                     </div>
                     <div style={{height:3,background:"#21262D",borderRadius:2,overflow:"hidden"}}>
                       <div style={{height:"100%",width:`${Math.min(100,(age/PREP_MAX_DAYS)*100)}%`,background:locked?"#E85D75":age/PREP_MAX_DAYS>0.75?"#F5A623":"#7EC8A4"}}/>
                     </div>
 
-                    {(p.note||f.note)&&<div style={{fontSize:"var(--fs-2)",color:"var(--t2)",borderTop:"1px solid #21262D",paddingTop:6,fontStyle:"italic"}}>{p.note||f.note}</div>}
-                    {locked&&<div style={{fontSize:"var(--fs-2)",color:"#E85D75",lineHeight:1.4}}>
+                    {(p.note||f.note)&&<div style={{fontSize:10,color:"#6E7681",borderTop:"1px solid #21262D",paddingTop:6,fontStyle:"italic"}}>{p.note||f.note}</div>}
+                    {locked&&<div style={{fontSize:10,color:"#E85D75",lineHeight:1.4}}>
                       Past {PREP_MAX_DAYS} days — the credit report has expired. Return it or archive it; it can't be rescheduled again.
                     </div>}
 
                     <div style={{display:"flex",gap:6,marginTop:2,flexWrap:"wrap"}}>
                       <button className="hov" onClick={e=>{e.stopPropagation();if(confirm(`Bring ${f.borrower} back to the active pipeline?\n\nStage returns to "${p.prevStage||"Lead Inquiry"}" and the stage clock starts today.`))continueFromPrep(f.id);}}
-                        style={{flex:1,background:"rgba(74,144,217,.1)",border:"1px solid #4A90D9",borderRadius:5,color:"#4A90D9",fontSize:"var(--fs-2)",padding:"5px 8px",whiteSpace:"nowrap"}}>
+                        style={{flex:1,background:"rgba(74,144,217,.1)",border:"1px solid #4A90D9",borderRadius:5,color:"#4A90D9",fontSize:10,padding:"5px 8px",whiteSpace:"nowrap"}}>
                         ✓ CONTINUE
                       </button>
                       <button className="hov" disabled={locked} onClick={e=>{e.stopPropagation();if(!locked)setPrepFor(f);}}
                         title={locked?`Locked at ${PREP_MAX_DAYS} days`:"Set a new review date"}
-                        style={{flex:1,background:locked?"#161B22":"rgba(245,166,35,.1)",border:`1px solid ${locked?"#21262D":"#F5A623"}`,borderRadius:5,color:locked?"#30363D":"#F5A623",fontSize:"var(--fs-2)",padding:"5px 8px",whiteSpace:"nowrap",cursor:locked?"not-allowed":"pointer"}}>
+                        style={{flex:1,background:locked?"#161B22":"rgba(245,166,35,.1)",border:`1px solid ${locked?"#21262D":"#F5A623"}`,borderRadius:5,color:locked?"#30363D":"#F5A623",fontSize:10,padding:"5px 8px",whiteSpace:"nowrap",cursor:locked?"not-allowed":"pointer"}}>
                         ↻ RESCHEDULE
                       </button>
                       <button className="hov" onClick={e=>{e.stopPropagation();setArchiveFor(f);}}
-                        style={{background:"rgba(110,118,129,.12)",border:"1px solid #30363D",borderRadius:5,color:"var(--t2)",fontSize:"var(--fs-2)",padding:"5px 10px",whiteSpace:"nowrap"}}>
+                        style={{background:"rgba(110,118,129,.12)",border:"1px solid #30363D",borderRadius:5,color:"#8B949E",fontSize:10,padding:"5px 10px",whiteSpace:"nowrap"}}>
                         🗄
                       </button>
                     </div>
@@ -1513,30 +1427,30 @@ export default function App() {
         {/* ARCHIVED */}
         {view==="archived"&&<div className="fi">
           <div style={{marginBottom:14,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--t2)"}}>🗄 ARCHIVED — {archived.length}</span>
-            <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>Out of every count and every average. Nothing was deleted — restore any row.</span>
+            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#8B949E"}}>🗄 ARCHIVED — {archived.length}</span>
+            <span style={{fontSize:11,color:"#484F58"}}>Out of every count and every average. Nothing was deleted — restore any row.</span>
           </div>
-          {display.length===0?<div style={{padding:40,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-5)"}}>Nothing archived yet.</div>:(
-            <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
+          {display.length===0?<div style={{padding:40,textAlign:"center",color:"#30363D",fontSize:13}}>Nothing archived yet.</div>:(
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
               <thead>
                 <tr style={{background:"#161B22",borderBottom:"2px solid #30363D"}}>
                   {["BORROWER","TYPE","AMOUNT","LAST STAGE","REASON","ARCHIVED",""].map((h,i)=>(
-                    <th key={i} style={{padding:"10px 14px",textAlign:"left",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
+                    <th key={i} style={{padding:"10px 14px",textAlign:"left",fontSize:10,color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {display.map((f,i)=>(
                   <tr key={f.id} className="row" style={{borderBottom:"1px solid #21262D",cursor:"pointer"}} onClick={()=>setDetail(f)}>
-                    <td style={{padding:"11px 14px",fontFamily:"Syne",fontWeight:700,color:"var(--t2)",background:i%2===0?"#0D1117":"#161B22"}}>{f.borrower}</td>
-                    <td style={{padding:"11px 14px",color:"var(--t2)",background:i%2===0?"#0D1117":"#161B22"}}>{f.type}</td>
-                    <td style={{padding:"11px 14px",color:"var(--t2)",background:i%2===0?"#0D1117":"#161B22"}}>${((f.loan||0)/1000).toFixed(0)}K</td>
-                    <td style={{padding:"11px 14px",color:"var(--t2)",fontSize:"var(--fs-3)",background:i%2===0?"#0D1117":"#161B22"}}>{isPrep(f)?(f.prep?.prevStage||"Preparation"):f.stage}</td>
-                    <td style={{padding:"11px 14px",color:"var(--t2)",fontSize:"var(--fs-3)",background:i%2===0?"#0D1117":"#161B22"}}>{f.archiveReason||"—"}</td>
-                    <td style={{padding:"11px 14px",color:"var(--t3)",fontSize:"var(--fs-3)",background:i%2===0?"#0D1117":"#161B22"}}>{f.archivedAt||"—"}</td>
+                    <td style={{padding:"11px 14px",fontFamily:"Syne",fontWeight:700,color:"#8B949E",background:i%2===0?"#0D1117":"#161B22"}}>{f.borrower}</td>
+                    <td style={{padding:"11px 14px",color:"#6E7681",background:i%2===0?"#0D1117":"#161B22"}}>{f.type}</td>
+                    <td style={{padding:"11px 14px",color:"#6E7681",background:i%2===0?"#0D1117":"#161B22"}}>${((f.loan||0)/1000).toFixed(0)}K</td>
+                    <td style={{padding:"11px 14px",color:"#6E7681",fontSize:11,background:i%2===0?"#0D1117":"#161B22"}}>{isPrep(f)?(f.prep?.prevStage||"Preparation"):f.stage}</td>
+                    <td style={{padding:"11px 14px",color:"#6E7681",fontSize:11,background:i%2===0?"#0D1117":"#161B22"}}>{f.archiveReason||"—"}</td>
+                    <td style={{padding:"11px 14px",color:"#484F58",fontSize:11,background:i%2===0?"#0D1117":"#161B22"}}>{f.archivedAt||"—"}</td>
                     <td style={{padding:"11px 14px",background:i%2===0?"#0D1117":"#161B22"}}>
                       <button className="hov" onClick={e=>{e.stopPropagation();restoreFile(f.id);}}
-                        style={{background:"#21262D",color:"#7EC8A4",borderRadius:5,padding:"4px 10px",fontSize:"var(--fs-2)",fontFamily:"DM Mono"}}>↩ RESTORE</button>
+                        style={{background:"#21262D",color:"#7EC8A4",borderRadius:5,padding:"4px 10px",fontSize:10,fontFamily:"DM Mono"}}>↩ RESTORE</button>
                     </td>
                   </tr>
                 ))}
@@ -1553,48 +1467,48 @@ export default function App() {
             return(
               <div key={phase.id} className="fi" style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
                 <div style={{background:phase.bg,borderBottom:`2px solid ${phase.color}`,padding:"10px 16px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-                  <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:phase.color,letterSpacing:"1px"}}>PHASE {phase.id} — {phase.label.toUpperCase()}</span>
-                  <span style={{background:phase.color,color:"#0D1117",borderRadius:10,padding:"1px 8px",fontSize:"var(--fs-3)",fontWeight:500}}>{pf.length}</span>
+                  <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:phase.color,letterSpacing:"1px"}}>PHASE {phase.id} — {phase.label.toUpperCase()}</span>
+                  <span style={{background:phase.color,color:"#0D1117",borderRadius:10,padding:"1px 8px",fontSize:11,fontWeight:500}}>{pf.length}</span>
                   <div style={{marginLeft:"auto",display:"flex",gap:5,flexWrap:"wrap"}}>
-                    {phase.stages.map((s,i)=><span key={i} style={{fontSize:"var(--fs-2)",color:"var(--t3)",background:"#0D1117",borderRadius:4,padding:"2px 6px"}}>{s}</span>)}
+                    {phase.stages.map((s,i)=><span key={i} style={{fontSize:10,color:"#484F58",background:"#0D1117",borderRadius:4,padding:"2px 6px"}}>{s}</span>)}
                   </div>
                 </div>
                 {pf.length===0?(
-                  <div style={{padding:"18px",color:"var(--t4)",fontSize:"var(--fs-4)",textAlign:"center"}}>No active files in this phase</div>
+                  <div style={{padding:"18px",color:"#30363D",fontSize:12,textAlign:"center"}}>No active files in this phase</div>
                 ):(
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:12,padding:12}}>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(270px,1fr))",gap:12,padding:12}}>
                     {pf.map(f=>{
                       const u=urgency(f);
                       const ph=getPhase(f.stage);
                       const si=ph.stages.indexOf(f.stage);
                       const cd=daysTil(f.closing);
-                      const uc=u==="critical"?"#E85D75":u==="warning"?"#F5A623":u==="stale"?"var(--t3)":"#21262D";
+                      const uc=u==="critical"?"#E85D75":u==="warning"?"#F5A623":u==="stale"?"#484F58":"#21262D";
                       return(
                         <div key={f.id} className="card" onClick={()=>setDetail(f)}
                           style={{background:"#0D1117",border:`1px solid ${uc}`,borderRadius:8,padding:"12px 14px",display:"flex",flexDirection:"column",gap:8}}>
                           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
                             <div>
-                              <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--t1)",lineHeight:1.2}}>
+                              <div style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#E6EDF3",lineHeight:1.2}}>
                                 {f.borrower}
-                                {f.isInbound && <span title="Inbound referral" style={{marginLeft:6,fontSize:"var(--fs-2)",color:"#FFD166"}}>🤝</span>}
+                                {f.isInbound && <span title="Inbound referral" style={{marginLeft:6,fontSize:10,color:"#FFD166"}}>🤝</span>}
                               </div>
-                              <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{f.type} · ${(f.loan/1000).toFixed(0)}k</div>
-                              {f.lo&&<div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:1}}>{f.lo.split(" ")[0]}{f.referralPartner?` · ${f.referralPartner.split(" ")[0]}`:""}</div>}
+                              <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>{f.type} · ${(f.loan/1000).toFixed(0)}k</div>
+                              {f.lo&&<div style={{fontSize:10,color:"#484F58",marginTop:1}}>{f.lo.split(" ")[0]}{f.referralPartner?` · ${f.referralPartner.split(" ")[0]}`:""}</div>}
                             </div>
-                            {u!=="normal"&&<span style={{background:uc,color:"#0D1117",borderRadius:4,padding:"2px 6px",fontSize:"var(--fs-2)",fontWeight:500}}>
+                            {u!=="normal"&&<span style={{background:uc,color:"#0D1117",borderRadius:4,padding:"2px 6px",fontSize:10,fontWeight:500}}>
                               {u==="critical"?"CRITICAL":u==="warning"?"WARN":"STALE"}
                             </span>}
                           </div>
                           <div style={{display:"flex",gap:3}}>
-                            {ph.stages.map((_,i)=><div key={i} style={{height:4,flex:1,borderRadius:2,background:i<=si?ph.color:"var(--t4)"}}/>)}
+                            {ph.stages.map((_,i)=><div key={i} style={{height:4,flex:1,borderRadius:2,background:i<=si?ph.color:"#21262D"}}/>)}
                           </div>
-                          <div style={{fontSize:"var(--fs-3)",color:ph.color,fontWeight:500}}>{f.stage}</div>
-                          <div style={{display:"flex",justifyContent:"space-between",fontSize:"var(--fs-2)",color:"var(--t3)"}}>
+                          <div style={{fontSize:11,color:ph.color,fontWeight:500}}>{f.stage}</div>
+                          <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#484F58"}}>
                             <span title={`File age: ${fileAge(f) ?? "—"} days`}>
                               {daysInStage(f)===null ? "— in stage" : `${daysInStage(f)}d in stage`}
-                              {fileAge(f)!==null && <span style={{color:"var(--t4)"}}> · {fileAge(f)}d total</span>}
+                              {fileAge(f)!==null && <span style={{color:"#30363D"}}> · {fileAge(f)}d total</span>}
                             </span>
-                            {f.closing&&<span style={{color:cd!==null&&cd<=3?"#E85D75":cd!==null&&cd<=7?"#F5A623":"var(--t3)"}}>
+                            {f.closing&&<span style={{color:cd!==null&&cd<=3?"#E85D75":cd!==null&&cd<=7?"#F5A623":"#484F58"}}>
                               {cd===0?"CLOSING TODAY":cd!==null&&cd>0?`Close in ${cd}d`:cd!==null?"PAST DUE":f.closing}
                               {/* El ritmo se lee sin abrir el archivo: de un
                                   vistazo se ve cual va adelantado y cual
@@ -1613,11 +1527,11 @@ export default function App() {
                               <div style={{background:"rgba(232,93,117,.08)",border:"1px solid #E85D7544",
                                 borderLeft:"2px solid #E85D75",borderRadius:"0 5px 5px 0",
                                 padding:"6px 8px",marginTop:7}}>
-                                <div style={{fontSize:"var(--fs-2)",color:"#E85D75",lineHeight:1.4,
+                                <div style={{fontSize:10,color:"#E85D75",lineHeight:1.4,
                                   display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>
                                   ⚑ {w.text}
                                 </div>
-                                <div style={{fontSize:"var(--fs-1)",color:"var(--t2)",marginTop:2}}>
+                                <div style={{fontSize:9,color:"#8B949E",marginTop:2}}>
                                   {P(m)}{edad!==null?" · "+TX("findingDaysOpen",{n:edad}):""}
                                   {openFindings(f).length>1?" · "+TX("nMore",{n:openFindings(f).length-1}):""}
                                 </div>
@@ -1627,11 +1541,11 @@ export default function App() {
                           {(()=>{const n=latestNote(f); if(!n) return null; const c=noteCount(f);
                             return (
                               <div style={{borderTop:"1px solid #21262D",paddingTop:6}}>
-                                <div style={{fontSize:"var(--fs-2)",color:"var(--t2)",fontStyle:"italic",lineHeight:1.45,
+                                <div style={{fontSize:10,color:"#6E7681",fontStyle:"italic",lineHeight:1.45,
                                   display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>
                                   {n.text}
                                 </div>
-                                <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:3}}>
+                                <div style={{fontSize:9,color:"#484F58",marginTop:3}}>
                                   {n.legacy
                                     ? "nota anterior al historial · sin fecha ni autor"
                                     : `${timeAgo(n.at)}${n.by?` · ${n.by.split(" ")[0]}`:""}`}
@@ -1639,7 +1553,7 @@ export default function App() {
                                 </div>
                               </div>
                             );})()}
-                          {f.lastEditedBy&&!latestNote(f)&&<div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"0.5px",borderTop:"1px solid #21262D",paddingTop:6}}>
+                          {f.lastEditedBy&&!latestNote(f)&&<div style={{fontSize:9,color:"#484F58",letterSpacing:"0.5px",borderTop:"1px solid #21262D",paddingTop:6}}>
                             Edited by {f.lastEditedBy.name?.split(" ")[0]||"?"} · {timeAgo(f.lastEditedAt)}
                           </div>}
                           {(f.phone || f.email) && (
@@ -1647,14 +1561,14 @@ export default function App() {
                               {f.phone && (
                                 <a href={`tel:${f.phone.replace(/[^\d+]/g,"")}`} onClick={e=>e.stopPropagation()}
                                   title={`Call ${f.phone}`}
-                                  style={{background:"rgba(74,144,217,.08)",border:"1px solid #4A90D944",borderRadius:4,padding:"3px 7px",color:"#4A90D9",fontSize:"var(--fs-2)",fontFamily:"DM Mono",textDecoration:"none"}}>
+                                  style={{background:"rgba(74,144,217,.08)",border:"1px solid #4A90D944",borderRadius:4,padding:"3px 7px",color:"#4A90D9",fontSize:10,fontFamily:"DM Mono",textDecoration:"none"}}>
                                   📱 {f.phone}
                                 </a>
                               )}
                               {f.email && (
                                 <a href={`mailto:${f.email}`} onClick={e=>e.stopPropagation()}
                                   title={`Email ${f.email}`}
-                                  style={{background:"rgba(189,101,232,.08)",border:"1px solid #BD65E844",borderRadius:4,padding:"3px 7px",color:"#BD65E8",fontSize:"var(--fs-2)",fontFamily:"DM Mono",textDecoration:"none"}}>
+                                  style={{background:"rgba(189,101,232,.08)",border:"1px solid #BD65E844",borderRadius:4,padding:"3px 7px",color:"#BD65E8",fontSize:10,fontFamily:"DM Mono",textDecoration:"none"}}>
                                   ✉
                                 </a>
                               )}
@@ -1662,11 +1576,11 @@ export default function App() {
                           )}
                           <div style={{display:"flex",gap:6,marginTop:2}}>
                             <button className="hov" onClick={e=>{e.stopPropagation();advance(f.id);}}
-                              style={{flex:1,background:"rgba(255,255,255,.05)",border:"1px solid #21262D",borderRadius:5,color:"var(--t2)",fontSize:"var(--fs-2)",padding:"5px 0"}}>
+                              style={{flex:1,background:"rgba(255,255,255,.05)",border:"1px solid #21262D",borderRadius:5,color:"#8B949E",fontSize:10,padding:"5px 0"}}>
                               ADVANCE →
                             </button>
                             <button className="hov" onClick={e=>{e.stopPropagation();if(confirm(`Mark ${f.borrower} as CLOSED?`))closeFile(f.id);}}
-                              style={{background:"rgba(6,214,160,.1)",border:"1px solid #06D6A0",borderRadius:5,color:"#06D6A0",fontSize:"var(--fs-2)",padding:"5px 10px"}}>
+                              style={{background:"rgba(6,214,160,.1)",border:"1px solid #06D6A0",borderRadius:5,color:"#06D6A0",fontSize:10,padding:"5px 10px"}}>
                               CLOSE ✓
                             </button>
                           </div>
@@ -1727,7 +1641,7 @@ function PrepModal({file, onClose, onConfirm}){
     setReviewOn(rr.mode==="days" ? addDaysISO(today(), rr.days) : "");
   },[reason]);
 
-  const fs={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"var(--t1)",padding:"9px 11px",fontSize:"var(--fs-5)",fontFamily:"'IBM Plex Sans',system-ui,-apple-system,sans-serif",width:"100%"};
+  const fs={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",padding:"9px 11px",fontSize:13,fontFamily:"'DM Mono','Courier New',monospace",width:"100%"};
   const daysOut = reviewOn ? Math.ceil((new Date(reviewOn+"T00:00:00")-new Date(new Date().toDateString()))/86400000) : null;
 
   return(
@@ -1735,43 +1649,43 @@ function PrepModal({file, onClose, onConfirm}){
       <div className="fi" onClick={e=>e.stopPropagation()}
         style={{background:"#161B22",border:"1px solid #7EC8A455",borderRadius:12,width:"100%",maxWidth:430,maxHeight:"calc(100vh - 40px)",overflowY:"auto",padding:22,display:"flex",flexDirection:"column",gap:14}}>
         <div>
-          <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-7)",color:"#7EC8A4"}}>
+          <div style={{fontFamily:"Syne",fontWeight:800,fontSize:17,color:"#7EC8A4"}}>
             {isReschedule?"↻ RESCHEDULE":"⏸ SEND TO PREPARATION"}
           </div>
-          <div style={{fontSize:"var(--fs-4)",color:"var(--t2)",marginTop:3}}>{file.borrower}</div>
-          {!isReschedule&&<div style={{fontSize:"var(--fs-3)",color:"var(--t3)",marginTop:6,lineHeight:1.5}}>
+          <div style={{fontSize:12,color:"#8B949E",marginTop:3}}>{file.borrower}</div>
+          {!isReschedule&&<div style={{fontSize:11,color:"#484F58",marginTop:6,lineHeight:1.5}}>
             Leaves the active board and stops the stage clock. It is not closed and not archived — it comes back on the review date.
           </div>}
         </div>
 
         <div>
-          <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>WHY IS THIS CLIENT WAITING?</div>
+          <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>WHY IS THIS CLIENT WAITING?</div>
           <select value={reason} onChange={e=>setReason(e.target.value)} style={fs}>
             {PREP_REASONS.map(x=><option key={x.id} value={x.id}>{x.label}</option>)}
           </select>
-          {r.why&&<div style={{fontSize:"var(--fs-2)",color:"var(--t2)",marginTop:6,lineHeight:1.5,fontStyle:"italic"}}>{r.why}</div>}
+          {r.why&&<div style={{fontSize:10,color:"#6E7681",marginTop:6,lineHeight:1.5,fontStyle:"italic"}}>{r.why}</div>}
         </div>
 
         <div>
-          <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>
+          <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>
             REVIEW ON {r.mode==="date"&&<span style={{color:"#F5A623"}}>— pick the real date</span>}
           </div>
           <input type="date" value={reviewOn} onChange={e=>setReviewOn(e.target.value)} style={fs}/>
           <div style={{display:"flex",gap:6,marginTop:8,flexWrap:"wrap"}}>
             {[30,60,90].map(d=>(
               <button key={d} className="hov" onClick={()=>setReviewOn(addDaysISO(today(),d))}
-                style={{background:"#21262D",border:"1px solid #30363D",borderRadius:5,color:"var(--t2)",fontSize:"var(--fs-3)",padding:"5px 12px",fontFamily:"DM Mono"}}>
+                style={{background:"#21262D",border:"1px solid #30363D",borderRadius:5,color:"#8B949E",fontSize:11,padding:"5px 12px",fontFamily:"DM Mono"}}>
                 +{d}d
               </button>
             ))}
-            {daysOut!==null&&<span style={{fontSize:"var(--fs-2)",color:daysOut>PREP_MAX_DAYS?"#E85D75":"var(--t3)",alignSelf:"center",marginLeft:4}}>
+            {daysOut!==null&&<span style={{fontSize:10,color:daysOut>PREP_MAX_DAYS?"#E85D75":"#484F58",alignSelf:"center",marginLeft:4}}>
               {daysOut}d out{daysOut>PREP_MAX_DAYS?` — past the ${PREP_MAX_DAYS}-day cap`:""}
             </span>}
           </div>
         </div>
 
         <div>
-          <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>WHAT HAS TO HAPPEN BEFORE THEY COME BACK?</div>
+          <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>WHAT HAS TO HAPPEN BEFORE THEY COME BACK?</div>
           <textarea value={note} onChange={e=>setNote(e.target.value)} rows={3}
             placeholder="e.g. collections paid off, 2025 taxes filed, 3 months of statements"
             style={{...fs,resize:"vertical"}}/>
@@ -1779,11 +1693,11 @@ function PrepModal({file, onClose, onConfirm}){
 
         <div style={{display:"flex",gap:8}}>
           <button className="hov" onClick={onClose}
-            style={{flex:1,background:"#21262D",color:"var(--t2)",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:"var(--fs-4)",border:"none"}}>CANCEL</button>
+            style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"none"}}>CANCEL</button>
           <button className="hov"
             disabled={!reviewOn}
             onClick={()=>{ if(reviewOn) onConfirm({reason, reviewOn, note}); }}
-            style={{flex:2,background:reviewOn?"#7EC8A4":"#21262D",color:reviewOn?"#0D1117":"var(--t3)",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:"var(--fs-4)",fontWeight:500,border:"none",cursor:reviewOn?"pointer":"not-allowed"}}>
+            style={{flex:2,background:reviewOn?"#7EC8A4":"#21262D",color:reviewOn?"#0D1117":"#484F58",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,fontWeight:500,border:"none",cursor:reviewOn?"pointer":"not-allowed"}}>
             {reviewOn?(isReschedule?"RESCHEDULE":"SEND TO PREPARATION"):"PICK A REVIEW DATE"}
           </button>
         </div>
@@ -1795,29 +1709,29 @@ function PrepModal({file, onClose, onConfirm}){
 // ─── ARCHIVE MODAL ───
 function ArchiveModal({file, onClose, onConfirm}){
   const [reason,setReason]=useState(ARCHIVE_REASONS[0]);
-  const fs={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"var(--t1)",padding:"9px 11px",fontSize:"var(--fs-5)",fontFamily:"'IBM Plex Sans',system-ui,-apple-system,sans-serif",width:"100%"};
+  const fs={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",padding:"9px 11px",fontSize:13,fontFamily:"'DM Mono','Courier New',monospace",width:"100%"};
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:120,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
       <div className="fi" onClick={e=>e.stopPropagation()}
         style={{background:"#161B22",border:"1px solid #30363D",borderRadius:12,width:"100%",maxWidth:400,padding:22,display:"flex",flexDirection:"column",gap:14}}>
         <div>
-          <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-7)",color:"var(--t1)"}}>🗄 ARCHIVE</div>
-          <div style={{fontSize:"var(--fs-4)",color:"var(--t2)",marginTop:3}}>{file.borrower}</div>
-          <div style={{fontSize:"var(--fs-3)",color:"var(--t3)",marginTop:6,lineHeight:1.5}}>
+          <div style={{fontFamily:"Syne",fontWeight:800,fontSize:17,color:"#E6EDF3"}}>🗄 ARCHIVE</div>
+          <div style={{fontSize:12,color:"#8B949E",marginTop:3}}>{file.borrower}</div>
+          <div style={{fontSize:11,color:"#484F58",marginTop:6,lineHeight:1.5}}>
             Nothing is deleted. The file leaves every count and every average, and can be restored from the ARCHIVED tab.
           </div>
         </div>
         <div>
-          <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>REASON</div>
+          <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>REASON</div>
           <select value={reason} onChange={e=>setReason(e.target.value)} style={fs}>
             {ARCHIVE_REASONS.map(x=><option key={x} value={x}>{x}</option>)}
           </select>
         </div>
         <div style={{display:"flex",gap:8}}>
           <button className="hov" onClick={onClose}
-            style={{flex:1,background:"#21262D",color:"var(--t2)",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:"var(--fs-4)",border:"none"}}>CANCEL</button>
+            style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"none"}}>CANCEL</button>
           <button className="hov" onClick={()=>onConfirm(reason)}
-            style={{flex:2,background:"#30363D",color:"var(--t1)",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:"var(--fs-4)",fontWeight:500,border:"none"}}>ARCHIVE</button>
+            style={{flex:2,background:"#30363D",color:"#E6EDF3",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,fontWeight:500,border:"none"}}>ARCHIVE</button>
         </div>
       </div>
     </div>
@@ -2018,8 +1932,8 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           {label:"BRANCH VOLUME",value:`$${((closedVol+activeVol)/1e6).toFixed(2)}M`,color:"#F5A623"},
         ].map(s=>(
           <div key={s.label} style={{background:"#161B22",border:`1px solid ${s.color}33`,borderTop:`3px solid ${s.color}`,borderRadius:8,padding:"12px"}}>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{s.label}</div>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",color:s.color}}>{s.value}</div>
+            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>{s.label}</div>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:20,color:s.color}}>{s.value}</div>
           </div>
         ))}
       </div>
@@ -2037,11 +1951,11 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           !isAssistant && ["mix",TX("mixTab")],
         ].filter(Boolean).map(([t,l])=>(
           <button key={t} className="hov" onClick={()=>setProdTab(t)}
-            style={{background:prodTab===t?"#F5A623":"#21262D",color:prodTab===t?"#0D1117":"var(--t2)",borderRadius:6,padding:"6px 14px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",fontWeight:500}}>
+            style={{background:prodTab===t?"#F5A623":"#21262D",color:prodTab===t?"#0D1117":"#8B949E",borderRadius:6,padding:"6px 14px",fontSize:11,fontFamily:"DM Mono",fontWeight:500}}>
             {l}
           </button>
         ))}
-        <div style={{marginLeft:"auto",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",alignSelf:"center"}}>
+        <div style={{marginLeft:"auto",fontSize:10,color:"#484F58",letterSpacing:"1px",alignSelf:"center"}}>
           {isAdmin ? "ADMIN VIEW · ALL DATA VISIBLE" : isLO ? "LO VIEW · YOUR COMP ONLY" : "ASSISTANT VIEW · NO COMP"}
         </div>
       </div>
@@ -2052,12 +1966,12 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           {loStats.map((lo,i)=>(
             <div key={lo.name} style={{background:"#161B22",border:`1px solid ${loColors[i]}44`,borderRadius:10,overflow:"hidden"}}>
               <div style={{background:`${loColors[i]}18`,borderBottom:`2px solid ${loColors[i]}`,padding:"10px 14px",display:"flex",alignItems:"center",gap:10}}>
-                <div style={{width:36,height:36,borderRadius:"50%",background:loColors[i],display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-5)",color:"#0D1117",flexShrink:0}}>
+                <div style={{width:36,height:36,borderRadius:"50%",background:loColors[i],display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Syne",fontWeight:800,fontSize:13,color:"#0D1117",flexShrink:0}}>
                   {lo.name.split(" ").map(n=>n[0]).join("").slice(0,2)}
                 </div>
                 <div>
-                  <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:loColors[i]}}>{lo.name}</div>
-                  <div style={{fontSize:"var(--fs-2)",color:"var(--t3)"}}>{lo.role}</div>
+                  <div style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:loColors[i]}}>{lo.name}</div>
+                  <div style={{fontSize:10,color:"#484F58"}}>{lo.role}</div>
                 </div>
               </div>
               <div style={{padding:"12px 14px",display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
@@ -2067,19 +1981,19 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                   {l:"THIS MO",v:lo.monthCount,c:"#BD65E8"},
                 ].map(s=>(
                   <div key={s.l} style={{textAlign:"center",background:"#0D1117",borderRadius:6,padding:"8px 4px"}}>
-                    <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:s.c}}>{s.v}</div>
-                    <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"0.5px"}}>{s.l}</div>
+                    <div style={{fontFamily:"Syne",fontWeight:800,fontSize:18,color:s.c}}>{s.v}</div>
+                    <div style={{fontSize:9,color:"#484F58",letterSpacing:"0.5px"}}>{s.l}</div>
                   </div>
                 ))}
               </div>
               <div style={{padding:"0 14px 12px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                 <div style={{background:"#0D1117",borderRadius:6,padding:"8px 10px"}}>
-                  <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginBottom:2}}>FUNDED VOL</div>
-                  <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#06D6A0"}}>${(lo.closedVol/1000).toFixed(0)}K</div>
+                  <div style={{fontSize:9,color:"#484F58",marginBottom:2}}>FUNDED VOL</div>
+                  <div style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#06D6A0"}}>${(lo.closedVol/1000).toFixed(0)}K</div>
                 </div>
                 <div style={{background:"#0D1117",borderRadius:6,padding:"8px 10px"}}>
-                  <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginBottom:2}}>PIPELINE</div>
-                  <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#4A90D9"}}>${(lo.activeVol/1000).toFixed(0)}K</div>
+                  <div style={{fontSize:9,color:"#484F58",marginBottom:2}}>PIPELINE</div>
+                  <div style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#4A90D9"}}>${(lo.activeVol/1000).toFixed(0)}K</div>
                 </div>
               </div>
             </div>
@@ -2089,21 +2003,21 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
         {orphanFiles.length > 0 && (
           <div style={{background:"#161B22",border:"1px solid #E85D7544",borderRadius:10,overflow:"hidden"}}>
             <div style={{background:"rgba(232,93,117,.08)",borderBottom:"2px solid #E85D75",padding:"10px 16px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#E85D75",letterSpacing:"1px"}}>⚠ UNASSIGNED LO FILES</span>
-              <span style={{background:"#E85D75",color:"#0D1117",borderRadius:10,padding:"1px 8px",fontSize:"var(--fs-3)",fontWeight:500}}>{orphanFiles.length}</span>
-              <span style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginLeft:6,flex:1,minWidth:200}}>won't show in production stats until fixed · click any row to open & fix manually</span>
+              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#E85D75",letterSpacing:"1px"}}>⚠ UNASSIGNED LO FILES</span>
+              <span style={{background:"#E85D75",color:"#0D1117",borderRadius:10,padding:"1px 8px",fontSize:11,fontWeight:500}}>{orphanFiles.length}</span>
+              <span style={{fontSize:11,color:"#8B949E",marginLeft:6,flex:1,minWidth:200}}>won't show in production stats until fixed · click any row to open & fix manually</span>
               {isAdmin && autoFixableCount > 0 && (
                 <button className="hov" onClick={()=>setShowAutoFixPreview(true)}
-                  style={{background:"#F5A623",color:"#0D1117",borderRadius:6,padding:"7px 14px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",fontWeight:500,border:"none",cursor:"pointer"}}>
+                  style={{background:"#F5A623",color:"#0D1117",borderRadius:6,padding:"7px 14px",fontFamily:"DM Mono",fontSize:11,fontWeight:500,border:"none",cursor:"pointer"}}>
                   ✨ AUTO-FIX {autoFixableCount}
                 </button>
               )}
             </div>
-            <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
               <thead>
                 <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
                   {["BORROWER","TYPE","LOAN","STAGE","CURRENT LO VALUE","SUGGESTED FIX"].map((h,i)=>(
-                    <th key={i} style={{padding:"8px 14px",textAlign:i<2?"left":i===2?"center":"left",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
+                    <th key={i} style={{padding:"8px 14px",textAlign:i<2?"left":i===2?"center":"left",fontSize:10,color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -2111,16 +2025,16 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 {orphanFiles.map((f,i)=>(
                   <tr key={f.id} className="row" onClick={()=>onOpenFile && onOpenFile(f)}
                     style={{borderBottom:"1px solid #21262D",background:i%2===0?"#0D1117":"#161B22",cursor:"pointer"}}>
-                    <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"var(--t1)"}}>{f.borrower}</td>
-                    <td style={{padding:"10px 14px",color:"var(--t2)"}}>{f.type}</td>
+                    <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"#E6EDF3"}}>{f.borrower}</td>
+                    <td style={{padding:"10px 14px",color:"#8B949E"}}>{f.type}</td>
                     <td style={{padding:"10px 14px",textAlign:"center",color:"#06D6A0",fontWeight:500}}>${(f.loan/1000).toFixed(0)}K</td>
-                    <td style={{padding:"10px 14px",color:"var(--t2)"}}>{f.stage}</td>
+                    <td style={{padding:"10px 14px",color:"#8B949E"}}>{f.stage}</td>
                     <td style={{padding:"10px 14px",color:"#E85D75",fontWeight:500,fontStyle:"italic"}}>{f.lo ? `"${f.lo}"` : "(blank)"}</td>
                     <td style={{padding:"10px 14px"}}>
                       {f._suggestedLo ? (
                         <span style={{color:"#06D6A0",fontWeight:500}}>→ {f._suggestedLo}</span>
                       ) : (
-                        <span style={{color:"var(--t3)",fontStyle:"italic"}}>no match · fix manually</span>
+                        <span style={{color:"#484F58",fontStyle:"italic"}}>no match · fix manually</span>
                       )}
                     </td>
                   </tr>
@@ -2135,28 +2049,28 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
             <div className="fi" style={{background:"#161B22",border:"1px solid #30363D",borderRadius:12,width:"100%",maxWidth:680,maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
               <div style={{padding:"20px 24px 16px",borderBottom:"1px solid #21262D",flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
                 <div>
-                  <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:"#F5A623"}}>✨ AUTO-FIX PREVIEW</div>
-                  <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:4,lineHeight:1.5}}>
+                  <div style={{fontFamily:"Syne",fontWeight:800,fontSize:18,color:"#F5A623"}}>✨ AUTO-FIX PREVIEW</div>
+                  <div style={{fontSize:11,color:"#8B949E",marginTop:4,lineHeight:1.5}}>
                     Review the suggested LO assignments below. Click APPLY to update all {autoFixableCount} files at once.
                   </div>
                 </div>
-                <button onClick={()=>setShowAutoFixPreview(false)} style={{background:"transparent",border:"none",color:"var(--t3)",fontSize:"var(--fs-9)",cursor:"pointer",padding:"0 0 0 12px"}}>✕</button>
+                <button onClick={()=>setShowAutoFixPreview(false)} style={{background:"transparent",border:"none",color:"#484F58",fontSize:20,cursor:"pointer",padding:"0 0 0 12px"}}>✕</button>
               </div>
               <div style={{flex:1,overflowY:"auto",padding:"12px 0"}}>
-                <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
                   <thead>
                     <tr style={{borderBottom:"1px solid #30363D"}}>
                       {["BORROWER","CURRENT","→","NEW LO"].map((h,i)=>(
-                        <th key={i} style={{padding:"8px 14px",textAlign:"left",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
+                        <th key={i} style={{padding:"8px 14px",textAlign:"left",fontSize:10,color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {orphanFiles.filter(f=>f._suggestedLo).map((f,i)=>(
                       <tr key={f.id} style={{borderBottom:"1px solid #21262D",background:i%2===0?"#0D1117":"#161B22"}}>
-                        <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"var(--t1)"}}>{f.borrower}</td>
+                        <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"#E6EDF3"}}>{f.borrower}</td>
                         <td style={{padding:"10px 14px",color:"#E85D75",fontStyle:"italic"}}>{f.lo ? `"${f.lo}"` : "(blank)"}</td>
-                        <td style={{padding:"10px 14px",color:"var(--t3)",textAlign:"center"}}>→</td>
+                        <td style={{padding:"10px 14px",color:"#484F58",textAlign:"center"}}>→</td>
                         <td style={{padding:"10px 14px",color:"#06D6A0",fontWeight:500}}>{f._suggestedLo}</td>
                       </tr>
                     ))}
@@ -2169,11 +2083,11 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                   if(onBulkUpdate) onBulkUpdate(updates);
                   setShowAutoFixPreview(false);
                 }}
-                  style={{flex:2,background:"#F5A623",color:"#0D1117",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:"var(--fs-4)",fontWeight:500,border:"none",cursor:"pointer"}}>
+                  style={{flex:2,background:"#F5A623",color:"#0D1117",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,fontWeight:500,border:"none",cursor:"pointer"}}>
                   ✨ APPLY {autoFixableCount} FIXES
                 </button>
                 <button className="hov" onClick={()=>setShowAutoFixPreview(false)}
-                  style={{flex:1,background:"#21262D",color:"var(--t2)",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:"var(--fs-4)",border:"none",cursor:"pointer"}}>
+                  style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"none",cursor:"pointer"}}>
                   CANCEL
                 </button>
               </div>
@@ -2186,31 +2100,31 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
       {prodTab==="monthly"&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:10}}>
           <div style={{background:"#161B22",border:"1px solid #06D6A044",borderTop:"3px solid #06D6A0",borderRadius:8,padding:12}}>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>BEST MONTH (12MO)</div>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:"#06D6A0"}}>{bestMonth.units > 0 ? monthLabel(bestMonth.month) : "—"}</div>
-            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{bestMonth.units} units · ${(bestMonth.volume/1000).toFixed(0)}K</div>
+            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>BEST MONTH (12MO)</div>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:18,color:"#06D6A0"}}>{bestMonth.units > 0 ? monthLabel(bestMonth.month) : "—"}</div>
+            <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>{bestMonth.units} units · ${(bestMonth.volume/1000).toFixed(0)}K</div>
           </div>
           <div style={{background:"#161B22",border:"1px solid #E85D7544",borderTop:"3px solid #E85D75",borderRadius:8,padding:12}}>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>SLOWEST MONTH</div>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:"#E85D75"}}>{worstMonth.units > 0 ? monthLabel(worstMonth.month) : "—"}</div>
-            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{worstMonth.units} units · ${(worstMonth.volume/1000).toFixed(0)}K</div>
+            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>SLOWEST MONTH</div>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:18,color:"#E85D75"}}>{worstMonth.units > 0 ? monthLabel(worstMonth.month) : "—"}</div>
+            <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>{worstMonth.units} units · ${(worstMonth.volume/1000).toFixed(0)}K</div>
           </div>
           <div style={{background:"#161B22",border:"1px solid #4A90D944",borderTop:"3px solid #4A90D9",borderRadius:8,padding:12}}>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>12-MO TOTAL UNITS</div>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:"#4A90D9"}}>{last12Months.reduce((s,m)=>s+m.units,0)}</div>
-            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>loans funded</div>
+            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>12-MO TOTAL UNITS</div>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:18,color:"#4A90D9"}}>{last12Months.reduce((s,m)=>s+m.units,0)}</div>
+            <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>loans funded</div>
           </div>
           <div style={{background:"#161B22",border:"1px solid #F5A62344",borderTop:"3px solid #F5A623",borderRadius:8,padding:12}}>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>12-MO TOTAL VOLUME</div>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:"#F5A623"}}>${(last12Months.reduce((s,m)=>s+m.volume,0)/1e6).toFixed(2)}M</div>
-            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>funded</div>
+            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>12-MO TOTAL VOLUME</div>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:18,color:"#F5A623"}}>${(last12Months.reduce((s,m)=>s+m.volume,0)/1e6).toFixed(2)}M</div>
+            <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>funded</div>
           </div>
         </div>
 
         <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,padding:16}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-            <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#4A90D9",letterSpacing:"1px"}}>UNITS CLOSED · LAST 12 MONTHS</div>
-            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px"}}>peak: {maxUnits} unit{maxUnits===1?"":"s"}</div>
+            <div style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#4A90D9",letterSpacing:"1px"}}>UNITS CLOSED · LAST 12 MONTHS</div>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px"}}>peak: {maxUnits} unit{maxUnits===1?"":"s"}</div>
           </div>
           <div style={{display:"flex",gap:6,alignItems:"flex-end",height:140,paddingTop:8}}>
             {last12Months.map((m,i)=>{
@@ -2219,7 +2133,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               const isCurrent = i===last12Months.length-1;
               return (
                 <div key={m.month} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4,minWidth:0}}>
-                  <div style={{fontSize:"var(--fs-2)",fontFamily:"DM Mono",color:isBest?"#06D6A0":"var(--t2)",fontWeight:isBest?500:400,minHeight:12}}>
+                  <div style={{fontSize:10,fontFamily:"DM Mono",color:isBest?"#06D6A0":"#8B949E",fontWeight:isBest?500:400,minHeight:12}}>
                     {m.units>0 ? m.units : ""}
                   </div>
                   <div style={{
@@ -2230,7 +2144,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                     transition:"all .2s",
                     minHeight: m.units>0 ? 4 : 0,
                   }}/>
-                  <div style={{fontSize:"var(--fs-1)",color:isCurrent?"#4A90D9":"var(--t3)",fontFamily:"DM Mono",letterSpacing:"0.5px",fontWeight:isCurrent?500:400,whiteSpace:"nowrap"}}>
+                  <div style={{fontSize:9,color:isCurrent?"#4A90D9":"#484F58",fontFamily:"DM Mono",letterSpacing:"0.5px",fontWeight:isCurrent?500:400,whiteSpace:"nowrap"}}>
                     {monthLabel(m.month)}
                   </div>
                 </div>
@@ -2241,8 +2155,8 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
 
         <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,padding:16}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-            <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#F5A623",letterSpacing:"1px"}}>FUNDED VOLUME · LAST 12 MONTHS</div>
-            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px"}}>peak: ${(maxVolume/1000).toFixed(0)}K</div>
+            <div style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#F5A623",letterSpacing:"1px"}}>FUNDED VOLUME · LAST 12 MONTHS</div>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px"}}>peak: ${(maxVolume/1000).toFixed(0)}K</div>
           </div>
           <div style={{display:"flex",gap:6,alignItems:"flex-end",height:140,paddingTop:8}}>
             {last12Months.map((m,i)=>{
@@ -2251,7 +2165,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               const isCurrent = i===last12Months.length-1;
               return (
                 <div key={m.month} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4,minWidth:0}}>
-                  <div style={{fontSize:"var(--fs-1)",fontFamily:"DM Mono",color:isBest?"#F5A623":"var(--t2)",fontWeight:isBest?500:400,minHeight:12,whiteSpace:"nowrap"}}>
+                  <div style={{fontSize:9,fontFamily:"DM Mono",color:isBest?"#F5A623":"#8B949E",fontWeight:isBest?500:400,minHeight:12,whiteSpace:"nowrap"}}>
                     {m.volume>0 ? `$${(m.volume/1000).toFixed(0)}K` : ""}
                   </div>
                   <div style={{
@@ -2262,7 +2176,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                     transition:"all .2s",
                     minHeight: m.volume>0 ? 4 : 0,
                   }}/>
-                  <div style={{fontSize:"var(--fs-1)",color:isCurrent?"#4A90D9":"var(--t3)",fontFamily:"DM Mono",letterSpacing:"0.5px",fontWeight:isCurrent?500:400,whiteSpace:"nowrap"}}>
+                  <div style={{fontSize:9,color:isCurrent?"#4A90D9":"#484F58",fontFamily:"DM Mono",letterSpacing:"0.5px",fontWeight:isCurrent?500:400,whiteSpace:"nowrap"}}>
                     {monthLabel(m.month)}
                   </div>
                 </div>
@@ -2273,23 +2187,23 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
 
         <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
           <div style={{background:"#1a2a3a",borderBottom:"2px solid #4A90D9",padding:"10px 16px"}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#4A90D9",letterSpacing:"1px"}}>MONTHLY DETAIL · 12-MONTH ROLLING</span>
+            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#4A90D9",letterSpacing:"1px"}}>MONTHLY DETAIL · 12-MONTH ROLLING</span>
           </div>
-          <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
+          <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
             <thead>
               <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
                 {["MONTH","UNITS","VOLUME","AVG LOAN"].map((h,i)=>(
-                  <th key={i} style={{padding:"8px 14px",textAlign:i===0?"left":"center",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
+                  <th key={i} style={{padding:"8px 14px",textAlign:i===0?"left":"center",fontSize:10,color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {[...last12Months].reverse().map((m,i)=>(
                 <tr key={m.month} style={{borderBottom:"1px solid #21262D",background:i%2===0?"#0D1117":"#161B22"}}>
-                  <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"var(--t1)"}}>{monthLabel(m.month)}</td>
+                  <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"#E6EDF3"}}>{monthLabel(m.month)}</td>
                   <td style={{padding:"10px 14px",textAlign:"center",color:m.units>0?"#06D6A0":"#30363D",fontWeight:500}}>{m.units}</td>
                   <td style={{padding:"10px 14px",textAlign:"center",color:m.volume>0?"#F5A623":"#30363D",fontWeight:500}}>${(m.volume/1000).toFixed(0)}K</td>
-                  <td style={{padding:"10px 14px",textAlign:"center",color:"var(--t2)"}}>{m.units>0?`$${(m.volume/m.units/1000).toFixed(0)}K`:"—"}</td>
+                  <td style={{padding:"10px 14px",textAlign:"center",color:"#8B949E"}}>{m.units>0?`$${(m.volume/m.units/1000).toFixed(0)}K`:"—"}</td>
                 </tr>
               ))}
             </tbody>
@@ -2299,23 +2213,23 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
         {yearlyList.length > 0 && (
           <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
             <div style={{background:"#261535",borderBottom:"2px solid #BD65E8",padding:"10px 16px"}}>
-              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#BD65E8",letterSpacing:"1px"}}>ANNUAL SUMMARY</span>
+              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#BD65E8",letterSpacing:"1px"}}>ANNUAL SUMMARY</span>
             </div>
-            <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
               <thead>
                 <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
                   {["YEAR","UNITS","VOLUME","AVG LOAN"].map((h,i)=>(
-                    <th key={i} style={{padding:"8px 14px",textAlign:i===0?"left":"center",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
+                    <th key={i} style={{padding:"8px 14px",textAlign:i===0?"left":"center",fontSize:10,color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {yearlyList.map((y,i)=>(
                   <tr key={y.year} style={{borderBottom:"1px solid #21262D",background:i%2===0?"#0D1117":"#161B22"}}>
-                    <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#BD65E8"}}>{y.year}</td>
+                    <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#BD65E8"}}>{y.year}</td>
                     <td style={{padding:"10px 14px",textAlign:"center",color:"#06D6A0",fontWeight:500}}>{y.units}</td>
                     <td style={{padding:"10px 14px",textAlign:"center",color:"#F5A623",fontWeight:500}}>${(y.volume/1e6).toFixed(2)}M</td>
-                    <td style={{padding:"10px 14px",textAlign:"center",color:"var(--t2)"}}>${(y.volume/y.units/1000).toFixed(0)}K</td>
+                    <td style={{padding:"10px 14px",textAlign:"center",color:"#8B949E"}}>${(y.volume/y.units/1000).toFixed(0)}K</td>
                   </tr>
                 ))}
               </tbody>
@@ -2326,34 +2240,34 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
 
       {/* REFERRAL PARTNERS TAB (existing — sources of business) */}
       {prodTab==="referrals"&&<div>
-        {topRefs.length===0?<div style={{padding:32,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-5)"}}>No referral partners tracked yet. Add partner names to your files to see them here.</div>:(
+        {topRefs.length===0?<div style={{padding:32,textAlign:"center",color:"#30363D",fontSize:13}}>No referral partners tracked yet. Add partner names to your files to see them here.</div>:(
           <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
             <div style={{background:"#1a2e25",borderBottom:"2px solid #06D6A0",padding:"10px 16px",display:"flex",alignItems:"center",gap:10}}>
-              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#06D6A0",letterSpacing:"1px"}}>REFERRAL PARTNER LEADERBOARD</span>
-              <span style={{background:"#06D6A0",color:"#0D1117",borderRadius:10,padding:"1px 8px",fontSize:"var(--fs-3)",fontWeight:500}}>{topRefs.length}</span>
+              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#06D6A0",letterSpacing:"1px"}}>REFERRAL PARTNER LEADERBOARD</span>
+              <span style={{background:"#06D6A0",color:"#0D1117",borderRadius:10,padding:"1px 8px",fontSize:11,fontWeight:500}}>{topRefs.length}</span>
             </div>
-            <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
               <thead>
                 <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
                   {["#","REFERRAL PARTNER","TOTAL FILES","CLOSED","ACTIVE","FUNDED VOLUME"].map((h,i)=>(
-                    <th key={i} style={{padding:"8px 14px",textAlign:i<2?"left":"center",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
+                    <th key={i} style={{padding:"8px 14px",textAlign:i<2?"left":"center",fontSize:10,color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {topRefs.map((ref,i)=>(
                   <tr key={ref.name} style={{borderBottom:"1px solid #21262D",background:i%2===0?"#0D1117":"#161B22"}}>
-                    <td style={{padding:"10px 14px",color:i===0?"#F5A623":i===1?"var(--t2)":i===2?"#CD7F32":"var(--t3)",fontFamily:"Syne",fontWeight:700}}>{i+1}</td>
-                    <td style={{padding:"10px 14px",color:"var(--t1)",fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-4)"}}>
+                    <td style={{padding:"10px 14px",color:i===0?"#F5A623":i===1?"#8B949E":i===2?"#CD7F32":"#484F58",fontFamily:"Syne",fontWeight:700}}>{i+1}</td>
+                    <td style={{padding:"10px 14px",color:"#E6EDF3",fontFamily:"Syne",fontWeight:700,fontSize:12}}>
                       {ref.name}
                       {ref.merged&&(
-                        <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",fontFamily:"DM Mono",fontWeight:400,marginTop:2}}>
+                        <div style={{fontSize:9,color:"#484F58",fontFamily:"DM Mono",fontWeight:400,marginTop:2}}>
                           {TX("unifies")} {ref.variants.map(v=>v.name+" ("+v.count+")").join(" · ")}
                         </div>
                       )}
                     </td>
                     <td style={{padding:"10px 14px",textAlign:"center"}}>
-                      <span style={{background:"#21262D",color:"var(--t1)",borderRadius:12,padding:"2px 10px",fontSize:"var(--fs-4)",fontWeight:500}}>{ref.total}</span>
+                      <span style={{background:"#21262D",color:"#E6EDF3",borderRadius:12,padding:"2px 10px",fontSize:12,fontWeight:500}}>{ref.total}</span>
                     </td>
                     <td style={{padding:"10px 14px",textAlign:"center",color:"#06D6A0",fontWeight:500}}>{ref.closed}</td>
                     <td style={{padding:"10px 14px",textAlign:"center",color:"#F5A623",fontWeight:500}}>{ref.active}</td>
@@ -2372,25 +2286,25 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
         {/* Headline metrics */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:10}}>
           <div style={{background:"#161B22",border:"1px solid #A78BFA44",borderTop:"3px solid #A78BFA",borderRadius:8,padding:12}}>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>REFERRED OUT (TOTAL)</div>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",color:"#A78BFA"}}>{(referredOut||[]).length}</div>
-            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>${(outboundTotalVol/1000).toFixed(0)}K orig. volume</div>
+            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>REFERRED OUT (TOTAL)</div>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:20,color:"#A78BFA"}}>{(referredOut||[]).length}</div>
+            <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>${(outboundTotalVol/1000).toFixed(0)}K orig. volume</div>
           </div>
           <div style={{background:"#161B22",border:"1px solid #06D6A044",borderTop:"3px solid #06D6A0",borderRadius:8,padding:12}}>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>OUTBOUND FUNDED</div>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",color:"#06D6A0"}}>{outboundFunded.length}</div>
-            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>${(outboundFundedVol/1000).toFixed(0)}K closed at banker</div>
+            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>OUTBOUND FUNDED</div>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:20,color:"#06D6A0"}}>{outboundFunded.length}</div>
+            <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>${(outboundFundedVol/1000).toFixed(0)}K closed at banker</div>
           </div>
           <div style={{background:"#161B22",border:"1px solid #F5A62344",borderTop:"3px solid #F5A623",borderRadius:8,padding:12}}>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>FEES EARNED (50 BPS)</div>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",color:"#F5A623"}}>${outboundFeesEarned.toLocaleString()}</div>
-            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>on referred-out funded</div>
+            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>FEES EARNED (50 BPS)</div>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:20,color:"#F5A623"}}>${outboundFeesEarned.toLocaleString()}</div>
+            <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>on referred-out funded</div>
           </div>
           {isAdmin && (
             <div style={{background:"#161B22",border:"1px solid #E85D7544",borderTop:"3px solid #E85D75",borderRadius:8,padding:12}}>
-              <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>LOST COMP (GROSS)</div>
-              <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",color:"#E85D75"}}>${outboundLostComp.toLocaleString()}</div>
-              <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>vs. {BPS_RATE} bps de comp propia</div>
+              <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>LOST COMP (GROSS)</div>
+              <div style={{fontFamily:"Syne",fontWeight:800,fontSize:20,color:"#E85D75"}}>${outboundLostComp.toLocaleString()}</div>
+              <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>vs. {BPS_RATE} bps de comp propia</div>
             </div>
           )}
         </div>
@@ -2398,25 +2312,25 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
         {/* Inbound metrics */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:10}}>
           <div style={{background:"#161B22",border:"1px solid #FFD16644",borderTop:"3px solid #FFD166",borderRadius:8,padding:12}}>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>INBOUND (TOTAL)</div>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",color:"#FFD166"}}>{inboundList.length}</div>
-            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>from external bankers</div>
+            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>INBOUND (TOTAL)</div>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:20,color:"#FFD166"}}>{inboundList.length}</div>
+            <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>from external bankers</div>
           </div>
           <div style={{background:"#161B22",border:"1px solid #06D6A044",borderTop:"3px solid #06D6A0",borderRadius:8,padding:12}}>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>INBOUND CLOSED</div>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",color:"#06D6A0"}}>{inboundClosed.length}</div>
-            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>${(inboundFundedVol/1000).toFixed(0)}K funded</div>
+            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>INBOUND CLOSED</div>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:20,color:"#06D6A0"}}>{inboundClosed.length}</div>
+            <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>${(inboundFundedVol/1000).toFixed(0)}K funded</div>
           </div>
           <div style={{background:"#161B22",border:"1px solid #4A90D944",borderTop:"3px solid #4A90D9",borderRadius:8,padding:12}}>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>INBOUND ACTIVE</div>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",color:"#4A90D9"}}>{inboundActive.length}</div>
-            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>${(inboundActiveVol/1000).toFixed(0)}K in pipeline</div>
+            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>INBOUND ACTIVE</div>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:20,color:"#4A90D9"}}>{inboundActive.length}</div>
+            <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>${(inboundActiveVol/1000).toFixed(0)}K in pipeline</div>
           </div>
           {isAdmin && (
             <div style={{background:"#161B22",border:"1px solid #06D6A044",borderTop:"3px solid #06D6A0",borderRadius:8,padding:12}}>
-              <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>COMP FROM INBOUND</div>
-              <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",color:"#06D6A0"}}>${inboundCompEarned.toLocaleString()}</div>
-              <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{BPS_RATE} bps on closed</div>
+              <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>COMP FROM INBOUND</div>
+              <div style={{fontFamily:"Syne",fontWeight:800,fontSize:20,color:"#06D6A0"}}>${inboundCompEarned.toLocaleString()}</div>
+              <div style={{fontSize:11,color:"#8B949E",marginTop:2}}>{BPS_RATE} bps on closed</div>
             </div>
           )}
         </div>
@@ -2424,20 +2338,20 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
         {/* Reciprocity table */}
         <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
           <div style={{background:"#1f1830",borderBottom:"2px solid #A78BFA",padding:"10px 16px",display:"flex",alignItems:"center",gap:10}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#A78BFA",letterSpacing:"1px"}}>🏦 BANKER RECIPROCITY</span>
-            <span style={{fontSize:"var(--fs-3)",color:"var(--t2)"}}>who's sending what · spot imbalances</span>
+            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#A78BFA",letterSpacing:"1px"}}>🏦 BANKER RECIPROCITY</span>
+            <span style={{fontSize:11,color:"#8B949E"}}>who's sending what · spot imbalances</span>
           </div>
           {bankerReciprocity.length === 0 ? (
-            <div style={{padding:24,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-4)"}}>
+            <div style={{padding:24,textAlign:"center",color:"#30363D",fontSize:12}}>
               No banker referrals tracked yet.<br/>
-              <span style={{fontSize:"var(--fs-2)",marginTop:6,display:"block"}}>Refer a file out OR add an inbound referral to populate this table.</span>
+              <span style={{fontSize:10,marginTop:6,display:"block"}}>Refer a file out OR add an inbound referral to populate this table.</span>
             </div>
           ) : (
-            <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
               <thead>
                 <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
                   {["BANKER","COMPANY","SENT TO THEM","THEY SENT US","VOLUME OUT","VOLUME IN","BALANCE"].map((h,i)=>(
-                    <th key={i} style={{padding:"8px 14px",textAlign:i<2?"left":"center",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
+                    <th key={i} style={{padding:"8px 14px",textAlign:i<2?"left":"center",fontSize:10,color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -2445,16 +2359,16 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 {bankerReciprocity.map((b,i)=>{
                   const netCount = b.receivedIn - b.sentOut;
                   const netLabel = netCount > 0 ? `+${netCount} (favoring you)` : netCount < 0 ? `${netCount} (favoring them)` : "even";
-                  const netColor = netCount > 0 ? "#06D6A0" : netCount < 0 ? "#E85D75" : "var(--t2)";
+                  const netColor = netCount > 0 ? "#06D6A0" : netCount < 0 ? "#E85D75" : "#8B949E";
                   return (
                     <tr key={b.name} style={{borderBottom:"1px solid #21262D",background:i%2===0?"#0D1117":"#161B22"}}>
-                      <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"var(--t1)"}}>{b.name}</td>
-                      <td style={{padding:"10px 14px",color:"var(--t2)",fontSize:"var(--fs-3)"}}>{b.company || "—"}</td>
+                      <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"#E6EDF3"}}>{b.name}</td>
+                      <td style={{padding:"10px 14px",color:"#8B949E",fontSize:11}}>{b.company || "—"}</td>
                       <td style={{padding:"10px 14px",textAlign:"center",color:"#A78BFA",fontWeight:500}}>{b.sentOut}</td>
                       <td style={{padding:"10px 14px",textAlign:"center",color:"#FFD166",fontWeight:500}}>{b.receivedIn}</td>
-                      <td style={{padding:"10px 14px",textAlign:"center",color:"#A78BFA",fontSize:"var(--fs-3)"}}>${(b.sentOutVol/1000).toFixed(0)}K</td>
-                      <td style={{padding:"10px 14px",textAlign:"center",color:"#FFD166",fontSize:"var(--fs-3)"}}>${(b.receivedInVol/1000).toFixed(0)}K</td>
-                      <td style={{padding:"10px 14px",textAlign:"center",color:netColor,fontWeight:500,fontSize:"var(--fs-3)"}}>{netLabel}</td>
+                      <td style={{padding:"10px 14px",textAlign:"center",color:"#A78BFA",fontSize:11}}>${(b.sentOutVol/1000).toFixed(0)}K</td>
+                      <td style={{padding:"10px 14px",textAlign:"center",color:"#FFD166",fontSize:11}}>${(b.receivedInVol/1000).toFixed(0)}K</td>
+                      <td style={{padding:"10px 14px",textAlign:"center",color:netColor,fontWeight:500,fontSize:11}}>{netLabel}</td>
                     </tr>
                   );
                 })}
@@ -2467,31 +2381,31 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
         {isAdmin && (outboundFunded.length > 0 || inboundClosed.length > 0) && (
           <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
             <div style={{background:"#1a1000",borderBottom:"2px solid #F5A623",padding:"10px 16px"}}>
-              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#F5A623",letterSpacing:"1px"}}>💰 YEAR-END COMP IMPACT</span>
+              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#F5A623",letterSpacing:"1px"}}>💰 YEAR-END COMP IMPACT</span>
             </div>
             <div style={{padding:"16px 18px",display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:14}}>
               <div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>OUTBOUND — WHAT YOU WOULD HAVE EARNED IN HOUSE</div>
-                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-8)",color:"var(--t2)"}}>${outboundWouldHaveEarned.toLocaleString()}</div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:3}}>{BPS_RATE} bps × ${(outboundFundedVol/1000).toFixed(0)}K</div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>OUTBOUND — WHAT YOU WOULD HAVE EARNED IN HOUSE</div>
+                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:18,color:"#8B949E"}}>${outboundWouldHaveEarned.toLocaleString()}</div>
+                <div style={{fontSize:10,color:"#484F58",marginTop:3}}>{BPS_RATE} bps × ${(outboundFundedVol/1000).toFixed(0)}K</div>
               </div>
               <div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>WHAT YOU EARNED IN REFERRAL FEES</div>
-                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-8)",color:"#F5A623"}}>${outboundFeesEarned.toLocaleString()}</div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:3}}>{REFERRAL_FEE_BPS} bps × ${(outboundFundedVol/1000).toFixed(0)}K</div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>WHAT YOU EARNED IN REFERRAL FEES</div>
+                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:18,color:"#F5A623"}}>${outboundFeesEarned.toLocaleString()}</div>
+                <div style={{fontSize:10,color:"#484F58",marginTop:3}}>{REFERRAL_FEE_BPS} bps × ${(outboundFundedVol/1000).toFixed(0)}K</div>
               </div>
               <div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>NET LOST COMP (OUTBOUND)</div>
-                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-8)",color:"#E85D75"}}>${outboundLostComp.toLocaleString()}</div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:3}}>opportunity cost</div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>NET LOST COMP (OUTBOUND)</div>
+                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:18,color:"#E85D75"}}>${outboundLostComp.toLocaleString()}</div>
+                <div style={{fontSize:10,color:"#484F58",marginTop:3}}>opportunity cost</div>
               </div>
               <div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>INBOUND COMP EARNED</div>
-                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-8)",color:"#06D6A0"}}>${inboundCompEarned.toLocaleString()}</div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:3}}>{BPS_RATE} bps × ${(inboundFundedVol/1000).toFixed(0)}K</div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>INBOUND COMP EARNED</div>
+                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:18,color:"#06D6A0"}}>${inboundCompEarned.toLocaleString()}</div>
+                <div style={{fontSize:10,color:"#484F58",marginTop:3}}>{BPS_RATE} bps × ${(inboundFundedVol/1000).toFixed(0)}K</div>
               </div>
             </div>
-            <div style={{padding:"12px 18px",borderTop:"1px solid #21262D",background:"#0D1117",fontSize:"var(--fs-3)",color:"var(--t2)",lineHeight:1.6}}>
+            <div style={{padding:"12px 18px",borderTop:"1px solid #21262D",background:"#0D1117",fontSize:11,color:"#8B949E",lineHeight:1.6}}>
               <strong style={{color:"#F5A623"}}>Read it:</strong> Outbound is what the branch could not place and you sent away — you got <strong style={{color:"#F5A623"}}>${outboundFeesEarned.toLocaleString()}</strong> in referral fees but missed <strong style={{color:"#E85D75"}}>${outboundLostComp.toLocaleString()}</strong> in your own comp. Inbound is what bankers send your way — you earned <strong style={{color:"#06D6A0"}}>${inboundCompEarned.toLocaleString()}</strong> from those. Use this to decide which lenders or channels are worth adding.
             </div>
           </div>
@@ -2514,29 +2428,29 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
         const totF=byProd.reduce((a,r)=>a+r.funded,0);
         const totV=byProd.reduce((a,r)=>a+r.fundedVolume,0);
         const totC=byProd.reduce((a,r)=>a+r.comp,0);
-        const th=(t,c)=>(<th style={{padding:"9px 12px",textAlign:c||"center",fontSize:"var(--fs-2)",
-          color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{t}</th>);
+        const th=(t,c)=>(<th style={{padding:"9px 12px",textAlign:c||"center",fontSize:9.5,
+          color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{t}</th>);
         const money=n=>"$"+Math.round(n).toLocaleString();
         if(totF===0&&byProd.every(r=>!r.active)) return (
           <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,
-            padding:"26px 16px",textAlign:"center",color:"var(--t3)",fontSize:"var(--fs-4)"}}>{TX("mixNoData")}</div>
+            padding:"26px 16px",textAlign:"center",color:"#484F58",fontSize:12}}>{TX("mixNoData")}</div>
         );
         return (
           <div style={{display:"flex",flexDirection:"column",gap:14}}>
             <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:8,padding:"12px 16px",
-              fontSize:"var(--fs-3)",color:"var(--t2)",lineHeight:1.6}}>{TX("mixLead")}</div>
+              fontSize:11.5,color:"#8B949E",lineHeight:1.6}}>{TX("mixLead")}</div>
 
             {totF<20&&(
               <div style={{background:"rgba(245,166,35,.08)",border:"1px solid #F5A62344",borderRadius:8,
-                padding:"10px 14px",fontSize:"var(--fs-3)",color:"#F5A623",lineHeight:1.55}}>
+                padding:"10px 14px",fontSize:11,color:"#F5A623",lineHeight:1.55}}>
                 {TX("thinMix",{n:totF})}
               </div>
             )}
 
             <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
-              <div style={{background:"#0D1117",padding:"9px 14px",fontSize:"var(--fs-2)",color:"#F5A623",
+              <div style={{background:"#0D1117",padding:"9px 14px",fontSize:10,color:"#F5A623",
                 letterSpacing:"1px",borderBottom:"1px solid #30363D"}}>{TX("byBaseProduct")}</div>
-              <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
                 <thead><tr style={{borderBottom:"1px solid #21262D"}}>
                   {th(TX("byBaseProduct"),"left")}{th(TX("hClosed"))}{th(TX("hVolume"))}
                   {th(TX("hShare"))}{th(TX("hAvg"))}{th(TX("hComp"))}{th(TX("hActive"))}
@@ -2544,13 +2458,13 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 <tbody>
                   {byProd.map((r,i)=>(
                     <tr key={r.key} style={{borderBottom:"1px solid #21262D",background:i%2?"#161B22":"#0D1117"}}>
-                      <td style={{padding:"10px 12px",color:"var(--t1)"}}>{P(baseProductLabel(r.key))}</td>
+                      <td style={{padding:"10px 12px",color:"#E6EDF3"}}>{P(baseProductLabel(r.key))}</td>
                       <td style={{padding:"10px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>{r.funded||"—"}</td>
-                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono"}}>{r.fundedVolume?money(r.fundedVolume):"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"#8B949E",fontFamily:"DM Mono"}}>{r.fundedVolume?money(r.fundedVolume):"—"}</td>
                       <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,
-                        fontSize:"var(--fs-5)",color:"#F5A623"}}>{r.unitShare?r.unitShare+"%":"—"}</td>
-                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono",fontSize:"var(--fs-3)"}}>{r.avgLoan?money(r.avgLoan):"—"}</td>
-                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono"}}>{r.comp?money(r.comp):"—"}</td>
+                        fontSize:13,color:"#F5A623"}}>{r.unitShare?r.unitShare+"%":"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"#6E7681",fontFamily:"DM Mono",fontSize:11}}>{r.avgLoan?money(r.avgLoan):"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"#8B949E",fontFamily:"DM Mono"}}>{r.comp?money(r.comp):"—"}</td>
                       <td style={{padding:"10px 12px",textAlign:"center",color:"#4A90D9",fontFamily:"DM Mono"}}>{r.active||"—"}</td>
                     </tr>
                   ))}
@@ -2567,13 +2481,13 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
             </div>
 
             <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
-              <div style={{background:"#0D1117",padding:"9px 14px",fontSize:"var(--fs-2)",color:"#7EC8A4",
+              <div style={{background:"#0D1117",padding:"9px 14px",fontSize:10,color:"#7EC8A4",
                 letterSpacing:"1px",borderBottom:"1px solid #30363D",display:"flex",
                 justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
                 <span>{TX("byGroup")}</span>
-                <span style={{color:"var(--t3)",fontSize:"var(--fs-1)"}}>{TX("planEdit")}</span>
+                <span style={{color:"#484F58",fontSize:9}}>{TX("planEdit")}</span>
               </div>
-              <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
                 <thead><tr style={{borderBottom:"1px solid #21262D"}}>
                   {th(TX("byGroup"),"left")}{th(TX("hClosed"))}{th(TX("hVolume"))}
                   {th(TX("hShare"))}{th(TX("hPlan"))}{th(TX("hDelta"))}{th(TX("hActive"))}
@@ -2581,21 +2495,21 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 <tbody>
                   {byGrp.map((r,i)=>(
                     <tr key={r.key} style={{borderBottom:"1px solid #21262D",background:i%2?"#161B22":"#0D1117"}}>
-                      <td style={{padding:"10px 12px",color:"var(--t1)"}}>{r.key}</td>
+                      <td style={{padding:"10px 12px",color:"#E6EDF3"}}>{r.key}</td>
                       <td style={{padding:"10px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>{r.funded||"—"}</td>
-                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono"}}>{r.fundedVolume?money(r.fundedVolume):"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"#8B949E",fontFamily:"DM Mono"}}>{r.fundedVolume?money(r.fundedVolume):"—"}</td>
                       <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,
-                        fontSize:"var(--fs-5)",color:"#F5A623"}}>{r.unitShare}%</td>
+                        fontSize:13,color:"#F5A623"}}>{r.unitShare}%</td>
                       <td style={{padding:"10px 12px",textAlign:"center"}}>
                         <input value={mixPlan[r.key]??""} inputMode="numeric"
                           onChange={e=>{const v=e.target.value.replace(/[^\d]/g,"");
                             setMixPlan({...mixPlan,[r.key]:v===""?undefined:Number(v)});}}
                           style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:4,
-                            color:"var(--t2)",padding:"3px 6px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",
+                            color:"#8B949E",padding:"3px 6px",fontSize:11,fontFamily:"DM Mono",
                             width:46,textAlign:"center"}}/>
                       </td>
                       <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"DM Mono",
-                        color:r.delta===null?"var(--t3)":Math.abs(r.delta)<=5?"#7EC8A4":r.delta>0?"#4A90D9":"#F5A623"}}>
+                        color:r.delta===null?"#484F58":Math.abs(r.delta)<=5?"#7EC8A4":r.delta>0?"#4A90D9":"#F5A623"}}>
                         {r.delta===null?"—":(r.delta>0?"+":"")+r.delta}
                       </td>
                       <td style={{padding:"10px 12px",textAlign:"center",color:"#4A90D9",fontFamily:"DM Mono"}}>{r.active||"—"}</td>
@@ -2606,14 +2520,14 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
             </div>
 
             <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
-              <div style={{background:"#0D1117",padding:"9px 14px",fontSize:"var(--fs-2)",color:"#7EC8A4",
+              <div style={{background:"#0D1117",padding:"9px 14px",fontSize:10,color:"#7EC8A4",
                 letterSpacing:"1px",borderBottom:"1px solid #30363D"}}>{TX("byDpaMix")}</div>
               {(()=>{const rows=productionByDpa(files,{cutover:BARRETT_CUTOVER,bpsDefault:BPS_RATE});
                 if(!rows.length) return (
-                  <div style={{padding:"18px 14px",color:"var(--t3)",fontSize:"var(--fs-3)"}}>{TX("noDpaYet")}</div>
+                  <div style={{padding:"18px 14px",color:"#484F58",fontSize:11.5}}>{TX("noDpaYet")}</div>
                 );
                 return (
-                  <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
+                  <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
                     <thead><tr style={{borderBottom:"1px solid #21262D"}}>
                       {th(TX("byBaseProduct"),"left")}{th(TX("hPct"))}{th(TX("hForm"))}
                       {th(TX("hClosed"))}{th(TX("hVolume"))}{th(TX("hShare"))}
@@ -2622,13 +2536,13 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                     <tbody>
                       {rows.map((r,i)=>(
                         <tr key={r.key} style={{borderBottom:"1px solid #21262D",background:i%2?"#161B22":"#0D1117"}}>
-                          <td style={{padding:"10px 12px",color:"var(--t1)"}}>{P(baseProductLabel(r.base))}</td>
+                          <td style={{padding:"10px 12px",color:"#E6EDF3"}}>{P(baseProductLabel(r.base))}</td>
                           <td style={{padding:"10px 12px",textAlign:"center",color:r.dpa?"#F5A623":"#30363D",fontFamily:"DM Mono"}}>{r.pct?r.pct+"%":"—"}</td>
-                          <td style={{padding:"10px 12px",textAlign:"center",color:r.dpa?"#7EC8A4":"#30363D",fontSize:"var(--fs-3)"}}>{r.dpa?(P(dpaForm(r.form))||"—"):TX("noDpaRow")}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:r.dpa?"#7EC8A4":"#30363D",fontSize:11}}>{r.dpa?(P(dpaForm(r.form))||"—"):TX("noDpaRow")}</td>
                           <td style={{padding:"10px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>{r.funded||"—"}</td>
-                          <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono"}}>{r.fundedVolume?money(r.fundedVolume):"—"}</td>
-                          <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-5)",color:"#F5A623"}}>{r.unitShare?r.unitShare+"%":"—"}</td>
-                          <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono",fontSize:"var(--fs-3)"}}>{r.avgDays??"—"}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:"#8B949E",fontFamily:"DM Mono"}}>{r.fundedVolume?money(r.fundedVolume):"—"}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,fontSize:13,color:"#F5A623"}}>{r.unitShare?r.unitShare+"%":"—"}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:"#6E7681",fontFamily:"DM Mono",fontSize:11}}>{r.avgDays??"—"}</td>
                           <td style={{padding:"10px 12px",textAlign:"center",color:"#4A90D9",fontFamily:"DM Mono"}}>{r.active||"—"}</td>
                         </tr>
                       ))}
@@ -2638,9 +2552,9 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
             </div>
 
             <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
-              <div style={{background:"#0D1117",padding:"9px 14px",fontSize:"var(--fs-2)",color:"#4A90D9",
+              <div style={{background:"#0D1117",padding:"9px 14px",fontSize:10,color:"#4A90D9",
                 letterSpacing:"1px",borderBottom:"1px solid #30363D"}}>{TX("byState")}</div>
-              <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
                 <thead><tr style={{borderBottom:"1px solid #21262D"}}>
                   {th(TX("byState"),"left")}{th(TX("hClosed"))}{th(TX("hVolume"))}
                   {th(TX("hShare"))}{th(TX("hAvg"))}{th(TX("hActive"))}
@@ -2648,11 +2562,11 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 <tbody>
                   {productionByState(files,{cutover:BARRETT_CUTOVER,bpsDefault:BPS_RATE}).map((r,i)=>(
                     <tr key={r.key} style={{borderBottom:"1px solid #21262D",background:i%2?"#161B22":"#0D1117"}}>
-                      <td style={{padding:"10px 12px",color:"var(--t1)"}}>{r.key}</td>
+                      <td style={{padding:"10px 12px",color:"#E6EDF3"}}>{r.key}</td>
                       <td style={{padding:"10px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>{r.funded||"—"}</td>
-                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono"}}>{r.fundedVolume?money(r.fundedVolume):"—"}</td>
-                      <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-5)",color:"#F5A623"}}>{r.unitShare}%</td>
-                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono",fontSize:"var(--fs-3)"}}>{r.avgLoan?money(r.avgLoan):"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"#8B949E",fontFamily:"DM Mono"}}>{r.fundedVolume?money(r.fundedVolume):"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,fontSize:13,color:"#F5A623"}}>{r.unitShare}%</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"#6E7681",fontFamily:"DM Mono",fontSize:11}}>{r.avgLoan?money(r.avgLoan):"—"}</td>
                       <td style={{padding:"10px 12px",textAlign:"center",color:"#4A90D9",fontFamily:"DM Mono"}}>{r.active||"—"}</td>
                     </tr>
                   ))}
@@ -2661,9 +2575,9 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
             </div>
 
             <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
-              <div style={{background:"#0D1117",padding:"9px 14px",fontSize:"var(--fs-2)",color:"#BD65E8",
+              <div style={{background:"#0D1117",padding:"9px 14px",fontSize:10,color:"#BD65E8",
                 letterSpacing:"1px",borderBottom:"1px solid #30363D"}}>{TX("byOriginator")}</div>
-              <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
                 <thead><tr style={{borderBottom:"1px solid #21262D"}}>
                   {th("LO","left")}{th(TX("hClosed"))}{th(TX("hVolume"))}{th(TX("hShare"))}
                   {th(TX("hAvg"))}{th(TX("hActive"))}
@@ -2671,15 +2585,15 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 <tbody>
                   {byLo.map((r,i)=>(
                     <tr key={r.key} style={{borderBottom:"1px solid #21262D",background:i%2?"#161B22":"#0D1117"}}>
-                      <td style={{padding:"10px 12px",color:r.funded||r.active?"var(--t1)":"var(--t2)"}}>
+                      <td style={{padding:"10px 12px",color:r.funded||r.active?"#E6EDF3":"#6E7681"}}>
                         {r.key}
-                        {!r.funded&&!r.active&&<span style={{color:"var(--t3)",fontSize:"var(--fs-2)"}}>{"  "}{TX("noProduction")}</span>}
+                        {!r.funded&&!r.active&&<span style={{color:"#484F58",fontSize:9.5}}>{"  "}{TX("noProduction")}</span>}
                       </td>
                       <td style={{padding:"10px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>{r.funded||"—"}</td>
-                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono"}}>{r.fundedVolume?money(r.fundedVolume):"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"#8B949E",fontFamily:"DM Mono"}}>{r.fundedVolume?money(r.fundedVolume):"—"}</td>
                       <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,
-                        fontSize:"var(--fs-5)",color:r.unitShare?"#F5A623":"var(--t3)"}}>{r.unitShare}%</td>
-                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono",fontSize:"var(--fs-3)"}}>{r.avgLoan?money(r.avgLoan):"—"}</td>
+                        fontSize:13,color:r.unitShare?"#F5A623":"#484F58"}}>{r.unitShare}%</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"#6E7681",fontFamily:"DM Mono",fontSize:11}}>{r.avgLoan?money(r.avgLoan):"—"}</td>
                       <td style={{padding:"10px 12px",textAlign:"center",color:"#4A90D9",fontFamily:"DM Mono"}}>{r.active||"—"}</td>
                     </tr>
                   ))}
@@ -2694,36 +2608,36 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
       {prodTab==="scorecard"&&(()=>{
         const sc=lenderConcentration(lenderScorecard(files,{cutover:BARRETT_CUTOVER}));
         const vista=isAssistant?"spec":scView;
-        const TONE={good:"#7EC8A4",warn:"#F5A623",bad:"#E85D75",neutral:"var(--t2)"};
+        const TONE={good:"#7EC8A4",warn:"#F5A623",bad:"#E85D75",neutral:"#8B949E"};
         return (
           <div style={{display:"flex",flexDirection:"column",gap:14}}>
             <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:8,padding:"12px 16px",
-              fontSize:"var(--fs-3)",color:"var(--t2)",lineHeight:1.6}}>
+              fontSize:11.5,color:"#8B949E",lineHeight:1.6}}>
               {vista==="lender"?TX("scorecardLead"):vista==="product"?TX("productStrength"):TX("specLead")}
-              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:6}}>{TX("autoDerived")}</div>
+              <div style={{fontSize:10,color:"#484F58",marginTop:6}}>{TX("autoDerived")}</div>
             </div>
 
             <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
               {(isAssistant?["spec"]:["lender","product","spec"]).map(v=>(
                 <button key={v} className="hov" onClick={()=>setScView(v)}
-                  style={{background:scView===v?"#F5A623":"#21262D",color:scView===v?"#0D1117":"var(--t2)",
-                    border:"none",borderRadius:6,padding:"6px 14px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",
+                  style={{background:scView===v?"#F5A623":"#21262D",color:scView===v?"#0D1117":"#8B949E",
+                    border:"none",borderRadius:6,padding:"6px 14px",fontSize:11,fontFamily:"DM Mono",
                     fontWeight:500,cursor:"pointer"}}>
                   {v==="lender"?TX("byLender"):v==="product"?TX("byProduct"):TX("bySpecialty")}
                 </button>
               ))}
               {vista==="spec"&&specialtyCatalog().map(c=>(
                 <button key={c.category} className="hov" onClick={()=>{setScCat(c.category);setScSpec(null);}}
-                  style={{background:scCat===c.category?"#4A90D9":"#21262D",color:scCat===c.category?"#0D1117":"var(--t2)",
-                    border:"none",borderRadius:6,padding:"5px 11px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",cursor:"pointer"}}>
+                  style={{background:scCat===c.category?"#4A90D9":"#21262D",color:scCat===c.category?"#0D1117":"#8B949E",
+                    border:"none",borderRadius:6,padding:"5px 11px",fontSize:10.5,fontFamily:"DM Mono",cursor:"pointer"}}>
                   {P(c.label)} · {c.lenders}
                 </button>
               ))}
               {vista==="product"&&productsWorked(files,{cutover:BARRETT_CUTOVER}).map(pw=>(
                 <button key={pw.product} className="hov" onClick={()=>setScProduct(pw.product)}
                   style={{background:(scProduct||productsWorked(files,{cutover:BARRETT_CUTOVER})[0]?.product)===pw.product?"#4A90D9":"#21262D",
-                    color:(scProduct||productsWorked(files,{cutover:BARRETT_CUTOVER})[0]?.product)===pw.product?"#0D1117":"var(--t2)",
-                    border:"none",borderRadius:6,padding:"5px 11px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",cursor:"pointer"}}>
+                    color:(scProduct||productsWorked(files,{cutover:BARRETT_CUTOVER})[0]?.product)===pw.product?"#0D1117":"#8B949E",
+                    border:"none",borderRadius:6,padding:"5px 11px",fontSize:10.5,fontFamily:"DM Mono",cursor:"pointer"}}>
                   {P(categoryLabel(pw.product))} · {pw.files}
                 </button>
               ))}
@@ -2731,19 +2645,19 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
 
             {vista==="lender"&&(sc.length===0?(
               <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,
-                padding:"26px 16px",textAlign:"center",color:"var(--t3)",fontSize:"var(--fs-4)"}}>
+                padding:"26px 16px",textAlign:"center",color:"#484F58",fontSize:12}}>
                 {TX("scNoData")}
               </div>
             ):(
               <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
-                <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
                   <thead>
                     <tr style={{background:"#0D1117",borderBottom:"1px solid #30363D"}}>
                       {[TX("scHeadLender"),TX("scHeadTouched"),TX("scHeadFunded"),TX("scHeadPull"),
                         TX("scHeadShare"),TX("scHeadExits"),TX("scHeadFault"),TX("scHeadDays"),TX("scHeadBps"),TX("scHeadVerdict")]
                         .map((h,i)=>(
                         <th key={i} style={{padding:"9px 12px",textAlign:i===0||i===9?"left":"center",
-                          fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
+                          fontSize:9.5,color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -2753,30 +2667,30 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                       return (
                         <tr key={r.id} style={{borderBottom:"1px solid #21262D",
                           background:i%2===0?"#0D1117":"#161B22"}}>
-                          <td style={{padding:"10px 12px",color:"var(--t1)"}}>
+                          <td style={{padding:"10px 12px",color:"#E6EDF3"}}>
                             {r.name}
                             {r.compLost>0&&(
-                              <div style={{fontSize:"var(--fs-1)",color:"#E85D75"}}>
+                              <div style={{fontSize:9,color:"#E85D75"}}>
                                 −${r.compLost.toLocaleString()} {TX("scCompLost")}
                               </div>
                             )}
                           </td>
-                          <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono"}}>{r.touched}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:"#8B949E",fontFamily:"DM Mono"}}>{r.touched}</td>
                           <td style={{padding:"10px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>{r.funded}</td>
                           <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,
-                            fontSize:"var(--fs-6)",color:r.pullThrough>=80?"#7EC8A4":r.pullThrough>=50?"#F5A623":"#E85D75"}}>
+                            fontSize:14,color:r.pullThrough>=80?"#7EC8A4":r.pullThrough>=50?"#F5A623":"#E85D75"}}>
                             {r.pullThrough!==null?r.pullThrough+"%":"—"}
                           </td>
                           <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"DM Mono",
-                            color:r.sharePct>=40?"#F5A623":"var(--t2)"}}>{r.sharePct?r.sharePct+"%":"—"}</td>
-                          <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono"}}>{r.exits||"—"}</td>
+                            color:r.sharePct>=40?"#F5A623":"#8B949E"}}>{r.sharePct?r.sharePct+"%":"—"}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:"#8B949E",fontFamily:"DM Mono"}}>{r.exits||"—"}</td>
                           <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"DM Mono",
-                            color:r.exitsLender>0?"#E85D75":"var(--t3)"}}>
+                            color:r.exitsLender>0?"#E85D75":"#484F58"}}>
                             {r.exitsLender||"—"}{r.exitsLender>0&&r.faultRate!==null?` · ${r.faultRate}%`:""}
                           </td>
-                          <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono"}}>{r.avgDaysToClose??"—"}</td>
-                          <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono"}}>{r.avgBps??"—"}</td>
-                          <td style={{padding:"10px 12px",color:c,fontSize:"var(--fs-3)"}}>{P(v)}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:"#8B949E",fontFamily:"DM Mono"}}>{r.avgDaysToClose??"—"}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:"#8B949E",fontFamily:"DM Mono"}}>{r.avgBps??"—"}</td>
+                          <td style={{padding:"10px 12px",color:c,fontSize:11}}>{P(v)}</td>
                         </tr>
                       );
                     })}
@@ -2790,51 +2704,51 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               const prod=scProduct||worked[0]?.product;
               if(!prod) return (
                 <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,
-                  padding:"26px 16px",textAlign:"center",color:"var(--t3)",fontSize:"var(--fs-4)"}}>{TX("noProductData")}</div>
+                  padding:"26px 16px",textAlign:"center",color:"#484F58",fontSize:12}}>{TX("noProductData")}</div>
               );
               const list=productScorecard(files,prod,{cutover:BARRETT_CUTOVER});
               const tried=list.filter(x=>x.tried), untried=list.filter(x=>!x.tried).slice(0,12);
               const prodRow=(r,proven)=>(
                 <div key={r.lenderId} style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:10,
-                  padding:"9px 14px",borderBottom:"1px solid #21262D",fontSize:"var(--fs-3)"}}>
-                  <span style={{color:proven?"var(--t1)":"var(--t2)",flex:1}}>{r.lenderName}</span>
+                  padding:"9px 14px",borderBottom:"1px solid #21262D",fontSize:11.5}}>
+                  <span style={{color:proven?"#E6EDF3":"#6E7681",flex:1}}>{r.lenderName}</span>
                   {proven?(
                     <>
-                      <span style={{color:"var(--t2)",fontFamily:"DM Mono",fontSize:"var(--fs-3)"}}>
+                      <span style={{color:"#8B949E",fontFamily:"DM Mono",fontSize:10.5}}>
                         {TX("closedOf",{a:r.funded,b:r.touched})}
                       </span>
-                      <span style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-5)",minWidth:48,textAlign:"right",
+                      <span style={{fontFamily:"Syne",fontWeight:800,fontSize:13,minWidth:48,textAlign:"right",
                         color:r.pullThrough>=80?"#7EC8A4":r.pullThrough>=50?"#F5A623":"#E85D75"}}>
                         {r.pullThrough}%
                       </span>
-                      <span style={{color:r.exitsLender>0?"#E85D75":"var(--t3)",fontFamily:"DM Mono",
-                        fontSize:"var(--fs-2)",minWidth:90,textAlign:"right"}}>
+                      <span style={{color:r.exitsLender>0?"#E85D75":"#484F58",fontFamily:"DM Mono",
+                        fontSize:10,minWidth:90,textAlign:"right"}}>
                         {r.exitsLender>0?TX("ownCall",{n:r.exitsLender}):""}
                       </span>
                     </>
                   ):null}
-                  <span style={{color:"var(--t3)",fontFamily:"DM Mono",fontSize:"var(--fs-3)",minWidth:56,textAlign:"right"}}>
+                  <span style={{color:"#484F58",fontFamily:"DM Mono",fontSize:10.5,minWidth:56,textAlign:"right"}}>
                     {r.avgBps?r.avgBps+" bps":"—"}
                   </span>
                 </div>
               );
               return (
                 <div style={{display:"flex",flexDirection:"column",gap:12}}>
-                  <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#F5A623"}}>
+                  <div style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#F5A623"}}>
                     {TX("productQ",{p:P(categoryLabel(prod))})}
                   </div>
                   <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
-                    <div style={{background:"#0D1117",padding:"8px 14px",fontSize:"var(--fs-2)",color:"#7EC8A4",
+                    <div style={{background:"#0D1117",padding:"8px 14px",fontSize:9.5,color:"#7EC8A4",
                       letterSpacing:"1px",borderBottom:"1px solid #30363D"}}>{TX("proven")}</div>
                     {tried.length===0
-                      ? <div style={{padding:"16px",color:"var(--t3)",fontSize:"var(--fs-3)"}}>—</div>
+                      ? <div style={{padding:"16px",color:"#484F58",fontSize:11.5}}>—</div>
                       : tried.map(r=>prodRow(r,true))}
                   </div>
                   <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
-                    <div style={{background:"#0D1117",padding:"8px 14px",fontSize:"var(--fs-2)",color:"var(--t3)",
+                    <div style={{background:"#0D1117",padding:"8px 14px",fontSize:9.5,color:"#484F58",
                       letterSpacing:"1px",borderBottom:"1px solid #21262D"}}>{TX("untried")}</div>
                     {untried.map(r=>prodRow(r,false))}
-                    <div style={{padding:"9px 14px",fontSize:"var(--fs-2)",color:"var(--t3)",lineHeight:1.55}}>
+                    <div style={{padding:"9px 14px",fontSize:9.5,color:"#484F58",lineHeight:1.55}}>
                       {TX("offersNotProof")}
                     </div>
                   </div>
@@ -2860,19 +2774,19 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 const set=v=>setDpaDraft({...d,[k]:v});
                 return (
                   <div key={k} style={{minWidth:w||96}}>
-                    <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{label}</div>
+                    <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>{label}</div>
                     {opts?(
                       <select value={d[k]??""} onChange={e=>set(e.target.value||null)}
-                        style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,color:"var(--t1)",
-                          padding:"5px 7px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",width:"100%"}}>
+                        style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,color:"#E6EDF3",
+                          padding:"5px 7px",fontSize:11,fontFamily:"DM Mono",width:"100%"}}>
                         <option value="">—</option>
                         {opts.map(o=><option key={o.v} value={o.v}>{o.l}</option>)}
                       </select>
                     ):(
                       <input value={d[k]??""} inputMode={type==="num"?"decimal":undefined}
                         onChange={e=>set(e.target.value)}
-                        style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,color:"var(--t1)",
-                          padding:"5px 7px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",width:"100%"}}/>
+                        style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,color:"#E6EDF3",
+                          padding:"5px 7px",fontSize:11,fontFamily:"DM Mono",width:"100%"}}/>
                     )}
                   </div>
                 );
@@ -2884,33 +2798,33 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 const open=dpaOpen===key;
                 return (
                   <div key={key} style={{borderBottom:"1px solid #21262D"}}>
-                    <div style={{display:"flex",alignItems:"baseline",gap:10,padding:"9px 14px",fontSize:"var(--fs-3)"}}>
-                      <span style={{flex:1,color:l.tried?"var(--t1)":"var(--t2)"}}>
+                    <div style={{display:"flex",alignItems:"baseline",gap:10,padding:"9px 14px",fontSize:11.5}}>
+                      <span style={{flex:1,color:l.tried?"#E6EDF3":"#8B949E"}}>
                         {l.name}
                         {l.siblings.length>0&&(
-                          <span style={{color:"var(--t3)",fontSize:"var(--fs-2)"}}>
+                          <span style={{color:"#484F58",fontSize:9.5}}>
                             {"  "}{TX("alsoDoes")} {l.siblings.slice(0,3).map(x=>P(specialtyLabel(x))).join(", ")}
                           </span>
                         )}
-                        {sum&&<div style={{fontSize:"var(--fs-2)",color:"#7EC8A4",marginTop:2}}>
+                        {sum&&<div style={{fontSize:10,color:"#7EC8A4",marginTop:2}}>
                           {sum}
-                          {det?.updatedBy&&<span style={{color:"var(--t3)"}}>
+                          {det?.updatedBy&&<span style={{color:"#484F58"}}>
                             {"  "}{TX("capturedBy",{who:String(det.updatedBy).split(" ")[0],d:det.updatedAt})}
                           </span>}
                         </div>}
                       </span>
                       {l.tried&&!isAssistant&&(
                         <>
-                          <span style={{color:"var(--t2)",fontFamily:"DM Mono",fontSize:"var(--fs-3)"}}>
+                          <span style={{color:"#8B949E",fontFamily:"DM Mono",fontSize:10.5}}>
                             {TX("closedOf",{a:l.funded,b:l.touched})}
                           </span>
-                          <span style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-5)",minWidth:44,textAlign:"right",
+                          <span style={{fontFamily:"Syne",fontWeight:800,fontSize:13,minWidth:44,textAlign:"right",
                             color:l.pullThrough>=80?"#7EC8A4":l.pullThrough>=50?"#F5A623":"#E85D75"}}>
                             {l.pullThrough}%
                           </span>
                         </>
                       )}
-                      <span style={{color:"var(--t3)",fontFamily:"DM Mono",fontSize:"var(--fs-3)",minWidth:54,textAlign:"right"}}>
+                      <span style={{color:"#484F58",fontFamily:"DM Mono",fontSize:10.5,minWidth:54,textAlign:"right"}}>
                         {l.bps?l.bps+" bps":"—"}
                       </span>
                       {(
@@ -2921,7 +2835,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                           }}
                           style={{background:sum?"#21262D":"rgba(126,200,164,.12)",
                             border:`1px solid ${sum?"#7EC8A4":"#7EC8A488"}`,
-                            borderRadius:5,color:"#7EC8A4",fontSize:"var(--fs-2)",padding:"4px 10px",
+                            borderRadius:5,color:"#7EC8A4",fontSize:9.5,padding:"4px 10px",
                             cursor:"pointer",fontFamily:"DM Mono",whiteSpace:"nowrap"}}>
                           {open?"✕":(sum?TX("dpaEdit"):TX("dpaEmpty"))}
                         </button>
@@ -2929,7 +2843,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                     </div>
                     {open&&(
                       <div style={{padding:"11px 14px 14px",background:"#0D1117",borderTop:"1px solid #21262D"}}>
-                        <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:8}}>
+                        <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:8}}>
                           {TX("specDetailTitle")}
                         </div>
                         <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:9}}>
@@ -2949,15 +2863,15 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                         </div>
                         {Array.isArray(det?.notes)&&det.notes.length>0&&(
                           <div style={{marginBottom:9}}>
-                            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>
+                            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>
                               {TX("observations")}
                             </div>
                             {det.notes.slice().reverse().map((n,ni)=>(
                               <div key={ni} style={{borderLeft:"2px solid #21262D",paddingLeft:9,marginBottom:6}}>
-                                <div style={{fontSize:"var(--fs-1)",color:"var(--t3)"}}>
+                                <div style={{fontSize:9,color:"#484F58"}}>
                                   {n.at}{n.by?" · "+String(n.by).split(" ")[0]:""}
                                 </div>
-                                <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",lineHeight:1.5}}>{n.text}</div>
+                                <div style={{fontSize:11,color:"#8B949E",lineHeight:1.5}}>{n.text}</div>
                               </div>
                             ))}
                           </div>
@@ -2965,8 +2879,8 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                         <input value={dpaDraft?.newNote??""}
                           onChange={e=>setDpaDraft({...dpaDraft,newNote:e.target.value})}
                           placeholder={TX("addObservation")}
-                          style={{background:"#161B22",border:"1px solid #30363D",borderRadius:5,color:"var(--t1)",
-                            padding:"6px 9px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",width:"100%",marginBottom:9}}/>
+                          style={{background:"#161B22",border:"1px solid #30363D",borderRadius:5,color:"#E6EDF3",
+                            padding:"6px 9px",fontSize:11,fontFamily:"DM Mono",width:"100%",marginBottom:9}}/>
                         <button className="hov" onClick={()=>{
                             const d={...dpaDraft};
                             d.fixesRate = d.fixesRate==="true"?true:d.fixesRate==="false"?false:null;
@@ -2975,10 +2889,10 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                             setDpaOpen(null); setDpaDraft(null);
                           }}
                           style={{background:"#7EC8A4",color:"#0D1117",border:"none",borderRadius:6,
-                            padding:"7px 16px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",fontWeight:500,cursor:"pointer"}}>
+                            padding:"7px 16px",fontSize:11,fontFamily:"DM Mono",fontWeight:500,cursor:"pointer"}}>
                           {TX("dpaSave")}
                         </button>
-                        <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:7,lineHeight:1.5}}>{TX("specDetailHint")}</div>
+                        <div style={{fontSize:9,color:"#484F58",marginTop:7,lineHeight:1.5}}>{TX("specDetailHint")}</div>
                       </div>
                     )}
                   </div>
@@ -2991,39 +2905,39 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                       <button key={sp.id} className="hov" onClick={()=>setScSpec(sp.id)}
                         style={{background:spec===sp.id?"#7EC8A4":"transparent",
                           border:`1px solid ${spec===sp.id?"#7EC8A4":sp.lenders<=12?"#F5A62366":"#30363D"}`,
-                          color:spec===sp.id?"#0D1117":sp.lenders<=12?"#F5A623":"var(--t2)",
-                          borderRadius:5,padding:"4px 9px",fontSize:"var(--fs-2)",fontFamily:"DM Mono",cursor:"pointer"}}>
+                          color:spec===sp.id?"#0D1117":sp.lenders<=12?"#F5A623":"#8B949E",
+                          borderRadius:5,padding:"4px 9px",fontSize:10,fontFamily:"DM Mono",cursor:"pointer"}}>
                         {P(specialtyLabel(sp.id))} <span style={{opacity:.6}}>{sp.lenders}</span>
                       </button>
                     ))}
                   </div>
                   <div style={{display:"flex",alignItems:"baseline",gap:10,flexWrap:"wrap"}}>
-                    <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#7EC8A4"}}>
+                    <span style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#7EC8A4"}}>
                       {TX("specQ",{p:P(specialtyLabel(spec))})}
                     </span>
-                    <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>{list.length} lenders</span>
-                    {cov&&<span style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginLeft:"auto"}}>
+                    <span style={{fontSize:11,color:"#484F58"}}>{list.length} lenders</span>
+                    {cov&&<span style={{fontSize:10,color:"#484F58",marginLeft:"auto"}}>
                       {TX("specCoverage",{f:cov.filled,t:cov.total})}</span>}
                   </div>
                   {(
                     <div style={{background:"rgba(126,200,164,.08)",border:"1px solid #7EC8A455",
-                      borderRadius:8,padding:"10px 14px",fontSize:"var(--fs-3)",color:"#7EC8A4",lineHeight:1.55}}>
+                      borderRadius:8,padding:"10px 14px",fontSize:11,color:"#7EC8A4",lineHeight:1.55}}>
                       {isDpa?TX("dpaFillHere"):TX("specFillHere")}
                     </div>
                   )}
                   {thin&&(
                     <div style={{background:"rgba(245,166,35,.08)",border:"1px solid #F5A62344",borderRadius:8,
-                      padding:"10px 14px",fontSize:"var(--fs-3)",color:"#F5A623",lineHeight:1.55}}>{TX("specThin")}</div>
+                      padding:"10px 14px",fontSize:11,color:"#F5A623",lineHeight:1.55}}>{TX("specThin")}</div>
                   )}
                   <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
-                    {tried.length>0&&<div style={{background:"#0D1117",padding:"8px 14px",fontSize:"var(--fs-2)",
+                    {tried.length>0&&<div style={{background:"#0D1117",padding:"8px 14px",fontSize:9.5,
                       color:"#7EC8A4",letterSpacing:"1px",borderBottom:"1px solid #30363D"}}>{TX("proven")}</div>}
                     {tried.map(l=>row(l))}
-                    {rest.length>0&&<div style={{background:"#0D1117",padding:"8px 14px",fontSize:"var(--fs-2)",
-                      color:"var(--t3)",letterSpacing:"1px",borderTop:tried.length?"1px solid #30363D":"none",
+                    {rest.length>0&&<div style={{background:"#0D1117",padding:"8px 14px",fontSize:9.5,
+                      color:"#484F58",letterSpacing:"1px",borderTop:tried.length?"1px solid #30363D":"none",
                       borderBottom:"1px solid #21262D"}}>{TX("untried")}</div>}
                     {rest.slice(0,30).map(l=>row(l))}
-                    {rest.length>30&&<div style={{padding:"9px 14px",fontSize:"var(--fs-2)",color:"var(--t3)"}}>
+                    {rest.length>30&&<div style={{padding:"9px 14px",fontSize:9.5,color:"#484F58"}}>
                       +{rest.length-30}</div>}
                   </div>
                 </div>
@@ -3031,7 +2945,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
             })()}
 
             <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:8,padding:"11px 16px",
-              fontSize:"var(--fs-2)",color:"var(--t3)",lineHeight:1.6}}>
+              fontSize:10,color:"#484F58",lineHeight:1.6}}>
               {TX("scFaultNote")}
             </div>
           </div>
@@ -3042,31 +2956,31 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
       {prodTab==="override"&&isAdmin&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
         <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center",
           background:"#161B22",border:"1px solid #30363D",borderRadius:8,padding:"10px 14px"}}>
-          <span style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px"}}>{TX("year")}</span>
+          <span style={{fontSize:10,color:"#484F58",letterSpacing:"1px"}}>{TX("year")}</span>
           <select value={compYear} onChange={e=>setCompYear(Number(e.target.value))}
-            style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,color:"var(--t1)",
-              padding:"5px 8px",fontSize:"var(--fs-3)",fontFamily:"DM Mono"}}>
+            style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,color:"#E6EDF3",
+              padding:"5px 8px",fontSize:11,fontFamily:"DM Mono"}}>
             {[1,2,3].map(y=><option key={y} value={y}>Año {y} · Paulo {(teamLeadShare(y)*100).toFixed(0)}%</option>)}
           </select>
-          <span style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginLeft:8}}>{TX("filesPerMo")}</span>
+          <span style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginLeft:8}}>{TX("filesPerMo")}</span>
           <input type="number" value={filesMo} onChange={e=>setFilesMo(Math.max(1,Number(e.target.value)||1))}
-            style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,color:"var(--t1)",
-              padding:"5px 8px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",width:58}}/>
-          <span style={{fontSize:"var(--fs-2)",color:"var(--t2)"}}>
+            style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,color:"#E6EDF3",
+              padding:"5px 8px",fontSize:11,fontFamily:"DM Mono",width:58}}/>
+          <span style={{fontSize:10,color:"#6E7681"}}>
             {TX("costPerFile")} ${Math.round(branchCostPerFile(filesMo)).toLocaleString()} · {TX("seniorCap")} {(ladderCeiling(filesMo,9174,compYear)*100).toFixed(1)}% · {TX("since")} {BARRETT_CUTOVER}
           </span>
         </div>
 
         {justClaimed&&(
           <div style={{background:"rgba(74,144,217,.1)",border:"1px solid #4A90D9",borderRadius:8,
-            padding:"9px 14px",fontSize:"var(--fs-3)",color:"#4A90D9"}}>
+            padding:"9px 14px",fontSize:11.5,color:"#4A90D9"}}>
             Reclamado para el corte {payrollPeriodLabel(currentPayrollPeriod(),CURRENT_LANG)} — {justClaimed}
           </div>
         )}
 
         {losWithoutCompRule(files,COMP_ROSTER).length>0&&(
           <div style={{background:"rgba(232,93,117,.08)",border:"1px solid #E85D7555",borderRadius:8,
-            padding:"10px 14px",fontSize:"var(--fs-3)",color:"#E85D75",lineHeight:1.5}}>
+            padding:"10px 14px",fontSize:11,color:"#E85D75",lineHeight:1.5}}>
             Sin regla de compensación: {losWithoutCompRule(files,COMP_ROSTER).join(", ")}.
             Sus archivos se reparten por volumen derivado, que puede no ser su acuerdo real.
           </div>
@@ -3077,14 +2991,14 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
             {label:TX("currentCut"),value:payrollPeriodLabel(currentPayrollPeriod(),CURRENT_LANG),color:"#4A90D9",sub:TX("barrettCloses"),small:true},
             {label:TX("unclaimed"),value:`${payroll.count}`,color:"#F5A623",sub:TX("fundedFiles")},
             {label:TX("yourShare"),value:`$${payroll.toBM.toLocaleString()}`,color:"#F5A623",sub:TX("yourSplitPlusBranch")},
-            {label:TX("blocked"),value:String(payroll.blockedCount),color:payroll.blockedCount?"#E85D75":"var(--t3)",
+            {label:TX("blocked"),value:String(payroll.blockedCount),color:payroll.blockedCount?"#E85D75":"#484F58",
               sub:`$${payroll.blockedDollars.toLocaleString()}`},
-            {label:TX("fromOldCuts"),value:`$${payroll.staleDollars.toLocaleString()}`,color:payroll.staleCount?"#E85D75":"var(--t3)",sub:TX("carriedN",{n:payroll.staleCount})},
+            {label:TX("fromOldCuts"),value:`$${payroll.staleDollars.toLocaleString()}`,color:payroll.staleCount?"#E85D75":"#484F58",sub:TX("carriedN",{n:payroll.staleCount})},
           ].map(s=>(
             <div key={s.label} style={{background:"#1a1000",border:`1px solid ${s.color}44`,borderTop:`3px solid ${s.color}`,borderRadius:8,padding:"12px"}}>
-              <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{s.label}</div>
-              <div style={{fontFamily:"Syne",fontWeight:800,fontSize:s.small?"var(--fs-5)":"var(--fs-9)",color:s.color}}>{s.value}</div>
-              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:2}}>{s.sub}</div>
+              <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:3}}>{s.label}</div>
+              <div style={{fontFamily:"Syne",fontWeight:800,fontSize:s.small?13:20,color:s.color}}>{s.value}</div>
+              <div style={{fontSize:10,color:"#484F58",marginTop:2}}>{s.sub}</div>
             </div>
           ))}
         </div>
@@ -3092,23 +3006,23 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
         <div style={{background:"#161B22",border:"1px solid #F5A62333",borderRadius:10,overflow:"hidden"}}>
           <div style={{background:"#1a1000",borderBottom:"2px solid #F5A623",padding:"10px 16px",
             display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#F5A623",letterSpacing:"1px"}}>{TX("nextRequest")}</span>
+            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#F5A623",letterSpacing:"1px"}}>{TX("nextRequest")}</span>
             <span style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
-              <span style={{fontSize:"var(--fs-2)",color:"var(--t2)"}}>{TX("claimOptional")}</span>
+              <span style={{fontSize:10,color:"#6E7681"}}>{TX("claimOptional")}</span>
               <button className="hov" disabled={picked.size===0} onClick={()=>setShowRequest(true)}
-                style={{background:picked.size?"#F5A623":"#21262D",color:picked.size?"#0D1117":"var(--t3)",
-                  border:"none",borderRadius:6,padding:"7px 14px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",
+                style={{background:picked.size?"#F5A623":"#21262D",color:picked.size?"#0D1117":"#484F58",
+                  border:"none",borderRadius:6,padding:"7px 14px",fontFamily:"DM Mono",fontSize:11,
                   fontWeight:500,cursor:picked.size?"pointer":"not-allowed"}}>
                 {TX("generateRequest")} · {picked.size}
               </button>
             </span>
           </div>
           {payroll.rows.length===0?(
-            <div style={{padding:"22px 16px",textAlign:"center",color:"var(--t3)",fontSize:"var(--fs-4)"}}>
+            <div style={{padding:"22px 16px",textAlign:"center",color:"#484F58",fontSize:12}}>
               No hay archivos fondeados sin reclamar.
             </div>
           ):(
-            <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
               <thead>
                 <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
                   <th style={{padding:"8px 6px 8px 12px",width:24}}>
@@ -3118,7 +3032,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                       style={{accentColor:"#F5A623",cursor:"pointer"}}/>
                   </th>
                   {[TX("client"),TX("fundedOn"),TX("cut"),"LO",TX("split"),"NET",TX("yourShare"),""].map((h,i)=>(
-                    <th key={i} style={{padding:"8px 12px",textAlign:i<4?"left":"center",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
+                    <th key={i} style={{padding:"8px 12px",textAlign:i<4?"left":"center",fontSize:10,color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -3130,39 +3044,39 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                         onChange={()=>{const n=new Set(picked); n.has(r.file.id)?n.delete(r.file.id):n.add(r.file.id); setPicked(n);}}
                         style={{accentColor:"#F5A623",cursor:r.ready?"pointer":"not-allowed",opacity:r.ready?1:.3}}/>
                     </td>
-                    <td style={{padding:"9px 12px",color:"var(--t1)"}}>
+                    <td style={{padding:"9px 12px",color:"#E6EDF3"}}>
                       {r.file.borrower}
                       {!r.ready&&(
-                        <div style={{fontSize:"var(--fs-1)",color:"#E85D75",marginTop:2}}>
+                        <div style={{fontSize:9,color:"#E85D75",marginTop:2}}>
                           {TX("blocked")} · {TX("blockedWhy")} {r.blockers.map(x=>P(x)).join(" · ")}
                         </div>
                       )}
                       {r.kind==="referral"&&(
-                        <div style={{fontSize:"var(--fs-1)",color:"#A78BFA"}}>
+                        <div style={{fontSize:9,color:"#A78BFA"}}>
                           {TX("referralFeeOf",{b:r.referral.bps})}{r.referral.banker?` · ${r.referral.banker}`:""}
                           {r.branchPct>0? + " · " + TX("branchPctOf",{n:(r.branchPct*100).toFixed(0)}):" · "+TX("ofTheLo")}
                         </div>
                       )}
                     </td>
-                    <td style={{padding:"9px 12px",color:"var(--t2)",fontFamily:"DM Mono",fontSize:"var(--fs-3)"}}>
+                    <td style={{padding:"9px 12px",color:"#8B949E",fontFamily:"DM Mono",fontSize:11}}>
                       {r.kind==="referral"?r.referral.date:fundedDate(r.file)}
                     </td>
-                    <td style={{padding:"9px 12px",fontSize:"var(--fs-2)",color:r.stale?"#E85D75":"var(--t2)"}}>
+                    <td style={{padding:"9px 12px",fontSize:10,color:r.stale?"#E85D75":"#6E7681"}}>
                       {payrollPeriodLabel(r.period)}{r.stale?" · "+TX("carried"):""}
                     </td>
-                    <td style={{padding:"9px 12px",color:"var(--t2)",fontSize:"var(--fs-3)"}}>
+                    <td style={{padding:"9px 12px",color:"#8B949E",fontSize:11}}>
                       {r.file.lo||"—"}
-                      <span style={{color:r.rosterMissing?"#E85D75":"var(--t3)"}}>
+                      <span style={{color:r.rosterMissing?"#E85D75":"#484F58"}}>
                         {" · "}{r.kind==="referral"?TX("referredShort"):r.rosterMissing?TX("noCompRule"):P(r.split.stageMeta)}
                       </span>
                     </td>
-                    <td style={{padding:"9px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono",fontSize:"var(--fs-3)"}}>
+                    <td style={{padding:"9px 12px",textAlign:"center",color:"#8B949E",fontFamily:"DM Mono",fontSize:11}}>
                       {r.kind==="referral"?"—":`${(r.split.shares.lo*100).toFixed(1)}%${r.split.floorApplied?" ⚑":""}`}
                     </td>
                     <td style={{padding:"9px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>${r.split.net.toLocaleString()}</td>
                     <td style={{padding:"9px 12px",textAlign:"center"}}>
-                      <span style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-6)",color:"#F5A623"}}>${r.split.toBM.toLocaleString()}</span>
-                      {r.split.isBM&&<div style={{fontSize:"var(--fs-1)",color:"var(--t3)"}}>{TX("yourLoSplit")}</div>}
+                      <span style={{fontFamily:"Syne",fontWeight:800,fontSize:14,color:"#F5A623"}}>${r.split.toBM.toLocaleString()}</span>
+                      {r.split.isBM&&<div style={{fontSize:9,color:"#484F58"}}>{TX("yourLoSplit")}</div>}
                     </td>
                     <td style={{padding:"9px 12px",textAlign:"center"}}>
                       <button className="hov" onClick={()=>{
@@ -3171,7 +3085,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                           setTimeout(()=>setJustClaimed(null),3500);
                         }}
                         style={{background:"#21262D",border:"1px solid #4A90D9",borderRadius:4,color:"#4A90D9",
-                          fontSize:"var(--fs-2)",padding:"4px 9px",cursor:"pointer",fontFamily:"DM Mono"}}>{TX("claim")}</button>
+                          fontSize:9.5,padding:"4px 9px",cursor:"pointer",fontFamily:"DM Mono"}}>{TX("claim")}</button>
                     </td>
                   </tr>
                 ))}
@@ -3180,7 +3094,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 <tr style={{background:"#1a1000",borderTop:"2px solid #F5A623"}}>
                   <td colSpan={6} style={{padding:"10px 12px",fontFamily:"Syne",fontWeight:700,color:"#F5A623"}}>{TX("totalFiles",{n:payroll.count})}</td>
                   <td style={{padding:"10px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>${payroll.net.toLocaleString()}</td>
-                  <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-7)",color:"#F5A623"}}>${payroll.toBM.toLocaleString()}</td>
+                  <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,fontSize:16,color:"#F5A623"}}>${payroll.toBM.toLocaleString()}</td>
                   <td/>
                 </tr>
               </tfoot>
@@ -3201,18 +3115,18 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 border:"1px solid #F5A62355",borderRadius:12,width:"100%",maxWidth:700,
                 maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column"}}>
                 <div style={{padding:"16px 22px 12px",borderBottom:"1px solid #21262D"}}>
-                  <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-7)",color:"#F5A623"}}>{TX("payrollRequest")}</div>
-                  <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:3}}>
+                  <div style={{fontFamily:"Syne",fontWeight:800,fontSize:16,color:"#F5A623"}}>{TX("payrollRequest")}</div>
+                  <div style={{fontSize:11,color:"#8B949E",marginTop:3}}>
                     {req.periodLabel} · {TX("filesTotal",{n:req.fileCount,d:req.total.toLocaleString()})}
                   </div>
                 </div>
                 <div style={{flex:1,overflow:"auto",padding:"14px 22px"}}>
-                  <pre style={{margin:0,fontFamily:"'IBM Plex Mono','DM Mono',monospace",fontSize:"var(--fs-3)",
-                    color:"var(--t1)",whiteSpace:"pre",lineHeight:1.65}}>{text}</pre>
+                  <pre style={{margin:0,fontFamily:"'DM Mono','Courier New',monospace",fontSize:11,
+                    color:"#E6EDF3",whiteSpace:"pre",lineHeight:1.65}}>{text}</pre>
                 </div>
                 {reqError&&(
                   <div style={{margin:"0 22px",background:"rgba(232,93,117,.1)",border:"1px solid #E85D75",
-                    borderRadius:6,padding:"9px 12px",fontSize:"var(--fs-3)",color:"#E85D75"}}>
+                    borderRadius:6,padding:"9px 12px",fontSize:11,color:"#E85D75"}}>
                     {TX("couldNotClose",{e:reqError})}
                   </div>
                 )}
@@ -3221,8 +3135,8 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                       try{ navigator.clipboard?.writeText(text); }catch(err){ setReqError(TX("errClipboard")); }
                       setCopied(true); setTimeout(()=>setCopied(false),2200);
                     }}
-                    style={{flex:1,background:"#21262D",color:copied?"#7EC8A4":"var(--t2)",borderRadius:7,
-                      padding:"10px 0",fontFamily:"DM Mono",fontSize:"var(--fs-3)",
+                    style={{flex:1,background:"#21262D",color:copied?"#7EC8A4":"#8B949E",borderRadius:7,
+                      padding:"10px 0",fontFamily:"DM Mono",fontSize:11.5,
                       border:`1px solid ${copied?"#7EC8A4":"#30363D"}`,cursor:"pointer"}}>
                     {copied?TX("copied"):TX("copyText")}
                   </button>
@@ -3267,14 +3181,14 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                       }
                     }}
                     style={{flex:2,background:"#F5A623",color:"#0D1117",borderRadius:7,padding:"10px 0",
-                      fontFamily:"DM Mono",fontSize:"var(--fs-3)",fontWeight:500,border:"none",cursor:"pointer"}}>
+                      fontFamily:"DM Mono",fontSize:11.5,fontWeight:500,border:"none",cursor:"pointer"}}>
                     {TX("alreadySent")}
                   </button>
                   <button className="hov" onClick={()=>setShowRequest(false)}
-                    style={{flex:1,background:"transparent",color:"var(--t2)",borderRadius:7,padding:"10px 0",
-                      fontFamily:"DM Mono",fontSize:"var(--fs-3)",border:"1px solid #30363D",cursor:"pointer"}}>CERRAR</button>
+                    style={{flex:1,background:"transparent",color:"#6E7681",borderRadius:7,padding:"10px 0",
+                      fontFamily:"DM Mono",fontSize:11.5,border:"1px solid #30363D",cursor:"pointer"}}>CERRAR</button>
                 </div>
-                <div style={{padding:"0 22px 14px",fontSize:"var(--fs-1)",color:"var(--t3)"}}>
+                <div style={{padding:"0 22px 14px",fontSize:9,color:"#484F58"}}>
                   {TX("sendYourself")}
                 </div>
               </div>
@@ -3287,64 +3201,64 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
             <div style={{background:"#0D1117",borderBottom:"1px solid #30363D",padding:"10px 16px",
               display:"flex",justifyContent:"space-between",alignItems:"baseline",flexWrap:"wrap",gap:8}}>
-              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--t2)",letterSpacing:"1px"}}>
+              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#8B949E",letterSpacing:"1px"}}>
                 REQUESTS ENVIADOS
               </span>
-              <span style={{fontSize:"var(--fs-2)",color:"var(--t3)"}}>
+              <span style={{fontSize:10,color:"#484F58"}}>
                 {TX("inTotal",{n:payrollLog.length,d:payrollLog.reduce((a,x)=>a+(x.total||0),0).toLocaleString()})}
               </span>
             </div>
             {[...payrollLog].reverse().map(entry=>(
               <div key={entry.id} style={{borderBottom:"1px solid #21262D",padding:"10px 16px"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8,flexWrap:"wrap"}}>
-                  <span style={{fontSize:"var(--fs-3)",color:"var(--t1)"}}>
+                  <span style={{fontSize:11.5,color:"#E6EDF3"}}>
                     {entry.periodLabel}
-                    <span style={{color:"var(--t3)"}}> · {TX("sentBy",{d:entry.sentAt,who:String(entry.by||"").split(" ")[0]})}</span>
+                    <span style={{color:"#484F58"}}> · {TX("sentBy",{d:entry.sentAt,who:String(entry.by||"").split(" ")[0]})}</span>
                   </span>
                   <span style={{display:"flex",gap:8,alignItems:"baseline"}}>
-                    <span style={{fontSize:"var(--fs-2)",color:"var(--t2)"}}>{TX("nFiles",{n:entry.fileCount})}</span>
-                    <span style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-5)",color:"#F5A623"}}>
+                    <span style={{fontSize:10,color:"#6E7681"}}>{TX("nFiles",{n:entry.fileCount})}</span>
+                    <span style={{fontFamily:"Syne",fontWeight:800,fontSize:13,color:"#F5A623"}}>
                       ${(entry.total||0).toLocaleString()}
                     </span>
                     {onDeletePayrollLog&&(
                       <button className="hov" onClick={()=>{
                           if(window.confirm(TX("deleteLogEntry"))) onDeletePayrollLog(entry.id);
                         }}
-                        style={{background:"transparent",border:"1px solid #30363D",borderRadius:4,color:"var(--t3)",
-                          fontSize:"var(--fs-1)",padding:"3px 7px",cursor:"pointer",fontFamily:"DM Mono"}}>✕</button>
+                        style={{background:"transparent",border:"1px solid #30363D",borderRadius:4,color:"#484F58",
+                          fontSize:9,padding:"3px 7px",cursor:"pointer",fontFamily:"DM Mono"}}>✕</button>
                     )}
                     <button className="hov" onClick={()=>setOpenLog(openLog===entry.id?null:entry.id)}
-                      style={{background:"#21262D",border:"1px solid #30363D",borderRadius:4,color:"var(--t2)",
-                        fontSize:"var(--fs-1)",padding:"3px 8px",cursor:"pointer",fontFamily:"DM Mono"}}>
+                      style={{background:"#21262D",border:"1px solid #30363D",borderRadius:4,color:"#8B949E",
+                        fontSize:9,padding:"3px 8px",cursor:"pointer",fontFamily:"DM Mono"}}>
                       {openLog===entry.id?TX("close"):TX("view")}
                     </button>
                   </span>
                 </div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:3}}>
+                <div style={{fontSize:9.5,color:"#484F58",marginTop:3}}>
                   {(entry.payees||[]).map(p=>`${String(p.name).split(" ")[0]} $${p.subtotal.toLocaleString()}`).join(" · ")}
                 </div>
                 {openLog===entry.id&&(
                   <div style={{marginTop:9}}>
                     <pre style={{margin:0,background:"#0D1117",border:"1px solid #21262D",borderRadius:6,
-                      padding:"11px 13px",fontFamily:"'IBM Plex Mono','DM Mono',monospace",fontSize:"var(--fs-3)",
-                      color:"var(--t2)",whiteSpace:"pre",overflowX:"auto",lineHeight:1.6}}>{entry.text}</pre>
+                      padding:"11px 13px",fontFamily:"'DM Mono','Courier New',monospace",fontSize:10.5,
+                      color:"#8B949E",whiteSpace:"pre",overflowX:"auto",lineHeight:1.6}}>{entry.text}</pre>
                     <button className="hov" onClick={()=>{navigator.clipboard?.writeText(entry.text);}}
                       style={{marginTop:6,background:"#21262D",border:"1px solid #30363D",borderRadius:5,
-                        color:"var(--t2)",fontSize:"var(--fs-2)",padding:"5px 12px",cursor:"pointer",fontFamily:"DM Mono"}}>
+                        color:"#8B949E",fontSize:10,padding:"5px 12px",cursor:"pointer",fontFamily:"DM Mono"}}>
                       COPIAR DE NUEVO
                     </button>
                   </div>
                 )}
               </div>
             ))}
-            <div style={{padding:"9px 16px",fontSize:"var(--fs-1)",color:"var(--t3)"}}>
+            <div style={{padding:"9px 16px",fontSize:9,color:"#484F58"}}>
               {TX("exactCopy")}
             </div>
           </div>
         )}
 
         <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,padding:"12px 16px"}}>
-          <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:8}}>
+          <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:8}}>
             {TX("netSplitYear",{y:compYear,n:filesMo})}
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:8}}>
@@ -3353,8 +3267,8 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 {year:compYear,filesPerMonth:filesMo,trainerAssigned:k==="newbie"||k==="intermediate"});
               return (
                 <div key={k} style={{background:"#0D1117",border:"1px solid #21262D",borderRadius:6,padding:"9px 11px"}}>
-                  <div style={{fontSize:"var(--fs-3)",color:"var(--t1)",fontWeight:500}}>{P(LO_STAGES[k])}</div>
-                  <div style={{fontSize:"var(--fs-2)",color:"var(--t2)",fontFamily:"DM Mono",marginTop:4,lineHeight:1.6}}>
+                  <div style={{fontSize:11,color:"#E6EDF3",fontWeight:500}}>{P(LO_STAGES[k])}</div>
+                  <div style={{fontSize:10,color:"#6E7681",fontFamily:"DM Mono",marginTop:4,lineHeight:1.6}}>
                     LO {(demo.shares.lo*100).toFixed(1)}%
                     {demo.shares.trainer>0?` · trainer ${(demo.shares.trainer*100).toFixed(1)}%`:""}
                     <br/>{demo.isBM
@@ -3370,7 +3284,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               );
             })}
           </div>
-          <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:8,lineHeight:1.6}}>
+          <div style={{fontSize:9,color:"#484F58",marginTop:8,lineHeight:1.6}}>
             El Newbie no sube con la escalera — sube al graduar a Intermediate con ${STAGE_THRESHOLDS.intermediate/1e6}M de volumen fondeado.
             Un piso contractual (⚑) nunca se suma a los aumentos de la escalera.
           </div>
@@ -3378,25 +3292,25 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
 
         <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
           <div style={{background:"#1a2a3a",borderBottom:"2px solid #4A90D9",padding:"10px 16px",display:"flex",alignItems:"center",gap:10}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#4A90D9",letterSpacing:"1px"}}>MY PERSONAL LO COMP — {profile.name.toUpperCase()}</span>
-            <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>your files only · {BPS_RATE} bps default</span>
+            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#4A90D9",letterSpacing:"1px"}}>MY PERSONAL LO COMP — {profile.name.toUpperCase()}</span>
+            <span style={{fontSize:11,color:"#484F58"}}>your files only · {BPS_RATE} bps default</span>
           </div>
-          <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
+          <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
             <thead>
               <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
                 {["BORROWER","PROGRAM","LOAN AMOUNT","CLOSED","BPS","GROSS COMP"].map((h,i)=>(
-                  <th key={i} style={{padding:"8px 14px",textAlign:"left",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
+                  <th key={i} style={{padding:"8px 14px",textAlign:"left",fontSize:10,color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {myClosedFiles.map((f,i)=>(
                 <tr key={f.id} style={{borderBottom:"1px solid #21262D",background:i%2===0?"#0D1117":"#161B22"}}>
-                  <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"var(--t1)",fontSize:"var(--fs-3)"}}>{f.borrower}</td>
-                  <td style={{padding:"10px 14px",color:"var(--t2)",fontSize:"var(--fs-3)"}}>{f.type}</td>
+                  <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"#E6EDF3",fontSize:11}}>{f.borrower}</td>
+                  <td style={{padding:"10px 14px",color:"#8B949E",fontSize:11}}>{f.type}</td>
                   <td style={{padding:"10px 14px",color:"#06D6A0",fontWeight:500}}>${f.loan.toLocaleString()}</td>
-                  <td style={{padding:"10px 14px",color:"var(--t3)"}}>{f.closedAt||f.closing}</td>
-                  <td style={{padding:"10px 14px",color:"var(--t2)",fontSize:"var(--fs-3)"}}>{fileCompBps(f,BPS_RATE)}</td>
+                  <td style={{padding:"10px 14px",color:"#484F58"}}>{f.closedAt||f.closing}</td>
+                  <td style={{padding:"10px 14px",color:"#8B949E",fontSize:11}}>{fileCompBps(f,BPS_RATE)}</td>
                   <td style={{padding:"10px 14px",color:"#4A90D9",fontWeight:500,fontFamily:"Syne"}}>${myComp(f).toLocaleString()}</td>
                 </tr>
               ))}
@@ -3405,13 +3319,13 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               <tfoot>
                 <tr style={{background:"#0a1a2a",borderTop:"2px solid #4A90D9"}}>
                   <td colSpan={4} style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"#4A90D9"}}>MY TOTAL PERSONAL COMP</td>
-                  <td style={{padding:"10px 14px",color:"var(--t3)",fontSize:"var(--fs-3)"}}>{BPS_RATE} bps avg</td>
-                  <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-7)",color:"#4A90D9"}}>${myTotalComp.toLocaleString()}</td>
+                  <td style={{padding:"10px 14px",color:"#484F58",fontSize:11}}>{BPS_RATE} bps avg</td>
+                  <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:800,fontSize:16,color:"#4A90D9"}}>${myTotalComp.toLocaleString()}</td>
                 </tr>
               </tfoot>
             )}
           </table>
-          {myClosedFiles.length===0&&<div style={{padding:24,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-4)"}}>No personal closed files yet.</div>}
+          {myClosedFiles.length===0&&<div style={{padding:24,textAlign:"center",color:"#30363D",fontSize:12}}>No personal closed files yet.</div>}
         </div>
       </div>}
 
@@ -3419,25 +3333,25 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
       {prodTab==="mycomp"&&isLO&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
         <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
           <div style={{background:"#1a2a3a",borderBottom:"2px solid #4A90D9",padding:"10px 16px",display:"flex",alignItems:"center",gap:10}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#4A90D9",letterSpacing:"1px"}}>MY PERSONAL COMP — {profile.name.toUpperCase()}</span>
-            <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>your closed files only · {BPS_RATE} bps default</span>
+            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#4A90D9",letterSpacing:"1px"}}>MY PERSONAL COMP — {profile.name.toUpperCase()}</span>
+            <span style={{fontSize:11,color:"#484F58"}}>your closed files only · {BPS_RATE} bps default</span>
           </div>
-          <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
+          <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
             <thead>
               <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
                 {["BORROWER","PROGRAM","LOAN AMOUNT","CLOSED","BPS","GROSS COMP"].map((h,i)=>(
-                  <th key={i} style={{padding:"8px 14px",textAlign:"left",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
+                  <th key={i} style={{padding:"8px 14px",textAlign:"left",fontSize:10,color:"#484F58",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {myClosedFiles.map((f,i)=>(
                 <tr key={f.id} style={{borderBottom:"1px solid #21262D",background:i%2===0?"#0D1117":"#161B22"}}>
-                  <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"var(--t1)",fontSize:"var(--fs-3)"}}>{f.borrower}</td>
-                  <td style={{padding:"10px 14px",color:"var(--t2)",fontSize:"var(--fs-3)"}}>{f.type}</td>
+                  <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"#E6EDF3",fontSize:11}}>{f.borrower}</td>
+                  <td style={{padding:"10px 14px",color:"#8B949E",fontSize:11}}>{f.type}</td>
                   <td style={{padding:"10px 14px",color:"#06D6A0",fontWeight:500}}>${f.loan.toLocaleString()}</td>
-                  <td style={{padding:"10px 14px",color:"var(--t3)"}}>{f.closedAt||f.closing}</td>
-                  <td style={{padding:"10px 14px",color:"var(--t2)",fontSize:"var(--fs-3)"}}>{fileCompBps(f,BPS_RATE)}</td>
+                  <td style={{padding:"10px 14px",color:"#484F58"}}>{f.closedAt||f.closing}</td>
+                  <td style={{padding:"10px 14px",color:"#8B949E",fontSize:11}}>{fileCompBps(f,BPS_RATE)}</td>
                   <td style={{padding:"10px 14px",color:"#4A90D9",fontWeight:500,fontFamily:"Syne"}}>${myComp(f).toLocaleString()}</td>
                 </tr>
               ))}
@@ -3446,13 +3360,13 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               <tfoot>
                 <tr style={{background:"#0a1a2a",borderTop:"2px solid #4A90D9"}}>
                   <td colSpan={4} style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"#4A90D9"}}>MY TOTAL COMP</td>
-                  <td style={{padding:"10px 14px",color:"var(--t3)",fontSize:"var(--fs-3)"}}>{BPS_RATE} bps avg</td>
-                  <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-7)",color:"#4A90D9"}}>${myTotalComp.toLocaleString()}</td>
+                  <td style={{padding:"10px 14px",color:"#484F58",fontSize:11}}>{BPS_RATE} bps avg</td>
+                  <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:800,fontSize:16,color:"#4A90D9"}}>${myTotalComp.toLocaleString()}</td>
                 </tr>
               </tfoot>
             )}
           </table>
-          {myClosedFiles.length===0&&<div style={{padding:24,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-4)"}}>No personal closed files yet.</div>}
+          {myClosedFiles.length===0&&<div style={{padding:24,textAlign:"center",color:"#30363D",fontSize:12}}>No personal closed files yet.</div>}
         </div>
       </div>}
 
@@ -3485,7 +3399,7 @@ const ACTION_VERB={"Appraisal Ordered":"order","Submitted to UW":"submit","Condi
 // Los niveles de contingencia hablan el mismo idioma que el resto: rojo
 // roto, dorado se avecina, verde hecho, gris estancado. Antes "done"
 // era gris y "normal" verde — al reves de lo que el ojo espera.
-const LEVEL_COLOR = { critical:"#E85D75", warn:"#F5A623", normal:"#4A90D9", done:"#7EC8A4", missing:"var(--t2)" };
+const LEVEL_COLOR = { critical:"#E85D75", warn:"#F5A623", normal:"#4A90D9", done:"#7EC8A4", missing:"#6E7681" };
 
 // ─── CARD STRIP (design A) ───
 // Two contract contingencies on one line, the delivery date and its legal
@@ -3505,16 +3419,16 @@ function ContingencyStrip({file}){
     const act=actionStage?derived[actionStage]:null;
     const late=act&&act.startBy<today();
     return (
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8,fontSize:"var(--fs-2)"}}>
-        <span style={{fontFamily:"DM Mono",color:done?"var(--t3)":c,whiteSpace:"nowrap"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8,fontSize:10}}>
+        <span style={{fontFamily:"DM Mono",color:done?"#484F58":c,whiteSpace:"nowrap"}}>
           <b style={{fontWeight:500,letterSpacing:".5px"}}>{s.short}</b>{" "}
-          <span style={{color:done?"#30363D":"var(--t2)"}}>{mon(s.date)}</span>
-          {done&&<span style={{marginLeft:4,fontSize:"var(--fs-1)"}}>
+          <span style={{color:done?"#30363D":"#8B949E"}}>{mon(s.date)}</span>
+          {done&&<span style={{marginLeft:4,fontSize:8.5}}>
             {s.outcome==="met"?"✓":s.outcome==="waived"?"⚑":s.outcome==="missed"?"✕":"—"}</span>}
         </span>
         {!done&&(
-          <span style={{fontFamily:"DM Mono",color:late?"#E85D75":"var(--t2)",textAlign:"right",whiteSpace:"nowrap"}}>
-            {act&&<span style={{color:late?"#E85D75":"var(--t2)"}}>
+          <span style={{fontFamily:"DM Mono",color:late?"#E85D75":"#6E7681",textAlign:"right",whiteSpace:"nowrap"}}>
+            {act&&<span style={{color:late?"#E85D75":"#8B949E"}}>
               {ACTION_VERB[actionStage]||"start"} by {mon(act.startBy)} · </span>}
             <span style={{color:c,fontWeight:500}}>
               {s.daysLeft<0?`${Math.abs(s.daysLeft)}d late`:`${s.daysLeft}d`}</span>
@@ -3529,7 +3443,7 @@ function ContingencyStrip({file}){
       {row(st.appraisal,"Appraisal Ordered")}
       {row(st.loan,"Submitted to UW")}
       {(coe||st.ctc?.date)&&(
-        <div style={{display:"flex",gap:10,fontSize:"var(--fs-2)",color:"var(--t3)",fontFamily:"DM Mono",flexWrap:"wrap",
+        <div style={{display:"flex",gap:10,fontSize:9.5,color:"#484F58",fontFamily:"DM Mono",flexWrap:"wrap",
           borderTop:"1px solid #161B22",paddingTop:5}}>
           {st.ctc?.date&&<span>CTC <span style={{color:LEVEL_COLOR[st.ctc.level]}}>{mon(st.ctc.date)}</span></span>}
           {coe&&<span>COE <span style={{color:LEVEL_COLOR[st.coe.level]}}>{mon(coe)}</span></span>}
@@ -3538,7 +3452,7 @@ function ContingencyStrip({file}){
         </div>
       )}
       {conflicts.length>0&&(
-        <div style={{fontSize:"var(--fs-2)",fontFamily:"DM Mono",color:"#E85D75"}}>
+        <div style={{fontSize:9.5,fontFamily:"DM Mono",color:"#E85D75"}}>
           ⚠ {conflicts.length} {(conflicts.length===1?TX("conflicts"):TX("conflictsPl")).toLowerCase()}
         </div>
       )}
@@ -3551,8 +3465,8 @@ function LenderChangeModal({file,profile,onClose,onConfirm}){
   const [toId,setToId]=useState(file.backupLenderId||"");
   const [reasonId,setReasonId]=useState("");
   const [notes,setNotes]=useState("");
-  const fs={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"var(--t1)",
-    padding:"8px 10px",fontSize:"var(--fs-4)",fontFamily:"'IBM Plex Sans',system-ui,-apple-system,sans-serif",width:"100%"};
+  const fs={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",
+    padding:"8px 10px",fontSize:12,fontFamily:"'DM Mono','Courier New',monospace",width:"100%"};
   const options=lendersFor(file,file.channel||"broker").filter(l=>l.id!==file.lenderId);
   const cost=toId?changeCost(file,toId):null;
   const from=lenderById(file.lenderId);
@@ -3565,13 +3479,13 @@ function LenderChangeModal({file,profile,onClose,onConfirm}){
       <div className="fi" onClick={e=>e.stopPropagation()} style={{background:"#161B22",border:"1px solid #30363D",
         borderRadius:12,width:"100%",maxWidth:460,maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column"}}>
         <div style={{padding:"18px 22px 14px",borderBottom:"1px solid #21262D"}}>
-          <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-7)",color:"var(--t1)"}}>{TX("changeLenderTitle")}</div>
-          <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:3}}>{file.borrower} · {from?from.name:"sin lender"}</div>
+          <div style={{fontFamily:"Syne",fontWeight:800,fontSize:16,color:"#E6EDF3"}}>{TX("changeLenderTitle")}</div>
+          <div style={{fontSize:11,color:"#8B949E",marginTop:3}}>{file.borrower} · {from?from.name:"sin lender"}</div>
         </div>
 
         <div style={{flex:1,overflowY:"auto",padding:"14px 22px",display:"flex",flexDirection:"column",gap:12}}>
           <div>
-            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{TX("newLender")}</div>
+            <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{TX("newLender")}</div>
             <select value={toId} onChange={e=>setToId(e.target.value)} style={fs}>
               <option value="">— escoge —</option>
               {options.map(o=><option key={o.id} value={o.id}>
@@ -3583,17 +3497,17 @@ function LenderChangeModal({file,profile,onClose,onConfirm}){
           {cost&&(
             <div style={{background:"#0D1117",border:`1px solid ${cost.tooLate?"#E85D75":"#21262D"}`,
               borderRadius:6,padding:"10px 11px",display:"flex",flexDirection:"column",gap:7}}>
-              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px"}}>{TX("whatItCosts")}</div>
+              <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px"}}>{TX("whatItCosts")}</div>
 
               {cost.comp&&(
                 <div>
-                  <div style={{display:"flex",justifyContent:"space-between",fontSize:"var(--fs-3)"}}>
-                    <span style={{color:"var(--t2)"}}>{TX("compensation")}</span>
-                    <span style={{color:cost.comp.bps<0?"#E85D75":cost.comp.bps>0?"#7EC8A4":"var(--t2)",fontFamily:"DM Mono"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",fontSize:11}}>
+                    <span style={{color:"#8B949E"}}>{TX("compensation")}</span>
+                    <span style={{color:cost.comp.bps<0?"#E85D75":cost.comp.bps>0?"#7EC8A4":"#8B949E",fontFamily:"DM Mono"}}>
                       {cost.comp.bps>0?"+":""}{cost.comp.bps} bps · {cost.comp.dollars<0?"−":""}${Math.abs(cost.comp.dollars).toLocaleString()}
                     </span>
                   </div>
-                  <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:3,lineHeight:1.5}}>
+                  <div style={{fontSize:9,color:"#484F58",marginTop:3,lineHeight:1.5}}>
                     {TX("youChargeToday",{n:cost.comp.current})} {cost.comp.cappedByNewLender
                       ? TX("cappedThere",{name:to?.name,n:cost.comp.toCeiling,a:cost.comp.after})
                       : TX("notCappedThere",{name:to?.name,n:cost.comp.toCeiling})}
@@ -3602,25 +3516,25 @@ function LenderChangeModal({file,profile,onClose,onConfirm}){
               )}
 
               {cost.lockLost&&(
-                <div style={{fontSize:"var(--fs-3)",color:"#F5A623",lineHeight:1.45}}>
+                <div style={{fontSize:10.5,color:"#F5A623",lineHeight:1.45}}>
                   El lock no se transfiere. Sueltas {cost.lockedRate}% y vuelves a lockear
                   al mercado del día. Si la tasa subió, la paga el cliente.
                 </div>
               )}
 
-              <div style={{display:"flex",justifyContent:"space-between",fontSize:"var(--fs-3)"}}>
-                <span style={{color:"var(--t2)"}}>{TX("landsAt")}</span>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:11}}>
+                <span style={{color:"#8B949E"}}>{TX("landsAt")}</span>
                 <span style={{color:"#F5A623",fontFamily:"DM Mono"}}>{cost.landsAt}</span>
               </div>
-              <div style={{display:"flex",justifyContent:"space-between",fontSize:"var(--fs-3)"}}>
-                <span style={{color:"var(--t2)"}}>{TX("reunderwrite")}</span>
-                <span style={{color:"var(--t2)",fontFamily:"DM Mono"}}>{TX("daysN",{n:cost.days.best+"–"+cost.days.worst})}</span>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:11}}>
+                <span style={{color:"#8B949E"}}>{TX("reunderwrite")}</span>
+                <span style={{color:"#8B949E",fontFamily:"DM Mono"}}>{TX("daysN",{n:cost.days.best+"–"+cost.days.worst})}</span>
               </div>
-              <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",lineHeight:1.5}}>
+              <div style={{fontSize:9,color:"#484F58",lineHeight:1.5}}>
                 {TX("travelsHint")}</div>
 
               {cost.tooLate&&(
-                <div style={{fontSize:"var(--fs-3)",color:"#E85D75",background:"rgba(232,93,117,.08)",
+                <div style={{fontSize:10.5,color:"#E85D75",background:"rgba(232,93,117,.08)",
                   border:"1px solid #E85D7544",borderRadius:5,padding:"7px 9px",lineHeight:1.45}}>
                   En el peor caso este cambio ya no llega al cierre del {cost.viability.coe}.
                   La fecha tope para decidir era el {cost.viability.decideByWorst}.
@@ -3630,7 +3544,7 @@ function LenderChangeModal({file,profile,onClose,onConfirm}){
           )}
 
           <div>
-            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{TX("reason")}</div>
+            <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{TX("reason")}</div>
             <select value={reasonId} onChange={e=>setReasonId(e.target.value)} style={fs}>
               <option value="">— escoge —</option>
               {Object.entries(REASON_CATEGORIES).map(([cat,meta])=>(
@@ -3640,7 +3554,7 @@ function LenderChangeModal({file,profile,onClose,onConfirm}){
               ))}
             </select>
             {reasonId&&(
-              <div style={{fontSize:"var(--fs-2)",color:isLenderFault(reasonId)?"#F5A623":"var(--t3)",marginTop:5,lineHeight:1.45}}>
+              <div style={{fontSize:9.5,color:isLenderFault(reasonId)?"#F5A623":"#484F58",marginTop:5,lineHeight:1.45}}>
                 {PN(REASON_CATEGORIES[reasonById(reasonId).cat])}
                 {isLenderFault(reasonId)?" · cuenta contra este lender en el scorecard":""}
               </div>
@@ -3648,7 +3562,7 @@ function LenderChangeModal({file,profile,onClose,onConfirm}){
           </div>
 
           <div>
-            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{TX("note")}</div>
+            <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{TX("note")}</div>
             <input value={notes} onChange={e=>setNotes(e.target.value)}
               placeholder={TX("reasonNote")} style={fs}/>
           </div>
@@ -3658,13 +3572,13 @@ function LenderChangeModal({file,profile,onClose,onConfirm}){
           <button className="hov" disabled={!ready}
             onClick={()=>onConfirm({lenderId:toId,reasonId,notes,by:profile?.name||null})}
             style={{flex:2,background:ready?"#F5A623":"#21262D",color:ready?"#0D1117":"#30363D",borderRadius:7,
-              padding:"10px 0",fontFamily:"DM Mono",fontSize:"var(--fs-4)",fontWeight:500,border:"none",
+              padding:"10px 0",fontFamily:"DM Mono",fontSize:12,fontWeight:500,border:"none",
               cursor:ready?"pointer":"not-allowed"}}>
             {TX("moveTo")} {to?to.name.toUpperCase().slice(0,16):"…"}
           </button>
           <button className="hov" onClick={onClose}
-            style={{flex:1,background:"#21262D",color:"var(--t2)",borderRadius:7,padding:"10px 0",
-              fontFamily:"DM Mono",fontSize:"var(--fs-4)",border:"none",cursor:"pointer"}}>CANCELAR</button>
+            style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",
+              fontFamily:"DM Mono",fontSize:12,border:"none",cursor:"pointer"}}>CANCELAR</button>
         </div>
       </div>
     </div>
@@ -3675,26 +3589,26 @@ function LenderChangeModal({file,profile,onClose,onConfirm}){
 function BackupPanel({file,backupId,setBackupId,onChangeLender}){
   const v=backupViability(file);
   const b=lenderById(backupId);
-  const fs={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"var(--t1)",
-    padding:"7px 9px",fontSize:"var(--fs-4)",fontFamily:"'IBM Plex Sans',system-ui,-apple-system,sans-serif",width:"100%"};
+  const fs={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",
+    padding:"7px 9px",fontSize:12,fontFamily:"'DM Mono','Courier New',monospace",width:"100%"};
   const options=lendersFor(file,file.channel||"broker").filter(l=>l.id!==file.lenderId);
   const cost=backupId?compDeltaBetween(file,file.lenderId,backupId):null;
   const lc=v.level==="critical"?"#E85D75":v.level==="warn"?"#F5A623":"#7EC8A4";
 
   return (
     <div style={{borderTop:"1px solid #21262D",paddingTop:11,display:"flex",flexDirection:"column",gap:8}}>
-      <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px"}}>{TX("backupLender")}</div>
+      <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px"}}>{TX("backupLender")}</div>
       <select value={backupId} onChange={e=>setBackupId(e.target.value)} style={fs}>
         <option value="">— ninguno —</option>
         {options.map(o=><option key={o.id} value={o.id}>{o.name}{o.lenderPaidBps?` · ${o.lenderPaidBps} bps`:""}</option>)}
       </select>
 
       {b&&cost&&(
-        <div style={{fontSize:"var(--fs-2)",fontFamily:"DM Mono",color:cost.bps<0?"#E85D75":"#7EC8A4"}}>
+        <div style={{fontSize:10,fontFamily:"DM Mono",color:cost.bps<0?"#E85D75":"#7EC8A4"}}>
           {cost.bps===0
             ? TX("movingFree",{name:b.name,n:cost.toCeiling})
             : TX("movingCosts",{b:cost.bps,d:Math.abs(cost.dollars).toLocaleString()})}
-          <div style={{color:"var(--t3)",fontSize:"var(--fs-1)",marginTop:2}}>
+          <div style={{color:"#484F58",fontSize:9,marginTop:2}}>
             {TX("youChargeCap",{a:cost.current,b:cost.toCeiling})}
           </div>
         </div>
@@ -3702,29 +3616,29 @@ function BackupPanel({file,backupId,setBackupId,onChangeLender}){
 
       {b&&v.ready&&(
         <div style={{background:"#0D1117",border:`1px solid ${lc}44`,borderRadius:6,padding:"9px 10px"}}>
-          <div style={{fontSize:"var(--fs-3)",color:lc,fontFamily:"DM Mono"}}>
+          <div style={{fontSize:11,color:lc,fontFamily:"DM Mono"}}>
             {v.window==="impossible"
               ? TX("noLongerMakesIt",{d:v.decideByBest})
               : v.window==="best_case_only"
                 ? TX("onlyIfNothingFails",{d:v.decideByBest})
                 : TX("safeUntil",{d:v.decideByWorst,n:v.daysToWorst})}
           </div>
-          <div style={{marginTop:6,display:"flex",flexDirection:"column",gap:2,fontSize:"var(--fs-2)",fontFamily:"DM Mono"}}>
-            <div style={{color:v.window==="safe"?"#7EC8A4":"var(--t3)"}}>
+          <div style={{marginTop:6,display:"flex",flexDirection:"column",gap:2,fontSize:9.5,fontFamily:"DM Mono"}}>
+            <div style={{color:v.window==="safe"?"#7EC8A4":"#484F58"}}>
               {TX("untilArrivesAnyway",{d:v.decideByWorst,n:v.worstDays})}
             </div>
-            <div style={{color:v.window==="best_case_only"?"#F5A623":"var(--t3)"}}>
+            <div style={{color:v.window==="best_case_only"?"#F5A623":"#484F58"}}>
               {TX("betweenOnlyIfClean",{a:v.decideByWorst,b:v.decideByBest,n:v.bestDays})}
             </div>
-            <div style={{color:v.window==="impossible"?"#E85D75":"var(--t3)"}}>
+            <div style={{color:v.window==="impossible"?"#E85D75":"#484F58"}}>
               {TX("afterNoMakes",{d:v.decideByBest})}
             </div>
           </div>
-          <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:5,lineHeight:1.5}}>
+          <div style={{fontSize:9,color:"#484F58",marginTop:5,lineHeight:1.5}}>
             {TX("countedBackFromCd",{d:v.cdDeadline})}
           </div>
           {v.expiresBeforeContingency&&(
-            <div style={{fontSize:"var(--fs-2)",color:"#F5A623",marginTop:6,lineHeight:1.45}}>
+            <div style={{fontSize:10,color:"#F5A623",marginTop:6,lineHeight:1.45}}>
               {TX("cushionBefore",{n:v.gapDays,d:v.loanContingency})}
             </div>
           )}
@@ -3733,27 +3647,27 @@ function BackupPanel({file,backupId,setBackupId,onChangeLender}){
 
       <button className="hov" onClick={onChangeLender} disabled={!file.lenderId}
         style={{background:"rgba(245,166,35,.1)",color:file.lenderId?"#F5A623":"#30363D",borderRadius:6,
-          padding:"8px 0",fontFamily:"DM Mono",fontSize:"var(--fs-3)",border:`1px solid ${file.lenderId?"#F5A623":"#21262D"}`,
+          padding:"8px 0",fontFamily:"DM Mono",fontSize:11,border:`1px solid ${file.lenderId?"#F5A623":"#21262D"}`,
           cursor:file.lenderId?"pointer":"not-allowed"}}>{TX("changeLender")}</button>
 
       {(file.lenderHistory||[]).length>0&&(
         <div style={{marginTop:2}}>
-          <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>
+          <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>
             HISTORIAL · {lenderChangeCount(file)} cambio{lenderChangeCount(file)===1?"":"s"}
             {lenderFaultChanges(file)>0&&<span style={{color:"#F5A623"}}> · {lenderFaultChanges(file)} por el lender</span>}
           </div>
           {(file.lenderHistory||[]).slice().reverse().map((h,i)=>(
-            <div key={i} style={{fontSize:"var(--fs-2)",color:"var(--t2)",marginBottom:5,lineHeight:1.5}}>
-              <span style={{color:"var(--t3)"}}>{h.at}</span>{" · "}
-              <span style={{color:"var(--t2)"}}>{h.fromName||"—"} → {h.toName}</span>
+            <div key={i} style={{fontSize:10,color:"#6E7681",marginBottom:5,lineHeight:1.5}}>
+              <span style={{color:"#484F58"}}>{h.at}</span>{" · "}
+              <span style={{color:"#8B949E"}}>{h.fromName||"—"} → {h.toName}</span>
               {h.compDeltaDollars!=null&&<span style={{color:h.compDeltaBps<0?"#E85D75":"#7EC8A4"}}>
                 {" · "}{h.compDeltaBps>0?"+":""}{h.compDeltaBps} bps</span>}
-              <div style={{color:"var(--t3)",fontSize:"var(--fs-2)"}}>
+              <div style={{color:"#484F58",fontSize:9.5}}>
                 {h.reasonId?P(reasonById(h.reasonId)):"sin motivo"}
                 {h.daysWithPrevLender!=null?` · ${h.daysWithPrevLender}d con el anterior`:""}
                 {h.by?` · ${h.by.split(" ")[0]}`:""}
               </div>
-              {h.notes&&<div style={{color:"var(--t2)",fontSize:"var(--fs-2)",fontStyle:"italic"}}>{h.notes}</div>}
+              {h.notes&&<div style={{color:"#6E7681",fontSize:9.5,fontStyle:"italic"}}>{h.notes}</div>}
             </div>
           ))}
         </div>
@@ -3817,76 +3731,76 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
     <div style={{background:"rgba(6,214,160,.04)",border:"1px solid #06D6A033",borderRadius:8,
       padding:14,display:"flex",flexDirection:"column",gap:10}}>
       <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#06D6A0",letterSpacing:"1px"}}>
+        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#06D6A0",letterSpacing:"1px"}}>
           {isAdmin?TX("fileComp"):TX("yourComp")}
         </span>
-        <span style={{marginLeft:"auto",fontSize:"var(--fs-1)",color:"var(--t3)"}}>{TX("savesWithSave")}</span>
+        <span style={{marginLeft:"auto",fontSize:9,color:"#484F58"}}>{TX("savesWithSave")}</span>
       </div>
 
       <div>
-        <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>{TX("clientOrigin")}</div>
+        <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>{TX("clientOrigin")}</div>
         {isAdmin?(
           <select value={origin} onChange={e=>setOrigin(e.target.value)}
-            style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"var(--t1)",
-              padding:"6px 9px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",width:"100%"}}>
+            style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",
+              padding:"6px 9px",fontSize:11.5,fontFamily:"DM Mono",width:"100%"}}>
             {LEAD_ORIGINS.map(o=><option key={o.id} value={o.id}>{P(o)}</option>)}
           </select>
         ):(
-          <div style={{fontSize:"var(--fs-3)",color:"var(--t2)"}}>{P(leadOrigin(origin))||"—"}</div>
+          <div style={{fontSize:11.5,color:"#8B949E"}}>{P(leadOrigin(origin))||"—"}</div>
         )}
         {pay.split.inHouseApplied&&(
-          <div style={{fontSize:"var(--fs-2)",color:"#F5A623",marginTop:4}}>
+          <div style={{fontSize:9.5,color:"#F5A623",marginTop:4}}>
             Lead de la sucursal · {(IN_HOUSE_REDUCTION*100).toFixed(0)} puntos menos que producción propia
           </div>
         )}
         {pay.split.leadPending&&isAdmin&&(
-          <div style={{fontSize:"var(--fs-2)",color:"#BD65E8",marginTop:4}}>
+          <div style={{fontSize:9.5,color:"#BD65E8",marginTop:4}}>
             {TX("leadPending")}
           </div>
         )}
         {isAdmin&&PN(leadOrigin(origin))&&!pay.split.leadPending&&(
-          <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:3}}>{PN(leadOrigin(origin))}</div>
+          <div style={{fontSize:9,color:"#484F58",marginTop:3}}>{PN(leadOrigin(origin))}</div>
         )}
       </div>
 
       {financedFeeAmount(draft)>0&&(
-        <div style={{borderTop:"1px solid #21262D",paddingTop:9,fontSize:"var(--fs-3)"}}>
-          <div style={{display:"flex",justifyContent:"space-between",color:"var(--t2)",marginBottom:3}}>
+        <div style={{borderTop:"1px solid #21262D",paddingTop:9,fontSize:11.5}}>
+          <div style={{display:"flex",justifyContent:"space-between",color:"#6E7681",marginBottom:3}}>
             <span>{TX("baseLoan")}</span>
             <span style={{fontFamily:"DM Mono"}}>${(Number(draft.loan)||0).toLocaleString()}</span>
           </div>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,marginBottom:3}}>
-            <span style={{color:"var(--t2)"}}>+ {P(financedFeeMeta(draft))}</span>
+            <span style={{color:"#6E7681"}}>+ {P(financedFeeMeta(draft))}</span>
             <span style={{display:"flex",alignItems:"center",gap:6}}>
               {isAdmin?(
                 <input value={feePct} inputMode="decimal"
                   onChange={e=>setFeePct(e.target.value.replace(/[^\d.]/g,""))}
-                  style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:4,color:"var(--t2)",
-                    padding:"2px 5px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",width:44,textAlign:"right"}}/>
-              ):<span style={{color:"var(--t3)",fontSize:"var(--fs-3)"}}>{financedFeePct(draft)}</span>}
-              <span style={{color:"var(--t3)",fontSize:"var(--fs-2)"}}>%</span>
-              <span style={{color:"var(--t2)",fontFamily:"DM Mono",minWidth:74,textAlign:"right"}}>
+                  style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:4,color:"#8B949E",
+                    padding:"2px 5px",fontSize:10.5,fontFamily:"DM Mono",width:44,textAlign:"right"}}/>
+              ):<span style={{color:"#484F58",fontSize:10.5}}>{financedFeePct(draft)}</span>}
+              <span style={{color:"#484F58",fontSize:10}}>%</span>
+              <span style={{color:"#6E7681",fontFamily:"DM Mono",minWidth:74,textAlign:"right"}}>
                 ${financedFeeAmount(draft).toLocaleString()}
               </span>
             </span>
           </div>
-          <div style={{display:"flex",justifyContent:"space-between",color:"var(--t2)",
+          <div style={{display:"flex",justifyContent:"space-between",color:"#8B949E",
             borderTop:"1px solid #21262D",paddingTop:5}}>
             <span>{TX("compBasis")}</span>
             <span style={{fontFamily:"DM Mono"}}>${compBasisAmount(draft).toLocaleString()}</span>
           </div>
-          {isAdmin&&<div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:5,lineHeight:1.5}}>{TX("financedHint")}</div>}
+          {isAdmin&&<div style={{fontSize:9,color:"#484F58",marginTop:5,lineHeight:1.5}}>{TX("financedHint")}</div>}
         </div>
       )}
 
-      <div style={{display:"flex",justifyContent:"space-between",fontSize:"var(--fs-4)",borderTop:"1px solid #21262D",paddingTop:9}}>
-        <span style={{color:"var(--t2)"}}>{TX("grossComm")}{isAdmin?` · ${fileCompBps(draft)} bps`:""}
+      <div style={{display:"flex",justifyContent:"space-between",fontSize:12,borderTop:"1px solid #21262D",paddingTop:9}}>
+        <span style={{color:"#8B949E"}}>{TX("grossComm")}{isAdmin?` · ${fileCompBps(draft)} bps`:""}
           {effBps!==null&&effBps!==Number(file.bps)?<span style={{color:"#F5A623"}}> · sin guardar</span>:null}</span>
-        <span style={{color:"var(--t1)",fontFamily:"DM Mono"}}>${pay.gross.toLocaleString()}</span>
+        <span style={{color:"#E6EDF3",fontFamily:"DM Mono"}}>${pay.gross.toLocaleString()}</span>
       </div>
 
       <div style={{borderTop:"1px solid #21262D",paddingTop:8}}>
-        <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:6}}>
+        <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:6}}>
           {TX("adjustments")}
         </div>
         {fees.map((fee,i)=>(
@@ -3894,11 +3808,11 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
             <input type="checkbox" checked={fee.on} disabled={!isAdmin}
               onChange={e=>setFees(fees.map((x,j)=>j===i?{...x,on:e.target.checked}:x))}
               style={{accentColor:"#E85D75",cursor:isAdmin?"pointer":"not-allowed"}}/>
-            <span style={{fontSize:"var(--fs-3)",color:fee.on?"var(--t1)":"var(--t3)",flex:1}}>{P(fee)}</span>
+            <span style={{fontSize:11,color:fee.on?"#E6EDF3":"#484F58",flex:1}}>{P(fee)}</span>
             <input inputMode="numeric" value={fee.amount} disabled={!isAdmin||!fee.on}
               onChange={e=>setFees(fees.map((x,j)=>j===i?{...x,amount:Number(e.target.value.replace(/[^\d]/g,""))||0}:x))}
               style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,
-                color:fee.on?"#E85D75":"#30363D",padding:"4px 7px",fontSize:"var(--fs-3)",
+                color:fee.on?"#E85D75":"#30363D",padding:"4px 7px",fontSize:11,
                 fontFamily:"DM Mono",width:76,textAlign:"right"}}/>
           </div>
         ))}
@@ -3908,21 +3822,21 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
               onClick={()=>setExtras(extras.map((x,j)=>j===i?{...x,kind:x.kind==="fee"?"credit":"fee"}:x))}
               title={e.kind==="fee"?TX("toCredit"):TX("toFee")}
               style={{background:"transparent",border:"none",width:15,padding:0,
-                color:ADJUSTMENT_KINDS[e.kind].color,fontSize:"var(--fs-6)",fontFamily:"DM Mono",
+                color:ADJUSTMENT_KINDS[e.kind].color,fontSize:14,fontFamily:"DM Mono",
                 cursor:isAdmin?"pointer":"default"}}>{e.kind==="fee"?"−":"+"}</button>
             <input value={e.label} disabled={!isAdmin} placeholder={e.kind==="credit"?TX("creditName"):TX("adjName")}
               onChange={ev=>setExtras(extras.map((x,j)=>j===i?{...x,label:ev.target.value}:x))}
-              style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,color:"var(--t1)",
-                padding:"4px 7px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",flex:1}}/>
+              style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,color:"#E6EDF3",
+                padding:"4px 7px",fontSize:11,fontFamily:"DM Mono",flex:1}}/>
             <input inputMode="numeric" value={e.amount} disabled={!isAdmin}
               onChange={ev=>setExtras(extras.map((x,j)=>j===i?{...x,amount:Number(ev.target.value.replace(/[^\d]/g,""))||0}:x))}
               style={{background:"#0D1117",borderRadius:5,
                 border:`1px solid ${e.kind==="credit"?"#7EC8A455":"#30363D"}`,
                 color:ADJUSTMENT_KINDS[e.kind].color,
-                padding:"4px 7px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",width:76,textAlign:"right"}}/>
+                padding:"4px 7px",fontSize:11,fontFamily:"DM Mono",width:76,textAlign:"right"}}/>
             {isAdmin&&(
               <button className="hov" onClick={()=>setExtras(extras.filter((_,j)=>j!==i))}
-                style={{background:"transparent",border:"none",color:"var(--t3)",fontSize:"var(--fs-5)",
+                style={{background:"transparent",border:"none",color:"#484F58",fontSize:13,
                   cursor:"pointer",padding:"0 3px"}} title="quitar">×</button>
             )}
           </div>
@@ -3930,28 +3844,28 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
         {isAdmin&&(
           <button className="hov"
             onClick={()=>setExtras([...extras,{id:`custom_${Date.now()}`,label:"",amount:0,kind:"fee"}])}
-            style={{background:"transparent",border:"1px dashed #30363D",borderRadius:5,color:"var(--t2)",
-              fontSize:"var(--fs-2)",fontFamily:"DM Mono",padding:"5px 0",width:"100%",cursor:"pointer",marginTop:2}}>
+            style={{background:"transparent",border:"1px dashed #30363D",borderRadius:5,color:"#6E7681",
+              fontSize:10,fontFamily:"DM Mono",padding:"5px 0",width:"100%",cursor:"pointer",marginTop:2}}>
             {TX("otherAdj")}
           </button>
         )}
-        {!isAdmin&&<div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:2}}>
+        {!isAdmin&&<div style={{fontSize:9,color:"#484F58",marginTop:2}}>
           Registrados con el archivo.
         </div>}
       </div>
 
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",
         borderTop:"1px solid #21262D",paddingTop:8}}>
-        <span style={{fontSize:"var(--fs-4)",color:"var(--t1)",fontWeight:500}}>NET</span>
-        <span style={{fontSize:"var(--fs-6)",color:"#06D6A0",fontFamily:"DM Mono"}}>${pay.net.toLocaleString()}</span>
+        <span style={{fontSize:12,color:"#E6EDF3",fontWeight:500}}>NET</span>
+        <span style={{fontSize:15,color:"#06D6A0",fontFamily:"DM Mono"}}>${pay.net.toLocaleString()}</span>
       </div>
       {unnamed&&(
-        <div style={{fontSize:"var(--fs-2)",color:"#E85D75"}}>
+        <div style={{fontSize:9.5,color:"#E85D75"}}>
           {TX("unnamedAdj")}
         </div>
       )}
       {(pay.deducted>0||pay.credited>0)&&(
-        <div style={{fontSize:"var(--fs-2)",color:"var(--t2)",marginTop:-4}}>
+        <div style={{fontSize:9.5,color:"#6E7681",marginTop:-4}}>
           {pay.deducted>0?TX("adjTotals",{d:pay.deducted.toLocaleString()}):""}
           {pay.deducted>0&&pay.credited>0?"  ":""}
           {pay.credited>0?TX("credTotals",{d:pay.credited.toLocaleString()}):""}
@@ -3959,21 +3873,21 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
       )}
 
       <div style={{borderTop:"1px solid #21262D",paddingTop:8}}>
-        <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:6}}>
+        <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:6}}>
           {isAdmin?TX("distribution"):TX("yourCompShort")}
         </div>
         {rows.length===0?(
-          <div style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>{TX("notYourFile")}</div>
+          <div style={{fontSize:10.5,color:"#484F58"}}>{TX("notYourFile")}</div>
         ):rows.map((r)=>{
           const own=r.id==="lo"&&mine;
           return (
             <div key={r.id} style={{marginBottom:6}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8}}>
-                <span style={{fontSize:"var(--fs-3)",color:own?"#06D6A0":"var(--t2)"}}>
-                  {r.who}<span style={{color:"var(--t3)"}}> · {(r.pct*100).toFixed(1)}%</span>
+                <span style={{fontSize:11.5,color:own?"#06D6A0":"#8B949E"}}>
+                  {r.who}<span style={{color:"#484F58"}}> · {(r.pct*100).toFixed(1)}%</span>
                 </span>
-                <span style={{fontFamily:"Syne",fontWeight:800,fontSize:own?"var(--fs-6)":"var(--fs-5)",
-                  color:own?"#06D6A0":"var(--t1)"}}>${r.amount.toLocaleString()}</span>
+                <span style={{fontFamily:"Syne",fontWeight:800,fontSize:own?15:13,
+                  color:own?"#06D6A0":"#E6EDF3"}}>${r.amount.toLocaleString()}</span>
               </div>
             </div>
           );
@@ -3998,27 +3912,27 @@ function LenderStrip({file}){
     <div style={{background:"rgba(74,144,217,.06)",border:`1px solid ${conf.some(c=>c.sev==="critical")?"#E85D7555":"#30363D"}`,
       borderRadius:6,padding:"7px 9px",marginTop:9,display:"flex",flexDirection:"column",gap:4}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8}}>
-        <span style={{fontSize:"var(--fs-3)",color:l?"#4A90D9":"var(--t3)",fontFamily:"DM Mono",fontWeight:500,
+        <span style={{fontSize:11,color:l?"#4A90D9":"#484F58",fontFamily:"DM Mono",fontWeight:500,
           overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
           {lenderNameOf(file)||"sin lender"}
         </span>
         <span style={{display:"flex",gap:6,alignItems:"baseline",flexShrink:0}}>
-          {file.rate&&<span style={{fontSize:"var(--fs-3)",color:"var(--t1)",fontFamily:"DM Mono"}}>{Number(file.rate).toFixed(3)}%</span>}
-          <span style={{fontSize:"var(--fs-1)",color:lc,border:`1px solid ${lc}66`,borderRadius:3,padding:"1px 5px",
+          {file.rate&&<span style={{fontSize:10.5,color:"#E6EDF3",fontFamily:"DM Mono"}}>{Number(file.rate).toFixed(3)}%</span>}
+          <span style={{fontSize:9,color:lc,border:`1px solid ${lc}66`,borderRadius:3,padding:"1px 5px",
             fontFamily:"DM Mono",letterSpacing:".5px"}}>{ls.state==="locked"?"LOCKED":"FLOAT"}</span>
         </span>
       </div>
-      <div style={{fontSize:"var(--fs-2)",color:"var(--t2)",fontFamily:"DM Mono",display:"flex",gap:8,flexWrap:"wrap"}}>
+      <div style={{fontSize:9.5,color:"#6E7681",fontFamily:"DM Mono",display:"flex",gap:8,flexWrap:"wrap"}}>
         {ch&&<span style={{color:ch.color}}>{P(ch).toLowerCase()}</span>}
-        {bk&&bv.ready&&<span style={{color:bv.level==="critical"?"#E85D75":bv.level==="warn"?"#F5A623":"var(--t2)"}}>
+        {bk&&bv.ready&&<span style={{color:bv.level==="critical"?"#E85D75":bv.level==="warn"?"#F5A623":"#6E7681"}}>
           respaldo {bk.name.split(" ")[0]} · viable to {mon(bv.decideByWorst)}</span>}
         {ls.state==="float"&&ls.mustLockBy&&(
-          <span style={{color:ls.level==="critical"?"#E85D75":"var(--t2)"}}>
+          <span style={{color:ls.level==="critical"?"#E85D75":"#6E7681"}}>
             lock by {mon(ls.mustLockBy)}{ls.daysLeft!==null?` · ${ls.daysLeft<0?`${Math.abs(ls.daysLeft)}d late`:`${ls.daysLeft}d`}`:""}
           </span>
         )}
         {ls.state==="locked"&&ls.expires&&(
-          <span style={{color:ls.coversClose?"var(--t2)":"#E85D75"}}>
+          <span style={{color:ls.coversClose?"#6E7681":"#E85D75"}}>
             exp {mon(ls.expires)}{ls.coversClose?` · +${ls.spare}d`:` · corto ${ls.shortBy}d`}
           </span>
         )}
@@ -4047,8 +3961,8 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
   const [backupId,setBackupId]=useState(file.backupLenderId||"");
   const [lenderOther,setLenderOther]=useState(file.lenderOther||"");
 
-  const fs={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"var(--t1)",
-    padding:"7px 9px",fontSize:"var(--fs-4)",fontFamily:"'IBM Plex Sans',system-ui,-apple-system,sans-serif",width:"100%"};
+  const fs={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",
+    padding:"7px 9px",fontSize:12,fontFamily:"'DM Mono','Courier New',monospace",width:"100%"};
 
   const draftBase={...file,channel,lenderId:lenderId||null,rate:parseFloat(rate)||null,
     lockState,lockedAt:lockedAt||null,lockTermDays:parseInt(term)||null};
@@ -4087,9 +4001,9 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
     <div style={{background:"rgba(74,144,217,.05)",border:"1px solid #4A90D933",borderRadius:8,
       padding:14,display:"flex",flexDirection:"column",gap:12}}>
       <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#4A90D9",letterSpacing:"1px"}}>{TX("lenderLock")}</span>
-        <span style={{fontSize:"var(--fs-2)",color:"var(--t2)"}}>{TX("channelDecides")}</span>
-        <span style={{marginLeft:"auto",fontSize:"var(--fs-1)",color:"var(--t3)"}}>{TX("savesWithSave")}</span>
+        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#4A90D9",letterSpacing:"1px"}}>{TX("lenderLock")}</span>
+        <span style={{fontSize:9.5,color:"#6E7681"}}>{TX("channelDecides")}</span>
+        <span style={{marginLeft:"auto",fontSize:9,color:"#484F58"}}>{TX("savesWithSave")}</span>
       </div>
 
 
@@ -4102,28 +4016,28 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
       {/* CHANNEL — chosen first, everything filters from it */}
       <div>
-        <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{TX("channel")}</div>
+        <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{TX("channel")}</div>
         <div style={{display:"flex",gap:8}}>
           {CHANNEL_IDS.map(id=>{
             const c=CHANNELS[id],on=channel===id,n=lendersFor(draft,id).length;
             return (
               <button key={id} className="hov" onClick={()=>{setChannel(id);
                 if(!lendersFor(draft,id).some(x=>x.id===lenderId)) setLenderId("");}}
-                style={{flex:1,background:on?`${c.color}18`:"#0D1117",border:`1px solid ${on?c.color:"var(--t4)"}`,
+                style={{flex:1,background:on?`${c.color}18`:"#0D1117",border:`1px solid ${on?c.color:"#30363D"}`,
                   borderRadius:6,padding:"8px 6px",cursor:"pointer",fontFamily:"DM Mono",textAlign:"left"}}>
-                <div style={{fontSize:"var(--fs-3)",color:on?c.color:"var(--t2)",fontWeight:500}}>{P(c)}</div>
-                <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:2}}>{n} lenders · {TX("cap")} {c.capBps}</div>
+                <div style={{fontSize:11,color:on?c.color:"#8B949E",fontWeight:500}}>{P(c)}</div>
+                <div style={{fontSize:9,color:"#484F58",marginTop:2}}>{n} lenders · {TX("cap")} {c.capBps}</div>
               </button>
             );
           })}
         </div>
-        <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:5}}>{PN(CHANNELS[channel])}</div>
+        <div style={{fontSize:9,color:"#484F58",marginTop:5}}>{PN(CHANNELS[channel])}</div>
       </div>
 
       {/* LENDER */}
       <div>
-        <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>
-          LENDER <span style={{color:"var(--t4)"}}>· {options.length} {TX("makesProduct",{p:P(categoryLabel(lenderProductKey(file.type)))})}</span>
+        <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>
+          LENDER <span style={{color:"#30363D"}}>· {options.length} {TX("makesProduct",{p:P(categoryLabel(lenderProductKey(file.type)))})}</span>
         </div>
         <select value={lenderId} onChange={e=>setLenderId(e.target.value)} style={fs}>
           <option value="">{TX("unassigned")}</option>
@@ -4136,12 +4050,12 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
           <div style={{marginTop:6}}>
             <input value={lenderOther} onChange={e=>setLenderOther(e.target.value)}
               placeholder={TX("lenderName")} style={fs}/>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:3}}>
+            <div style={{fontSize:9,color:"#484F58",marginTop:3}}>
               {TX("otherLenderHint")}</div>
           </div>
         )}
         {hidden.length>0&&(
-          <div style={{fontSize:"var(--fs-2)",color:"#F5A623",marginTop:5,lineHeight:1.5}}>
+          <div style={{fontSize:9.5,color:"#F5A623",marginTop:5,lineHeight:1.5}}>
             {TX("hiddenByChannel",{
               n:hidden.length,
               list:hidden.slice(0,4).map(x=>x.name).join(", ")
@@ -4150,8 +4064,8 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
           </div>
         )}
         {l&&(
-          <div style={{marginTop:6,display:"flex",gap:8,flexWrap:"wrap",fontSize:"var(--fs-2)",fontFamily:"DM Mono"}}>
-            {l.contacts?.[0]?.ae&&<span style={{color:"var(--t2)"}}>AE {l.contacts[0].ae}</span>}
+          <div style={{marginTop:6,display:"flex",gap:8,flexWrap:"wrap",fontSize:9.5,fontFamily:"DM Mono"}}>
+            {l.contacts?.[0]?.ae&&<span style={{color:"#6E7681"}}>AE {l.contacts[0].ae}</span>}
             {l.contacts?.[0]?.phone&&<a href={`tel:${l.contacts[0].phone.replace(/[^\d+]/g,"")}`}
               style={{color:"#4A90D9",textDecoration:"none"}}>{l.contacts[0].phone}</a>}
             {l.guidelines&&<a href={l.guidelines} target="_blank" rel="noreferrer"
@@ -4166,13 +4080,13 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
         <div style={{background:"#0D1117",border:`1px solid ${comp.overCeiling?"#E85D75":"#21262D"}`,
           borderRadius:6,padding:"10px 11px",display:"flex",flexDirection:"column",gap:8}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8}}>
-            <span style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px"}}>{TX("compensation")}</span>
-            <span style={{fontSize:"var(--fs-1)",color:comp.meta.editable?"#7EC8A4":"var(--t2)"}}>{P(comp.meta)}</span>
+            <span style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px"}}>{TX("compensation")}</span>
+            <span style={{fontSize:9,color:comp.meta.editable?"#7EC8A4":"#6E7681"}}>{P(comp.meta)}</span>
           </div>
 
           {comp.lines.map(ln=>(
             <div key={ln.id} style={{display:"flex",alignItems:"center",gap:8}}>
-              <span style={{fontSize:"var(--fs-2)",color:"var(--t2)",flex:1}}>{P(ln)}</span>
+              <span style={{fontSize:10,color:"#8B949E",flex:1}}>{P(ln)}</span>
               {ln.editable?(
                 <input inputMode="numeric" placeholder={ln.planBps!=null?String(ln.planBps):"0"}
                   value={ln.id==="ratePrice"?ratePriceBps:ln.id==="origination"?originationBps
@@ -4180,12 +4094,12 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
                   onChange={e=>{const v=e.target.value.replace(/[^\d]/g,"");
                     ln.id==="ratePrice"?setRatePriceBps(v):ln.id==="origination"?setOriginationBps(v)
                     :ln.id==="lenderPaid"?setLenderPaidBps(v):setBorrowerPaidBps(v);}}
-                  style={{...fs,width:66,textAlign:"right",padding:"5px 7px",fontSize:"var(--fs-3)"}}/>
+                  style={{...fs,width:66,textAlign:"right",padding:"5px 7px",fontSize:11.5}}/>
               ):(
-                <span style={{fontSize:"var(--fs-3)",color:"var(--t2)",fontFamily:"DM Mono",width:66,textAlign:"right"}}>{ln.bps??"—"}</span>
+                <span style={{fontSize:11.5,color:"#8B949E",fontFamily:"DM Mono",width:66,textAlign:"right"}}>{ln.bps??"—"}</span>
               )}
-              <span style={{fontSize:"var(--fs-1)",color:"var(--t3)",width:22}}>bps</span>
-              <span style={{fontSize:"var(--fs-3)",color:"var(--t1)",fontFamily:"DM Mono",width:74,textAlign:"right"}}>
+              <span style={{fontSize:9,color:"#484F58",width:22}}>bps</span>
+              <span style={{fontSize:10.5,color:"#E6EDF3",fontFamily:"DM Mono",width:74,textAlign:"right"}}>
                 {ln.dollars!==null?`$${ln.dollars.toLocaleString()}`:"—"}
               </span>
             </div>
@@ -4193,8 +4107,8 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
 
           <div style={{borderTop:"1px solid #21262D",paddingTop:7,display:"flex",
             justifyContent:"space-between",alignItems:"baseline"}}>
-            <span style={{fontSize:"var(--fs-2)",color:"var(--t2)"}}>Total</span>
-            <span style={{fontSize:"var(--fs-5)",color:comp.overCeiling?"#E85D75":"#F5A623",fontFamily:"DM Mono"}}>
+            <span style={{fontSize:10,color:"#8B949E"}}>Total</span>
+            <span style={{fontSize:13,color:comp.overCeiling?"#E85D75":"#F5A623",fontFamily:"DM Mono"}}>
               {comp.totalBps??"—"} bps{comp.totalDollars!==null?` · $${comp.totalDollars.toLocaleString()}`:""}
             </span>
           </div>
@@ -4205,21 +4119,21 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
               <div style={{height:"100%",width:`${Math.min(100,comp.pctOfCeiling??0)}%`,
                 background:comp.overCeiling?"#E85D75":comp.pctOfCeiling>=95?"#F5A623":"#7EC8A4"}}/>
             </div>
-            <div style={{display:"flex",justifyContent:"space-between",fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:4}}>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:9,color:"#484F58",marginTop:4}}>
               <span>{PN(comp.meta)}</span>
-              <span style={{color:comp.overCeiling?"#E85D75":"var(--t3)"}}>
+              <span style={{color:comp.overCeiling?"#E85D75":"#484F58"}}>
                 {comp.remainingBps>0?TX("ceilingLeftN",{n:comp.ceilingBps,r:comp.remainingBps}):TX("ceilingLeft",{n:comp.ceilingBps})}
               </span>
             </div>
           </div>
 
-          <div style={{fontSize:"var(--fs-1)",color:"var(--t3)"}}>
+          <div style={{fontSize:9,color:"#484F58"}}>
             {comp.totalBps!=null
               ? TX("willWriteBps",{n:comp.totalBps})
               : "Sin dato — los reportes usan el default de la sucursal."}
           </div>
           {comp.model==="correspondent"&&(
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t2)"}}>
+            <div style={{fontSize:9,color:"#6E7681"}}>
               {TX("combinedCap")}
             </div>
           )}
@@ -4231,11 +4145,11 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
       {/* RATE + LOCK */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
         <div>
-          <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>{TX("rate")}</div>
+          <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>{TX("rate")}</div>
           <input value={rate} onChange={e=>setRate(e.target.value)} placeholder="6.990" inputMode="decimal" style={fs}/>
         </div>
         <div>
-          <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>ESTADO</div>
+          <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>ESTADO</div>
           <select value={lockState} onChange={e=>setLockState(e.target.value)} style={fs}>
             <option value="float">{TX("floating")}</option>
             <option value="locked">{TX("locked")}</option>
@@ -4249,28 +4163,28 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
           borderRadius:6,padding:"9px 10px"}}>
           {ls.mustLockBy?(
             <>
-              <div style={{fontSize:"var(--fs-3)",color:ls.level==="critical"?"#E85D75":"#F5A623",fontFamily:"DM Mono"}}>
+              <div style={{fontSize:11,color:ls.level==="critical"?"#E85D75":"#F5A623",fontFamily:"DM Mono"}}>
                 {TX("lastDayToLock",{d:ls.mustLockBy})}
-                {ls.daysLeft!==null&&<span style={{color:"var(--t2)"}}> · {ls.daysLeft<0?`${Math.abs(ls.daysLeft)}d tarde`:`faltan ${ls.daysLeft}d`}</span>}
+                {ls.daysLeft!==null&&<span style={{color:"#8B949E"}}> · {ls.daysLeft<0?`${Math.abs(ls.daysLeft)}d tarde`:`faltan ${ls.daysLeft}d`}</span>}
               </div>
-              <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:3}}>
+              <div style={{fontSize:9,color:"#484F58",marginTop:3}}>
                 {TX("cdCarriesRate")}</div>
             </>
           ):(
-            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)"}}>{TX("noCloseNoCap")}</div>
+            <div style={{fontSize:10,color:"#484F58"}}>{TX("noCloseNoCap")}</div>
           )}
           {ls.coe&&(
             <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:3}}>
-              <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px"}}>{TX("whichTermQ")}</div>
+              <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px"}}>{TX("whichTermQ")}</div>
               {ls.terms.map(t=>(
-                <div key={t.term} style={{display:"flex",gap:8,fontSize:"var(--fs-2)",fontFamily:"DM Mono",
+                <div key={t.term} style={{display:"flex",gap:8,fontSize:10,fontFamily:"DM Mono",
                   color:t.covers?"#7EC8A4":"#E85D75"}}>
                   <span style={{minWidth:34}}>{t.term}d</span>
-                  <span style={{color:"var(--t2)",minWidth:82}}>{t.expires}</span>
+                  <span style={{color:"#6E7681",minWidth:82}}>{t.expires}</span>
                   <span>{t.covers?TX("coversBy",{n:t.spare}):TX("shortByN",{n:t.shortBy})}</span>
                 </div>
               ))}
-              <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:2}}>
+              <div style={{fontSize:9,color:"#484F58",marginTop:2}}>
                 {TX("priceDecides")}</div>
             </div>
           )}
@@ -4281,11 +4195,11 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
       {lockState==="locked"&&(
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
           <div>
-            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>{TX("lockDate")}</div>
+            <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>{TX("lockDate")}</div>
             <input type="date" value={lockedAt} onChange={e=>setLockedAt(e.target.value)} style={fs}/>
           </div>
           <div>
-            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>{TX("lockTerm")}</div>
+            <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>{TX("lockTerm")}</div>
             <select value={term} onChange={e=>setTerm(e.target.value)} style={fs}>
               {LOCK_TERMS.map(t=><option key={t} value={t}>{t} días</option>)}
             </select>
@@ -4293,10 +4207,10 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
           {ls.expires&&(
             <div style={{gridColumn:"1/-1",background:"#0D1117",
               border:`1px solid ${ls.coversClose?"#7EC8A433":"#E85D7544"}`,borderRadius:6,padding:"8px 10px"}}>
-              <div style={{fontSize:"var(--fs-3)",fontFamily:"DM Mono",color:ls.coversClose?"#7EC8A4":"#E85D75"}}>
+              <div style={{fontSize:11,fontFamily:"DM Mono",color:ls.coversClose?"#7EC8A4":"#E85D75"}}>
                 Vence {ls.expires}
                 {ls.coe&&(ls.coversClose
-                  ? <span style={{color:"var(--t2)"}}> · cubre el cierre con {ls.spare}d de sobra</span>
+                  ? <span style={{color:"#8B949E"}}> · cubre el cierre con {ls.spare}d de sobra</span>
                   : <span> · {ls.shortBy}d antes del cierre, habrá extensión</span>)}
               </div>
             </div>
@@ -4310,7 +4224,7 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
         onChangeLender={onChangeLender}/>
 
       {conf.length>0&&conf.map((c,i)=>(
-        <div key={i} style={{fontSize:"var(--fs-3)",color:c.sev==="critical"?"#E85D75":"#F5A623",background:"#0D1117",
+        <div key={i} style={{fontSize:10.5,color:c.sev==="critical"?"#E85D75":"#F5A623",background:"#0D1117",
           border:`1px solid ${c.sev==="critical"?"#E85D7544":"#F5A62344"}`,borderRadius:5,
           padding:"7px 9px",lineHeight:1.45}}>{P(c)}</div>
       ))}
@@ -4334,8 +4248,8 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
   const [oc,setOc]=useState("met"); const [ocDate,setOcDate]=useState(""); const [ocNote,setOcNote]=useState("");
   const [showDerived,setShowDerived]=useState(false);
 
-  const fs={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"var(--t1)",
-    padding:"7px 9px",fontSize:"var(--fs-4)",fontFamily:"'IBM Plex Sans',system-ui,-apple-system,sans-serif",width:"100%"};
+  const fs={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",
+    padding:"7px 9px",fontSize:12,fontFamily:"'DM Mono','Courier New',monospace",width:"100%"};
 
   // Preview against what is being typed, not against what was last saved.
   const draft={...file,state,contingencies:{...box,...d}};
@@ -4361,11 +4275,11 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
     const typing = d[key] && !isValidISO(d[key]);
     return (
       <div>
-        <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>{label}</div>
+        <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>{label}</div>
         <input type="date" value={d[key]} onChange={e=>setD({...d,[key]:e.target.value})}
           style={{...fs,borderColor:typing?"#F5A623":"#30363D"}}/>
-        {typing&&<div style={{fontSize:"var(--fs-1)",color:"#F5A623",marginTop:3}}>{TX("typingYear")}</div>}
-        {!typing&&hint&&<div style={{fontSize:"var(--fs-1)",color:"var(--t4)",marginTop:3}}>{hint}</div>}
+        {typing&&<div style={{fontSize:9,color:"#F5A623",marginTop:3}}>{TX("typingYear")}</div>}
+        {!typing&&hint&&<div style={{fontSize:9,color:"#30363D",marginTop:3}}>{hint}</div>}
       </div>
     );
   };
@@ -4374,11 +4288,11 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
     <div style={{background:"rgba(232,93,117,.04)",border:"1px solid #E85D7533",borderRadius:8,
       padding:14,display:"flex",flexDirection:"column",gap:12}}>
       <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#E85D75",letterSpacing:"1px"}}>{TX("contingencies")}</span>
-        <span style={{fontSize:"var(--fs-2)",color:"var(--t2)"}}>
+        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#E85D75",letterSpacing:"1px"}}>{TX("contingencies")}</span>
+        <span style={{fontSize:9.5,color:"#6E7681"}}>
           {TX("contClock")}
         </span>
-        <span style={{marginLeft:"auto",fontSize:"var(--fs-1)",color:"var(--t3)"}}>{TX("savesWithSave")}</span>
+        <span style={{marginLeft:"auto",fontSize:9,color:"#484F58"}}>{TX("savesWithSave")}</span>
       </div>
 
 
@@ -4392,12 +4306,12 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
       {/* STATE — decides whether the contract counts calendar or business days */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 2fr",gap:10,alignItems:"end"}}>
         <div>
-          <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>ESTADO</div>
+          <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>ESTADO</div>
           <select value={state} onChange={e=>setState(e.target.value)} style={fs}>
             {US_STATES.map(s=><option key={s}>{s}</option>)}
           </select>
         </div>
-        <div style={{fontSize:"var(--fs-2)",color:basis==="business"?"#F5A623":"var(--t2)",paddingBottom:8}}>
+        <div style={{fontSize:10,color:basis==="business"?"#F5A623":"#6E7681",paddingBottom:8}}>
           {basis==="business"
             ? TX("businessDays")
             : TX("calendarDays",{s:state})}
@@ -4410,7 +4324,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
         {field("contractSignal",TX("contractSignal"),TX("contractSignalHint"))}
         {(()=>{const n=signalToAcceptDays(draft);
           return n===null?null:(
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t2)",marginTop:3}}>{TX("signalGap",{n})}</div>
+            <div style={{fontSize:9,color:"#6E7681",marginTop:3}}>{TX("signalGap",{n})}</div>
           );})()}
       </div>
 
@@ -4421,7 +4335,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
 
       {/* CONTRACT — deposit at risk */}
       <div>
-        <div style={{fontSize:"var(--fs-2)",color:"#E85D75",letterSpacing:"1px",marginBottom:6,fontWeight:500}}>
+        <div style={{fontSize:9.5,color:"#E85D75",letterSpacing:"1px",marginBottom:6,fontWeight:500}}>
           {TX("fromContract")}
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
@@ -4432,7 +4346,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
 
       {/* DELIVERY CHAIN */}
       <div>
-        <div style={{fontSize:"var(--fs-2)",color:"#F5A623",letterSpacing:"1px",marginBottom:6,fontWeight:500}}>
+        <div style={{fontSize:9.5,color:"#F5A623",letterSpacing:"1px",marginBottom:6,fontWeight:500}}>
           {TX("deliveryChain")}
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
@@ -4442,9 +4356,9 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
         </div>
         {cd&&(
           <div style={{marginTop:8,background:"rgba(189,101,232,.08)",border:"1px solid #BD65E844",
-            borderRadius:6,padding:"8px 10px",fontSize:"var(--fs-3)",color:"#BD65E8",fontFamily:"DM Mono"}}>
+            borderRadius:6,padding:"8px 10px",fontSize:10.5,color:"#BD65E8",fontFamily:"DM Mono"}}>
             {TX("cdReceivedBy",{d:cd})}
-            <div style={{color:"var(--t2)",fontSize:"var(--fs-2)",marginTop:3}}>
+            <div style={{color:"#8B949E",fontSize:9.5,marginTop:3}}>
               {TX("cdCounts",{d:cdMailDeadline(d.coe)})}
             </div>
           </div>
@@ -4461,15 +4375,15 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
         return (
           <div style={{background:p.state==="ahead"?"rgba(126,200,164,.07)":"rgba(232,93,117,.07)",
             border:`1px solid ${col}44`,borderRadius:6,padding:"10px 12px"}}>
-            <div style={{fontSize:"var(--fs-3)",color:col,lineHeight:1.45}}>
+            <div style={{fontSize:11,color:col,lineHeight:1.45}}>
               {p.state==="ahead"?TX("paceAheadFull",{n:p.days}):TX("paceBehindFull",{n:p.days})}
             </div>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t2)",marginTop:4,lineHeight:1.5}}>
+            <div style={{fontSize:9,color:"#8B949E",marginTop:4,lineHeight:1.5}}>
               {TX("paceBasis",{s:file.stage,d:p.shouldStartBy})}
               {p.couldCloseBy?" · "+TX("paceCould",{d:p.couldCloseBy}):""}
             </div>
             {p.state==="ahead"&&(
-              <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:4,lineHeight:1.5}}>
+              <div style={{fontSize:9,color:"#484F58",marginTop:4,lineHeight:1.5}}>
                 {TX("paceAddendum")}
               </div>
             )}
@@ -4479,11 +4393,11 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
       {/* CONFLICTS */}
       {conflicts.length>0&&(
         <div style={{display:"flex",flexDirection:"column",gap:6}}>
-          <div style={{fontSize:"var(--fs-2)",color:"#E85D75",letterSpacing:"1px",fontWeight:500}}>
+          <div style={{fontSize:9.5,color:"#E85D75",letterSpacing:"1px",fontWeight:500}}>
             ⚠ {conflicts.length} {conflicts.length===1?TX("conflicts"):TX("conflictsPl")}
           </div>
           {conflicts.map((c,i)=>(
-            <div key={i} style={{fontSize:"var(--fs-3)",color:c.sev==="critical"?"#E85D75":"#F5A623",
+            <div key={i} style={{fontSize:10.5,color:c.sev==="critical"?"#E85D75":"#F5A623",
               background:"#0D1117",border:`1px solid ${c.sev==="critical"?"#E85D7544":"#F5A62344"}`,
               borderRadius:5,padding:"7px 9px",lineHeight:1.45}}>{P(c)}</div>
           ))}
@@ -4493,28 +4407,28 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
       {/* RESULTS PER CONTINGENCY */}
       {rows.some(r=>r.date)&&(
         <div style={{display:"flex",flexDirection:"column",gap:6}}>
-          <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px"}}>{TX("resultPerCont")}</div>
+          <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px"}}>{TX("resultPerCont")}</div>
           {rows.filter(r=>r.date).map(r=>{
             const ext=contingencyExtensionCount(file,r.id);
             return (
               <div key={r.id} style={{background:"#0D1117",border:"1px solid #21262D",borderRadius:5,padding:"8px 10px"}}>
                 <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                  <span style={{fontSize:"var(--fs-2)",color:LEVEL_COLOR[r.level],fontWeight:500,minWidth:38}}>{r.short}</span>
-                  <span style={{fontSize:"var(--fs-3)",color:"var(--t2)"}}>{r.date}</span>
-                  {r.contractDays!==null&&<span style={{fontSize:"var(--fs-1)",color:r.contractDays<0?"#E85D75":"#30363D"}}>
+                  <span style={{fontSize:10,color:LEVEL_COLOR[r.level],fontWeight:500,minWidth:38}}>{r.short}</span>
+                  <span style={{fontSize:10.5,color:"#8B949E"}}>{r.date}</span>
+                  {r.contractDays!==null&&<span style={{fontSize:9,color:r.contractDays<0?"#E85D75":"#30363D"}}>
                     {r.contractDays} {TX("contractDaysOf",{b:r.basis==="business"?TX("bizShort"):TX("calShort")})}
                     {r.contractDays<0?" ⚠":""}</span>}
-                  <span style={{fontSize:"var(--fs-2)",color:r.outcomeMeta.color,marginLeft:"auto"}}>
+                  <span style={{fontSize:9.5,color:r.outcomeMeta.color,marginLeft:"auto"}}>
                     {P(r.outcomeMeta)}{ext>0?` ·${ext}×`:""}
                   </span>
                   <button className="hov" onClick={()=>setOpenId(openId===r.id?null:r.id)}
-                    style={{background:"#21262D",border:"1px solid #30363D",borderRadius:4,color:"var(--t2)",
-                      fontSize:"var(--fs-1)",padding:"3px 7px",cursor:"pointer",fontFamily:"DM Mono"}}>
+                    style={{background:"#21262D",border:"1px solid #30363D",borderRadius:4,color:"#8B949E",
+                      fontSize:9,padding:"3px 7px",cursor:"pointer",fontFamily:"DM Mono"}}>
                     {openId===r.id?"✕":TX("record")}
                   </button>
                 </div>
                 {r.depositAtRisk&&(
-                  <div style={{fontSize:"var(--fs-2)",color:"#E85D75",marginTop:5}}>
+                  <div style={{fontSize:9.5,color:"#E85D75",marginTop:5}}>
                     {TX("depositExposed")}
                   </div>
                 )}
@@ -4526,14 +4440,14 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
                     </select>
                     {outcomeById(oc).requiresNewDate&&(
                       <div>
-                        <div style={{fontSize:"var(--fs-1)",color:"#F5A623",marginBottom:3}}>
+                        <div style={{fontSize:9,color:"#F5A623",marginBottom:3}}>
                           {TX("newDateAddendum")}
                         </div>
                         <input type="date" value={ocDate} onChange={e=>setOcDate(e.target.value)} style={fs}/>
                       </div>
                     )}
                     {PN(outcomeById(oc))&&(
-                      <div style={{fontSize:"var(--fs-2)",color:outcomeById(oc).color}}>{PN(outcomeById(oc))}</div>
+                      <div style={{fontSize:9.5,color:outcomeById(oc).color}}>{PN(outcomeById(oc))}</div>
                     )}
                     <input value={ocNote} onChange={e=>setOcNote(e.target.value)}
                       placeholder={TX("outcomeNote")} style={fs}/>
@@ -4541,7 +4455,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
                       disabled={outcomeById(oc).requiresNewDate&&!ocDate}
                       style={{background:outcomeById(oc).requiresNewDate&&!ocDate?"#161B22":"#21262D",
                         color:outcomeById(oc).requiresNewDate&&!ocDate?"#30363D":"#7EC8A4",borderRadius:5,
-                        padding:"7px 0",fontSize:"var(--fs-3)",fontFamily:"DM Mono",
+                        padding:"7px 0",fontSize:10.5,fontFamily:"DM Mono",
                         border:`1px solid ${outcomeById(oc).requiresNewDate&&!ocDate?"#21262D":"#7EC8A4"}`,
                         cursor:outcomeById(oc).requiresNewDate&&!ocDate?"not-allowed":"pointer"}}>
                       GUARDAR RESULTADO
@@ -4558,19 +4472,19 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
       {derived.length>0&&(
         <div>
           <button className="hov" onClick={()=>setShowDerived(v=>!v)}
-            style={{background:"transparent",border:"none",color:"#4A90D9",fontSize:"var(--fs-2)",
+            style={{background:"transparent",border:"none",color:"#4A90D9",fontSize:10,
               fontFamily:"DM Mono",cursor:"pointer",padding:0}}>
             {showDerived?"▾":"▸"} {TX("derivedDates")} ({derived.length})
           </button>
           {showDerived&&(
             <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:3}}>
-              <div style={{fontSize:"var(--fs-1)",color:"var(--t4)",marginBottom:5,lineHeight:1.5}}>
+              <div style={{fontSize:9,color:"#30363D",marginBottom:5,lineHeight:1.5}}>
                 {TX("derivedHint")}</div>
               {/* La leyenda va donde se usa el color, no en una pantalla
                   de ayuda que nadie abre. */}
               <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:7}}>
                 {["done","soon","broken"].map(id=>(
-                  <span key={id} style={{fontSize:"var(--fs-1)",color:signalColor(id),letterSpacing:".4px"}}>
+                  <span key={id} style={{fontSize:8.5,color:signalColor(id),letterSpacing:".4px"}}>
                     ● {P(SIGNALS[id])}
                   </span>
                 ))}
@@ -4583,11 +4497,11 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
                 const sig=deadlineSignal(r,file);
                 const col=r.legal?signalColor("legal"):signalColor(sig);
                 return (
-                  <div key={r.stage} style={{display:"flex",gap:8,fontSize:"var(--fs-2)",fontFamily:"DM Mono",
+                  <div key={r.stage} style={{display:"flex",gap:8,fontSize:10,fontFamily:"DM Mono",
                     color:col,alignItems:"baseline"}}>
                     <span style={{minWidth:70}}>{r.startBy}</span>
                     <span style={{flex:1}}>{r.stage}{r.legal?" ⚖":""}</span>
-                    <span style={{color:"var(--t3)",fontSize:"var(--fs-1)"}}>{r.owner||""}</span>
+                    <span style={{color:"#484F58",fontSize:9}}>{r.owner||""}</span>
                   </div>
                 );
               })}
@@ -4599,10 +4513,10 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
       {/* LOG */}
       {(file.contingencyLog||[]).length>0&&(
         <div style={{borderTop:"1px solid #21262D",paddingTop:8}}>
-          <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{TX("history")}</div>
+          <div style={{fontSize:9.5,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{TX("history")}</div>
           {(file.contingencyLog||[]).slice().reverse().map((e,i)=>(
-            <div key={i} style={{fontSize:"var(--fs-2)",color:"var(--t2)",display:"flex",gap:7,marginBottom:3}}>
-              <span style={{color:"var(--t3)",minWidth:70}}>{e.at}</span>
+            <div key={i} style={{fontSize:10,color:"#6E7681",display:"flex",gap:7,marginBottom:3}}>
+              <span style={{color:"#484F58",minWidth:70}}>{e.at}</span>
               <span style={{color:outcomeById(e.outcome).color,minWidth:70}}>
                 {contingencyById(e.id)?.short} {P(outcomeById(e.outcome))}
               </span>
@@ -4636,9 +4550,9 @@ function DpaPanel({file,lang,onSave,readOnly}){
   const chip=(activo,label,onClick,color)=>(
     <button key={label} className="hov" disabled={readOnly} onClick={onClick}
       style={{background:activo?(color||"#7EC8A4"):"transparent",
-        color:activo?"#0D1117":(color||"var(--t2)"),
+        color:activo?"#0D1117":(color||"#8B949E"),
         border:`1px solid ${activo?(color||"#7EC8A4"):"#30363D"}`,borderRadius:5,
-        padding:"5px 11px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",
+        padding:"5px 11px",fontSize:10.5,fontFamily:"DM Mono",
         cursor:readOnly?"default":"pointer"}}>{label}</button>
   );
 
@@ -4648,30 +4562,30 @@ function DpaPanel({file,lang,onSave,readOnly}){
       padding:on?"12px 14px":"9px 14px",
       display:"flex",flexDirection:"column",gap:on?11:0}}>
       <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:on?"var(--fs-5)":"var(--fs-3)",
-          color:on?"#7EC8A4":"var(--t2)",letterSpacing:"1px"}}>{L2("dpaBlock")}</span>
-        {on&&<span style={{fontSize:"var(--fs-3)",color:"#7EC8A4",fontFamily:"DM Mono"}}>{dpaLabel(file,lang)}</span>}
+        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:on?13:11.5,
+          color:on?"#7EC8A4":"#6E7681",letterSpacing:"1px"}}>{L2("dpaBlock")}</span>
+        {on&&<span style={{fontSize:11,color:"#7EC8A4",fontFamily:"DM Mono"}}>{dpaLabel(file,lang)}</span>}
         <div style={{display:"flex",gap:5,marginLeft:"auto"}}>
           {chip(on,L2("yesShort"),()=>onSave(setDpa(file,{on:true})))}
-          {chip(!on,L2("noShort"),()=>onSave(setDpa(file,{on:false})),"var(--t2)")}
+          {chip(!on,L2("noShort"),()=>onSave(setDpa(file,{on:false})),"#8B949E")}
         </div>
       </div>
 
       {on&&(<>
         <div>
-          <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{L2("dpaPctLabel")}</div>
+          <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L2("dpaPctLabel")}</div>
           <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
             {DPA_PCTS.map(p=>chip(d.pct===p,p+"%",()=>onSave(setDpa(file,{pct:p})),"#F5A623"))}
           </div>
         </div>
 
         <div>
-          <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{L2("dpaForm")}</div>
+          <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L2("dpaForm")}</div>
           <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
             {DPA_FORMS.map(f=>chip(d.form===f.id,P2(f),()=>onSave(setDpa(file,{form:f.id}))))}
           </div>
           {d.form&&(
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:4}}>
+            <div style={{fontSize:9,color:"#484F58",marginTop:4}}>
               {lang==="en"?dpaForm(d.form)?.note_en:dpaForm(d.form)?.note_es}
             </div>
           )}
@@ -4679,7 +4593,7 @@ function DpaPanel({file,lang,onSave,readOnly}){
 
         {d.form==="forgivable"&&(
           <div>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{L2("dpaYears")}</div>
+            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L2("dpaYears")}</div>
             <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
               {[3,5,10].map(y=>chip(d.forgivenessYears===y,y+"",
                 ()=>onSave(setDpa(file,{forgivenessYears:y})),"#4A90D9"))}
@@ -4688,9 +4602,9 @@ function DpaPanel({file,lang,onSave,readOnly}){
         )}
 
         {!dpaComplete(file)&&(
-          <div style={{fontSize:"var(--fs-1)",color:"#F5A623"}}>{L2("dpaIncomplete")}</div>
+          <div style={{fontSize:9,color:"#F5A623"}}>{L2("dpaIncomplete")}</div>
         )}
-        <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",lineHeight:1.5}}>{L2("dpaBlockHint")}</div>
+        <div style={{fontSize:9,color:"#484F58",lineHeight:1.5}}>{L2("dpaBlockHint")}</div>
       </>)}
     </div>
   );
@@ -4707,65 +4621,28 @@ function FindingsPanel({file,profile,onSave}){
   const [waiting,setWaiting]=useState("lo");
   const abiertos=openFindings(file);
   const cerrados=resolvedFindings(file);
-  const fs={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"var(--t1)",
-    padding:"7px 9px",fontSize:"var(--fs-4)",fontFamily:"'IBM Plex Sans',system-ui,-apple-system,sans-serif",width:"100%"};
+  const fs={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",
+    padding:"7px 9px",fontSize:12,fontFamily:"'DM Mono','Courier New',monospace",width:"100%"};
 
   return (
     <div style={{background:abiertos.length?"rgba(232,93,117,.05)":"rgba(126,200,164,.04)",
       border:`1px solid ${abiertos.length?"#E85D7544":"#7EC8A433"}`,borderRadius:8,
       padding:14,display:"flex",flexDirection:"column",gap:10}}>
       <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",
+        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,
           color:abiertos.length?"#E85D75":"#7EC8A4",letterSpacing:"1px"}}>{TX("findings")}</span>
         {abiertos.length>0&&(
           <span style={{background:"#E85D75",color:"#0D1117",borderRadius:10,padding:"1px 8px",
-            fontSize:"var(--fs-2)",fontWeight:500}}>{TX("findingOpen",{n:abiertos.length})}</span>
+            fontSize:10,fontWeight:500}}>{TX("findingOpen",{n:abiertos.length})}</span>
         )}
       </div>
 
-      {/* Los doce puntos con su estado. Marcar limpio no es un hallazgo:
-          el rojo se reserva para lo que está roto, que es lo que lo hace
-          creíble cuando aparece. */}
-      {(()=>{const cov=gate1Coverage(file);
-        const TONO={pending:"var(--t2)",verified:"#06D6A0",na:"var(--t3)",finding:"#E85D75"};
-        return (
-          <div style={{borderBottom:"1px solid #21262D",paddingBottom:11,marginBottom:2}}>
-            <div style={{display:"flex",alignItems:"baseline",gap:8,marginBottom:7,flexWrap:"wrap"}}>
-              <span style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px"}}>{TX("gate1Title")}</span>
-              <span style={{fontSize:"var(--fs-2)",marginLeft:"auto",
-                color:cov.pending===0&&cov.findings===0?"#7EC8A4":"var(--t2)"}}>
-                {cov.pending===0&&cov.findings===0
-                  ? TX("gate1AllDone",{t:cov.total})
-                  : TX("gate1Coverage",{d:cov.done,t:cov.total,p:cov.pending})}
-              </span>
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:4}}>
-              {GATE1_VERIFY_IDS.map(id=>{
-                const st=gate1State(file,id), col=TONO[st], at=gate1At(file,id);
-                const bloqueado=st==="finding";
-                return (
-                  <button key={id} className="hov"
-                    onClick={bloqueado?undefined:()=>onSave(cycleGate1(file,id,profile?.name||null))}
-                    title={bloqueado?TX("gate1Blocked"):""}
-                    style={{background:st==="verified"?"rgba(6,214,160,.10)":
-                      st==="finding"?"rgba(232,93,117,.10)":"transparent",
-                      border:`1px solid ${st==="pending"?"#30363D":col}`,borderRadius:4,
-                      padding:"5px 8px",textAlign:"left",cursor:bloqueado?"default":"pointer",
-                      fontFamily:"DM Mono",display:"flex",flexDirection:"column",gap:1}}>
-                    <span style={{fontSize:"var(--fs-2)",color:st==="na"?"var(--t3)":"var(--t1)",lineHeight:1.3}}>
-                      {P(gate1Item(id))}
-                    </span>
-                    <span style={{fontSize:"var(--fs-1)",color:col}}>
-                      {P(GATE1_STATES[st])}{at&&st!=="finding"?` · ${md(at)}`:""}
-                    </span>
-                  </button>
-                );})}
-            </div>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:6,lineHeight:1.5}}>{TX("gate1Hint")}</div>
-          </div>
-        );})()}
+      {/* La rejilla de los doce puntos NO va aquí. Verificar el 1003 es
+          la revisión que hace Tina antes de registrar; un LO marcándola
+          deja el nombre equivocado en el papel que va a Barrett. El LO ve
+          el conteo en el resumen de arriba y el detalle en PROCESAMIENTO. */}
 
-      {abiertos.length===0&&<div style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>{TX("findingNone")}</div>}
+      {abiertos.length===0&&<div style={{fontSize:11,color:"#484F58"}}>{TX("findingNone")}</div>}
 
       {abiertos.map(f=>{
         const w=waitingMeta(f.waitingOn), edad=findingAge(f);
@@ -4773,23 +4650,32 @@ function FindingsPanel({file,profile,onSave}){
           <div key={f.id} style={{background:"#0D1117",borderLeft:"2px solid #E85D75",
             borderRadius:"0 5px 5px 0",padding:"8px 10px"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8,flexWrap:"wrap"}}>
-              <span style={{fontSize:"var(--fs-2)",color:"var(--t2)"}}>{P(gate1Item(f.item))}</span>
-              <span style={{fontSize:"var(--fs-2)",color:w?.color||"var(--t2)"}}>{P(w)}</span>
+              <span style={{fontSize:10,color:"#8B949E"}}>{P(gate1Item(f.item))}</span>
+              <span style={{fontSize:9.5,color:w?.color||"#8B949E"}}>{P(w)}</span>
             </div>
-            <div style={{fontSize:"var(--fs-3)",color:"var(--t1)",lineHeight:1.5,margin:"3px 0"}}>{f.text}</div>
+            <div style={{fontSize:11.5,color:"#E6EDF3",lineHeight:1.5,margin:"3px 0"}}>{f.text}</div>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
-              <span style={{fontSize:"var(--fs-1)",color:edad>=7?"#E85D75":"var(--t3)"}}>
+              <span style={{fontSize:9,color:edad>=7?"#E85D75":"#484F58"}}>
                 {f.at}{f.by?" · "+String(f.by).split(" ")[0]:""}
                 {edad!==null?" · "+TX("findingDaysOpen",{n:edad}):""}
               </span>
-              <button className="hov" onClick={()=>{
-                  const n=resolveFinding(file,f.id,{by:profile?.name||null});
-                  onSave({findings:n.findings});
-                }}
-                style={{background:"#21262D",border:"1px solid #7EC8A4",borderRadius:4,color:"#7EC8A4",
-                  fontSize:"var(--fs-1)",padding:"3px 9px",cursor:"pointer",fontFamily:"DM Mono"}}>
-                {TX("findingResolve")}
-              </button>
+              {/* Un LO cierra lo que se espera de ÉL. Si el hallazgo espera
+                  a procesamiento o al lender, cerrarlo desde aquí taparía
+                  trabajo que no hizo. */}
+              {(profile?.role!=="lo"||f.waitingOn==="lo")?(
+                <button className="hov" onClick={()=>{
+                    const n=resolveFinding(file,f.id,{by:profile?.name||null});
+                    onSave({findings:n.findings});
+                  }}
+                  style={{background:"#21262D",border:"1px solid #7EC8A4",borderRadius:4,color:"#7EC8A4",
+                    fontSize:9,padding:"3px 9px",cursor:"pointer",fontFamily:"DM Mono"}}>
+                  {TX("findingResolve")}
+                </button>
+              ):(
+                <span style={{fontSize:9,color:"#484F58",fontFamily:"DM Mono"}}>
+                  {TX("findingNotYours",{w:P(waitingMeta(f.waitingOn))})}
+                </span>
+              )}
             </div>
           </div>
         );
@@ -4797,39 +4683,39 @@ function FindingsPanel({file,profile,onSave}){
 
       {!open?(
         <button className="hov" onClick={()=>setOpen(true)}
-          style={{background:"transparent",border:"1px dashed #30363D",borderRadius:5,color:"var(--t2)",
-            fontSize:"var(--fs-3)",fontFamily:"DM Mono",padding:"7px 0",width:"100%",cursor:"pointer"}}>
+          style={{background:"transparent",border:"1px dashed #30363D",borderRadius:5,color:"#8B949E",
+            fontSize:10.5,fontFamily:"DM Mono",padding:"7px 0",width:"100%",cursor:"pointer"}}>
           {TX("findingAdd")}
         </button>
       ):(
         <div style={{background:"#0D1117",border:"1px solid #21262D",borderRadius:6,
           padding:"10px 11px",display:"flex",flexDirection:"column",gap:8}}>
           <div>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>{TX("findingItem")}</div>
+            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>{TX("findingItem")}</div>
             <select value={item} onChange={e=>setItem(e.target.value)} style={fs}>
               {GATE1_ITEMS.map(g=><option key={g.id} value={g.id}>{P(g)}</option>)}
             </select>
           </div>
           <div>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>{TX("findingWhat")}</div>
+            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>{TX("findingWhat")}</div>
             <input value={text} onChange={e=>setText(e.target.value)}
               placeholder={TX("findingWhatPlaceholder")} style={fs}/>
           </div>
           <div>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>{TX("findingWaiting")}</div>
+            <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>{TX("findingWaiting")}</div>
             <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
               {WAITING_IDS.map(id=>{
                 const on=waiting===id,m=FINDING_WAITING[id];
                 return (
                   <button key={id} className="hov" onClick={()=>setWaiting(id)}
                     style={{background:on?m.color:"transparent",color:on?"#0D1117":m.color,
-                      border:`1px solid ${m.color}`,borderRadius:5,padding:"4px 9px",fontSize:"var(--fs-2)",
+                      border:`1px solid ${m.color}`,borderRadius:5,padding:"4px 9px",fontSize:10,
                       fontFamily:"DM Mono",cursor:"pointer"}}>{P(m)}</button>
                 );
               })}
             </div>
           </div>
-          {!text.trim()&&<div style={{fontSize:"var(--fs-1)",color:"#F5A623"}}>{TX("findingNeedsText")}</div>}
+          {!text.trim()&&<div style={{fontSize:9,color:"#F5A623"}}>{TX("findingNeedsText")}</div>}
           <div style={{display:"flex",gap:7}}>
             <button className="hov" disabled={!text.trim()}
               onClick={()=>{
@@ -4839,24 +4725,24 @@ function FindingsPanel({file,profile,onSave}){
               }}
               style={{flex:2,background:text.trim()?"#E85D75":"#161B22",
                 color:text.trim()?"#0D1117":"#30363D",borderRadius:6,padding:"8px 0",
-                fontFamily:"DM Mono",fontSize:"var(--fs-3)",fontWeight:500,border:"none",
+                fontFamily:"DM Mono",fontSize:11,fontWeight:500,border:"none",
                 cursor:text.trim()?"pointer":"not-allowed"}}>{TX("findingSave")}</button>
             <button className="hov" onClick={()=>{setOpen(false);setText("");}}
-              style={{flex:1,background:"#21262D",color:"var(--t2)",borderRadius:6,padding:"8px 0",
-                fontFamily:"DM Mono",fontSize:"var(--fs-3)",border:"none",cursor:"pointer"}}>{TX("cancel")}</button>
+              style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:6,padding:"8px 0",
+                fontFamily:"DM Mono",fontSize:11,border:"none",cursor:"pointer"}}>{TX("cancel")}</button>
           </div>
         </div>
       )}
 
       {cerrados.length>0&&(
         <div style={{borderTop:"1px solid #21262D",paddingTop:8}}>
-          <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>
+          <div style={{fontSize:9,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>
             {TX("findingHistory")} · {cerrados.length}
           </div>
           {cerrados.slice().reverse().map(f=>(
-            <div key={f.id} style={{fontSize:"var(--fs-2)",color:"var(--t2)",marginBottom:4,lineHeight:1.5}}>
-              <span style={{color:"var(--t3)"}}>{P(gate1Item(f.item))}</span> · {f.text}
-              <div style={{fontSize:"var(--fs-1)",color:"var(--t3)"}}>
+            <div key={f.id} style={{fontSize:10,color:"#6E7681",marginBottom:4,lineHeight:1.5}}>
+              <span style={{color:"#484F58"}}>{P(gate1Item(f.item))}</span> · {f.text}
+              <div style={{fontSize:9,color:"#484F58"}}>
                 {TX("findingResolved",{d:f.resolvedAt,who:String(f.resolvedBy||"").split(" ")[0]})}
                 {findingAge(f)!==null?" · "+TX("findingTookDays",{n:findingAge(f)}):""}
               </div>
@@ -4864,7 +4750,7 @@ function FindingsPanel({file,profile,onSave}){
           ))}
         </div>
       )}
-      <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",lineHeight:1.5}}>{TX("findingsHint")}</div>
+      <div style={{fontSize:9,color:"#484F58",lineHeight:1.5}}>{TX("findingsHint")}</div>
     </div>
   );
 }
@@ -4893,6 +4779,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
   // dos bloques en la misma pantalla con dos cifras de dinero distintas.
   const [pendingBps,setPendingBps] = useState(null);
   const [showChange,setShowChange]=useState(false);
+  const [chkBusy,setChkBusy]=useState(false);
   const [newNote,setNewNote]=useState("");
   const [showAllNotes,setShowAllNotes]=useState(false);
   const entries=noteEntries(file);
@@ -4933,7 +4820,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
   const inPrep = stage === PREP_STAGE;
   const archivedFile = !!file.archived;
   const isInbound = !!file.isInbound;
-  const fs2={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"var(--t1)",padding:"8px 10px",fontSize:"var(--fs-5)",fontFamily:"'IBM Plex Sans',system-ui,-apple-system,sans-serif",width:"100%"};
+  const fs2={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",padding:"8px 10px",fontSize:13,fontFamily:"'DM Mono','Courier New',monospace",width:"100%"};
 
   // Live fee calculations for referred-out files
   const finalLoanForCalc = parseInt(outFinalLoan)||parseInt(loanAmt)||file.loan||0;
@@ -4953,21 +4840,21 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
         <div style={{padding:"14px 22px 12px",display:"flex",justifyContent:"space-between",
           alignItems:"flex-start",gap:20,flexWrap:"wrap",flexShrink:0}}>
           <div style={{minWidth:0}}>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:"var(--t1)",letterSpacing:"-0.4px"}}>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:19,color:"#E6EDF3",letterSpacing:"-0.4px"}}>
               {file.borrower}
-              {isInbound&&<span title="Inbound referral" style={{marginLeft:9,fontSize:"var(--fs-4)",color:"#FFD166"}}>🤝</span>}
+              {isInbound&&<span title="Inbound referral" style={{marginLeft:9,fontSize:12,color:"#FFD166"}}>🤝</span>}
             </div>
             <div style={{display:"flex",gap:26,marginTop:11,flexWrap:"wrap"}}>
               {[
-                [TX("hdProduct"), loanType, "var(--t1)"],
-                [TX("hdAmount"),  "$"+parseInt(loanAmt||0).toLocaleString(), "var(--t1)"],
-                ...(lenderNameOf(file)?[[TX("hdLender"), lenderNameOf(file), "var(--t1)"]]:[]),
-                [TX("hdLo"), loAssigned||"—", "var(--t2)"],
-                ...(!inPrep&&!isReferredOut?[[TX("hdProcessor"), processorOf(file).full, "var(--t2)"]]:[]),
+                [TX("hdProduct"), loanType, "#E6EDF3"],
+                [TX("hdAmount"),  "$"+parseInt(loanAmt||0).toLocaleString(), "#E6EDF3"],
+                ...(lenderNameOf(file)?[[TX("hdLender"), lenderNameOf(file), "#E6EDF3"]]:[]),
+                [TX("hdLo"), loAssigned||"—", "#8B949E"],
+                ...(!inPrep&&!isReferredOut?[[TX("hdProcessor"), processorOf(file).full, "#8B949E"]]:[]),
               ].map(([lbl,val,col])=>(
                 <div key={lbl}>
-                  <div style={{fontSize:"var(--fs-1)",letterSpacing:"1.3px",color:"var(--t3)",marginBottom:3}}>{lbl}</div>
-                  <div style={{fontSize:"var(--fs-3)",color:col}}>{val}</div>
+                  <div style={{fontSize:8,letterSpacing:"1.3px",color:"#484F58",marginBottom:3}}>{lbl}</div>
+                  <div style={{fontSize:11.5,color:col}}>{val}</div>
                 </div>
               ))}
             </div>
@@ -4975,9 +4862,9 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
           <div style={{display:"flex",gap:24,alignItems:"flex-start"}}>
             {!inPrep&&!isReferredOut&&(
               <div style={{textAlign:"right"}}>
-                <div style={{fontSize:"var(--fs-1)",letterSpacing:"1.3px",color:"var(--t3)",marginBottom:3}}>{TX("hdStage")}</div>
-                <div style={{fontSize:"var(--fs-4)",color:ph.color}}>{stage}</div>
-                <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:2}}>
+                <div style={{fontSize:8,letterSpacing:"1.3px",color:"#484F58",marginBottom:3}}>{TX("hdStage")}</div>
+                <div style={{fontSize:12,color:ph.color}}>{stage}</div>
+                <div style={{fontSize:9,color:"#484F58",marginTop:2}}>
                   {daysInStage(file)===null?"—":`${daysInStage(file)}d`}
                   {(()=>{const c=stageClock(file.stage,file);return c?` · ${TX("hdCeiling",{n:c.late})}`:"";})()}
                 </div>
@@ -4985,9 +4872,9 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
             )}
             {closing&&(
               <div style={{textAlign:"right"}}>
-                <div style={{fontSize:"var(--fs-1)",letterSpacing:"1.3px",color:"var(--t3)",marginBottom:3}}>{TX("hdClosing")}</div>
-                <div style={{fontSize:"var(--fs-4)",color:"#F5A623"}}>{md(closing)}</div>
-                <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:2}}>
+                <div style={{fontSize:8,letterSpacing:"1.3px",color:"#484F58",marginBottom:3}}>{TX("hdClosing")}</div>
+                <div style={{fontSize:12,color:"#F5A623"}}>{md(closing)}</div>
+                <div style={{fontSize:9,color:"#484F58",marginTop:2}}>
                   {(()=>{const d=daysTil(closing);
                     return d===null?"":d===0?TX("closingToday"):d>0?TX("hdInDays",{n:d}):TX("pastDue");})()}
                 </div>
@@ -5000,17 +4887,17 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
               const col=signalColor(p.signal);
               return (
                 <div style={{textAlign:"right"}}>
-                  <div style={{fontSize:"var(--fs-1)",letterSpacing:"1.3px",color:"var(--t3)",marginBottom:3}}>{TX("hdPace")}</div>
-                  <div style={{fontSize:"var(--fs-4)",color:col}}>
+                  <div style={{fontSize:8,letterSpacing:"1.3px",color:"#484F58",marginBottom:3}}>{TX("hdPace")}</div>
+                  <div style={{fontSize:12,color:col}}>
                     {p.state==="ahead"?"▲":"▼"} {TX("paceDays",{n:p.days})}
                   </div>
-                  <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:2}}>
+                  <div style={{fontSize:9,color:"#484F58",marginTop:2}}>
                     {p.state==="ahead"?TX("paceAhead"):TX("paceBehind")}
                   </div>
                 </div>
               );})()}
-            <button onClick={onClose} style={{background:"transparent",border:"none",color:"var(--t3)",
-              fontSize:"var(--fs-8)",cursor:"pointer",padding:"2px 0 0 4px",lineHeight:1}}>✕</button>
+            <button onClick={onClose} style={{background:"transparent",border:"none",color:"#484F58",
+              fontSize:18,cursor:"pointer",padding:"2px 0 0 4px",lineHeight:1}}>✕</button>
           </div>
         </div>
 
@@ -5024,15 +4911,15 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
         {!isClosed&&!inPrep&&!isReferredOut&&(
           <div style={{padding:"9px 22px",borderTop:"1px solid #21262D",
             display:"flex",alignItems:"center",gap:11,flexShrink:0,justifyContent:"flex-end"}}>
-            <span style={{fontSize:"var(--fs-1)",color:"var(--t3)"}}>
+            <span style={{fontSize:9,color:"#484F58"}}>
               {daysInStage(file)===null?"—":`${daysInStage(file)}d`}
               {(()=>{const c=stageClock(file.stage,file);return c?` · ${TX("hdCeiling",{n:c.late})}`:"";})()}
             </span>
-            <span style={{fontSize:"var(--fs-1)",letterSpacing:"1.3px",color:"var(--t3)"}}>{TX("hdStage")}</span>
+            <span style={{fontSize:8,letterSpacing:"1.3px",color:"#484F58"}}>{TX("hdStage")}</span>
             <select value={stage} onChange={e=>{setStage(e.target.value);
                 onSave(stagePatch(file, e.target.value));}}
               style={{background:"#0D1117",border:`1px solid ${ph.color}`,borderRadius:6,
-                color:ph.color,padding:"7px 11px",fontSize:"var(--fs-4)",fontFamily:"DM Mono",
+                color:ph.color,padding:"7px 11px",fontSize:12,fontFamily:"DM Mono",
                 minWidth:280,cursor:"pointer"}}>
               {ALL_STAGES.map((s,i)=><option key={i} value={s.stage} style={{color:s.phase.color,background:"#0D1117"}}>[{s.phase.short}] {s.stage}</option>)}
               <optgroup label="── Bank-to-Bank Referral ──">
@@ -5061,7 +4948,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
             return (
               <button key={id} className="hov" onClick={()=>setTab(id)}
                 style={{background:on?"#171D26":"transparent",border:"none",cursor:"pointer",
-                  color:on?"#F5A623":"var(--t2)",fontSize:"var(--fs-3)",fontFamily:"Syne",
+                  color:on?"#F5A623":"#8B949E",fontSize:11.5,fontFamily:"Syne",
                   fontWeight:on?800:500,letterSpacing:"1.6px",padding:"12px 0",
                   textAlign:"center",borderRight:i<4?"1px solid #21262D":"none",
                   boxShadow:on?"inset 0 -2px 0 #F5A623":"none",
@@ -5080,7 +4967,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
         {/* ESTRUCTURA — lo que define el prestamo. Columna izquierda. */}
         <div style={{display:tab==="loan"?"grid":"none",gridTemplateColumns:"1fr 1fr",gap:10,alignSelf:"start"}}>
           <div>
-            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{L("loanType")}</div>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L("loanType")}</div>
             <select value={loanType} onChange={e=>setLoanType(e.target.value)} style={fs2}>
               {LOAN_TYPE_GROUPS.map(g=><optgroup key={g.group} label={g.group}>{g.types.map(lt=><option key={lt}>{lt}</option>)}</optgroup>)}
               {/* Un archivo viejo puede traer un tipo que ya no esta en el
@@ -5094,13 +4981,13 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
               )}
             </select>
             {loanType&&!LOAN_TYPES.includes(loanType)&&(
-              <div style={{fontSize:"var(--fs-1)",color:"#F5A623",marginTop:4,lineHeight:1.5}}>
+              <div style={{fontSize:9,color:"#F5A623",marginTop:4,lineHeight:1.5}}>
                 {TX("legacyTypeHint")}
               </div>
             )}
           </div>
           <div>
-            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{L("loanAmount")}</div>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L("loanAmount")}</div>
             <input value={loanAmt} onChange={e=>setLoanAmt(e.target.value)} placeholder="350000" style={fs2}/>
           </div>
           {/* El DPA es parte de COMO ESTA ARMADO el prestamo, igual que el
@@ -5114,13 +5001,13 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
           )}
           {isAdmin && (
             <div>
-              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>BPS COMP <span style={{color:"#F5A623"}}>{TX("reportedByDash")}</span></div>
+              <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>BPS COMP <span style={{color:"#F5A623"}}>{TX("reportedByDash")}</span></div>
               <input value={bps} onChange={e=>setBps(e.target.value)} placeholder="150" style={{...fs2,color:"#F5A623"}}/>
             </div>
           )}
           {isAdmin && (
             <div style={{gridColumn:"1/-1"}}>
-              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:2}}>
+              <div style={{fontSize:10,color:"#484F58",marginTop:2}}>
                 {TX("bpsFieldHint",{n:BPS_RATE})}
               </div>
             </div>
@@ -5132,14 +5019,14 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
             media pantalla vacia al lado de un bloque estirado. */}
         <div style={{display:tab==="loan"?"grid":"none",gridTemplateColumns:"1fr 1fr",gap:10,alignSelf:"start"}}>
           <div style={{gridColumn:"1/-1"}}>
-            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{L("loanOfficer")}</div>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L("loanOfficer")}</div>
             <select value={loAssigned} onChange={e=>setLoAssigned(e.target.value)} style={fs2}>
               {LO_LIST.map(lo=><option key={lo.name} value={lo.name}>{lo.name} · {lo.role}</option>)}
             </select>
           </div>
           {!inPrep && !isReferredOut && (
             <div style={{gridColumn:"1/-1"}}>
-              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{L("processor")}</div>
+              <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L("processor")}</div>
               {isAdmin?(
                 <select value={processor} onChange={e=>setProcessor(e.target.value)} style={fs2}>
                   {PROCESSOR_IDS.map(id=>(
@@ -5147,10 +5034,10 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
                   ))}
                 </select>
               ):(
-                <div style={{fontSize:"var(--fs-4)",color:processorOf(file).color}}>{processorOf(file).full}</div>
+                <div style={{fontSize:12.5,color:processorOf(file).color}}>{processorOf(file).full}</div>
               )}
               {isRegistered(file)&&(
-                <div style={{fontSize:"var(--fs-2)",color:"#7EC8A4",marginTop:4}}>
+                <div style={{fontSize:10,color:"#7EC8A4",marginTop:4}}>
                   {L("registeredOn",{d:registeredAt(file)})}
                   {registeredBy(file)?L("registeredBy",{who:String(registeredBy(file)).split(" ")[0]}):""}
                   {registrationCount(file)>1?` · ${L("registerTimes",{n:registrationCount(file)})}`:""}
@@ -5159,7 +5046,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
               {/* El lender cambió y el archivo volvió a Tina. Dorado: se
                   avecina un trabajo, nada está roto todavía. */}
               {needsReRegistration(file)&&(
-                <div style={{fontSize:"var(--fs-2)",color:"#F5A623",marginTop:4,lineHeight:1.5}}>
+                <div style={{fontSize:10,color:"#F5A623",marginTop:4,lineHeight:1.5}}>
                   {L("reRegisterNeeded",{n:lenderNameOf(file)||"—"})}
                 </div>
               )}
@@ -5175,7 +5062,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
                 <div title={TX("registerNoLenderHint")}
                   style={{marginTop:7,width:"100%",background:"transparent",
                     color:"#F5A623",borderRadius:6,padding:"8px 0",fontFamily:"DM Mono",
-                    fontSize:"var(--fs-3)",border:"1px dashed #F5A62366",textAlign:"center",
+                    fontSize:11,border:"1px dashed #F5A62366",textAlign:"center",
                     cursor:"default"}}>
                   {TX("registerNoLender")}
                 </div>
@@ -5194,33 +5081,33 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
                   title={TX("registerHint")}
                   style={{marginTop:7,width:"100%",background:"rgba(126,200,164,.1)",
                     color:"#7EC8A4",borderRadius:6,padding:"8px 0",fontFamily:"DM Mono",
-                    fontSize:"var(--fs-3)",border:"1px solid #7EC8A4",cursor:"pointer"}}>
+                    fontSize:11,border:"1px solid #7EC8A4",cursor:"pointer"}}>
                   {TX("register")}
                 </button>
               )}
-              <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:4,lineHeight:1.5}}>
+              <div style={{fontSize:9,color:"#484F58",marginTop:4,lineHeight:1.5}}>
                 {L("processorHint")}
                 {PROCESSORS[processor]?.external?" · "+L("processorExternal"):""}
               </div>
             </div>
           )}
           <div style={{gridColumn:"1/-1"}}>
-            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{L("referralPartner")}</div>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L("referralPartner")}</div>
             <input value={referralPartner} onChange={e=>setReferralPartner(e.target.value)}
               list="socios-conocidos" placeholder={TX("partnerPlaceholder")} style={fs2}/>
             <datalist id="socios-conocidos">
               {knownPartners(allFiles||[]).map(n=><option key={n} value={n}/>)}
             </datalist>
             {referralPartner.trim()&&!knownPartners(allFiles||[]).some(n=>canonicalPartner(n)===canonicalPartner(referralPartner))&&(
-              <div style={{fontSize:"var(--fs-1)",color:"#F5A623",marginTop:4}}>{TX("newPartner")}</div>
+              <div style={{fontSize:9,color:"#F5A623",marginTop:4}}>{TX("newPartner")}</div>
             )}
           </div>
           <div>
-            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>📱 PHONE</div>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>📱 PHONE</div>
             <input type="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="(702) 555-1234" style={fs2}/>
           </div>
           <div>
-            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>✉ EMAIL</div>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>✉ EMAIL</div>
             <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="borrower@email.com" style={fs2}/>
           </div>
         </div>
@@ -5241,9 +5128,13 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
           <div style={{background:"rgba(189,101,232,.04)",border:"1px solid #BD65E833",
             borderRadius:8,padding:14,display:"flex",flexDirection:"column",gap:10,
             gridRow:"span 3"}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#BD65E8",
+            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#BD65E8",
               letterSpacing:"1px"}}>{L("intake")}</span>
-            <IntakePane file={file} lang={lang} readOnly={isAssistant}
+            {/* La admisión la captura el LO al precalificar y la COMPLETA
+                procesamiento si falta algo — lo dice el propio texto del
+                bloque. `readOnly={isAssistant}` bloqueaba justamente a Tina
+                y a Laura, que son quienes la terminan. */}
+            <IntakePane file={file} lang={lang} readOnly={false}
               onSave={next=>onSave({intake:next.intake})}/>
           </div>
         )}
@@ -5253,16 +5144,77 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
           <FindingsPanel file={file} profile={profile} onSave={onSave}/>
         )}
 
-        {/* HITOS Y RESULTADO DE UW — el mismo bloque que ve la procesadora.
-            Si Martha marca algo y aqui no se ve, volvemos a los correos. */}
+        {/* ESTADO DE PROCESAMIENTO — RESUMEN, NO PANTALLA.
+            Aquí vivía la pantalla completa de Martha: la rejilla de los doce
+            puntos, los hitos, los números del préstamo y el resultado de UW,
+            todos tocables. Era un error de montaje. Un LO que toca un botón
+            ahí pisa el trabajo de otra persona, y el papel de Barrett acaba
+            diciendo "Jose revisó esto" cuando quien revisó fue Tina.
+            El LO ve el estado; el detalle vive en PROCESAMIENTO. */}
         {tab==="file" && !inPrep && !isReferredOut && (
           <div style={{background:"rgba(126,200,164,.04)",border:"1px solid #7EC8A433",
-            borderRadius:8,padding:14}}>
-            <MilestonesPane file={{...file,__who:profile?.name||null}} lang={lang}
-              readOnly={isAssistant}
-              onSave={next=>onSave({registrations:next.registrations,
-                milestones:next.milestones, uwResult:next.uwResult, uwLog:next.uwLog,
-                orders:next.orders})}/>
+            borderRadius:8,padding:14,display:"flex",flexDirection:"column",gap:9}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#7EC8A4",
+                letterSpacing:"1px"}}>{TX("procStatus")}</span>
+              <span style={{marginLeft:"auto",fontSize:9,color:"#484F58"}}>{TX("procReadOnly")}</span>
+            </div>
+
+            {(()=>{
+              const cov=gate1Coverage(file);
+              const hitos=visibleMilestones(file);
+              const hechos=hitos.filter(m=>milestoneAt(file,m.id)).length;
+              const res=uwOutcome(file);
+              const dias=daysTil(closing);
+              // Once puntos sin revisar en un archivo que firma en once días
+              // es lo único que un LO necesita ver de aquí.
+              const urgente=cov.pending>0&&dias!==null&&dias<=14;
+              const fila=(label,valor,color)=>(
+                <div style={{display:"flex",gap:10,fontSize:11,alignItems:"baseline"}}>
+                  <span style={{color:"#484F58",minWidth:104}}>{label}</span>
+                  <span style={{color:color||"#8B949E",fontFamily:"DM Mono",flex:1}}>{valor}</span>
+                </div>
+              );
+              return (<>
+                {fila(TX("gate1Title"),
+                  cov.pending===0&&cov.findings===0
+                    ? TX("gate1AllDone",{t:cov.total})
+                    : TX("gate1Coverage",{d:cov.done,t:cov.total,p:cov.pending}),
+                  cov.findings>0?"#E85D75":urgente?"#E85D75":cov.pending===0?"#7EC8A4":"#F5A623")}
+                {fila(TX("sumRegister"),
+                  isRegistered(file)
+                    ? `${registeredAt(file)}${registeredBy(file)?" · "+String(registeredBy(file)).split(" ")[0]:""}`
+                      + (discEsignedAt(file)?` · ${TX("discEsigned").toLowerCase()} ${discEsignedAt(file)}`:"")
+                    : needsReRegistration(file) ? TX("reRegisterNeeded",{n:lenderNameOf(file)||"—"})
+                    : TX("sumNone"),
+                  isRegistered(file)?"#7EC8A4":needsReRegistration(file)?"#F5A623":"#6E7681")}
+                {fila(TX("uwResult"),
+                  res?TX("uwResultOn",{o:P(uwOutcomeMeta(res)),d:uwOutcomeAt(file)}):TX("sumNone"),
+                  res?signalColor(uwOutcomeMeta(res).signal):"#6E7681")}
+                {fila(TX("milestones"),
+                  hitos.length?TX("sumOf",{a:hechos,b:hitos.length}):TX("sumNone"),
+                  hechos===hitos.length&&hitos.length?"#7EC8A4":"#6E7681")}
+              </>);
+            })()}
+
+            {/* El papel sí es del BM: va al expediente y a payroll. */}
+            {isAdmin&&(
+              <button className="hov" disabled={chkBusy}
+                onClick={async()=>{
+                  setChkBusy(true);
+                  try{ await downloadChecklist(file); }
+                  catch{ alert(TX("chkFailed")); }
+                  finally{ setChkBusy(false); }
+                }}
+                title={TX("chkHint")}
+                style={{marginTop:2,width:"100%",background:"#21262D",
+                  color:chkBusy?"#484F58":"#8B949E",borderRadius:5,padding:"8px 0",
+                  fontFamily:"DM Mono",fontSize:10.5,border:"1px solid #30363D",
+                  cursor:chkBusy?"wait":"pointer"}}>
+                {chkBusy?TX("chkBusy"):TX("chkPrint")}
+              </button>
+            )}
+            <div style={{fontSize:9,color:"#484F58",lineHeight:1.5}}>{TX("procWhere")}</div>
           </div>
         )}
 
@@ -5277,27 +5229,27 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
           <div style={{background:"rgba(74,144,217,.05)",border:"1px solid #4A90D933",borderRadius:8,
             padding:14,display:"flex",flexDirection:"column",gap:9}}>
             <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#4A90D9",letterSpacing:"1px"}}>
+              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#4A90D9",letterSpacing:"1px"}}>
                 {TX("compliance")}
               </span>
-              <span style={{marginLeft:"auto",fontSize:"var(--fs-2)",
-                color:docsDone({compliance:compDraft})===PAYROLL_DOCS.length&&chkDraft?"#7EC8A4":"var(--t2)"}}>
+              <span style={{marginLeft:"auto",fontSize:10,
+                color:docsDone({compliance:compDraft})===PAYROLL_DOCS.length&&chkDraft?"#7EC8A4":"#6E7681"}}>
                 {TX("docsOf",{a:docsDone({compliance:compDraft}),b:PAYROLL_DOCS.length})}
               </span>
             </div>
 
-            <label style={{display:"flex",alignItems:"center",gap:8,fontSize:"var(--fs-3)",
-              color:chkDraft?"#7EC8A4":"var(--t1)",cursor:"pointer"}}>
+            <label style={{display:"flex",alignItems:"center",gap:8,fontSize:11.5,
+              color:chkDraft?"#7EC8A4":"#E6EDF3",cursor:"pointer"}}>
               <input type="checkbox" checked={chkDraft} onChange={e=>setChkDraft(e.target.checked)}
                 style={{accentColor:"#7EC8A4",cursor:"pointer"}}/>
               {TX("checkReceived")}
             </label>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:-4,marginLeft:21}}>{TX("checkWhere")}</div>
+            <div style={{fontSize:9,color:"#484F58",marginTop:-4,marginLeft:21}}>{TX("checkWhere")}</div>
 
             <div style={{borderTop:"1px solid #21262D",paddingTop:8}}>
               {PAYROLL_DOCS.map(d=>(
-                <label key={d.id} style={{display:"flex",alignItems:"center",gap:8,fontSize:"var(--fs-3)",
-                  color:compDraft[d.id]?"#7EC8A4":"var(--t2)",cursor:"pointer",marginBottom:5}}>
+                <label key={d.id} style={{display:"flex",alignItems:"center",gap:8,fontSize:11.5,
+                  color:compDraft[d.id]?"#7EC8A4":"#8B949E",cursor:"pointer",marginBottom:5}}>
                   <input type="checkbox" checked={!!compDraft[d.id]}
                     onChange={e=>setCompDraft({...compDraft,[d.id]:e.target.checked})}
                     style={{accentColor:"#7EC8A4",cursor:"pointer"}}/>
@@ -5305,7 +5257,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
                 </label>
               ))}
             </div>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",lineHeight:1.5}}>{TX("complianceHint")}</div>
+            <div style={{fontSize:9,color:"#484F58",lineHeight:1.5}}>{TX("complianceHint")}</div>
           </div>
         )}
 
@@ -5321,24 +5273,24 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
         {tab==="loan" && isInbound && (
           <div style={{background:"rgba(255,209,102,.06)",border:"1px solid #FFD16644",borderRadius:8,padding:14,display:"flex",flexDirection:"column",gap:10}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:2}}>
-              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#FFD166",letterSpacing:"1px"}}>🤝 INBOUND — REFERRING BANKER</span>
-              <span style={{fontSize:"var(--fs-2)",color:"var(--t2)"}}>who sent you this deal</span>
+              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#FFD166",letterSpacing:"1px"}}>🤝 INBOUND — REFERRING BANKER</span>
+              <span style={{fontSize:10,color:"#8B949E"}}>who sent you this deal</span>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
               <div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>BANKER NAME</div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>BANKER NAME</div>
                 <input value={inBankerName} onChange={e=>setInBankerName(e.target.value)} placeholder="John Doe" style={fs2}/>
               </div>
               <div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>COMPANY</div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>COMPANY</div>
                 <input value={inBankerCompany} onChange={e=>setInBankerCompany(e.target.value)} placeholder="XYZ Mortgage" style={fs2}/>
               </div>
               <div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>📱 BANKER PHONE</div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>📱 BANKER PHONE</div>
                 <input type="tel" value={inBankerPhone} onChange={e=>setInBankerPhone(e.target.value)} placeholder="(702) 555-0000" style={fs2}/>
               </div>
               <div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>✉ BANKER EMAIL</div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>✉ BANKER EMAIL</div>
                 <input type="email" value={inBankerEmail} onChange={e=>setInBankerEmail(e.target.value)} placeholder="banker@company.com" style={fs2}/>
               </div>
             </div>
@@ -5346,13 +5298,13 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
               <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:2}}>
                 {inBankerPhone && (
                   <a href={`tel:${inBankerPhone.replace(/[^\d+]/g,"")}`}
-                    style={{background:"rgba(255,209,102,.1)",border:"1px solid #FFD16655",borderRadius:5,padding:"4px 9px",color:"#FFD166",fontSize:"var(--fs-3)",fontFamily:"DM Mono",textDecoration:"none"}}>
+                    style={{background:"rgba(255,209,102,.1)",border:"1px solid #FFD16655",borderRadius:5,padding:"4px 9px",color:"#FFD166",fontSize:11,fontFamily:"DM Mono",textDecoration:"none"}}>
                     📱 Call banker
                   </a>
                 )}
                 {inBankerEmail && (
                   <a href={`mailto:${inBankerEmail}`}
-                    style={{background:"rgba(255,209,102,.1)",border:"1px solid #FFD16655",borderRadius:5,padding:"4px 9px",color:"#FFD166",fontSize:"var(--fs-3)",fontFamily:"DM Mono",textDecoration:"none"}}>
+                    style={{background:"rgba(255,209,102,.1)",border:"1px solid #FFD16655",borderRadius:5,padding:"4px 9px",color:"#FFD166",fontSize:11,fontFamily:"DM Mono",textDecoration:"none"}}>
                     ✉ Email banker
                   </a>
                 )}
@@ -5366,16 +5318,16 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
           const dtr=prepDaysToReview(file); const age=prepAge(file); const locked=prepLocked(file);
           return(
             <div style={{background:"rgba(126,200,164,.06)",border:"1px solid #7EC8A444",borderRadius:8,padding:14,display:"flex",flexDirection:"column",gap:8}}>
-              <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#7EC8A4",letterSpacing:"1px"}}>⏸ IN PREPARATION</div>
-              <div style={{fontSize:"var(--fs-4)",color:"var(--t1)"}}>{r.label}</div>
-              <div style={{fontSize:"var(--fs-3)",color:"var(--t2)"}}>
-                Review {p.reviewOn||"—"} · <span style={{color:dtr<=0?"#E85D75":"var(--t3)"}}>{dtr>0?`in ${dtr}d`:dtr===0?"today":`${Math.abs(dtr)}d overdue`}</span>
+              <div style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#7EC8A4",letterSpacing:"1px"}}>⏸ IN PREPARATION</div>
+              <div style={{fontSize:12,color:"#E6EDF3"}}>{r.label}</div>
+              <div style={{fontSize:11,color:"#8B949E"}}>
+                Review {p.reviewOn||"—"} · <span style={{color:dtr<=0?"#E85D75":"#484F58"}}>{dtr>0?`in ${dtr}d`:dtr===0?"today":`${Math.abs(dtr)}d overdue`}</span>
               </div>
-              <div style={{fontSize:"var(--fs-3)",color:locked?"#E85D75":"var(--t3)"}}>
+              <div style={{fontSize:11,color:locked?"#E85D75":"#484F58"}}>
                 {age}d in preparation / {PREP_MAX_DAYS} max{p.reschedules>0?` · rescheduled ${p.reschedules}×`:""}
               </div>
-              <div style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>Returns to: <span style={{color:"var(--t2)"}}>{p.prevStage||"Lead Inquiry"}</span></div>
-              {p.note&&<div style={{fontSize:"var(--fs-3)",color:"var(--t2)",fontStyle:"italic",borderTop:"1px solid #21262D",paddingTop:7}}>{p.note}</div>}
+              <div style={{fontSize:11,color:"#484F58"}}>Returns to: <span style={{color:"#8B949E"}}>{p.prevStage||"Lead Inquiry"}</span></div>
+              {p.note&&<div style={{fontSize:11,color:"#6E7681",fontStyle:"italic",borderTop:"1px solid #21262D",paddingTop:7}}>{p.note}</div>}
             </div>
           );
         })()}
@@ -5384,45 +5336,45 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
         {tab==="loan" && isReferredOut && (
           <div style={{background:"rgba(167,139,250,.06)",border:"1px solid #A78BFA44",borderRadius:8,padding:14,display:"flex",flexDirection:"column",gap:10}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:2}}>
-              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#A78BFA",letterSpacing:"1px"}}>🔀 OUTBOUND — RECEIVING BANKER</span>
-              <span style={{fontSize:"var(--fs-2)",color:"var(--t2)"}}>who you sent this deal to</span>
+              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#A78BFA",letterSpacing:"1px"}}>🔀 OUTBOUND — RECEIVING BANKER</span>
+              <span style={{fontSize:10,color:"#8B949E"}}>who you sent this deal to</span>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
               <div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>BANKER NAME</div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>BANKER NAME</div>
                 <input value={outBankerName} onChange={e=>setOutBankerName(e.target.value)} placeholder="Jane Smith" style={fs2}/>
               </div>
               <div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>COMPANY</div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>COMPANY</div>
                 <input value={outBankerCompany} onChange={e=>setOutBankerCompany(e.target.value)} placeholder="ABC Mortgage" style={fs2}/>
               </div>
               <div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>📱 BANKER PHONE</div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>📱 BANKER PHONE</div>
                 <input type="tel" value={outBankerPhone} onChange={e=>setOutBankerPhone(e.target.value)} placeholder="(702) 555-0000" style={fs2}/>
               </div>
               <div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>✉ BANKER EMAIL</div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>✉ BANKER EMAIL</div>
                 <input type="email" value={outBankerEmail} onChange={e=>setOutBankerEmail(e.target.value)} placeholder="banker@company.com" style={fs2}/>
               </div>
               <div style={{gridColumn:"1/-1"}}>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>REFERRAL REASON</div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>REFERRAL REASON</div>
                 <select value={outReason} onChange={e=>setOutReason(e.target.value)} style={fs2}>
                   <option value="">-- Select reason --</option>
                   {REFERRAL_REASONS.map(r=><option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
               <div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>STATUS</div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>STATUS</div>
                 <select value={outStatus} onChange={e=>setOutStatus(e.target.value)} style={fs2}>
                   {REFERRAL_STATUSES.map(s=><option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
               <div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>CLOSE DATE (AT BANKER)</div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>CLOSE DATE (AT BANKER)</div>
                 <input type="date" value={outCloseDate} onChange={e=>setOutCloseDate(e.target.value)} style={fs2}/>
               </div>
               <div style={{gridColumn:"1/-1"}}>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>FINAL LOAN AMOUNT AT BANKER <span style={{color:"var(--t3)",fontWeight:400}}>· (may differ from original)</span></div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>FINAL LOAN AMOUNT AT BANKER <span style={{color:"#484F58",fontWeight:400}}>· (may differ from original)</span></div>
                 <input value={outFinalLoan} onChange={e=>setOutFinalLoan(e.target.value)} placeholder={String(file.loan||"350000")} style={fs2}/>
               </div>
             </div>
@@ -5430,13 +5382,13 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
               <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:2}}>
                 {outBankerPhone && (
                   <a href={`tel:${outBankerPhone.replace(/[^\d+]/g,"")}`}
-                    style={{background:"rgba(167,139,250,.1)",border:"1px solid #A78BFA55",borderRadius:5,padding:"4px 9px",color:"#A78BFA",fontSize:"var(--fs-3)",fontFamily:"DM Mono",textDecoration:"none"}}>
+                    style={{background:"rgba(167,139,250,.1)",border:"1px solid #A78BFA55",borderRadius:5,padding:"4px 9px",color:"#A78BFA",fontSize:11,fontFamily:"DM Mono",textDecoration:"none"}}>
                     📱 Call banker
                   </a>
                 )}
                 {outBankerEmail && (
                   <a href={`mailto:${outBankerEmail}`}
-                    style={{background:"rgba(167,139,250,.1)",border:"1px solid #A78BFA55",borderRadius:5,padding:"4px 9px",color:"#A78BFA",fontSize:"var(--fs-3)",fontFamily:"DM Mono",textDecoration:"none"}}>
+                    style={{background:"rgba(167,139,250,.1)",border:"1px solid #A78BFA55",borderRadius:5,padding:"4px 9px",color:"#A78BFA",fontSize:11,fontFamily:"DM Mono",textDecoration:"none"}}>
                     ✉ Email banker
                   </a>
                 )}
@@ -5445,19 +5397,19 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
             {/* Live fee calc — admin only */}
             {isAdmin && outStatus === "Closed (Funded)" && (
               <div style={{background:"#0D1117",border:"1px solid #21262D",borderRadius:6,padding:12,marginTop:4}}>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:8}}>COMP CALCULATION</div>
+                <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:8}}>COMP CALCULATION</div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
                   <div>
-                    <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginBottom:2}}>FEE EARNED ({REFERRAL_FEE_BPS} BPS)</div>
-                    <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#F5A623"}}>${feeEarned.toLocaleString()}</div>
+                    <div style={{fontSize:9,color:"#484F58",marginBottom:2}}>FEE EARNED ({REFERRAL_FEE_BPS} BPS)</div>
+                    <div style={{fontFamily:"Syne",fontWeight:700,fontSize:15,color:"#F5A623"}}>${feeEarned.toLocaleString()}</div>
                   </div>
                   <div>
-                    <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginBottom:2}}>WOULD HAVE ({parseInt(bps)||BPS_RATE} BPS)</div>
-                    <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--t2)"}}>${wouldHaveEarned.toLocaleString()}</div>
+                    <div style={{fontSize:9,color:"#484F58",marginBottom:2}}>WOULD HAVE ({parseInt(bps)||BPS_RATE} BPS)</div>
+                    <div style={{fontFamily:"Syne",fontWeight:700,fontSize:15,color:"#8B949E"}}>${wouldHaveEarned.toLocaleString()}</div>
                   </div>
                   <div>
-                    <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginBottom:2}}>LOST COMP</div>
-                    <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#E85D75"}}>${lostComp.toLocaleString()}</div>
+                    <div style={{fontSize:9,color:"#484F58",marginBottom:2}}>LOST COMP</div>
+                    <div style={{fontFamily:"Syne",fontWeight:700,fontSize:15,color:"#E85D75"}}>${lostComp.toLocaleString()}</div>
                   </div>
                 </div>
               </div>
@@ -5468,43 +5420,43 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
         {tab==="dates" && (isClosed && isAdmin ? (
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
             <div style={{background:"rgba(6,214,160,.06)",border:"1px solid #06D6A044",borderRadius:8,padding:12}}>
-              <div style={{fontSize:"var(--fs-2)",color:"#06D6A0",letterSpacing:"1px",marginBottom:5,fontWeight:500}}>ACTUAL CLOSE DATE <span style={{color:"var(--t3)"}}>· editable</span></div>
+              <div style={{fontSize:10,color:"#06D6A0",letterSpacing:"1px",marginBottom:5,fontWeight:500}}>ACTUAL CLOSE DATE <span style={{color:"#484F58"}}>· editable</span></div>
               <input type="date" value={closedAt} onChange={e=>setClosedAt(e.target.value)}
-                style={{background:"transparent",border:"none",color:"#06D6A0",fontSize:"var(--fs-5)",fontFamily:"DM Mono",width:"100%",fontWeight:500}}/>
-              <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:4,letterSpacing:"0.5px"}}>The month this counts toward production</div>
+                style={{background:"transparent",border:"none",color:"#06D6A0",fontSize:13,fontFamily:"DM Mono",width:"100%",fontWeight:500}}/>
+              <div style={{fontSize:9,color:"#484F58",marginTop:4,letterSpacing:"0.5px"}}>The month this counts toward production</div>
             </div>
             <div style={{background:"#0D1117",borderRadius:8,padding:12}}>
-              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>EXPECTED CLOSING DATE</div>
+              <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>EXPECTED CLOSING DATE</div>
               <input type="date" value={closing} onChange={e=>setClosing(e.target.value)}
-                style={{background:"transparent",border:"none",color:"var(--t2)",fontSize:"var(--fs-5)",fontFamily:"DM Mono",width:"100%"}}/>
-              <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:4,letterSpacing:"0.5px"}}>Original target date</div>
+                style={{background:"transparent",border:"none",color:"#8B949E",fontSize:13,fontFamily:"DM Mono",width:"100%"}}/>
+              <div style={{fontSize:9,color:"#484F58",marginTop:4,letterSpacing:"0.5px"}}>Original target date</div>
             </div>
           </div>
         ) : !isReferredOut ? (
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
             <div style={{background:"#0D1117",borderRadius:8,padding:12}}>
-              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{L("closingDate")}</div>
+              <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>{L("closingDate")}</div>
               <input type="date" value={closing} onChange={e=>setClosing(e.target.value)}
-                style={{background:"transparent",border:"none",color:"var(--t1)",fontSize:"var(--fs-5)",fontFamily:"DM Mono",width:"100%"}}/>
+                style={{background:"transparent",border:"none",color:"#E6EDF3",fontSize:13,fontFamily:"DM Mono",width:"100%"}}/>
             </div>
             <div style={{background:"#0D1117",borderRadius:8,padding:12}}>
-              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>{isClosed ? "CLOSED" : "DAYS IN STAGE"}</div>
+              <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:4}}>{isClosed ? "CLOSED" : "DAYS IN STAGE"}</div>
               {/* Syne's zero is indistinguishable from a lowercase o at this
                   size — "0d" rendered as "od". Numbers go in DM Mono, which
                   is what the rest of the app already uses for data. */}
-              <div style={{fontSize:isClosed?"var(--fs-6)":"var(--fs-10)",
-                fontFamily:isClosed?"Syne":"'IBM Plex Sans',system-ui,-apple-system,sans-serif",
+              <div style={{fontSize:isClosed?14:24,
+                fontFamily:isClosed?"Syne":"'DM Mono','Courier New',monospace",
                 fontWeight:isClosed?800:500,letterSpacing:isClosed?0:"-0.5px",
-                color:isClosed?"#06D6A0":(stageUrgency(file).level==="late"?"#E85D75":stageUrgency(file).level==="watch"?"#F5A623":"var(--t1)")}}>
+                color:isClosed?"#06D6A0":(stageUrgency(file).level==="late"?"#E85D75":stageUrgency(file).level==="watch"?"#F5A623":"#E6EDF3")}}>
                 {isClosed ? file.closedAt : (
                   daysInStage(file)===null ? "—" : <>
                     {daysInStage(file)}
-                    <span style={{fontSize:"var(--fs-5)",color:"var(--t3)",marginLeft:1}}>d</span>
+                    <span style={{fontSize:13,color:"#484F58",marginLeft:1}}>d</span>
                   </>
                 )}
               </div>
               {!isClosed && (()=>{ const c=stageClock(file.stage,file); return (
-                <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:4,letterSpacing:"0.5px"}}>
+                <div style={{fontSize:9,color:"#484F58",marginTop:4,letterSpacing:"0.5px"}}>
                   {c ? `target ${c.warn}d · ceiling ${c.late}d` : ""}
                   {fileAge(file)!==null ? ` · ${fileAge(file)}d total` : ""}
                 </div>
@@ -5516,12 +5468,12 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
         {/* NOTAS → EXPEDIENTE */}
         <div style={{display:tab==="file"?"block":"none"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:5}}>
-            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px"}}>
-              NOTES <span style={{color:"var(--t4)"}}>· STATUS · BLOCKER · NEXT</span>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px"}}>
+              NOTES <span style={{color:"#30363D"}}>· STATUS · BLOCKER · NEXT</span>
             </div>
             <div style={{
-              fontSize:"var(--fs-2)",
-              color: newNote.length > 200 ? "#E85D75" : newNote.length > 100 ? "#F5A623" : "var(--t3)",
+              fontSize:10,
+              color: newNote.length > 200 ? "#E85D75" : newNote.length > 100 ? "#F5A623" : "#484F58",
               fontFamily:"DM Mono",
               letterSpacing:"0.5px"
             }}>
@@ -5530,42 +5482,42 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
           </div>
           <textarea value={newNote} onChange={e=>setNewNote(e.target.value)} rows={2}
             placeholder={isReferredOut ? L("noteFromBanker") : L("notePlaceholder")}
-            style={{background:"#0D1117",border:`1px solid ${newNote.length>200?"#E85D75":"#30363D"}`,borderRadius:6,color:"var(--t1)",padding:"8px 10px",fontSize:"var(--fs-4)",fontFamily:"DM Mono",width:"100%",resize:"none"}}/>
+            style={{background:"#0D1117",border:`1px solid ${newNote.length>200?"#E85D75":"#30363D"}`,borderRadius:6,color:"#E6EDF3",padding:"8px 10px",fontSize:12,fontFamily:"DM Mono",width:"100%",resize:"none"}}/>
           <button className="hov" disabled={!newNote.trim()}
             onClick={()=>{ onSave({noteLog:addNoteEntry(file,newNote,profile?.name||null,file.stage).noteLog}); setNewNote(""); }}
             style={{marginTop:6,width:"100%",background:newNote.trim()?"rgba(126,200,164,.1)":"#161B22",
               color:newNote.trim()?"#7EC8A4":"#30363D",borderRadius:6,padding:"7px 0",fontFamily:"DM Mono",
-              fontSize:"var(--fs-3)",border:`1px solid ${newNote.trim()?"#7EC8A4":"#21262D"}`,
+              fontSize:11,border:`1px solid ${newNote.trim()?"#7EC8A4":"#21262D"}`,
               cursor:newNote.trim()?"pointer":"not-allowed"}}>{L("addUpdate")}</button>
 
           {entries.length>0&&(
             <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:8}}>
               {(showAllNotes?entries:entries.slice(0,2)).map((n,i)=>(
                 <div key={i} style={{borderLeft:`2px solid ${i===0?"#7EC8A4":"#21262D"}`,paddingLeft:9}}>
-                  <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:".5px"}}>
+                  <div style={{fontSize:9,color:"#484F58",letterSpacing:".5px"}}>
                     {n.legacy
                       ? L("noteLegacy")
                       : `${String(n.at).slice(0,10)} · ${timeAgo(n.at)}${n.by?` · ${n.by}`:""}`}
                   </div>
                   {n.stage&&(
-                    <div style={{fontSize:"var(--fs-1)",color:"var(--t2)",letterSpacing:".5px",marginTop:1}}>{n.stage}</div>
+                    <div style={{fontSize:9,color:"#6E7681",letterSpacing:".5px",marginTop:1}}>{n.stage}</div>
                   )}
-                  <div style={{fontSize:"var(--fs-3)",color:i===0?"var(--t1)":"var(--t2)",lineHeight:1.5,marginTop:2,whiteSpace:"pre-wrap"}}>{n.text}</div>
+                  <div style={{fontSize:11.5,color:i===0?"#E6EDF3":"#8B949E",lineHeight:1.5,marginTop:2,whiteSpace:"pre-wrap"}}>{n.text}</div>
                 </div>
               ))}
               {entries.length>2&&(
                 <button onClick={()=>setShowAllNotes(v=>!v)}
-                  style={{background:"transparent",border:"none",color:"#4A90D9",fontSize:"var(--fs-2)",
+                  style={{background:"transparent",border:"none",color:"#4A90D9",fontSize:10,
                     fontFamily:"DM Mono",cursor:"pointer",padding:0,textAlign:"left"}}>
                   {showAllNotes?L("seeLast2"):L("seeAll",{n:entries.length})}
                 </button>
               )}
             </div>
           )}
-          <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:6,letterSpacing:"0.5px"}}>
+          <div style={{fontSize:9,color:"#484F58",marginTop:6,letterSpacing:"0.5px"}}>
             {L("noteHint")}
           </div>
-          <div style={{fontSize:"var(--fs-1)",color:"#F5A623",marginTop:3,letterSpacing:"0.5px"}}>
+          <div style={{fontSize:9,color:"#F5A623",marginTop:3,letterSpacing:"0.5px"}}>
             {L("notesEnglishOnly")}
           </div>
         </div>
@@ -5573,28 +5525,28 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
         {tab==="file" && (file.lastEditedBy || (file.history && file.history.length > 0)) && (
           <div style={{background:"#0D1117",borderRadius:8,padding:12,border:"1px solid #21262D"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px"}}>{L("activity")}</div>
+              <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px"}}>{L("activity")}</div>
               <button onClick={()=>setShowHistory(s=>!s)}
-                style={{background:"transparent",border:"none",color:"var(--t2)",fontSize:"var(--fs-2)",fontFamily:"DM Mono",cursor:"pointer",letterSpacing:"1px"}}>
+                style={{background:"transparent",border:"none",color:"#8B949E",fontSize:10,fontFamily:"DM Mono",cursor:"pointer",letterSpacing:"1px"}}>
                 {showHistory ? L("hide")+" ↑" : L("showAll")+" ↓"}
               </button>
             </div>
             {file.lastEditedBy && (
-              <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:6}}>
-                Last edited by <span style={{color:"var(--t1)",fontWeight:500}}>{file.lastEditedBy.name}</span> · <span style={{color:"var(--t3)"}}>{timeAgo(file.lastEditedAt)}</span>
+              <div style={{fontSize:11,color:"#8B949E",marginTop:6}}>
+                Last edited by <span style={{color:"#E6EDF3",fontWeight:500}}>{file.lastEditedBy.name}</span> · <span style={{color:"#484F58"}}>{timeAgo(file.lastEditedAt)}</span>
               </div>
             )}
             {file.createdBy && (
-              <div style={{fontSize:"var(--fs-3)",color:"var(--t3)",marginTop:2}}>
+              <div style={{fontSize:11,color:"#484F58",marginTop:2}}>
                 Created by {file.createdBy.name} · {timeAgo(file.createdAt)}
               </div>
             )}
             {showHistory && file.history && file.history.length > 0 && (
               <div style={{marginTop:10,paddingTop:10,borderTop:"1px solid #21262D",display:"flex",flexDirection:"column",gap:5,maxHeight:200,overflowY:"auto"}}>
                 {[...file.history].reverse().map((h,i)=>(
-                  <div key={i} style={{fontSize:"var(--fs-3)",color:"var(--t2)",display:"flex",gap:8}}>
-                    <span style={{color:"var(--t3)",minWidth:75,fontSize:"var(--fs-2)"}}>{timeAgo(h.at)}</span>
-                    <span style={{color:"var(--t1)",fontWeight:500,minWidth:90}}>{h.name?.split(" ")[0] || "?"}</span>
+                  <div key={i} style={{fontSize:11,color:"#8B949E",display:"flex",gap:8}}>
+                    <span style={{color:"#484F58",minWidth:75,fontSize:10}}>{timeAgo(h.at)}</span>
+                    <span style={{color:"#E6EDF3",fontWeight:500,minWidth:90}}>{h.name?.split(" ")[0] || "?"}</span>
                     <span style={{flex:1}}>
                       {h.action==="created" && "created file"}
                       {h.action==="edited" && `edited ${h.fields?.join(", ") || "fields"}`}
@@ -5679,7 +5631,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
                   title={!on&&meta?(lang==="en"?meta.why_en:meta.why_es):""}
                   style={{background:"transparent",color:on?color:"#2B323B",
                     border:`1px solid ${on?color:"#1A1F26"}`,borderRadius:6,
-                    padding:"8px 14px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",
+                    padding:"8px 14px",fontFamily:"DM Mono",fontSize:10.5,
                     cursor:"pointer",whiteSpace:"nowrap"}}>{label}</button>
               );
             };
@@ -5687,14 +5639,14 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
             return (<>
               <button className="hov" onClick={salvar}
                 style={{background:"#F5A623",color:"#0D1117",borderRadius:6,padding:"8px 22px",
-                  fontFamily:"DM Mono",fontSize:"var(--fs-3)",fontWeight:500,border:"none",cursor:"pointer"}}>
+                  fontFamily:"DM Mono",fontSize:10.5,fontWeight:500,border:"none",cursor:"pointer"}}>
                 {L("save")}
               </button>
 
               {archivedFile?(
                 btn("restore",TX("restoreBtn"),"#7EC8A4",onRestore,{on:true})
               ):isClosed?(
-                btn("reopen",TX("reopenBtn"),"var(--t2)",onReopen,{on:true})
+                btn("reopen",TX("reopenBtn"),"#8B949E",onReopen,{on:true})
               ):isReferredOut?(
                 btn("pull",TX("pullBack"),"#A78BFA",()=>{
                   if(confirm(TX("pullBackAsk",{n:file.borrower}))){
@@ -5707,9 +5659,9 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
                 {btn("resched",TX("reschedBtn"),"#F5A623",onPrep,{on:!prepLocked(file),
                   why_es:`Pasó el tope de ${PREP_MAX_DAYS} días — devuélvelo o archívalo`,
                   why_en:`Past the ${PREP_MAX_DAYS}-day cap — return it or archive it`})}
-                {btn("arch",TX("archBtn"),"var(--t2)",onArchive,{on:true})}
+                {btn("arch",TX("archBtn"),"#8B949E",onArchive,{on:true})}
               </>):(<>
-                {btn("advance",L("advance")+" →","var(--t2)",onAdvance,A.advance)}
+                {btn("advance",L("advance")+" →","#8B949E",onAdvance,A.advance)}
                 {btn("close",L("closeFile")+" ✓","#06D6A0",
                   ()=>{if(confirm(TX("closeAsk",{n:file.borrower})))onCloseFile();},A.close)}
                 {btn("refer",TX("referBtn"),"#A78BFA",()=>{
@@ -5719,7 +5671,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
                   }
                 },A.refer)}
                 {btn("prep",TX("prepBtn"),"#7EC8A4",onPrep,A.prep)}
-                {btn("arch",TX("archBtn"),"var(--t2)",onArchive,A.archive)}
+                {btn("arch",TX("archBtn"),"#8B949E",onArchive,A.archive)}
               </>)}
 
               <div style={{flex:1,minWidth:12}}/>
@@ -5736,8 +5688,8 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
                     <button key={l} className="hov" onClick={()=>onSetLang(l)}
                       title={TX("langHint")}
                       style={{background:lang===l?"#F5A623":"transparent",
-                        color:lang===l?"#0D1117":"var(--t2)",border:"none",padding:"7px 11px",
-                        fontSize:"var(--fs-2)",fontFamily:"DM Mono",cursor:"pointer"}}>
+                        color:lang===l?"#0D1117":"#6E7681",border:"none",padding:"7px 11px",
+                        fontSize:10,fontFamily:"DM Mono",cursor:"pointer"}}>
                       {l.toUpperCase()}
                     </button>))}
                 </div>
@@ -5749,7 +5701,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
                   onClick={()=>{if(confirm(TX("deleteAsk")))onDelete();}}
                   title={TX("deleteHint")}
                   style={{background:"transparent",color:"#E85D75",border:"none",borderRadius:6,
-                    padding:"8px 14px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",cursor:"pointer"}}>
+                    padding:"8px 14px",fontFamily:"DM Mono",fontSize:10.5,cursor:"pointer"}}>
                   {TX("delBtn")}
                 </button>
               </>)}
@@ -5801,9 +5753,9 @@ function AddModal({profile, onClose, onAdd, existingFiles}){
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
       <div className="fi" style={{background:"#161B22",border:"1px solid #30363D",borderRadius:12,width:"100%",maxWidth:480,maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
         <div style={{padding:"20px 24px 16px",borderBottom:"1px solid #21262D",flexShrink:0}}>
-          <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:"var(--t1)"}}>NEW FILE</div>
+          <div style={{fontFamily:"Syne",fontWeight:800,fontSize:18,color:"#E6EDF3"}}>NEW FILE</div>
           {isAssistant && (
-            <div style={{fontSize:"var(--fs-3)",color:"#F5A623",marginTop:4,letterSpacing:"0.5px"}}>
+            <div style={{fontSize:11,color:"#F5A623",marginTop:4,letterSpacing:"0.5px"}}>
               ⚠ Assistant view — please confirm the LOAN OFFICER below before adding.
             </div>
           )}
@@ -5821,10 +5773,10 @@ function AddModal({profile, onClose, onAdd, existingFiles}){
             <input type="checkbox" checked={isInbound} onChange={e=>setIsInbound(e.target.checked)}
               style={{accentColor:"#FFD166",width:16,height:16,cursor:"pointer"}}/>
             <div style={{flex:1}}>
-              <div style={{fontSize:"var(--fs-4)",color: isInbound ? "#FFD166" : "var(--t1)",fontFamily:"Syne",fontWeight:700,letterSpacing:"0.5px"}}>
+              <div style={{fontSize:12,color: isInbound ? "#FFD166" : "#E6EDF3",fontFamily:"Syne",fontWeight:700,letterSpacing:"0.5px"}}>
                 🤝 This is an inbound referral from another banker
               </div>
-              <div style={{fontSize:"var(--fs-2)",color:"var(--t2)",marginTop:2}}>
+              <div style={{fontSize:10,color:"#8B949E",marginTop:2}}>
                 Tag this file so you can track who sent it your way + measure reciprocity at year end.
               </div>
             </div>
@@ -5833,22 +5785,22 @@ function AddModal({profile, onClose, onAdd, existingFiles}){
           {/* INBOUND BANKER FIELDS — shown only when checkbox is checked */}
           {isInbound && (
             <div style={{background:"rgba(255,209,102,.04)",border:"1px solid #FFD16633",borderRadius:8,padding:14,display:"flex",flexDirection:"column",gap:10}}>
-              <div style={{fontSize:"var(--fs-3)",color:"#FFD166",fontFamily:"Syne",fontWeight:700,letterSpacing:"1px",marginBottom:2}}>REFERRING BANKER</div>
+              <div style={{fontSize:11,color:"#FFD166",fontFamily:"Syne",fontWeight:700,letterSpacing:"1px",marginBottom:2}}>REFERRING BANKER</div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                 <div>
-                  <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>BANKER NAME</div>
+                  <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>BANKER NAME</div>
                   <input value={inBankerName} onChange={e=>setInBankerName(e.target.value)} placeholder="John Doe" style={IS}/>
                 </div>
                 <div>
-                  <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>COMPANY</div>
+                  <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>COMPANY</div>
                   <input value={inBankerCompany} onChange={e=>setInBankerCompany(e.target.value)} placeholder="XYZ Mortgage" style={IS}/>
                 </div>
                 <div>
-                  <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>📱 PHONE</div>
+                  <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>📱 PHONE</div>
                   <input type="tel" value={inBankerPhone} onChange={e=>setInBankerPhone(e.target.value)} placeholder="(702) 555-0000" style={IS}/>
                 </div>
                 <div>
-                  <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>✉ EMAIL</div>
+                  <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>✉ EMAIL</div>
                   <input type="email" value={inBankerEmail} onChange={e=>setInBankerEmail(e.target.value)} placeholder="banker@company.com" style={IS}/>
                 </div>
               </div>
@@ -5856,28 +5808,28 @@ function AddModal({profile, onClose, onAdd, existingFiles}){
           )}
 
           <div>
-            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>BORROWER NAME *</div>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>BORROWER NAME *</div>
             <input value={borrower} onChange={e=>setBorrower(e.target.value)} placeholder="Full legal name" style={IS} autoFocus/>
           </div>
 
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
             <div>
-              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>📱 PHONE</div>
+              <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>📱 PHONE</div>
               <input type="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="(702) 555-1234" style={IS}/>
             </div>
             <div>
-              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>✉ EMAIL</div>
+              <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>✉ EMAIL</div>
               <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="borrower@email.com" style={IS}/>
             </div>
           </div>
 
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
             <div>
-              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>LOAN AMOUNT</div>
+              <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>LOAN AMOUNT</div>
               <input value={loan} onChange={e=>setLoan(e.target.value)} placeholder="350000" style={IS}/>
             </div>
             <div>
-              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>LOAN TYPE</div>
+              <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>LOAN TYPE</div>
               <select value={type} onChange={e=>setType(e.target.value)} style={IS}>
                 {LOAN_TYPE_GROUPS.map(g=><optgroup key={g.group} label={g.group}>{g.types.map(x=><option key={x}>{x}</option>)}</optgroup>)}
               </select>
@@ -5885,14 +5837,14 @@ function AddModal({profile, onClose, onAdd, existingFiles}){
           </div>
 
           <div>
-            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>STARTING STAGE</div>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>STARTING STAGE</div>
             <select value={stage} onChange={e=>setStage(e.target.value)} style={IS}>
               {ALL_STAGES.map((s,i)=><option key={i} value={s.stage}>[{s.phase.short}] {s.stage}</option>)}
             </select>
           </div>
 
           <div>
-            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>
               LOAN OFFICER {isAssistant && <span style={{color:"#F5A623"}}>· assigning on behalf of</span>}
             </div>
             <select value={lo} onChange={e=>setLo(e.target.value)} style={IS}>
@@ -5901,18 +5853,18 @@ function AddModal({profile, onClose, onAdd, existingFiles}){
           </div>
 
           <div>
-            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>REFERRAL PARTNER</div>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>REFERRAL PARTNER</div>
             <input value={referralPartner} onChange={e=>setReferralPartner(e.target.value)} placeholder="Agent name, CPA, Smart Bee, walk-in..." style={IS}/>
           </div>
 
           <div>
-            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>EXPECTED CLOSING DATE</div>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>EXPECTED CLOSING DATE</div>
             <input type="date" value={closing} onChange={e=>setClosing(e.target.value)} style={IS}/>
           </div>
 
           <div>
-            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>
-              NOTES <span style={{color:"var(--t4)"}}>· STATUS · BLOCKER · NEXT</span>
+            <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px",marginBottom:5}}>
+              NOTES <span style={{color:"#30363D"}}>· STATUS · BLOCKER · NEXT</span>
             </div>
             <input value={note} onChange={e=>setNote(e.target.value)} placeholder="Subm 4/12 · UW queue · review by 4/15" style={IS}/>
           </div>
@@ -5971,9 +5923,9 @@ function AddModal({profile, onClose, onAdd, existingFiles}){
             }
             onAdd(newFile);
           }}
-            style={{flex:2,background:"#F5A623",color:"#0D1117",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:"var(--fs-4)",fontWeight:500,border:"none",cursor:"pointer"}}>ADD TO PIPELINE</button>
+            style={{flex:2,background:"#F5A623",color:"#0D1117",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,fontWeight:500,border:"none",cursor:"pointer"}}>ADD TO PIPELINE</button>
           <button className="hov" onClick={onClose}
-            style={{flex:1,background:"#21262D",color:"var(--t2)",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:"var(--fs-4)",border:"none",cursor:"pointer"}}>CANCEL</button>
+            style={{flex:1,background:"#21262D",color:"#8B949E",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:12,border:"none",cursor:"pointer"}}>CANCEL</button>
         </div>
       </div>
     </div>
@@ -5999,41 +5951,41 @@ function HelpModal({profile, onClose}){
 
   const block=(b,bi)=>{
     const k=b.k;
-    if(k==="lead") return <div key={bi} style={{fontSize:"var(--fs-5)",color:"var(--t1)",fontWeight:500,lineHeight:1.6,margin:"0 0 8px"}}>{T(b)}</div>;
-    if(k==="p")    return <div key={bi} style={{fontSize:"var(--fs-4)",color:"var(--t2)",lineHeight:1.7,margin:"0 0 9px"}}>{T(b)}</div>;
+    if(k==="lead") return <div key={bi} style={{fontSize:13,color:"#E6EDF3",fontWeight:500,lineHeight:1.6,margin:"0 0 8px"}}>{T(b)}</div>;
+    if(k==="p")    return <div key={bi} style={{fontSize:12.5,color:"#8B949E",lineHeight:1.7,margin:"0 0 9px"}}>{T(b)}</div>;
     if(k==="note"){ const [c,bg]=TONE[b.tone]||TONE.gold;
       return <div key={bi} style={{background:bg,border:`1px solid ${c}44`,borderLeft:`3px solid ${c}`,borderRadius:6,
-        padding:"10px 13px",fontSize:"var(--fs-4)",color:"#C9D1D9",lineHeight:1.65,margin:"0 0 10px"}}>{T(b)}</div>; }
+        padding:"10px 13px",fontSize:12.5,color:"#C9D1D9",lineHeight:1.65,margin:"0 0 10px"}}>{T(b)}</div>; }
     if(k==="list") return (
       <div key={bi} style={{margin:"0 0 10px"}}>
         {(b[lang]||P(b)).map((x,i)=>(
-          <div key={i} style={{display:"flex",gap:8,fontSize:"var(--fs-4)",color:"var(--t2)",lineHeight:1.7,marginBottom:2}}>
-            <span style={{color:"var(--t3)"}}>—</span><span>{x}</span>
+          <div key={i} style={{display:"flex",gap:8,fontSize:12.5,color:"#8B949E",lineHeight:1.7,marginBottom:2}}>
+            <span style={{color:"#484F58"}}>—</span><span>{x}</span>
           </div>))}
       </div>);
     if(k==="steps") return (
       <div key={bi} style={{margin:"0 0 10px"}}>
         {(b[lang]||P(b)).map((x,i)=>(
-          <div key={i} style={{display:"flex",gap:9,fontSize:"var(--fs-4)",color:"var(--t2)",lineHeight:1.7,marginBottom:5}}>
+          <div key={i} style={{display:"flex",gap:9,fontSize:12.5,color:"#8B949E",lineHeight:1.7,marginBottom:5}}>
             <span style={{color:"#F5A623",fontFamily:"DM Mono",flexShrink:0}}>{i+1}</span><span>{x}</span>
           </div>))}
       </div>);
     if(k==="table") return (
-      <table key={bi} style={{width:"100%",borderCollapse:"collapse",margin:"0 0 12px",fontSize:"var(--fs-4)"}}>
+      <table key={bi} style={{width:"100%",borderCollapse:"collapse",margin:"0 0 12px",fontSize:12}}>
         <thead><tr>{(b.head[lang]||b.head.es).map((h,i)=>(
-          <th key={i} style={{textAlign:"left",padding:"7px 10px",background:"#0D1117",color:"var(--t3)",
-            fontSize:"var(--fs-2)",letterSpacing:"1px",fontWeight:500,borderBottom:"1px solid #30363D"}}>{h}</th>))}</tr></thead>
+          <th key={i} style={{textAlign:"left",padding:"7px 10px",background:"#0D1117",color:"#484F58",
+            fontSize:10,letterSpacing:"1px",fontWeight:500,borderBottom:"1px solid #30363D"}}>{h}</th>))}</tr></thead>
         <tbody>{b.rows.map((r,i)=>(
           <tr key={i}>{r.map((cell,j)=>(
             <td key={j} style={{padding:"8px 10px",borderBottom:"1px solid #21262D",
-              color:j===0?"var(--t1)":"var(--t2)"}}>{T(cell)}</td>))}</tr>))}</tbody>
+              color:j===0?"#E6EDF3":"#8B949E"}}>{T(cell)}</td>))}</tr>))}</tbody>
       </table>);
     if(k==="kv") return (
       <div key={bi} style={{margin:"0 0 10px"}}>
         {b.rows.map((r,i)=>(
           <div key={i} style={{borderTop:"1px solid #21262D",padding:"9px 0"}}>
-            <div style={{fontSize:"var(--fs-4)",color:"var(--t1)",marginBottom:2}}>{T(r[0])}</div>
-            <div style={{fontSize:"var(--fs-4)",color:"var(--t2)",lineHeight:1.65}}>{T(r[1])}</div>
+            <div style={{fontSize:12.5,color:"#E6EDF3",marginBottom:2}}>{T(r[0])}</div>
+            <div style={{fontSize:12,color:"#8B949E",lineHeight:1.65}}>{T(r[1])}</div>
           </div>))}
       </div>);
     return null;
@@ -6049,10 +6001,10 @@ function HelpModal({profile, onClose}){
         <div style={{padding:"18px 22px 14px",borderBottom:"1px solid #21262D",display:"flex",
           justifyContent:"space-between",alignItems:"flex-start",gap:12,flexShrink:0}}>
           <div>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:"var(--t1)",letterSpacing:"-0.5px"}}>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:19,color:"#E6EDF3",letterSpacing:"-0.5px"}}>
               {TX("guideTitle")}
             </div>
-            <div style={{fontSize:"var(--fs-3)",color:"var(--t3)",letterSpacing:"1px",marginTop:3}}>
+            <div style={{fontSize:10.5,color:"#484F58",letterSpacing:"1px",marginTop:3}}>
               DEL VALLE LENDING CO. · BARRETT FINANCIAL GROUP · NMLS 181106
             </div>
           </div>
@@ -6060,13 +6012,13 @@ function HelpModal({profile, onClose}){
             <div style={{display:"flex",border:"1px solid #30363D",borderRadius:6,overflow:"hidden"}}>
               {["es","en"].map(l=>(
                 <button key={l} className="hov" onClick={()=>setLang(l)}
-                  style={{background:lang===l?"#F5A623":"transparent",color:lang===l?"#0D1117":"var(--t2)",
-                    border:"none",padding:"5px 11px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",cursor:"pointer"}}>
+                  style={{background:lang===l?"#F5A623":"transparent",color:lang===l?"#0D1117":"#6E7681",
+                    border:"none",padding:"5px 11px",fontSize:10.5,fontFamily:"DM Mono",cursor:"pointer"}}>
                   {l.toUpperCase()}
                 </button>))}
             </div>
-            <button onClick={onClose} style={{background:"transparent",border:"none",color:"var(--t3)",
-              fontSize:"var(--fs-8)",cursor:"pointer",padding:"0 0 0 4px"}}>✕</button>
+            <button onClick={onClose} style={{background:"transparent",border:"none",color:"#484F58",
+              fontSize:19,cursor:"pointer",padding:"0 0 0 4px"}}>✕</button>
           </div>
         </div>
 
@@ -6075,30 +6027,30 @@ function HelpModal({profile, onClose}){
           maxHeight:120,overflowY:"auto"}}>
           <input value={q} onChange={e=>setQ(e.target.value)}
             placeholder={TX("searchGuide")}
-            style={{background:"#161B22",border:"1px solid #30363D",borderRadius:6,color:"var(--t1)",
-              padding:"6px 10px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",flex:"1 1 200px",minWidth:150}}/>
+            style={{background:"#161B22",border:"1px solid #30363D",borderRadius:6,color:"#E6EDF3",
+              padding:"6px 10px",fontSize:11.5,fontFamily:"DM Mono",flex:"1 1 200px",minWidth:150}}/>
           {!hits&&sections.map(x=>(
             <button key={x.id} className="hov" onClick={()=>setSecId(x.id)}
-              style={{background:secId===x.id?x.color:"var(--t4)",color:secId===x.id?"#0D1117":"var(--t2)",
-                borderRadius:6,padding:"5px 10px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",fontWeight:500,
+              style={{background:secId===x.id?x.color:"#21262D",color:secId===x.id?"#0D1117":"#8B949E",
+                borderRadius:6,padding:"5px 10px",fontSize:10.5,fontFamily:"DM Mono",fontWeight:500,
                 border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>
               {x.icon} {T(x)}
             </button>))}
           {hits&&(
-            <span style={{fontSize:"var(--fs-3)",color:"var(--t2)",fontFamily:"DM Mono"}}>
+            <span style={{fontSize:11,color:"#6E7681",fontFamily:"DM Mono"}}>
               {hits.length} {TX("result")}{hits.length===1?"":"s"}
             </span>)}
         </div>
 
         <div style={{flex:1,overflowY:"auto",padding:"18px 22px 26px"}}>
           {shown.length===0&&(
-            <div style={{color:"var(--t3)",fontSize:"var(--fs-4)",textAlign:"center",padding:"30px 0"}}>
+            <div style={{color:"#484F58",fontSize:12.5,textAlign:"center",padding:"30px 0"}}>
               {TX("noGuideMatch")}
             </div>)}
           {shown.map((a,i)=>(
             <div key={a.id} style={{marginBottom:26,paddingBottom:i<shown.length-1?18:0,
               borderBottom:i<shown.length-1?"1px solid #21262D":"none"}}>
-              <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--t1)",marginBottom:10}}>
+              <div style={{fontFamily:"Syne",fontWeight:700,fontSize:15,color:"#E6EDF3",marginBottom:10}}>
                 {T(a)}
               </div>
               {(a.blocks||[]).map((b,j)=>block(b,j))}
@@ -6106,7 +6058,7 @@ function HelpModal({profile, onClose}){
         </div>
 
         <div style={{padding:"10px 22px",borderTop:"1px solid #21262D",background:"#0D1117",
-          fontSize:"var(--fs-2)",color:"var(--t3)",flexShrink:0}}>
+          fontSize:9.5,color:"#484F58",flexShrink:0}}>
           {TX("guideLive")}
         </div>
       </div>
@@ -6135,10 +6087,10 @@ function _HelpModalLegacy({profile, onClose}){
 
         <div style={{padding:"20px 24px 16px",borderBottom:"1px solid #21262D",flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",color:"var(--t1)",letterSpacing:"-0.5px"}}>HELP & BEST PRACTICES</div>
-            <div style={{fontSize:"var(--fs-3)",color:"var(--t3)",letterSpacing:"1px",marginTop:3}}>PIPELINE · DEL VALLE LENDING CO. · BARRETT FINANCIAL GROUP</div>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:20,color:"#E6EDF3",letterSpacing:"-0.5px"}}>HELP & BEST PRACTICES</div>
+            <div style={{fontSize:11,color:"#484F58",letterSpacing:"1px",marginTop:3}}>PIPELINE · DEL VALLE LENDING CO. · BARRETT FINANCIAL GROUP</div>
           </div>
-          <button onClick={onClose} style={{background:"transparent",border:"none",color:"var(--t3)",fontSize:"var(--fs-9)",cursor:"pointer",padding:"0 0 0 12px"}}>✕</button>
+          <button onClick={onClose} style={{background:"transparent",border:"none",color:"#484F58",fontSize:20,cursor:"pointer",padding:"0 0 0 12px"}}>✕</button>
         </div>
 
         <div style={{padding:"12px 24px",borderBottom:"1px solid #21262D",display:"flex",gap:6,flexWrap:"wrap",flexShrink:0,background:"#0D1117"}}>
@@ -6146,8 +6098,8 @@ function _HelpModalLegacy({profile, onClose}){
             <button key={t.id} className="hov" onClick={()=>setTab(t.id)}
               style={{
                 background: tab===t.id ? t.color : "#21262D",
-                color: tab===t.id ? "#0D1117" : "var(--t2)",
-                borderRadius:6, padding:"6px 12px", fontSize:"var(--fs-3)", fontFamily:"DM Mono", fontWeight:500,
+                color: tab===t.id ? "#0D1117" : "#8B949E",
+                borderRadius:6, padding:"6px 12px", fontSize:11, fontFamily:"DM Mono", fontWeight:500,
                 border:"none", cursor:"pointer"
               }}>
               {t.label}
@@ -6158,26 +6110,26 @@ function _HelpModalLegacy({profile, onClose}){
         <div style={{flex:1,overflowY:"auto",padding:"20px 24px"}}>
 
           {tab==="notes" && (
-            <div style={{display:"flex",flexDirection:"column",gap:18,fontSize:"var(--fs-5)",color:"var(--t1)",lineHeight:1.6}}>
+            <div style={{display:"flex",flexDirection:"column",gap:18,fontSize:13,color:"#E6EDF3",lineHeight:1.6}}>
               <div>
-                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-7)",color:"#F5A623",marginBottom:8}}>The STATUS · BLOCKER · NEXT format</div>
-                <div style={{color:"var(--t2)"}}>
+                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:16,color:"#F5A623",marginBottom:8}}>The STATUS · BLOCKER · NEXT format</div>
+                <div style={{color:"#8B949E"}}>
                   Every loan note follows three short pieces, separated by the <span style={{color:"#F5A623"}}>·</span> character.
                   Goal: anyone scanning the pipeline can understand a file in 3 seconds.
                 </div>
               </div>
               <div style={{background:"#0D1117",border:"1px solid #21262D",borderRadius:8,padding:14}}>
-                <div style={{display:"grid",gridTemplateColumns:"100px 1fr",gap:10,fontSize:"var(--fs-4)"}}>
+                <div style={{display:"grid",gridTemplateColumns:"100px 1fr",gap:10,fontSize:12}}>
                   <div style={{color:"#F5A623",fontWeight:500}}>STATUS</div>
-                  <div style={{color:"var(--t2)"}}>One phrase about where the file substantively is right now (not just the stage name).</div>
+                  <div style={{color:"#8B949E"}}>One phrase about where the file substantively is right now (not just the stage name).</div>
                   <div style={{color:"#F5A623",fontWeight:500}}>BLOCKER</div>
-                  <div style={{color:"var(--t2)"}}>The single thing holding it up. If clean, write "<span style={{color:"#06D6A0"}}>none</span>" or "<span style={{color:"#06D6A0"}}>clean</span>".</div>
+                  <div style={{color:"#8B949E"}}>The single thing holding it up. If clean, write "<span style={{color:"#06D6A0"}}>none</span>" or "<span style={{color:"#06D6A0"}}>clean</span>".</div>
                   <div style={{color:"#F5A623",fontWeight:500}}>NEXT</div>
-                  <div style={{color:"var(--t2)"}}>The immediate next action — what + who + by when.</div>
+                  <div style={{color:"#8B949E"}}>The immediate next action — what + who + by when.</div>
                 </div>
               </div>
               <div>
-                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--t1)",marginBottom:10}}>EXAMPLES BY STAGE</div>
+                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#E6EDF3",marginBottom:10}}>EXAMPLES BY STAGE</div>
                 <div style={{display:"flex",flexDirection:"column",gap:10}}>
                   {[
                     {stage:"Submitted to UW", note:"Subm 4/12 · UW queue · review by 4/15"},
@@ -6185,8 +6137,8 @@ function _HelpModalLegacy({profile, onClose}){
                     {stage:"Condition Clearing", note:"Conds in · BS rejected (stale) · Maria reupload by 4/18"},
                     {stage:"Clear to Close", note:"CTC 4/17 · title prelim pending · COE 4/25"},
                   ].map(ex=>(
-                    <div key={ex.stage} style={{display:"grid",gridTemplateColumns:"180px 1fr",gap:10,padding:"8px 12px",background:"#0D1117",borderRadius:6,fontSize:"var(--fs-4)",alignItems:"center"}}>
-                      <div style={{color:"var(--t3)",fontSize:"var(--fs-2)",letterSpacing:"1px"}}>{ex.stage.toUpperCase()}</div>
+                    <div key={ex.stage} style={{display:"grid",gridTemplateColumns:"180px 1fr",gap:10,padding:"8px 12px",background:"#0D1117",borderRadius:6,fontSize:12,alignItems:"center"}}>
+                      <div style={{color:"#484F58",fontSize:10,letterSpacing:"1px"}}>{ex.stage.toUpperCase()}</div>
                       <div style={{color:"#06D6A0",fontFamily:"DM Mono"}}>{ex.note}</div>
                     </div>
                   ))}
@@ -6196,8 +6148,8 @@ function _HelpModalLegacy({profile, onClose}){
           )}
 
           {tab==="abbrev" && (
-            <div style={{display:"flex",flexDirection:"column",gap:18,fontSize:"var(--fs-5)",color:"var(--t1)"}}>
-              <div style={{color:"var(--t2)",lineHeight:1.6}}>
+            <div style={{display:"flex",flexDirection:"column",gap:18,fontSize:13,color:"#E6EDF3"}}>
+              <div style={{color:"#8B949E",lineHeight:1.6}}>
                 Standard abbreviations everyone on the team uses. Stick to these so notes stay scannable and consistent.
               </div>
               {[
@@ -6220,12 +6172,12 @@ function _HelpModalLegacy({profile, onClose}){
                 ]},
               ].map(group=>(
                 <div key={group.title}>
-                  <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:group.color,marginBottom:8,letterSpacing:"1px"}}>{group.title.toUpperCase()}</div>
+                  <div style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:group.color,marginBottom:8,letterSpacing:"1px"}}>{group.title.toUpperCase()}</div>
                   <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:6}}>
                     {group.items.map(([abbr,full])=>(
-                      <div key={abbr} style={{display:"flex",gap:10,padding:"6px 10px",background:"#0D1117",borderRadius:5,fontSize:"var(--fs-4)",alignItems:"center"}}>
+                      <div key={abbr} style={{display:"flex",gap:10,padding:"6px 10px",background:"#0D1117",borderRadius:5,fontSize:12,alignItems:"center"}}>
                         <span style={{color:group.color,fontFamily:"DM Mono",fontWeight:500,minWidth:55}}>{abbr}</span>
-                        <span style={{color:"var(--t2)"}}>{full}</span>
+                        <span style={{color:"#8B949E"}}>{full}</span>
                       </div>
                     ))}
                   </div>
@@ -6235,10 +6187,10 @@ function _HelpModalLegacy({profile, onClose}){
           )}
 
           {tab==="workflow" && (
-            <div style={{display:"flex",flexDirection:"column",gap:18,fontSize:"var(--fs-5)",color:"var(--t1)",lineHeight:1.6}}>
+            <div style={{display:"flex",flexDirection:"column",gap:18,fontSize:13,color:"#E6EDF3",lineHeight:1.6}}>
               <div>
-                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-7)",color:"#06D6A0",marginBottom:8}}>Daily morning routine (5 min)</div>
-                <ol style={{color:"var(--t2)",paddingLeft:18,lineHeight:1.8}}>
+                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:16,color:"#06D6A0",marginBottom:8}}>Daily morning routine (5 min)</div>
+                <ol style={{color:"#8B949E",paddingLeft:18,lineHeight:1.8}}>
                   <li>Open the pipeline. Check the <strong style={{color:"#E85D75"}}>CRITICAL</strong> count at the top — files closing in ≤3 days.</li>
                   <li>Check phase tabs (PQ, HH, PR, UW, CP, CL, PC) — any phase with too many files in <strong style={{color:"#F5A623"}}>STALE</strong> status (5d+) needs attention.</li>
                   <li>Click any file showing CRITICAL or STALE → read its note → decide today's action.</li>
@@ -6249,18 +6201,18 @@ function _HelpModalLegacy({profile, onClose}){
           )}
 
           {tab==="refs" && (
-            <div style={{display:"flex",flexDirection:"column",gap:18,fontSize:"var(--fs-5)",color:"var(--t1)",lineHeight:1.6}}>
+            <div style={{display:"flex",flexDirection:"column",gap:18,fontSize:13,color:"#E6EDF3",lineHeight:1.6}}>
               <div>
-                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-7)",color:"#A78BFA",marginBottom:8}}>🏦 Bank-to-Bank Referrals</div>
-                <div style={{color:"var(--t2)"}}>
+                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:16,color:"#A78BFA",marginBottom:8}}>🏦 Bank-to-Bank Referrals</div>
+                <div style={{color:"#8B949E"}}>
                   When the branch can't place a file (product, credit, niche), refer it out to another banker and track everything.
                   When other bankers send you deals, tag the inbound so you can measure reciprocity at year end.
                 </div>
               </div>
 
               <div style={{background:"rgba(167,139,250,.06)",border:"1px solid #A78BFA44",borderRadius:8,padding:14}}>
-                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#A78BFA",marginBottom:8}}>🔀 Outbound — Referring a file OUT</div>
-                <ol style={{color:"var(--t2)",paddingLeft:18,lineHeight:1.8,fontSize:"var(--fs-4)"}}>
+                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#A78BFA",marginBottom:8}}>🔀 Outbound — Referring a file OUT</div>
+                <ol style={{color:"#8B949E",paddingLeft:18,lineHeight:1.8,fontSize:12}}>
                   <li>Open the file → change STAGE to <strong style={{color:"#A78BFA"}}>REFERRED OUT — EXTERNAL BANK</strong></li>
                   <li>Fill in the receiving banker's name, company, phone, and email</li>
                   <li>Select a REFERRAL REASON (credit, product, property type, etc.)</li>
@@ -6271,8 +6223,8 @@ function _HelpModalLegacy({profile, onClose}){
               </div>
 
               <div style={{background:"rgba(255,209,102,.06)",border:"1px solid #FFD16644",borderRadius:8,padding:14}}>
-                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#FFD166",marginBottom:8}}>🤝 Inbound — A banker sends YOU a file</div>
-                <ol style={{color:"var(--t2)",paddingLeft:18,lineHeight:1.8,fontSize:"var(--fs-4)"}}>
+                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#FFD166",marginBottom:8}}>🤝 Inbound — A banker sends YOU a file</div>
+                <ol style={{color:"#8B949E",paddingLeft:18,lineHeight:1.8,fontSize:12}}>
                   <li>Click <strong style={{color:"#F5A623"}}>+ NEW FILE</strong> as usual</li>
                   <li>At the top, check the box <strong style={{color:"#FFD166"}}>"This is an inbound referral from another banker"</strong></li>
                   <li>Fill in the referring banker's name, company, phone, and email</li>
@@ -6283,11 +6235,11 @@ function _HelpModalLegacy({profile, onClose}){
               </div>
 
               <div>
-                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--t1)",marginBottom:8}}>Year-end view</div>
-                <div style={{color:"var(--t2)",fontSize:"var(--fs-4)",lineHeight:1.7}}>
+                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:14,color:"#E6EDF3",marginBottom:8}}>Year-end view</div>
+                <div style={{color:"#8B949E",fontSize:12,lineHeight:1.7}}>
                   Production → <strong style={{color:"#F5A623"}}>🏦 BANK REFERRALS</strong> tab shows:
                 </div>
-                <ul style={{color:"var(--t2)",paddingLeft:18,lineHeight:1.8,fontSize:"var(--fs-4)",marginTop:6}}>
+                <ul style={{color:"#8B949E",paddingLeft:18,lineHeight:1.8,fontSize:12,marginTop:6}}>
                   <li>Outbound totals: # sent out, $ fees earned, $ lost comp</li>
                   <li>Inbound totals: # received, $ closed, $ comp earned</li>
                   <li>Reciprocity table: per-banker balance (who's sending who what)</li>
@@ -6298,8 +6250,8 @@ function _HelpModalLegacy({profile, onClose}){
           )}
 
           {tab==="roles" && (
-            <div style={{display:"flex",flexDirection:"column",gap:16,fontSize:"var(--fs-5)",color:"var(--t1)",lineHeight:1.6}}>
-              <div style={{color:"var(--t2)"}}>
+            <div style={{display:"flex",flexDirection:"column",gap:16,fontSize:13,color:"#E6EDF3",lineHeight:1.6}}>
+              <div style={{color:"#8B949E"}}>
                 You are signed in as <strong style={{color:profile.color}}>{profile.name}</strong> with role <strong style={{color:profile.color,textTransform:"uppercase"}}>{profile.role}</strong>.
               </div>
               {[
@@ -6334,10 +6286,10 @@ function _HelpModalLegacy({profile, onClose}){
                   borderRadius:8, padding:14
                 }}>
                   <div style={{display:"flex",alignItems:"baseline",gap:10,marginBottom:6}}>
-                    <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:r.color}}>{r.role.toUpperCase()}</div>
-                    <div style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>{r.who}</div>
+                    <div style={{fontFamily:"Syne",fontWeight:700,fontSize:15,color:r.color}}>{r.role.toUpperCase()}</div>
+                    <div style={{fontSize:11,color:"#484F58"}}>{r.who}</div>
                   </div>
-                  <ul style={{color:"var(--t2)",paddingLeft:18,lineHeight:1.7,fontSize:"var(--fs-4)"}}>
+                  <ul style={{color:"#8B949E",paddingLeft:18,lineHeight:1.7,fontSize:12}}>
                     {r.can.map((c,i)=><li key={i}>{c}</li>)}
                   </ul>
                 </div>
@@ -6346,7 +6298,7 @@ function _HelpModalLegacy({profile, onClose}){
           )}
 
           {tab==="faq" && (
-            <div style={{display:"flex",flexDirection:"column",gap:14,fontSize:"var(--fs-5)",color:"var(--t1)"}}>
+            <div style={{display:"flex",flexDirection:"column",gap:14,fontSize:13,color:"#E6EDF3"}}>
               {[
                 {q:"How do I refer a file out to another banker?",
                  a:"Open the file → change STAGE to 'REFERRED OUT — EXTERNAL BANK' (the last option in the stage dropdown). A purple banker info section appears. Fill in banker name, company, phone, email, reason, and status. Save."},
@@ -6364,8 +6316,8 @@ function _HelpModalLegacy({profile, onClose}){
                  a:"On the login screen, type your email, then click FORGOT? next to the password label. Click SEND RESET LINK."},
               ].map((item,i)=>(
                 <div key={i} style={{background:"#0D1117",border:"1px solid #21262D",borderRadius:8,padding:14}}>
-                  <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#E85D75",marginBottom:6}}>Q: {item.q}</div>
-                  <div style={{color:"var(--t2)",fontSize:"var(--fs-4)",lineHeight:1.6}}>{item.a}</div>
+                  <div style={{fontFamily:"Syne",fontWeight:700,fontSize:13,color:"#E85D75",marginBottom:6}}>Q: {item.q}</div>
+                  <div style={{color:"#8B949E",fontSize:12,lineHeight:1.6}}>{item.a}</div>
                 </div>
               ))}
             </div>
@@ -6374,11 +6326,11 @@ function _HelpModalLegacy({profile, onClose}){
         </div>
 
         <div style={{padding:"12px 24px",borderTop:"1px solid #21262D",background:"#0D1117",flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px"}}>
+          <div style={{fontSize:10,color:"#484F58",letterSpacing:"1px"}}>
             v2.1 · DEL VALLE LENDING CO. · BANK REFERRALS
           </div>
           <button onClick={onClose} className="hov"
-            style={{background:"#F5A623",color:"#0D1117",borderRadius:6,padding:"8px 18px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",fontWeight:500,border:"none",cursor:"pointer"}}>
+            style={{background:"#F5A623",color:"#0D1117",borderRadius:6,padding:"8px 18px",fontFamily:"DM Mono",fontSize:11,fontWeight:500,border:"none",cursor:"pointer"}}>
             GOT IT ✓
           </button>
         </div>
