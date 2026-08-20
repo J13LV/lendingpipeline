@@ -17,7 +17,7 @@ const TX = (k, v) => tr(k, CURRENT_LANG, v);
 // Las notas del motor viven como note_es / note_en.
 const PN = o => o ? (o["note_" + CURRENT_LANG] ?? o.note_es ?? o.note_en ?? "") : "";
 import {
-  stageUrgency, stageClock, daysInStage, fileAge, stampStage, today,
+  stageUrgency, stageClock, stageCeilingLabel, daysInStage, fileAge, stampStage, today,
   leadStandard, LEAD_STANDARD_DAYS, leadStandardReport, inPreQual, fileClock,
   CONTRACT_CANCEL_REASONS, canCancelContract, cancelContract, cancelCount,
   cancelReason, lastCancellation,
@@ -4360,7 +4360,8 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
             <span style={{color:"var(--t2)"}}>+ {P(financedFeeMeta(draft))}</span>
             <span style={{display:"flex",alignItems:"center",gap:6}}>
               {isAdmin?(
-                <input value={feePct} inputMode="decimal"
+                <input value={feePct} inputMode="decimal" placeholder="0"
+                  title={TX("financedHint")}
                   onChange={e=>setFeePct(e.target.value.replace(/[^\d.]/g,""))}
                   style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:4,color:"var(--t2)",
                     padding:"2px 5px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",width:44,textAlign:"right"}}/>
@@ -5454,7 +5455,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
                 <div style={{fontSize:"var(--fs-4)",color:ph.color}}>{stage}</div>
                 <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:2}}>
                   {daysInStage(file)===null?"—":`${daysInStage(file)}d`}
-                  {(()=>{const c=stageClock(file.stage,file);return c?` · ${TX("hdCeiling",{n:c.late})}`:"";})()}
+                  {(()=>{const e=stageCeilingLabel(file.stage,file,lang);return e?` · ${e}`:"";})()}
                 </div>
               </div>
             )}
@@ -5501,7 +5502,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
             display:"flex",alignItems:"center",gap:11,flexShrink:0,justifyContent:"flex-end"}}>
             <span style={{fontSize:"var(--fs-1)",color:"var(--t3)"}}>
               {daysInStage(file)===null?"—":`${daysInStage(file)}d`}
-              {(()=>{const c=stageClock(file.stage,file);return c?` · ${TX("hdCeiling",{n:c.late})}`:"";})()}
+              {(()=>{const e=stageCeilingLabel(file.stage,file,lang);return e?` · ${e}`:"";})()}
             </span>
             <span style={{fontSize:"var(--fs-1)",letterSpacing:"1.3px",color:"var(--t3)"}}>{TX("hdStage")}</span>
             <select value={stage} onChange={e=>{setStage(e.target.value);
@@ -6046,7 +6047,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
               </div>
               {!isClosed && (()=>{ const c=stageClock(file.stage,file); return (
                 <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:4,letterSpacing:"0.5px"}}>
-                  {c ? `target ${c.warn}d · ceiling ${c.late}d` : ""}
+                  {stageCeilingLabel(file.stage,file,lang)}
                   {fileAge(file)!==null ? ` · ${fileAge(file)}d total` : ""}
                 </div>
               );})()}

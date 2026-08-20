@@ -423,6 +423,25 @@ export const STAGE_OWNERS = {
   "Closing Docs Drawn": "Tina", "Signing": "Tina", "Funded": "Tina",
 };
 
+// El techo de una etapa en texto, listo para pintar. Las de House Hunt no
+// tienen `warn` ni `late` -las gobierna el plazo de 60 dias de APG- y
+// pintarlas con esos campos escribia "undefined" en la pantalla:
+// "target undefinedd . ceiling undefinedd".
+export function stageCeilingLabel(stage, file, lang = "es") {
+  const c = stageClock(stage, file);
+  if (!c) return "";
+  if (c.houseHunt) {
+    const hh = houseHuntStatus(file);
+    const dias = hh.daysSearching;
+    const ventana = HOUSE_HUNT.ladder[HOUSE_HUNT.ladder.length - 1].day;
+    return lang === "en"
+      ? `${dias ?? "—"}d searching · ${ventana}d APG window`
+      : `${dias ?? "—"}d buscando · ventana APG de ${ventana}d`;
+  }
+  if (!Number.isFinite(c.late)) return "";
+  return lang === "en" ? `ceiling ${c.late}d` : `techo ${c.late}d`;
+}
+
 export function stageClock(stage, file) {
   const fixed = FIXED_CLOCKS[stage];
   if (fixed) return { ...fixed, owner: resolveOwner(fixed.owner, file) };
@@ -2736,6 +2755,14 @@ export const FINANCED_FEES = {
 export function financedFeePct(file) {
   const o = file?.financedFeePct;
   if (o !== undefined && o !== null && o !== "" && Number.isFinite(Number(o))) return Number(o);
+  // VACIADO A PROPOSITO. El campo existe y esta en null: alguien lo borro
+  // porque el cliente paga el cargo en efectivo. Antes esto caia al default
+  // del producto y el cargo reaparecia calculado solo — el campo se sentia
+  // inmovil, se borraba en pantalla y volvia el mismo numero.
+  //
+  // NUNCA TOCADO es distinto: la clave no existe, y ahi si manda el default
+  // del producto, que es lo correcto para un FHA recien creado.
+  if (o === null && Object.prototype.hasOwnProperty.call(file || {}, "financedFeePct")) return 0;
   return FINANCED_FEES[baseProductOf(file?.type)]?.pct ?? 0;
 }
 export const financedFeeMeta = file => FINANCED_FEES[baseProductOf(file?.type)] || null;

@@ -754,8 +754,8 @@ export const UI = {
 
   baseLoan:   { es:"Monto base", en:"Base loan" },
   compBasis:  { es:"Base de la comisión", en:"Comp basis" },
-  financedHint:{ es:"El cargo se financia dentro del préstamo, así que el pagaré es mayor que el monto base. La comisión se paga sobre el total — igual que Arive. Pon 0 si el cliente lo paga en efectivo.",
-                 en:"The fee is financed into the loan, so the note is larger than the base amount. Comp is paid on the total — same as Arive. Set 0 if the borrower pays it in cash." },
+  financedHint:{ es:"El cargo se financia dentro del préstamo, así que el pagaré es mayor que el monto base. La comisión se paga sobre el total — igual que Arive. Déjalo en blanco o en 0 si el cliente lo paga en efectivo.",
+                 en:"The fee is financed into the loan, so the note is larger than the base amount. Comp is paid on the total — same as Arive. Leave it blank or set 0 if the borrower pays it in cash." },
 
   compliance: { es:"✓ REQUISITOS PARA COBRAR", en:"✓ PAYROLL REQUIREMENTS" },
   complianceHint:{ es:"Barrett paga cuando el préstamo fondeó, llegó el cheque y estos documentos están en Arive. Sin esto el archivo no entra al corte.",
