@@ -801,6 +801,9 @@ export default function App() {
       if (sinId > 0) setIdsBackfilled(sinId);
       await escribirLote(conIds, []);
       setMigrado(conIds.length);
+      // Es un aviso de "acaba de pasar algo", no un estado. Los otros avisos
+      // del sistema se apagan solos; este se quedaba hasta recargar.
+      setTimeout(()=>setMigrado(null), 12000);
       setMigrando(false);
     }catch{
       setSaveStatus("error");
@@ -2338,7 +2341,9 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
     <div className="fi" style={{display:"flex",flexDirection:"column",gap:16}}>
 
       {/* BRANCH STATS */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:10}}>
+      {/* De 150 a 168: con la escala nueva, ocho caracteres de Syne en
+          --fs-9 no caben en 150px. */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(168px,1fr))",gap:10}}>
         {[
           {label:"TOTAL FILES",value:files.length,color:"#4A90D9"},
           {label:"CLOSED LOANS",value:closed.length,color:"#06D6A0"},
@@ -2349,9 +2354,21 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           {label:"MONTH VOLUME",value:`$${(monthVol/1000).toFixed(0)}K`,color:"#BD65E8"},
           {label:"BRANCH VOLUME",value:`$${((closedVol+activeVol)/1e6).toFixed(2)}M`,color:"#F5A623"},
         ].map(s=>(
-          <div key={s.label} style={{background:"#161B22",border:`1px solid ${s.color}33`,borderTop:`3px solid ${s.color}`,borderRadius:8,padding:"12px"}}>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{s.label}</div>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",color:s.color}}>{s.value}</div>
+          <div key={s.label} style={{background:"#161B22",border:`1px solid ${s.color}33`,
+            borderTop:`3px solid ${s.color}`,borderRadius:8,padding:"12px",
+            // De red: nada se sale de su caja aunque el número crezca.
+            // `containerType` va AQUÍ, en la tarjeta: las unidades cqw del
+            // número se miden contra su contenedor, no contra sí mismas.
+            overflow:"hidden",minWidth:0,containerType:"inline-size"}}>
+            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",
+              marginBottom:3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{s.label}</div>
+            {/* $26.63M en Syne a --fs-9 medía más que la caja y se salía por
+                el lado. clamp() lo deja encoger SOLO si no cabe: el día que
+                cruces los $100M o alguien baje la escala, el número se ajusta
+                en vez de romper la tarjeta. */}
+            <div style={{fontFamily:"Syne",fontWeight:800,
+              fontSize:"clamp(var(--fs-6), 15cqw, var(--fs-9))",
+              color:s.color,whiteSpace:"nowrap",letterSpacing:"-0.5px"}}>{s.value}</div>
           </div>
         ))}
       </div>
