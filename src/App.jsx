@@ -21,6 +21,7 @@ import {
   hasContract, coeOf,
   leadStandard, LEAD_STANDARD_DAYS, leadStandardReport, inPreQual, fileClock,
   CONTRACT_CANCEL_REASONS, canCancelContract, cancelContract, cancelCount,
+  overdueReport, TASK_SEVERITY,
   cancelReason, lastCancellation,
   daysBetween, addDays as addDaysISO,
   // ─── 2B-1 contingencies ───
@@ -333,7 +334,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.08.21d";
+const APP_VERSION = "2026.08.21e";
 
 function huellaTexto(s) {
   let h = 0;
@@ -2615,6 +2616,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
         {[
           !isAssistant && ["team","🏆 TEAM PRODUCTION"],
+          ["overdue",TX("overdueTab")],
           !isAssistant && ["monthly","📅 MONTHLY"],
           !isAssistant && ["referrals","🤝 REFERRAL PARTNERS"],
           !isAssistant && ["bankrefs","🏦 BANK REFERRALS"],
@@ -2803,6 +2805,58 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           </div>
         )}
       </div>}
+
+      {/* TAREAS VENCIDAS */}
+      {prodTab==="overdue"&&(()=>{
+        const r=overdueReport(files);
+        const TONO={deposit:"#E85D75",legal:"#BD65E8",closing:"#E85D75",
+          pace:"#F5A623",missing:"#6E7681"};
+        return (
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:8,
+              padding:"12px 16px"}}>
+              <div className="sys">{TX("overdueLead")}</div>
+            </div>
+            {r.total===0?(
+              <div style={{background:"#161B22",border:"1px solid #7EC8A444",borderRadius:10,
+                padding:"26px 16px",textAlign:"center",color:"#7EC8A4",
+                fontSize:"var(--fs-4)"}}>{TX("overdueClean")}</div>
+            ):(<>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+                <span style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",
+                  color:"#E85D75"}}>{r.total}</span>
+                <span style={{fontSize:"var(--fs-3)",color:"var(--t2)"}}>
+                  {TX("overdueFiles",{n:r.total,f:r.files})}
+                </span>
+                {Object.entries(r.byKind).map(([k,n])=>(
+                  <span key={k} style={{marginLeft:0,fontSize:"var(--fs-1)",
+                    color:TONO[k],border:`1px solid ${TONO[k]}55`,borderRadius:4,
+                    padding:"2px 8px",fontFamily:"DM Mono"}}>
+                    {n} {P(TASK_SEVERITY[k])}
+                  </span>
+                ))}
+              </div>
+              <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,
+                overflow:"hidden"}}>
+                {r.rows.map((x,i)=>(
+                  <div key={i} className="hov" onClick={()=>onOpenFile&&onOpenFile(x.file)}
+                    style={{display:"flex",gap:12,alignItems:"baseline",padding:"10px 14px",
+                      borderBottom:"1px solid #21262D",cursor:"pointer",
+                      background:i%2?"#161B22":"#0D1117"}}>
+                    <span style={{fontSize:"var(--fs-1)",color:TONO[x.kind],minWidth:118,
+                      fontFamily:"DM Mono"}}>{P(TASK_SEVERITY[x.kind])}</span>
+                    <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-3)",
+                      color:"var(--t1)",minWidth:180}}>{x.file.borrower}</span>
+                    <span style={{fontSize:"var(--fs-2)",color:"var(--t2)",flex:1,
+                      lineHeight:1.45}}>{P(x)}</span>
+                    <span style={{fontSize:"var(--fs-2)",color:"var(--t3)",minWidth:96,
+                      textAlign:"right",fontFamily:"DM Mono"}}>{P(x.owner)}</span>
+                  </div>
+                ))}
+              </div>
+            </>)}
+          </div>
+        );})()}
 
       {/* MONTHLY TAB */}
       {prodTab==="monthly"&&<div style={{display:"flex",flexDirection:"column",gap:14}}>

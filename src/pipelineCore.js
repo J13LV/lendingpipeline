@@ -4292,6 +4292,152 @@ export function stampRegistration(file, by) {
   };
 }
 
+// ─── 7X5. TAREAS VENCIDAS ──────────────────────────────────────────
+// Lo que ya paso su plazo, con dueno y ordenado por lo que cuesta.
+//
+// La regla que ordena todo esto: severidad NO es "cuantos dias lleva".
+// Once dias sobre ocho esperando documentos del cliente y una contingencia
+// de tasacion vencida sin resolver son cosas distintas — en la segunda el
+// deposito del cliente esta expuesto. El orden es por lo que se pierde.
+//
+// Y solo entra lo VENCIDO. Si contara tambien lo que se avecina, el numero
+// nunca bajaria a cero y dejaria de significar algo — lo dorado ya se ve
+// en la cola.
+export const TASK_SEVERITY = {
+  deposit: { rank: 1, signal: "broken",
+    es: "Deposito en riesgo", en: "Deposit at risk" },
+  legal:   { rank: 2, signal: "legal",
+    es: "Plazo de ley",       en: "Legal deadline" },
+  closing: { rank: 3, signal: "broken",
+    es: "El cierre no llega", en: "Closing will not hold" },
+  pace:    { rank: 4, signal: "broken",
+    es: "Fuera de tiempo",    en: "Past its ceiling" },
+  missing: { rank: 5, signal: "broken",
+    es: "Falta capturar",     en: "Not captured" },
+};
+
+// Quien resuelve una tarea. En `team` va el nombre; en cliente y vendor va
+// el rol, porque nadie del equipo controla eso.
+function duenoDe(file, kind) {
+  if (kind === "legal") return WAIT_LABELS.legal;
+  // Lo que falta CAPTURAR es nuestro siempre: verificar el 1003 y registrar
+  // con el lender es trabajo de Tina, no del cliente ni del tasador. Sacar
+  // el dueno de la etapa aqui le colgaba a un prestatario la revision del
+  // 1003 solo porque el archivo estaba esperando sus documentos.
+  if (kind === "missing" || kind === "closing") {
+    const quien = STAGE_OWNERS[REGISTRATION_STAGE];
+    return quien ? { es: quien, en: quien, kind: "team", named: true } : WAIT_LABELS.team;
+  }
+  return stageWaitOn(file?.stage, file) || WAIT_LABELS.team;
+}
+
+export function overdueTasks(file) {
+  if (!file || file.archived || okDate(file.closedAt)) return [];
+  if (file.prep || file.stage === "PREPARATION — NOT READY YET") return [];
+  if (file.stage === "REFERRED OUT — EXTERNAL BANK") return [];
+  const out = [];
+  const push = (kind, es, en, extra = {}) => out.push({
+    kind, ...TASK_SEVERITY[kind], es, en,
+    file, owner: extra.owner || duenoDe(file, kind), ...extra,
+  });
+
+  // 1 . El deposito. Una contingencia de contrato que paso sin resolverse.
+  for (const st of allContingencyStatus(file)) {
+    if (!st.depositAtRisk) continue;
+    push("deposit",
+      `${st.es} vencio el ${st.date} sin registrar resultado`,
+      `${st.en} passed on ${st.date} with no outcome recorded`,
+      { days: Math.abs(st.daysLeft) });
+  }
+
+  const c = stageClock(file.stage, file);
+  const d = daysInStage(file);
+
+  // 2 . La ley. Un plazo legal sobre su techo.
+  if (c?.legal && d !== null && d > c.late)
+    push("legal", `${file.stage} lleva ${d}d — el plazo legal es ${c.late}d`,
+      `${file.stage} has been ${d}d — the legal limit is ${c.late}d`,
+      { days: d, ceiling: c.late });
+
+  // 3 . El cierre. Las fechas del contrato no se sostienen entre si.
+  for (const cf of contingencyConflicts(file)) {
+    if (cf.sev !== "critical") continue;
+    push("closing", cf.es, cf.en);
+    break;
+  }
+
+  // 4 . El ritmo, con quien hace esperar.
+  if (!c?.legal && !c?.houseHunt && d !== null && Number.isFinite(c?.late) && d > c.late)
+    push("pace", `${file.stage} · ${d}d sobre un techo de ${c.late}d`,
+      `${file.stage} · ${d}d against a ${c.late}d ceiling`,
+      { days: d, ceiling: c.late });
+
+  const ld = leadStandard(file);
+  if (ld.applies && ld.signal === "broken")
+    push("pace", `${ld.days}d habiles en Pre-Qual — el estandar es ${LEAD_STANDARD_DAYS}`,
+      `${ld.days} business days in Pre-Qual — the standard is ${LEAD_STANDARD_DAYS}`,
+      { days: ld.days, ceiling: LEAD_STANDARD_DAYS, owner: WAIT_LABELS.team });
+
+  // 5 . Lo que ya deberia estar hecho dado donde esta el archivo.
+  for (const g of backfillGaps(file))
+    push("missing", `Sin anotar: ${g.es}`, `Not recorded: ${g.en}`);
+  if (hasContract(file)
+      && ALL_STAGE_ORDER.indexOf(file.stage) > ALL_STAGE_ORDER.indexOf(REGISTRATION_STAGE)) {
+    const cov = gate1Coverage(file);
+    if (cov.pending > 0)
+      push("missing", `1003 · ${cov.pending} puntos sin revisar y el archivo ya avanzo`,
+        `1003 · ${cov.pending} items unchecked and the file has moved on`);
+  }
+
+  return out.sort((a, b) => a.rank - b.rank);
+}
+
+// Todo el pipeline, ordenado por lo que cuesta. Es la lista de la reunion.
+export const worstOverdue = file => {
+  const lista = overdueTasks(file);
+  if (!lista.length) return null;
+  const peor = [...lista].sort((a, b) => a.rank - b.rank || (b.days || 0) - (a.days || 0))[0];
+  return { ...peor, alsoCount: lista.length - 1, all: lista };
+};
+
+export function overdueReport(files, { owner = null } = {}) {
+  const rows = [];
+  for (const f of files || []) {
+    const tareas = overdueTasks(f);
+    if (!tareas.length) continue;
+    const mias = owner
+      ? tareas.filter(x => String(x.owner?.es || "") === String(owner))
+      : tareas;
+    if (!mias.length) continue;
+    // UNA por archivo, la peor. El resto viaja en `alsoCount` para que la
+    // fila pueda decir "+2 mas" sin repetir el archivo en la lista.
+    const peor = [...mias].sort((a, b) => a.rank - b.rank || (b.days || 0) - (a.days || 0))[0];
+    rows.push({ ...peor, alsoCount: mias.length - 1 });
+  }
+  rows.sort((a, b) => a.rank - b.rank
+    || (b.days || 0) - (a.days || 0)
+    || String(a.file?.borrower || "").localeCompare(String(b.file?.borrower || "")));
+  const porTipo = {};
+  for (const r of rows) porTipo[r.kind] = (porTipo[r.kind] || 0) + 1;
+  return {
+    rows, total: rows.length, byKind: porTipo,
+    files: new Set(rows.map(r => r.file?.id)).size,
+  };
+}
+
+// Cuantas tiene cada persona. Para la linea de arriba de su cola.
+export function overdueByOwner(files) {
+  const m = new Map();
+  for (const f of files || []) {
+    // Un archivo cuenta UNA vez por persona, aunque le deba tres cosas.
+    const suyos = new Set();
+    for (const tarea of overdueTasks(f)) suyos.add(tarea.owner?.es || "—");
+    for (const k of suyos) m.set(k, (m.get(k) || 0) + 1);
+  }
+  return m;
+}
+
+
 // ─── 7X4. RELLENO DE ARCHIVOS ANTERIORES ───────────────────────────
 // Los archivos que ya existían cuando se construyó todo esto tienen tres
 // clases de hueco, y ninguno se puede inventar:
