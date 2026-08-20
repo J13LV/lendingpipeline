@@ -50,6 +50,7 @@ import {
   DPA_PCTS, DPA_FORMS, dpaForm, dpaOf, hasDpa, miLooksWrong,
   setDpa, dpaLabel, dpaComplete, productionByDpa, productionByState,
   GATE1_ITEMS, gate1Item, FINDING_WAITING, WAITING_IDS, waitingMeta,
+  backfillGaps, filesNeedingBackfill, backfillCount, applyBackfill, wasBackfilled,
   gate1Coverage, visibleMilestones, milestoneAt, uwOutcome, uwOutcomeAt,
   uwOutcomeMeta, discEsignedAt,
   openFindings, resolvedFindings, hasOpenFindings, addFinding, resolveFinding,
@@ -643,6 +644,7 @@ export default function App() {
   const [search,setSearch]=useState("");
   const [showAdd,setShowAdd]=useState(false);
   const [showHelp,setShowHelp]=useState(false);
+  const [showBackfill,setShowBackfill]=useState(false);
   const [detail,setDetail]=useState(null);
   const [prepFor,setPrepFor]=useState(null);
   const [archiveFor,setArchiveFor]=useState(null);
@@ -1191,6 +1193,15 @@ export default function App() {
               title={TX("marthaHint")}
               style={{background:"#21262D",color:marthaBusy?"var(--t3)":"var(--t2)",borderRadius:6,padding:"8px 12px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",border:"1px solid #30363D",cursor:marthaBusy?"wait":"pointer"}}>
               {marthaBusy ? TX("marthaBusy") : TX("marthaBtn")}
+            </button>
+          )}
+          {isAdmin && backfillCount(files) > 0 && (
+            <button className="hov" onClick={()=>setShowBackfill(true)}
+              title={TX("bfLead")}
+              style={{background:"rgba(245,166,35,.1)",color:"#F5A623",borderRadius:6,
+                padding:"8px 12px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",
+                border:"1px solid #F5A62366",cursor:"pointer"}}>
+              {TX("bfBtn")} {filesNeedingBackfill(files).length}
             </button>
           )}
           {isAdmin && (
@@ -1789,6 +1800,21 @@ export default function App() {
       {archiveFor&&<ArchiveModal file={archiveFor} onClose={()=>setArchiveFor(null)}
         onConfirm={(reason)=>{archiveFile(archiveFor.id,reason);setArchiveFor(null);}}/>}
       {showHelp&&<HelpModal profile={profile} onClose={()=>setShowHelp(false)}/>}
+      {showBackfill&&<BackfillModal files={files} profile={profile} lang={lang}
+        onClose={()=>setShowBackfill(false)}
+        onApply={(updates)=>{
+          // Una sola escritura para todos los archivos: en tandas separadas,
+          // el listener de Firestore devuelve la copia vieja del servidor y
+          // revierte lo anterior. Es el mismo fallo del cierre de corte.
+          const mapa=new Map(updates.map(u=>[u.id,u]));
+          const next=files.map(f=>{
+            const u=mapa.get(f.id);
+            return u ? stampEdit(u.file, profile, "backfilled", {fields:u.fields}) : f;
+          });
+          setFiles(next);
+          setDoc(PIPELINE_DOC,{files:next},{merge:true}).catch(()=>setSaveStatus("error"));
+          return updates.length;
+        }}/>}
     </div>
   );
 }
@@ -1879,6 +1905,125 @@ function PrepModal({file, onClose, onConfirm}){
 }
 
 // ─── ARCHIVE MODAL ───
+// ─── RELLENO DE ARCHIVOS ANTERIORES ───
+// Una sentada, no un archivo a la vez. Los nueve o diez archivos que ya
+// existían cuando se construyó el registro y el sello de etapas tienen sus
+// fechas en la cabeza de alguien y en Arive, no en el sistema — y en el
+// checklist de Barrett salen como renglones en blanco de un archivo que sí
+// se registró.
+//
+// Lo que NO hace: pedir fechas que todavía no han ocurrido. Si el archivo
+// está en UW Review no se le pregunta cuándo fondeó. Pedir un dato que aún
+// no existe es invitar a inventarlo.
+function BackfillModal({files, profile, lang, onClose, onApply}){
+  const pendientes = filesNeedingBackfill(files);
+  const [datos, setDatos] = useState({});
+  const [hecho, setHecho] = useState(null);
+  const P2 = o => (o && typeof o === "object") ? (o[lang] ?? o.es ?? o.en ?? "") : o;
+
+  const fs2={background:"#0D1117",border:"1px solid #30363D",borderRadius:5,
+    color:"var(--t1)",padding:"5px 8px",fontSize:"var(--fs-2)",
+    fontFamily:"'DM Mono','Courier New',monospace",width:"100%"};
+
+  const set=(fid,campo,val)=>setDatos(d=>({...d,[fid]:{...(d[fid]||{}),[campo]:val}}));
+  const llenos=Object.values(datos).reduce((a,o)=>a+Object.values(o).filter(Boolean).length,0);
+
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:200,display:"flex",
+      alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
+      <div className="fi" onClick={e=>e.stopPropagation()} style={{background:"#161B22",
+        border:"1px solid #F5A62355",borderRadius:12,width:"100%",maxWidth:960,
+        maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+
+        <div style={{padding:"18px 22px 14px",borderBottom:"1px solid #21262D",flexShrink:0}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12}}>
+            <div>
+              <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-6)",color:"#F5A623"}}>
+                {TX("bfTitle")}
+              </div>
+              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:5,lineHeight:1.6,maxWidth:720}}>
+                {TX("bfLead")}
+              </div>
+            </div>
+            <button onClick={onClose} style={{background:"transparent",border:"none",
+              color:"var(--t4)",fontSize:20,cursor:"pointer",padding:"0 0 0 12px"}}>✕</button>
+          </div>
+          <div className="sys" style={{marginTop:8}}>{TX("bfOnlyPast")}</div>
+          <div style={{fontSize:"var(--fs-2)",color:"var(--t2)",marginTop:7}}>
+            {TX("bfCount",{f:pendientes.length,n:backfillCount(files)})}
+          </div>
+        </div>
+
+        <div style={{flex:1,overflowY:"auto",padding:"14px 22px"}}>
+          {pendientes.length===0?(
+            <div style={{padding:"34px 0",textAlign:"center",color:"var(--t4)",
+              fontSize:"var(--fs-3)"}}>{TX("bfNone")}</div>
+          ):pendientes.map(f=>{
+            const huecos=backfillGaps(f);
+            return (
+              <div key={f.id} style={{borderBottom:"1px solid #21262D",padding:"12px 0"}}>
+                <div style={{display:"flex",alignItems:"baseline",gap:10,flexWrap:"wrap",marginBottom:8}}>
+                  <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-4)",
+                    color:"var(--t1)"}}>{f.borrower}</span>
+                  <span style={{fontSize:"var(--fs-2)",color:"var(--t3)"}}>
+                    {f.type} · {lenderNameOf(f)||TX("unassigned")} · {f.stage}
+                  </span>
+                  {wasBackfilled(f)&&(
+                    <span style={{fontSize:"var(--fs-1)",color:"var(--t4)",marginLeft:"auto"}}>
+                      {TX("bfWasBackfilled",{d:f.backfill[f.backfill.length-1].at})}
+                    </span>
+                  )}
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(178px,1fr))",gap:9}}>
+                  {huecos.map(h=>(
+                    <div key={h.id}>
+                      <div style={{fontSize:"var(--fs-1)",color:"var(--t4)",marginBottom:3}}>
+                        {P2(h)}
+                      </div>
+                      <input type="date" value={datos[f.id]?.[h.id]||""}
+                        onChange={e=>set(f.id,h.id,e.target.value)} style={fs2}/>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div style={{padding:"13px 22px",borderTop:"1px solid #21262D",background:"#161B22",
+          flexShrink:0,display:"flex",gap:9,alignItems:"center",flexWrap:"wrap"}}>
+          <button className="hov" disabled={llenos===0}
+            onClick={()=>{
+              const updates=[];
+              for(const f of pendientes){
+                const v=datos[f.id];
+                if(!v) continue;
+                const next=applyBackfill(f,v,profile?.name||null);
+                if(next!==f) updates.push({id:f.id,file:next,
+                  fields:next.backfill[next.backfill.length-1].fields});
+              }
+              if(!updates.length) return;
+              const n=onApply(updates);
+              setHecho(n); setDatos({});
+              setTimeout(()=>setHecho(null),4000);
+            }}
+            style={{background:llenos?"#F5A623":"#21262D",color:llenos?"#0D1117":"var(--t4)",
+              borderRadius:7,padding:"10px 20px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",
+              fontWeight:500,border:"none",cursor:llenos?"pointer":"not-allowed"}}>
+            {TX("bfSave")} · {llenos}
+          </button>
+          {hecho!==null&&(
+            <span style={{fontSize:"var(--fs-2)",color:"#7EC8A4"}}>{TX("bfSaved",{n:hecho})}</span>
+          )}
+          <span className="sys" style={{marginLeft:"auto",maxWidth:420,textAlign:"right"}}>
+            {TX("bfBlank")}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ArchiveModal({file, onClose, onConfirm}){
   const [reason,setReason]=useState(ARCHIVE_REASONS[0]);
   const fs={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"var(--t1)",padding:"9px 11px",fontSize:"var(--fs-5)",fontFamily:"'IBM Plex Sans',system-ui,-apple-system,sans-serif",width:"100%"};
