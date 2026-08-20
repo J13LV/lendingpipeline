@@ -437,8 +437,10 @@ function LoginScreen() {
           <div style={{fontFamily:"Syne", fontWeight:800, fontSize:"var(--fs-10)", color:"var(--t1)",
             letterSpacing:"-0.7px", lineHeight:1.15}}>Del Valle Lending Co.</div>
             <div style={{fontFamily:"DM Mono",fontSize:"var(--fs-2)",color:"var(--t2)",letterSpacing:"0.5px",marginTop:4}}>powered by Barrett Financial Group</div>
+          {/* Barrett ya está en el renglón de arriba. Decirlo dos veces en
+              tres líneas no refuerza la marca: la diluye. */}
           <div style={{fontSize:"var(--fs-3)", color:"var(--t3)", letterSpacing:"2.5px", marginTop:8}}>
-            PIPELINE · BARRETT FINANCIAL GROUP
+            PIPELINE
           </div>
           <div style={{width:34, height:2, background:"#F5A623", margin:"16px auto 13px",
             borderRadius:2, opacity:.7}}/>
@@ -1239,9 +1241,22 @@ export default function App() {
 
       {/* HEADER */}
       <div style={{background:"#161B22",borderBottom:"1px solid #21262D",padding:"14px 24px",display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
-        <div>
-          <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",letterSpacing:"-0.5px"}}>PIPELINE</div>
-          <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"2px",marginTop:1}}>MORTGAGE BY DELVALLE</div>
+        {/* MARCA — "MORTGAGE BY DELVALLE" era de la época de PRMG y se
+            quedó sin cambiar. Tres escalones, no dos: qué es, de quién, y
+            bajo qué NMLS.
+
+            La marca va en IBM Plex Sans, NO en Syne. PIPELINE ya lleva el
+            peso del encabezado; si la marca compite en la misma familia y
+            el mismo grosor, los dos pierden y el bloque se vuelve una
+            mancha. Syne queda para títulos y números, que es lo que lo hace
+            reconocible cuando aparece. */}
+        <div style={{minWidth:0}}>
+          <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",
+            letterSpacing:"-0.5px",lineHeight:1.05}}>PIPELINE</div>
+          <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",letterSpacing:".3px",
+            marginTop:3,whiteSpace:"nowrap"}}>{TX("branchLending")}</div>
+          <div style={{fontSize:"var(--fs-1)",color:"var(--t4)",letterSpacing:".3px",
+            marginTop:1,whiteSpace:"nowrap"}}>{TX("branchPowered")}</div>
         </div>
         <div style={{display:"flex",gap:20,marginLeft:8}}>
           {[["ACTIVE",active.length,"#4A90D9"],["CLOSED",closed.length,"#06D6A0"],["CRITICAL",crit,"#E85D75"],["VOLUME",`$${(vol/1e6).toFixed(1)}M`,"#F5A623"]].map(([l,v,c])=>(
@@ -6763,7 +6778,7 @@ function _HelpModalLegacy({profile, onClose}){
 
         <div style={{padding:"12px 24px",borderTop:"1px solid #21262D",background:"#0D1117",flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px"}}>
-            v2.1 · DEL VALLE LENDING CO. · BANK REFERRALS
+            DEL VALLE LENDING CO. · BARRETT FINANCIAL GROUP · NMLS 181106
           </div>
           <button onClick={onClose} className="hov"
             style={{background:"#F5A623",color:"#0D1117",borderRadius:6,padding:"8px 18px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",fontWeight:500,border:"none",cursor:"pointer"}}>
