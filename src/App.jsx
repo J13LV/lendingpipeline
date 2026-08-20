@@ -19,6 +19,7 @@ const PN = o => o ? (o["note_" + CURRENT_LANG] ?? o.note_es ?? o.note_en ?? "") 
 import {
   stageUrgency, stageClock, daysInStage, fileAge, stampStage, today,
   leadStandard, LEAD_STANDARD_DAYS, leadStandardReport, inPreQual, fileClock,
+  CONTRACT_CANCEL_REASONS, canCancelContract, cancelContract, cancelCount,
   daysBetween, addDays as addDaysISO,
   // ─── 2B-1 contingencies ───
   CONTINGENCIES, CONTINGENCY_OUTCOMES, CONTRACT_DAY_BASIS,
@@ -2039,6 +2040,67 @@ function PrepModal({file, onClose, onConfirm}){
             onClick={()=>{ if(reviewOn) onConfirm({reason, reviewOn, note}); }}
             style={{flex:2,background:reviewOn?"#7EC8A4":"#21262D",color:reviewOn?"#0D1117":"var(--t3)",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:"var(--fs-4)",fontWeight:500,border:"none",cursor:reviewOn?"pointer":"not-allowed"}}>
             {reviewOn?(isReschedule?"RESCHEDULE":"SEND TO PREPARATION"):"PICK A REVIEW DATE"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── CONTRATO CANCELADO ───
+// Un evento, no ocho ediciones. Inspección mala, tasación baja, no hay
+// acuerdo: el contrato muere y el cliente vuelve a buscar casa.
+function CancelContractModal({file, lang, onClose, onConfirm}){
+  const [motivo,setMotivo]=useState("inspection");
+  const [nota,setNota]=useState("");
+  const P2=o=>(o&&typeof o==="object")?(o[lang]??o.es??o.en??""):o;
+  const fs2={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"var(--t1)",
+    padding:"9px 11px",fontSize:"var(--fs-3)",fontFamily:"'DM Mono','Courier New',monospace",width:"100%"};
+  const n=cancelCount(file);
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.8)",zIndex:130,display:"flex",
+      alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
+      <div className="fi" onClick={e=>e.stopPropagation()} style={{background:"#161B22",
+        border:"1px solid #F5A62355",borderRadius:12,width:"100%",maxWidth:520,
+        maxHeight:"calc(100vh - 40px)",overflowY:"auto",padding:22,
+        display:"flex",flexDirection:"column",gap:14}}>
+        <div>
+          <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-6)",color:"#F5A623"}}>
+            {TX("cancelTitle")}
+          </div>
+          <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:4}}>{file.borrower}</div>
+          {n>0&&<div style={{fontSize:"var(--fs-1)",color:"#F5A623",marginTop:3}}>
+            {TX("cancelNth",{n:n+1})}</div>}
+          <div style={{fontSize:"var(--fs-2)",color:"var(--t2)",marginTop:9,lineHeight:1.6}}>
+            {TX("cancelLead")}
+          </div>
+        </div>
+
+        <div>
+          <div style={{fontSize:"var(--fs-1)",color:"var(--t4)",letterSpacing:"1px",marginBottom:5}}>
+            {TX("cancelWhy")}
+          </div>
+          <select value={motivo} onChange={e=>setMotivo(e.target.value)} style={fs2}>
+            {CONTRACT_CANCEL_REASONS.map(r=><option key={r.id} value={r.id}>{P2(r)}</option>)}
+          </select>
+        </div>
+
+        <input value={nota} onChange={e=>setNota(e.target.value)}
+          placeholder={TX("cancelNote")} style={fs2}/>
+
+        <div className="sys">{TX("cancelWhat")}</div>
+        <div className="act">{TX("cancelWhere")}</div>
+
+        <div style={{display:"flex",gap:8}}>
+          <button className="hov" onClick={onClose}
+            style={{flex:1,background:"#21262D",color:"var(--t2)",borderRadius:7,padding:"11px 0",
+              fontFamily:"DM Mono",fontSize:"var(--fs-3)",border:"none",cursor:"pointer"}}>
+            {TX("cancel")}
+          </button>
+          <button className="hov" onClick={()=>onConfirm({reasonId:motivo,notes:nota})}
+            style={{flex:2,background:"#F5A623",color:"#0D1117",borderRadius:7,padding:"11px 0",
+              fontFamily:"DM Mono",fontSize:"var(--fs-3)",fontWeight:500,border:"none",cursor:"pointer"}}>
+            {TX("cancelDo")}
           </button>
         </div>
       </div>
@@ -5288,6 +5350,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
   const [pendingBps,setPendingBps] = useState(null);
   const [showChange,setShowChange]=useState(false);
   const [chkBusy,setChkBusy]=useState(false);
+  const [showCancel,setShowCancel]=useState(false);
   const [newNote,setNewNote]=useState("");
   const [showAllNotes,setShowAllNotes]=useState(false);
   const entries=noteEntries(file);
@@ -6179,6 +6242,8 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
                     onSave(stagePatch(file, REFERRED_OUT_STAGE));
                   }
                 },A.refer)}
+                {canCancelContract(file)&&btn("cancelct",TX("cancelBtn"),"#F5A623",
+                  ()=>setShowCancel(true),{on:true})}
                 {btn("prep",TX("prepBtn"),"#7EC8A4",onPrep,A.prep)}
                 {btn("arch",TX("archBtn"),"var(--t2)",onArchive,A.archive)}
               </>)}
@@ -6218,6 +6283,24 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
           })()}
         </div>
       </div>
+      {showCancel&&(
+        <CancelContractModal file={file} lang={lang} onClose={()=>setShowCancel(false)}
+          onConfirm={payload=>{
+            const next=cancelContract(file,{...payload,by:profile?.name||null});
+            setStage(next.stage);
+            onSave({stage:next.stage, stageEnteredAt:next.stageEnteredAt, daysInStage:0,
+              stageLog:next.stageLog, fileOpenedAt:next.fileOpenedAt,
+              contingencies:null, contingencyResults:null, contingencyLog:null,
+              closing:null, closedAt:null,
+              lenderId:null, lenderOther:null, lenderSince:null, backupLenderId:null,
+              lockState:"float", lockedAt:null, lockTermDays:null, lockExpires:null,
+              comp:null, registrations:null, registeredAt:null, registeredBy:null,
+              orders:null, milestones:null, uwResult:null,
+              lastContactAt:next.lastContactAt, contactCount:0,
+              contractCancellations:next.contractCancellations});
+            setShowCancel(false); onClose();
+          }}/>
+      )}
       {showChange&&(
         <LenderChangeModal file={file} profile={profile} onClose={()=>setShowChange(false)}
           onConfirm={payload=>{

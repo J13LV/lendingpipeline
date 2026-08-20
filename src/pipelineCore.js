@@ -2971,7 +2971,110 @@ export function restartHouseHuntWindow(file, newAgent) {
   };
 }
 
-// ─── 4. URGENCY ────────────────────────────────────────────────────
+// ─── EL CONTRATO SE CAYÓ ───────────────────────────────────────────
+// Pasa seguido: llega la inspección y la casa trae problemas que el
+// vendedor no quiere arreglar, o la tasación viene por debajo y no se
+// ponen de acuerdo. El contrato muere y el cliente vuelve a buscar casa.
+//
+// Hasta aquí eso no existía como evento. Había que editar campo por campo
+// —contingencias, COE, lender, lock, etapa— ocho toques en los que siempre
+// se olvida uno. Y el que se olvidaba dejaba la tarjeta gritando "COE 5d
+// past due" sobre un contrato que ya no existe.
+//
+// El CLIENTE NO SE PIERDE. Sigue vivo, sigue siendo del mismo LO y del
+// mismo socio referidor. Lo que se cae es el contrato.
+export const CONTRACT_CANCEL_REASONS = [
+  { id: "inspection",     es: "Inspección — el vendedor no arregla",
+                          en: "Inspection — seller will not repair" },
+  { id: "low_appraisal",  es: "Tasación por debajo — no hubo acuerdo",
+                          en: "Appraisal came in low — no agreement" },
+  { id: "financing",      es: "Financiamiento — el préstamo no salió",
+                          en: "Financing — the loan did not come through" },
+  { id: "buyer_backed",   es: "El cliente se echó atrás",
+                          en: "The buyer backed out" },
+  { id: "seller_backed",  es: "El vendedor se echó atrás",
+                          en: "The seller backed out" },
+  { id: "title",          es: "Problema de título o HOA",
+                          en: "Title or HOA problem" },
+  { id: "other",          es: "Otro",  en: "Other" },
+];
+export const cancelReason = id => CONTRACT_CANCEL_REASONS.find(r => r.id === id) || null;
+
+export const CONTRACT_CANCEL_LANDING = "Active Search";
+
+// ─── UNA SOLA VERDAD PARA EL COE ───────────────────────────────────
+// El cierre vivía en DOS campos: `closing`, del formulario viejo, y
+// `contingencies.coe`, del bloque de contingencias. Todo el sistema lee
+// `coe || closing`, así que borrar uno dejaba el otro vivo y la tarjeta
+// seguía diciendo "COE 5d past due" sobre un contrato cancelado. Parecía
+// que no guardaba; guardaba, y quedaba el otro.
+//
+// `coe` manda porque es el que vive con las demás contingencias. `closing`
+// se mantiene como espejo para lo que todavía lo lee.
+export const coeOf = file => okDate(file?.contingencies?.coe) || okDate(file?.closing) || null;
+
+// Escribe el cierre en los DOS campos a la vez, incluido el vacío. Sin
+// esto, "borrar la fecha" es borrar la mitad de la fecha.
+export function setCoe(file, iso) {
+  const d = okDate(iso);
+  return {
+    ...file,
+    closing: d,
+    contingencies: { ...(file?.contingencies || {}), coe: d },
+  };
+}
+
+// Un archivo puede cancelar contrato si LLEGÓ a tenerlo y todavía no cerró.
+export function canCancelContract(file) {
+  if (!file || file.archived || okDate(file.closedAt)) return false;
+  if (file.stage === "REFERRED OUT — EXTERNAL BANK" || file.prep) return false;
+  const i = ALL_STAGE_ORDER.indexOf(file.stage);
+  const bajo = ALL_STAGE_ORDER.indexOf("Under Contract");
+  return i > -1 && i >= bajo;
+}
+
+// Todo lo que muere con el contrato, de un solo toque. Lo que NO se toca:
+// el cliente, el LO, el socio referidor, la admisión, el historial de notas
+// y `fileOpenedAt` — el archivo no nació de nuevo, solo perdió una casa.
+export function cancelContract(file, { reasonId, notes, by } = {}) {
+  const entrada = {
+    at: today(), by: by || null,
+    reasonId: reasonId || "other",
+    notes: String(notes || "").trim() || null,
+    stageWhenCancelled: file?.stage || null,
+    lenderId: file?.lenderId || null,
+    lenderName: lenderNameOf(file),
+    coe: okDate(file?.contingencies?.coe) || okDate(file?.closing) || null,
+    daysUnderContract: okDate(file?.contingencies?.contractAccepted)
+      ? daysBetween(file.contingencies.contractAccepted) : null,
+  };
+  // El reloj de búsqueda vuelve a cero: son 60 días nuevos para encontrar
+  // casa, no los que ya se gastaron con la que se cayó.
+  const base = stampStage(file, CONTRACT_CANCEL_LANDING);
+  return {
+    ...base,
+    contingencies: null, contingencyResults: null, contingencyLog: null,
+    closing: null, closedAt: null,
+    // El lender y el lock se escogieron para un contrato que ya no existe.
+    lenderId: null, lenderOther: null, lenderSince: null, backupLenderId: null,
+    lockState: "float", lockedAt: null, lockTermDays: null, lockExpires: null,
+    comp: null,
+    // El registro con el lender tampoco sobrevive: cuando aparezca la casa
+    // nueva hay que registrar de nuevo, con el lender que toque entonces.
+    registrations: null, registeredAt: null, registeredBy: null,
+    // Los pedidos mueren con la propiedad: título, HOI y tasación eran de
+    // ESA casa. La verificación del 1003 SÍ sobrevive — es del cliente.
+    orders: null, milestones: null, uwResult: null,
+    lastContactAt: today(), contactCount: 0,
+    contractCancellations: [...(file?.contractCancellations || []), entrada],
+  };
+}
+
+export const cancelCount = file => (file?.contractCancellations || []).length;
+export const lastCancellation = file => {
+  const a = file?.contractCancellations || [];
+  return a.length ? a[a.length - 1] : null;
+};
 export function stageUrgency(file) {
   // En Pre-Qual manda el reloj de FASE. Los cinco relojes de etapa siguen
   // ahí para informar, pero no deciden el color: con seis relojes sobre el

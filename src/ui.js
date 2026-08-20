@@ -771,6 +771,21 @@ export const UI = {
   extraPayroll:{ es:"Barrett procesa un Extra Payroll fuera de ciclo. La solicitud entra antes de la 1PM del jueves y el depósito cae el martes siguiente.",
                  en:"Barrett runs an off-cycle Extra Payroll. The request goes in before 1PM Thursday and the deposit lands the following Tuesday." },
 
+  // ─── contrato cancelado ───
+  cancelBtn:{ es:"⤺ CONTRATO CANCELADO", en:"⤺ CONTRACT CANCELLED" },
+  cancelTitle:{ es:"El contrato se cayó", en:"The contract fell through" },
+  cancelLead:{ es:"El cliente NO se pierde: sigue vivo, sigue siendo tuyo y sigue contando para tu socio referidor. Lo que se cae es el contrato de esta casa.",
+               en:"The client is NOT lost: still alive, still yours, still counting for your referral partner. What falls through is the contract on this house." },
+  cancelWhat:{ es:"Se borran las contingencias, el COE, el lender, el lock, el registro y los pedidos — eran de esta propiedad. La verificación del 1003, las notas y la admisión se quedan: son del cliente.",
+               en:"Contingencies, COE, lender, lock, registration and orders are cleared — they belonged to this property. The 1003 verification, the notes and the intake stay: they belong to the client." },
+  cancelWhere:{ es:"Vuelve a Active Search con el reloj de búsqueda en cero.",
+                en:"Goes back to Active Search with the house-hunt clock reset." },
+  cancelWhy:{ es:"POR QUÉ SE CAYÓ", en:"WHY IT FELL THROUGH" },
+  cancelNote:{ es:"Qué pasó · quién lo confirmó", en:"What happened · who confirmed it" },
+  cancelDo:{ es:"CANCELAR EL CONTRATO", en:"CANCEL THE CONTRACT" },
+  cancelNth:{ es:"contrato caído {n} de este cliente", en:"contract {n} to fall through for this client" },
+  cancelWas:{ es:"Contrato caído el {d} · {r}", en:"Contract fell through {d} · {r}" },
+
   // ─── el estándar de tres días ───
   leadStd:{ es:"ESTÁNDAR DE {n} DÍAS", en:"{n}-DAY STANDARD" },
   leadClock:{ es:"{n}d hábiles en Pre-Qual", en:"{n} business days in Pre-Qual" },
