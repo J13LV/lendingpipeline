@@ -3051,13 +3051,27 @@ export function cancelContract(file, { reasonId, notes, by } = {}) {
   // El reloj de búsqueda vuelve a cero: son 60 días nuevos para encontrar
   // casa, no los que ya se gastaron con la que se cayó.
   const base = stampStage(file, CONTRACT_CANCEL_LANDING);
+  // La razón entra al hilo de notas. Guardarla solo en un arreglo que
+  // ningún panel pinta es lo mismo que no guardarla: el equipo lee las
+  // notas, no la estructura de datos. En inglés, por regla de la sucursal.
+  const motivo = cancelReason(entrada.reasonId);
+  const texto = "Contract fell through — " + (motivo?.en || "Other")
+    + (entrada.lenderName ? " (was with " + entrada.lenderName + ")" : "")
+    + (entrada.notes ? ". " + String(entrada.notes).replace(/[.\s]+$/, "") : "")
+    + ". Back to Active Search; client stays.";
+  const conNota = addNoteEntry(base, texto, by || null, file?.stage || null);
   return {
     ...base,
+    noteLog: conNota.noteLog,
     contingencies: null, contingencyResults: null, contingencyLog: null,
     closing: null, closedAt: null,
     // El lender y el lock se escogieron para un contrato que ya no existe.
+    // Los CUATRO campos que mira `hasLenderData`: dejar vivo el canal o la
+    // tasa hacía que la tira de lender siguiera pintándose sobre un archivo
+    // sin lender.
     lenderId: null, lenderOther: null, lenderSince: null, backupLenderId: null,
-    lockState: "float", lockedAt: null, lockTermDays: null, lockExpires: null,
+    channel: null, rate: null, bps: null,
+    lockState: null, lockedAt: null, lockTermDays: null, lockExpires: null,
     comp: null,
     // El registro con el lender tampoco sobrevive: cuando aparezca la casa
     // nueva hay que registrar de nuevo, con el lender que toque entonces.
