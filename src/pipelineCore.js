@@ -227,10 +227,6 @@ export function stageWaitOn(stage, file) {
     : { ...WAIT_LABELS.team, kind: "team" };
 }
 
-// El reloj de la etapa listo para pintarse: días, techo, señal y dueño.
-// Es el mismo cuadrito del estándar de Pre-Qual, con la diferencia de que
-// aquí el techo no es una promesa nuestra sino el tiempo que da quien nos
-// hace esperar.
 export function stagePace(file) {
   if (inPreQual(file)) return { applies: false };
   const c = stageClock(file?.stage, file);
@@ -240,6 +236,64 @@ export function stagePace(file) {
     applies: true, days: d, ceiling: c.late, target: c.warn,
     legal: !!c.legal, waitOn: stageWaitOn(file?.stage, file),
     signal: d > c.late ? "broken" : d >= c.warn ? "soon" : "idle",
+  };
+}
+
+// ─── EL RELOJ QUE MANDA ────────────────────────────────────────────
+// Sobre un archivo corren tres relojes a la vez y NO valen lo mismo:
+//
+//   1. El COE. Es del contrato y de él depende el depósito del cliente.
+//      Manda sobre todo lo demás.
+//   2. El estándar de Pre-Qual. Es la promesa de la sucursal.
+//   3. La etapa. Es el tiempo que da quien nos hace esperar.
+//
+// Graciela lo dejó a la vista: 1 de 8 días en Condition Clearing —o sea,
+// perfecta— con el COE a cuatro días y cuatro conflictos encima. El reloj
+// de etapa decía que iba bien y por eso desaparecía, dejando en su lugar
+// un CRITICAL que no explicaba nada.
+//
+// Y sale SIEMPRE, también cuando va bien. Un reloj que solo aparece con
+// mala noticia vuelve a ser una alarma; uno que está siempre es
+// información, y por eso se cree cuando se pone rojo.
+//
+// El color va en AZUL cuando corre normal: en el código de la casa el azul
+// es "dato del sistema, ni bueno ni malo", que es justo lo que es. El verde
+// significa HECHO y un reloj corriendo no está hecho.
+export const COE_CLOCK_DAYS = 7;
+
+export function fileClock(file) {
+  if (!file || file.archived) return { applies: false };
+  if (okDate(file.closedAt) || file.stage === "CLOSED — FUNDED") return { applies: false };
+  if (file.prep || file.stage === "PREPARATION — NOT READY YET") return { applies: false };
+
+  // 1 · El contrato manda. Cerca del cierre, lo único que importa es el COE.
+  const coe = okDate(file?.contingencies?.coe) || okDate(file?.closing);
+  if (coe) {
+    const faltan = coe >= today() ? daysBetween(today(), coe) : -daysBetween(coe, today());
+    if (faltan <= COE_CLOCK_DAYS) return {
+      applies: true, kind: "coe", days: faltan, label: "COE",
+      signal: faltan < 0 ? "broken" : faltan <= 3 ? "broken" : "soon",
+      waitOn: null,
+    };
+  }
+
+  // 2 · La promesa de la sucursal.
+  if (inPreQual(file)) {
+    const ld = leadStandard(file);
+    if (ld.days !== null) return {
+      applies: true, kind: "lead", days: ld.days, ceiling: LEAD_STANDARD_DAYS,
+      signal: ld.signal === "idle" ? "info" : ld.signal, waitOn: null, exits: true,
+    };
+    return { applies: false };
+  }
+
+  // 3 · La etapa, con quien nos hace esperar.
+  const sp = stagePace(file);
+  if (!sp.applies) return { applies: false };
+  return {
+    applies: true, kind: "stage", days: sp.days, ceiling: sp.ceiling,
+    legal: sp.legal, waitOn: sp.waitOn,
+    signal: sp.legal ? "legal" : sp.signal === "idle" ? "info" : sp.signal,
   };
 }
 

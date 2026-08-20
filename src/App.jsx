@@ -18,7 +18,7 @@ const TX = (k, v) => tr(k, CURRENT_LANG, v);
 const PN = o => o ? (o["note_" + CURRENT_LANG] ?? o.note_es ?? o.note_en ?? "") : "";
 import {
   stageUrgency, stageClock, daysInStage, fileAge, stampStage, today,
-  leadStandard, LEAD_STANDARD_DAYS, leadStandardReport, inPreQual, stagePace,
+  leadStandard, LEAD_STANDARD_DAYS, leadStandardReport, inPreQual, fileClock,
   daysBetween, addDays as addDaysISO,
   // ─── 2B-1 contingencies ───
   CONTINGENCIES, CONTINGENCY_OUTCOMES, CONTRACT_DAY_BASIS,
@@ -1798,39 +1798,31 @@ export default function App() {
                               <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{f.type} · ${(f.loan/1000).toFixed(0)}k</div>
                               {f.lo&&<div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:1}}>{f.lo.split(" ")[0]}{f.referralPartner?` · ${f.referralPartner.split(" ")[0]}`:""}</div>}
                             </div>
-                            {/* En Pre-Qual la etiqueta dice los DÍAS contra el
-                                estándar, no "CRITICAL". Un lead parado seis
-                                días y un archivo que firma en tres eran la
-                                misma palabra, y por eso la palabra no decía
-                                nada. */}
-                            {(()=>{const ld=leadStandard(f);
-                              if(ld.applies&&ld.days!==null){
-                                if(ld.signal==="idle") return null;
-                                const c=signalColor(ld.signal);
-                                return <span style={{background:c,color:"#0D1117",borderRadius:4,
+                            {/* UN SOLO RELOJ, siempre visible, y el que manda:
+                                el COE gana sobre la etapa porque de él depende
+                                el depósito. Antes desaparecía cuando el archivo
+                                iba bien y dejaba en su lugar un CRITICAL que no
+                                explicaba nada — Graciela con 1 de 8 días y el
+                                cierre a cuatro. */}
+                            {(()=>{const ck=fileClock(f);
+                              if(!ck.applies){
+                                return u!=="normal"?<span style={{background:uc,color:"#0D1117",
+                                  borderRadius:4,padding:"2px 6px",fontSize:"var(--fs-2)",
+                                  fontWeight:500}}>
+                                  {u==="critical"?"CRITICAL":u==="warning"?"WARN":"STALE"}
+                                </span>:null;
+                              }
+                              const c=signalColor(ck.signal);
+                              const texto = ck.kind==="coe"
+                                ? (ck.days<0?`COE ${Math.abs(ck.days)}d ${TX("pastDue")}`:`COE ${ck.days}d`)
+                                : `${ck.days}d / ${ck.ceiling}d${ck.legal?" ⚖":""}`;
+                              return <div style={{textAlign:"right",flexShrink:0}}>
+                                <span style={{background:c,color:"#0D1117",borderRadius:4,
                                   padding:"2px 7px",fontSize:"var(--fs-2)",fontWeight:500,
-                                  whiteSpace:"nowrap"}}>{ld.days}d / {LEAD_STANDARD_DAYS}d</span>;
-                              }
-                              // Fuera de Pre-Qual el techo lo pone quien
-                              // hace esperar, así que va su nombre debajo.
-                              const sp=stagePace(f);
-                              if(sp.applies&&sp.signal!=="idle"){
-                                const c=sp.legal?signalColor("legal"):signalColor(sp.signal);
-                                return <div style={{textAlign:"right",flexShrink:0}}>
-                                  <span style={{background:c,color:"#0D1117",borderRadius:4,
-                                    padding:"2px 7px",fontSize:"var(--fs-2)",fontWeight:500,
-                                    whiteSpace:"nowrap",fontFamily:"DM Mono"}}>
-                                    {sp.days}d / {sp.ceiling}d{sp.legal?" ⚖":""}
-                                  </span>
-                                  {sp.waitOn&&<div style={{fontSize:"var(--fs-1)",
-                                    color:"var(--t4)",marginTop:3,whiteSpace:"nowrap"}}>
-                                    {P(sp.waitOn)}</div>}
-                                </div>;
-                              }
-                              return u!=="normal"?<span style={{background:uc,color:"#0D1117",
-                                borderRadius:4,padding:"2px 6px",fontSize:"var(--fs-2)",fontWeight:500}}>
-                                {u==="critical"?"CRITICAL":u==="warning"?"WARN":"STALE"}
-                              </span>:null;})()}
+                                  whiteSpace:"nowrap",fontFamily:"DM Mono"}}>{texto}</span>
+                                {ck.waitOn&&<div style={{fontSize:"var(--fs-1)",color:"var(--t4)",
+                                  marginTop:3,whiteSpace:"nowrap"}}>{P(ck.waitOn)}</div>}
+                              </div>;})()}
                           </div>
                           <div style={{display:"flex",gap:3}}>
                             {ph.stages.map((_,i)=><div key={i} style={{height:4,flex:1,borderRadius:2,background:i<=si?ph.color:"var(--t4)"}}/>)}
