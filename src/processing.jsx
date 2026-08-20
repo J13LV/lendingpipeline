@@ -39,6 +39,7 @@ import {
   setOrderDue, orderDue, orderPastDue,
   GATE1_VERIFY_IDS, GATE1_STATES, gate1State, gate1At, cycleGate1, gate1Coverage,
   fileClock, stageColor, stageBreakdownLabel,
+  overdueReport, overdueTasks,
 } from "./pipelineCore";
 
 // Autocontenido a proposito: recibe `lang` y traduce solo. Asi no
@@ -824,9 +825,15 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
   const [quien, setQuien] = useState(esAdmin ? DEFAULT_PROCESSOR : propia);
   const [selId, setSelId] = useState(null);
 
-  const cola = processingQueue(files, quien);
+  const [soloVencidas, setSoloVencidas] = useState(false);
+  const colaCompleta = processingQueue(files, quien);
+  // Filtrar deja los grupos que tengan algo vencido, sin cambiar el orden.
+  const cola = soloVencidas
+    ? colaCompleta.map(g => ({ ...g, files: g.files.filter(f => overdueTasks(f).length) }))
+        .filter(g => g.files.length)
+    : colaCompleta;
   const conteos = queueCounts(files);
-  const planos = cola.flatMap(g => g.files);
+  const planos = colaCompleta.flatMap(g => g.files);
   const sel = planos.find(f => f.id === selId) || planos[0] || null;
   // Una procesadora externa no debe editar la cola de la otra, y el
   // admin mira sin tocar cuando no es la suya.
@@ -870,6 +877,29 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
               </div>
             )}
           </div>
+
+          {/* Lo vencido de ESTA cola, arriba del todo. Tocar filtra. */}
+          {(() => {
+            const mios = planos;
+            const r = overdueReport(mios);
+            if (!r.total) return null;
+            return (
+              <button className="hov" onClick={() => setSoloVencidas(v => !v)}
+                style={{ width: "100%", background: soloVencidas ? "#E85D75" : "rgba(232,93,117,.10)",
+                  border: `1px solid ${C.red}`, borderRadius: 6, padding: "8px 11px",
+                  marginBottom: 11, cursor: "pointer", display: "flex", alignItems: "center",
+                  gap: 8, textAlign: "left" }}>
+                <span style={{ fontFamily: "Syne", fontWeight: 800, fontSize: "var(--fs-3)",
+                  color: soloVencidas ? C.bg : C.red, letterSpacing: ".5px" }}>
+                  {r.total === 1 ? T("overdueOne") : T("overdueLine", { n: r.total })}
+                </span>
+                <span style={{ fontSize: "var(--fs-1)", marginLeft: "auto",
+                  color: soloVencidas ? C.bg : C.dim, fontFamily: "DM Mono" }}>
+                  {soloVencidas ? T("overdueAll") : T("overdueAsOf", { d: today() })}
+                </span>
+              </button>
+            );
+          })()}
 
           {cola.length === 0 && (
             <div style={{ color: C.dim, fontSize: "var(--fs-3)", padding: "24px 6px", textAlign: "center" }}>
