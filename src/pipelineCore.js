@@ -3839,7 +3839,116 @@ export function stampRegistration(file, by) {
   };
 }
 
-// ─── 7R. CODIGO DE COLOR ───────────────────────────────────────────
+// ─── 7X4. RELLENO DE ARCHIVOS ANTERIORES ───────────────────────────
+// Los archivos que ya existían cuando se construyó todo esto tienen tres
+// clases de hueco, y ninguno se puede inventar:
+//
+//   · Nunca pasaron por el botón de REGISTRADO —no existía— así que no
+//     tienen ciclo de registro ni fecha de divulgaciones.
+//   · Avanzaron de etapa antes de que arregláramos la fuga de stampStage,
+//     así que stageLog quedó sin sellar en las etapas por las que pasaron.
+//
+// En el checklist de Barrett eso son seis renglones en blanco de un
+// archivo que sí se registró y sí se sometió — solo que nadie lo anotó.
+//
+// La regla que ordena esto: SOLO se pregunta por lo que TUVO que ocurrir.
+// Si el archivo está en CD Issued, pasó por Submitted to UW por fuerza. Si
+// está en UW Review, la fecha de fondeo no se pregunta porque todavía no
+// existe. Pedir un dato que aún no ha pasado invita a inventarlo.
+export const BACKFILL_STAGES = [
+  "Initial Disclosures Sent", "Submitted to UW", "Conditional Approval",
+  "Clear to Close", "CD Issued", "Closing Docs Drawn", "Funded",
+];
+
+// Los huecos de UN archivo, en el orden en que ocurrieron.
+export function backfillGaps(file) {
+  if (!file || file.archived) return [];
+  const idx = ALL_STAGE_ORDER.indexOf(file.stage);
+  const cerrado = !!okDate(file.closedAt);
+  // Un archivo cerrado pasó por todo; uno vivo, hasta donde llegó.
+  const paso = etapa => cerrado
+    || (idx > -1 && ALL_STAGE_ORDER.indexOf(etapa) > -1
+        && ALL_STAGE_ORDER.indexOf(etapa) < idx);
+
+  const out = [];
+  if (paso(AFTER_REGISTRATION_STAGE) && !isRegistered(file))
+    out.push({ id: "registration", kind: "registration",
+      es: "Registro con el lender", en: "Registered with lender" });
+  if (isRegistered(file) || paso(AFTER_REGISTRATION_STAGE)) {
+    if (!discEsignedAt(file))
+      out.push({ id: "discEsignedAt", kind: "registration",
+        es: "Divulgaciones firmadas", en: "Disclosures signed" });
+  }
+  for (const st of BACKFILL_STAGES) {
+    if (!paso(st)) continue;
+    if (okDate(stageLogOf(file)[st])) continue;
+    out.push({ id: st, kind: "stage", es: st, en: st });
+  }
+  return out;
+}
+
+export const filesNeedingBackfill = files =>
+  (files || []).filter(f => backfillGaps(f).length > 0);
+
+export const backfillCount = files =>
+  filesNeedingBackfill(files).reduce((a, f) => a + backfillGaps(f).length, 0);
+
+// Escribe el relleno en las MISMAS estructuras que el trabajo del día a
+// día: stageLog y el ciclo de registro. Nada río abajo cambia — la hoja de
+// Martha y el checklist leen lo de siempre.
+//
+// Queda constancia de que fue relleno y de quién lo hizo. Una fecha
+// escrita a mano meses después no es lo mismo que una sellada el día que
+// ocurrió, y el día que un número no cuadre hay que poder distinguirlas.
+export function applyBackfill(file, valores, by) {
+  const v = valores || {};
+  let out = { ...file };
+  const puestos = [];
+
+  const log = { ...stageLogFromHistory(file), ...stageLogOf(file) };
+  for (const [k, val] of Object.entries(v)) {
+    const d = okDate(val);
+    if (!d) continue;
+    if (k === "registration") continue;
+    if (k === "discEsignedAt") continue;
+    if (!log[k]) { log[k] = d; puestos.push(k); }
+  }
+  out.stageLog = log;
+
+  const reg = okDate(v.registration);
+  if (reg && !isRegistered(out)) {
+    out.registrations = [...registrationsOf(out), {
+      lenderId: out.lenderId || null,
+      lenderName: lenderNameOf(out),
+      at: reg, by: by || null,
+      // Las divulgaciones salen el mismo día del registro, igual que en el
+      // toque normal. Si stageLog ya trae la fecha real, esa manda.
+      discSentAt: okDate(log[AFTER_REGISTRATION_STAGE]) || reg,
+      discEsignedAt: null,
+      barrettDiscSentAt: null,
+      loanNumberInvestor: null, loanNumberLender: null,
+      backfilled: true,
+    }];
+    out.registeredAt = reg;
+    out.registeredBy = by || null;
+    puestos.push("registration");
+  }
+
+  const firmadas = okDate(v.discEsignedAt);
+  if (firmadas) {
+    out = setRegistrationField(out, { discEsignedAt: firmadas });
+    if (out !== file) puestos.push("discEsignedAt");
+  }
+
+  if (!puestos.length) return file;
+  return {
+    ...out,
+    backfill: [...(file.backfill || []),
+      { at: today(), by: by || null, fields: puestos }],
+  };
+}
+
+export const wasBackfilled = file => (file?.backfill || []).length > 0;
 // El color se acumulo sin decidirse. Hoy el rojo dice cinco cosas
 // distintas: urgencia, conflicto, hallazgo abierto, borrar y contingencia
 // vencida. Y el caso que lo delato: una tasacion YA ORDENADA salia en
