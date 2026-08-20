@@ -3861,14 +3861,34 @@ export const BACKFILL_STAGES = [
 ];
 
 // Los huecos de UN archivo, en el orden en que ocurrieron.
-export function backfillGaps(file) {
+//
+// Tres exclusiones, y las tres por la misma razon: el relleno existe para
+// que el checklist de Barrett salga completo en un archivo que alguien va
+// a imprimir. Donde no hay papel que imprimir, no hay hueco que tapar.
+//
+//   · CERRADO o REFERIDO — ya fondeo, ya cobro, ya se fue. Nadie va a
+//     imprimir su checklist. La primera version daba por pasadas TODAS
+//     las etapas de un archivo cerrado, que es cierto en la vida real y
+//     jalaba los 44 cerrados y referidos a una pantalla de relleno.
+//   · SIN LENDER — pedir la fecha de registro con un lender que no
+//     existe es pedir que se invente. Cristobal Godinez salio asi.
+//   · ANTERIOR AL CORTE — se liquido bajo PRMG. Mismo criterio que ya
+//     usa payroll: nada de antes del 13 de julio vuelve a entrar.
+export function backfillGaps(file, cutover = BARRETT_CUTOVER) {
   if (!file || file.archived) return [];
+  if (okDate(file.closedAt)) return [];
+  if (file.stage === "REFERRED OUT — EXTERNAL BANK" || file.referredOut) return [];
+  if (file.prep) return [];
+  if (!hasLender(file)) return [];
+  // Un archivo abierto antes del corte pero que sigue vivo SI cuenta: se va
+  // a cerrar con Barrett y su checklist va a Barrett. Lo que se excluye es
+  // el que ya nacio y murio del otro lado.
+  const abierto = okDate(file.fileOpenedAt) || okDate(String(file.createdAt || "").split("T")[0]);
+  if (abierto && cutover && abierto < cutover && !file.stage) return [];
+
   const idx = ALL_STAGE_ORDER.indexOf(file.stage);
-  const cerrado = !!okDate(file.closedAt);
-  // Un archivo cerrado pasó por todo; uno vivo, hasta donde llegó.
-  const paso = etapa => cerrado
-    || (idx > -1 && ALL_STAGE_ORDER.indexOf(etapa) > -1
-        && ALL_STAGE_ORDER.indexOf(etapa) < idx);
+  const paso = etapa => idx > -1 && ALL_STAGE_ORDER.indexOf(etapa) > -1
+    && ALL_STAGE_ORDER.indexOf(etapa) < idx;
 
   const out = [];
   if (paso(AFTER_REGISTRATION_STAGE) && !isRegistered(file))
@@ -3887,8 +3907,15 @@ export function backfillGaps(file) {
   return out;
 }
 
+// Los que de verdad hay que cerrar, y en el orden que importa: el que
+// firma antes necesita su papel antes.
 export const filesNeedingBackfill = files =>
-  (files || []).filter(f => backfillGaps(f).length > 0);
+  (files || []).filter(f => backfillGaps(f).length > 0)
+    .sort((a, b) => {
+      const ca = okDate(a?.contingencies?.coe) || okDate(a?.closing) || "9999-12-31";
+      const cb = okDate(b?.contingencies?.coe) || okDate(b?.closing) || "9999-12-31";
+      return ca.localeCompare(cb);
+    });
 
 export const backfillCount = files =>
   filesNeedingBackfill(files).reduce((a, f) => a + backfillGaps(f).length, 0);
