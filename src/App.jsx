@@ -333,7 +333,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.08.21";
+const APP_VERSION = "2026.08.21b";
 
 function huellaTexto(s) {
   let h = 0;
@@ -455,6 +455,12 @@ function LoginScreen() {
            contador— y este sobre texto explicativo.
 
            Dos clases y no tres: mas de dos y nadie las distingue. */
+        .ver{position:absolute;top:12px;right:24px;font-family:'DM Mono','Courier New',monospace;
+          font-size:var(--fs-1);color:var(--t3);letter-spacing:.5px;pointer-events:none;}
+        @media (max-width:900px){
+          .ver{position:static;order:99;width:100%;text-align:left;
+            margin-top:2px;color:var(--t4);}
+        }
         .sys{font-size:var(--fs-1);color:var(--t4);line-height:1.55;}
         .act{font-size:var(--fs-2);color:var(--t3);line-height:1.6;font-style:italic;}
         .act::before{content:"→";color:#F5A623;font-style:normal;
@@ -1051,6 +1057,12 @@ export default function App() {
            contador— y este sobre texto explicativo.
 
            Dos clases y no tres: mas de dos y nadie las distingue. */
+        .ver{position:absolute;top:12px;right:24px;font-family:'DM Mono','Courier New',monospace;
+          font-size:var(--fs-1);color:var(--t3);letter-spacing:.5px;pointer-events:none;}
+        @media (max-width:900px){
+          .ver{position:static;order:99;width:100%;text-align:left;
+            margin-top:2px;color:var(--t4);}
+        }
         .sys{font-size:var(--fs-1);color:var(--t4);line-height:1.55;}
         .act{font-size:var(--fs-2);color:var(--t3);line-height:1.6;font-style:italic;}
         .act::before{content:"→";color:#F5A623;font-style:normal;
@@ -1114,6 +1126,12 @@ export default function App() {
            contador— y este sobre texto explicativo.
 
            Dos clases y no tres: mas de dos y nadie las distingue. */
+        .ver{position:absolute;top:12px;right:24px;font-family:'DM Mono','Courier New',monospace;
+          font-size:var(--fs-1);color:var(--t3);letter-spacing:.5px;pointer-events:none;}
+        @media (max-width:900px){
+          .ver{position:static;order:99;width:100%;text-align:left;
+            margin-top:2px;color:var(--t4);}
+        }
         .sys{font-size:var(--fs-1);color:var(--t4);line-height:1.55;}
         .act{font-size:var(--fs-2);color:var(--t3);line-height:1.6;font-style:italic;}
         .act::before{content:"→";color:#F5A623;font-style:normal;
@@ -1297,6 +1315,12 @@ export default function App() {
            contador— y este sobre texto explicativo.
 
            Dos clases y no tres: mas de dos y nadie las distingue. */
+        .ver{position:absolute;top:12px;right:24px;font-family:'DM Mono','Courier New',monospace;
+          font-size:var(--fs-1);color:var(--t3);letter-spacing:.5px;pointer-events:none;}
+        @media (max-width:900px){
+          .ver{position:static;order:99;width:100%;text-align:left;
+            margin-top:2px;color:var(--t4);}
+        }
         .sys{font-size:var(--fs-1);color:var(--t4);line-height:1.55;}
         .act{font-size:var(--fs-2);color:var(--t3);line-height:1.6;font-style:italic;}
         .act::before{content:"→";color:#F5A623;font-style:normal;
@@ -1315,7 +1339,14 @@ export default function App() {
       `}</style>
 
       {/* HEADER */}
-      <div style={{background:"#161B22",borderBottom:"1px solid #21262D",padding:"14px 24px",display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
+      <div style={{background:"#161B22",borderBottom:"1px solid #21262D",padding:"14px 24px",
+        display:"flex",alignItems:"center",gap:16,flexWrap:"wrap",position:"relative"}}>
+        {/* LA VERSIÓN, sola en su esquina. Debajo de la marca quedaba en un
+            gris casi negro y no se veía; junto al nombre habría cargado más
+            una barra que ya tiene demasiado. Aquí está siempre a la vista,
+            sin scroll, y no compite con nada: cuando alguien llame diciendo
+            que algo no le sale, la primera pregunta tiene respuesta. */}
+        <div className="ver">v{APP_VERSION}</div>
         {/* MARCA — "MORTGAGE BY DELVALLE" era de la época de PRMG y se
             quedó sin cambiar. Tres escalones, no dos: qué es, de quién, y
             bajo qué NMLS.
@@ -1333,7 +1364,6 @@ export default function App() {
           <div style={{fontSize:"var(--fs-1)",color:"var(--t4)",letterSpacing:".3px",
             marginTop:1,whiteSpace:"nowrap"}}>
             {TX("branchPowered")}
-            <span style={{color:"#30363D"}}>{"  ·  v"}{APP_VERSION}</span>
           </div>
         </div>
         <div style={{display:"flex",gap:20,marginLeft:8}}>
