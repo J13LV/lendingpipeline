@@ -21,7 +21,7 @@ import {
   hasContract, coeOf,
   leadStandard, LEAD_STANDARD_DAYS, leadStandardReport, inPreQual, fileClock,
   CONTRACT_CANCEL_REASONS, canCancelContract, cancelContract, cancelCount,
-  overdueReport, TASK_SEVERITY,
+  overdueReport, overdueByOwner, TASK_SEVERITY,
   cancelReason, lastCancellation,
   daysBetween, addDays as addDaysISO,
   // ─── 2B-1 contingencies ───
@@ -349,7 +349,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.08.21g";
+const APP_VERSION = "2026.08.21h";
 
 function huellaTexto(s) {
   let h = 0;
@@ -2451,6 +2451,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
   const [dpaDraft,setDpaDraft]=useState(null);
   const [filesMo,setFilesMo]=useState(8);
   const payroll=payrollSummary(files,{year:compYear,filesPerMonth:filesMo,roster:COMP_ROSTER});
+  const [duenoFiltro,setDuenoFiltro]=useState(null);
   const [prodTab,setProdTab]=useState(profile?.role==="assistant"?"scorecard":"team");
   const [showAutoFixPreview, setShowAutoFixPreview] = useState(false);
 
@@ -2837,7 +2838,9 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
 
       {/* TAREAS VENCIDAS */}
       {prodTab==="overdue"&&(()=>{
-        const r=overdueReport(files);
+        const r=overdueReport(files,{owner:duenoFiltro});
+        // Sin filtro, para saber cuantas tiene cada quien.
+        const porDueno=[...overdueByOwner(files).entries()].sort((a,b)=>b[1]-a[1]);
         const TONO={deposit:"#E85D75",legal:"#BD65E8",closing:"#E85D75",
           pace:"#F5A623",missing:"#6E7681"};
         return (
@@ -2846,6 +2849,32 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               padding:"12px 16px"}}>
               <div className="sys">{TX("overdueLead")}</div>
             </div>
+
+            {/* DE QUIEN SE ESPERA. Es la primera pregunta al abrir esto:
+                no "cuantas hay" sino "a quien llamo". Un archivo cuenta una
+                vez por persona aunque le deba tres cosas. */}
+            {porDueno.length>0&&(
+              <div style={{display:"flex",gap:7,flexWrap:"wrap",alignItems:"center"}}>
+                <button className="hov" onClick={()=>setDuenoFiltro(null)}
+                  style={{background:duenoFiltro===null?"#E85D75":"#21262D",
+                    color:duenoFiltro===null?"#0D1117":"var(--t2)",border:"none",
+                    borderRadius:6,padding:"5px 12px",fontSize:"var(--fs-2)",
+                    fontFamily:"DM Mono",cursor:"pointer"}}>
+                  {TX("showAll")} · {overdueReport(files).total}
+                </button>
+                {porDueno.map(([quien,n])=>(
+                  <button key={quien} className="hov"
+                    onClick={()=>setDuenoFiltro(duenoFiltro===quien?null:quien)}
+                    style={{background:duenoFiltro===quien?"#E85D75":"#21262D",
+                      color:duenoFiltro===quien?"#0D1117":"var(--t2)",border:"none",
+                      borderRadius:6,padding:"5px 12px",fontSize:"var(--fs-2)",
+                      fontFamily:"DM Mono",cursor:"pointer"}}>
+                    {quien} · {n}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {r.total===0?(
               <div style={{background:"#161B22",border:"1px solid #7EC8A444",borderRadius:10,
                 padding:"26px 16px",textAlign:"center",color:"#7EC8A4",
@@ -2855,7 +2884,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 <span style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",
                   color:"#E85D75"}}>{r.total}</span>
                 <span style={{fontSize:"var(--fs-3)",color:"var(--t2)"}}>
-                  {TX("overdueFiles",{n:r.total,f:r.files})}
+                  {TX("overdueFiles",{n:r.total})}
                 </span>
                 {Object.entries(r.byKind).map(([k,n])=>(
                   <span key={k} style={{marginLeft:0,fontSize:"var(--fs-1)",
@@ -2875,14 +2904,29 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                     <span style={{fontSize:"var(--fs-1)",color:TONO[x.kind],minWidth:118,
                       fontFamily:"DM Mono"}}>{P(TASK_SEVERITY[x.kind])}</span>
                     <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-3)",
-                      color:"var(--t1)",minWidth:180}}>{x.file.borrower}</span>
+                      color:"var(--t1)",minWidth:180}}>
+                      {x.file.borrower}
+                      {/* Cuantas MAS le deben a este archivo. Sin esto, el
+                          reporte parece decir que solo tiene un problema. */}
+                      {x.alsoCount>0&&(
+                        <span style={{color:"var(--t4)",fontFamily:"DM Mono",
+                          fontSize:"var(--fs-1)",fontWeight:400}}>{` +${x.alsoCount}`}</span>
+                      )}
+                    </span>
                     <span style={{fontSize:"var(--fs-2)",color:"var(--t2)",flex:1,
                       lineHeight:1.45}}>{P(x)}</span>
+                    {/* Cuanto lleva pasado. Ordena la urgencia dentro de un
+                        mismo motivo: doce dias no es lo mismo que uno. */}
+                    <span style={{fontSize:"var(--fs-2)",color:x.days>=7?"#E85D75":"var(--t3)",
+                      minWidth:44,textAlign:"right",fontFamily:"DM Mono"}}>
+                      {Number.isFinite(x.days)?`${x.days}d`:""}
+                    </span>
                     <span style={{fontSize:"var(--fs-2)",color:"var(--t3)",minWidth:96,
                       textAlign:"right",fontFamily:"DM Mono"}}>{P(x.owner)}</span>
                   </div>
                 ))}
               </div>
+              <div className="sys">{TX("overdueOpenHint")}</div>
             </>)}
           </div>
         );})()}

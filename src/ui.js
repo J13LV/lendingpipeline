@@ -804,7 +804,9 @@ export const UI = {
   overdueLead:{ es:"Lo que ya pasó su plazo, ordenado por lo que cuesta. El depósito del cliente pesa más que un techo de etapa, y un plazo de ley no negocia.",
                 en:"What has passed its deadline, ordered by what it costs. The client's deposit outweighs a stage ceiling, and a legal deadline does not negotiate." },
   overdueClean:{ es:"✓ Nada vencido en todo el pipeline.", en:"✓ Nothing overdue across the pipeline." },
-  overdueFiles:{ es:"{n} tareas en {f} archivos", en:"{n} tasks across {f} files" },
+  overdueFiles:{ es:"archivos necesitan movimiento hoy", en:"files need movement today" },
+  overdueOpenHint:{ es:"Toca cualquier renglón para abrir el archivo. Un archivo cuenta una vez, con lo peor que tenga — el +N dice cuántas más le deben.",
+                    en:"Tap any row to open the file. A file counts once, with its worst item — the +N says how many more it owes." },
 
   // ─── el estándar de tres días ───
   leadStd:{ es:"ESTÁNDAR DE {n} DÍAS", en:"{n}-DAY STANDARD" },
