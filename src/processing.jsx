@@ -38,6 +38,7 @@ import {
   uwOutcomeAt, setUwOutcome, clearUwOutcome, signalColor,
   setOrderDue, orderDue, orderPastDue,
   GATE1_VERIFY_IDS, GATE1_STATES, gate1State, gate1At, cycleGate1, gate1Coverage,
+  fileClock, stageColor, stageBreakdownLabel,
 } from "./pipelineCore";
 
 // Autocontenido a proposito: recibe `lang` y traduce solo. Asi no
@@ -876,27 +877,68 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
             </div>
           )}
 
+          {/* La cola agrupa por TRABAJO —"que hago hoy"— y eso es lo correcto
+              para una procesadora. Pero un grupo cubre VARIAS etapas: "Camino
+              al cierre" son siete. Sin la etapa en el renglon, nueve archivos
+              apilados se ven iguales y se pierden.
+
+              Tres cosas por renglon: la etapa con su color de fase, el reloj
+              que manda —el mismo del tablero del LO— y de quien se espera. */}
           {cola.map(g => (
-            <div key={g.id} style={{ marginBottom: 13 }}>
-              <div style={{ fontSize: "var(--fs-1)", color: g.color, letterSpacing: "1px", marginBottom: 5 }}>
-                {P(g).toUpperCase()} · {g.files.length}
+            <div key={g.id} style={{ marginBottom: 15 }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 7,
+                marginBottom: 7, flexWrap: "wrap" }}>
+                <span style={{ fontSize: "var(--fs-1)", color: g.color, letterSpacing: "1px" }}>
+                  {P(g).toUpperCase()}
+                </span>
+                <span style={{ background: g.color, color: C.bg, borderRadius: 9,
+                  padding: "0 7px", fontSize: "var(--fs-1)", fontWeight: 600 }}>
+                  {g.files.length}
+                </span>
+                {/* Cuantos hay en cada etapa, sin abrir nada. */}
+                <span style={{ fontSize: "var(--fs-1)", color: C.dim, marginLeft: "auto",
+                  fontFamily: "DM Mono", textAlign: "right" }}>
+                  {stageBreakdownLabel(g.files)}
+                </span>
               </div>
               {g.files.map(f => {
                 const on = sel && f.id === sel.id;
                 const coe = okDate(f?.contingencies?.coe) || okDate(f?.closing);
                 const abiertos = openFindings(f).length;
+                const ck = fileClock(f);
+                // Un hallazgo abierto pinta el borde de rojo aunque el grupo
+                // sea otro: es lo unico que para el archivo en seco.
+                const borde = abiertos ? C.red : g.color;
+                const reloj = ck.applies
+                  ? (ck.kind === "coe"
+                      ? (ck.days < 0 ? `COE ${Math.abs(ck.days)}d` : `COE ${ck.days}d`)
+                      : `${ck.days}d/${ck.ceiling}d${ck.legal ? " ⚖" : ""}`)
+                  : null;
                 return (
                   <div key={f.id} className="hov" onClick={() => setSelId(f.id)}
-                    style={{ background: on ? "#1C2530" : C.bg, borderLeft: `2px solid ${g.color}`,
-                      padding: "7px 9px", marginBottom: 5, cursor: "pointer",
+                    style={{ background: on ? "#1C2530" : C.bg, borderLeft: `2px solid ${borde}`,
+                      padding: "9px 10px", marginBottom: 7, cursor: "pointer",
                       borderRadius: "0 4px 4px 0" }}>
-                    <div style={{ color: on ? C.gold : C.text, fontSize: "var(--fs-3)",
-                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {f.borrower}
+                    <div style={{ display: "flex", justifyContent: "space-between",
+                      alignItems: "flex-start", gap: 8 }}>
+                      <span style={{ color: on ? C.gold : C.text, fontSize: "var(--fs-3)",
+                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {f.borrower}
+                      </span>
+                      {reloj && (
+                        <span style={{ background: signalColor(ck.signal), color: C.bg,
+                          borderRadius: 4, padding: "1px 6px", fontSize: "var(--fs-1)",
+                          fontFamily: "DM Mono", fontWeight: 500, whiteSpace: "nowrap",
+                          flexShrink: 0 }}>{reloj}</span>
+                      )}
                     </div>
-                    <div style={{ color: C.mid, fontSize: "var(--fs-1)", marginTop: 2 }}>
+                    <div style={{ color: stageColor(f.stage), fontSize: "var(--fs-2)", marginTop: 3 }}>
+                      {f.stage}
+                    </div>
+                    <div style={{ color: C.dim, fontSize: "var(--fs-1)", marginTop: 1 }}>
                       {f.type}{coe ? ` · COE ${md(coe)}` : ""}
-                      {abiertos ? ` · ⚑ ${abiertos}` : ""}
+                      {ck.waitOn ? ` · ${P(ck.waitOn)}` : ""}
+                      {abiertos ? <span style={{ color: C.red }}>{` · ⚑ ${abiertos}`}</span> : null}
                     </div>
                   </div>
                 );

@@ -4668,6 +4668,47 @@ export function processingQueue(files, quien = DEFAULT_PROCESSOR) {
     }));
 }
 
+// Que etapas hay dentro de un grupo y cuantos archivos en cada una,
+// ordenadas por la secuencia real del prestamo.
+export function stageBreakdown(files) {
+  const m = new Map();
+  for (const f of files || []) {
+    const e = f?.stage;
+    if (!e) continue;
+    m.set(e, (m.get(e) || 0) + 1);
+  }
+  return [...m.entries()]
+    .map(([stage, n]) => ({ stage, n }))
+    .sort((a, b) => ALL_STAGE_ORDER.indexOf(a.stage) - ALL_STAGE_ORDER.indexOf(b.stage));
+}
+
+// Etiqueta corta para el desglose: "1 Submitted · 1 UW Review".
+export function stageBreakdownLabel(files) {
+  return stageBreakdown(files)
+    .map(x => `${x.n} ${x.stage.replace(/ (Ordered|Issued|Sent|Drawn)$/, "")}`)
+    .join(" · ");
+}
+
+// El color de la FASE a la que pertenece una etapa. La cola pinta el
+// grupo con su color; la etapa necesita el suyo para no confundirse.
+export const PHASE_COLORS = {
+  1: "#4A90D9", 2: "#7EC8A4", 3: "#F5A623",
+  4: "#BD65E8", 5: "#E85D75", 6: "#FFD166", 7: "#06D6A0",
+};
+const PHASE_OF_STAGE = {};
+[["Lead Inquiry Needs Assessment|Credit Pull|Income Verification|Pre-Qualification", 1],
+ ["Realtor Connected|Active Search|Offer Submitted|Under Contract", 2],
+ ["Full Application|Initial Disclosures Sent|Doc Collection|Title Ordered|Appraisal Ordered|Insurance Ordered", 3],
+ ["Submitted to UW|UW Review|Conditional Approval|Condition Clearing|Clear to Close", 4],
+ ["CD Issued|Closing Scheduled|Final Verifications|Closing Docs Drawn", 5],
+ ["Signing|Funded|Recorded|Keys Delivered", 6],
+ ["Welcome Sent|30-Day Follow-Up|Review Requested|Nurture Active", 7],
+].forEach(([lista, fase]) => {
+  for (const e of lista.replace("Lead Inquiry Needs", "Lead Inquiry|Needs").split("|"))
+    PHASE_OF_STAGE[e] = fase;
+});
+export const stageColor = stage => PHASE_COLORS[PHASE_OF_STAGE[stage]] || "#6E7681";
+
 // Cuantos archivos tiene cada procesadora. Para el selector de cola.
 export function queueCounts(files) {
   const out = {};
