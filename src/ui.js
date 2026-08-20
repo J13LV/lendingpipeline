@@ -771,6 +771,10 @@ export const UI = {
   extraPayroll:{ es:"Barrett procesa un Extra Payroll fuera de ciclo. La solicitud entra antes de la 1PM del jueves y el depósito cae el martes siguiente.",
                  en:"Barrett runs an off-cycle Extra Payroll. The request goes in before 1PM Thursday and the deposit lands the following Tuesday." },
 
+  newVersion:{ es:"Hay una versión nueva del pipeline. La que tienes abierta puede mostrar datos o reglas viejas.",
+               en:"There is a newer version of the pipeline. The one you have open may show old data or old rules." },
+  newVersionBtn:{ es:"RECARGAR", en:"RELOAD" },
+
   noCoeYet:{ es:"Sin contrato no hay fecha de cierre. Se llena cuando el archivo llegue a Under Contract.",
              en:"No contract, no closing date. It fills in when the file reaches Under Contract." },
 

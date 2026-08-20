@@ -317,6 +317,46 @@ function timeAgo(iso){
   return new Date(iso).toLocaleDateString();
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// VERSIÓN Y DETECCIÓN DE DESPLIEGUE
+// ═══════════════════════════════════════════════════════════════════
+// Safari en iOS guarda el JavaScript con mucha insistencia: si la app
+// estaba abierta cuando se desplegó, se queda con lo que ya tenía cargado
+// y no hay forma de notarlo desde adentro. El móvil de Jose seguía
+// mostrando "MORTGAGE BY DELVALLE" y el CRITICAL viejo, varias tandas
+// después de haberlos cambiado.
+//
+// Con una persona eso es una molestia. Con cinco es un problema de datos:
+// alguien captura con reglas viejas sin saber que las suyas caducaron.
+//
+// Cómo se detecta sin tocar la configuración de compilación: Vite le pone
+// un hash al nombre del bundle y lo referencia desde index.html. Si el
+// index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
+// cada pocos minutos, sin caché, y se compara con el del arranque.
+const APP_VERSION = "2026.08.21";
+
+function huellaTexto(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) { h = ((h << 5) - h + s.charCodeAt(i)) | 0; }
+  return String(h);
+}
+
+async function huellaDelServidor() {
+  try {
+    const r = await fetch(`/index.html?_=${Date.now()}`, { cache: "no-store" });
+    if (!r.ok) return null;
+    return huellaTexto(await r.text());
+  } catch { return null; }
+}
+
+// Recargar de verdad. `location.reload()` en iOS puede volver a servir lo
+// mismo del caché; cambiar la URL obliga a pedir el index de nuevo, y con
+// él el bundle nuevo, que tiene otro nombre.
+function recargarDeVerdad() {
+  const base = window.location.pathname;
+  window.location.replace(`${base}?v=${Date.now()}`);
+}
+
 function LoginScreen() {
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
@@ -706,11 +746,42 @@ export default function App() {
   const [showAdd,setShowAdd]=useState(false);
   const [showHelp,setShowHelp]=useState(false);
   const [showBackfill,setShowBackfill]=useState(false);
+  // Hay un despliegue más nuevo que el que este navegador tiene cargado.
+  const [versionVieja,setVersionVieja]=useState(false);
   const [detail,setDetail]=useState(null);
   const [prepFor,setPrepFor]=useState(null);
   const [archiveFor,setArchiveFor]=useState(null);
   const [loaded,setLoaded]=useState(false);
   const [saveStatus,setSaveStatus]=useState("idle");
+
+  // ─── VIGILANCIA DE VERSIÓN ───
+  // Se toma la huella al arrancar y se vuelve a mirar cada cinco minutos, y
+  // también cada vez que alguien vuelve a la pestaña — que es justo cuando
+  // pasa: se despliega mientras la app está abierta en otra ventana.
+  useEffect(()=>{
+    let vivo = true;
+    // La huella del arranque se guarda en la sesion del navegador. Si la
+    // pestana se abre con un bundle viejo servido desde cache, la del
+    // servidor ya viene distinta y se detecta en el primer vistazo, sin
+    // esperar los cinco minutos.
+    let alArrancar = null;
+    try { alArrancar = sessionStorage.getItem("pipe_build") || null; } catch {}
+    const mirar = async () => {
+      const h = await huellaDelServidor();
+      if (!vivo || !h) return;
+      if (alArrancar === null) {
+        alArrancar = h;
+        try { sessionStorage.setItem("pipe_build", h); } catch {}
+        return;
+      }
+      if (h !== alArrancar) setVersionVieja(true);
+    };
+    mirar();
+    const t = setInterval(mirar, 5 * 60 * 1000);
+    const alVolver = () => { if (document.visibilityState === "visible") mirar(); };
+    document.addEventListener("visibilitychange", alVolver);
+    return ()=>{ vivo=false; clearInterval(t); document.removeEventListener("visibilitychange", alVolver); };
+  },[]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -1260,7 +1331,10 @@ export default function App() {
           <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",letterSpacing:".3px",
             marginTop:3,whiteSpace:"nowrap"}}>{TX("branchLending")}</div>
           <div style={{fontSize:"var(--fs-1)",color:"var(--t4)",letterSpacing:".3px",
-            marginTop:1,whiteSpace:"nowrap"}}>{TX("branchPowered")}</div>
+            marginTop:1,whiteSpace:"nowrap"}}>
+            {TX("branchPowered")}
+            <span style={{color:"#30363D"}}>{"  ·  v"}{APP_VERSION}</span>
+          </div>
         </div>
         <div style={{display:"flex",gap:20,marginLeft:8}}>
           {[["ACTIVE",active.length,"#4A90D9"],["CLOSED",closed.length,"#06D6A0"],["CRITICAL",crit,"#E85D75"],["VOLUME",`$${(vol/1e6).toFixed(1)}M`,"#F5A623"]].map(([l,v,c])=>(
@@ -1414,6 +1488,22 @@ export default function App() {
           <span style={{color:"var(--t3)"}}>● STALE 5d+</span>
         </div>
       </div>
+
+      {versionVieja&&(
+        <div style={{margin:"0 24px 10px",background:"rgba(245,166,35,.12)",
+          border:"1px solid #F5A623",borderRadius:8,padding:"11px 14px",
+          display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+          <span style={{fontSize:"var(--fs-3)",color:"#F5A623",lineHeight:1.55,flex:1,minWidth:220}}>
+            {TX("newVersion")}
+          </span>
+          <button className="hov" onClick={recargarDeVerdad}
+            style={{background:"#F5A623",color:"#0D1117",borderRadius:6,padding:"8px 16px",
+              fontFamily:"DM Mono",fontSize:"var(--fs-3)",fontWeight:500,border:"none",
+              cursor:"pointer",whiteSpace:"nowrap"}}>
+            {TX("newVersionBtn")}
+          </button>
+        </div>
+      )}
 
       {migrado!==null&&(
         <div style={{margin:"0 24px 10px",background:"rgba(126,200,164,.1)",
