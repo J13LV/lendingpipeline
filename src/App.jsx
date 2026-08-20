@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc, onSnapshot } from "firebase/firestore";
+import { getFirestore, doc, setDoc, onSnapshot, collection, writeBatch, getDocs } from "firebase/firestore";
 import { helpSections, searchHelp } from "./helpContent";
 import { tr, defaultLang } from "./ui";
 import { downloadMarthaSheet } from "./marthaExport";
@@ -85,7 +85,47 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
 const auth = getAuth(firebaseApp);
+// ═══════════════════════════════════════════════════════════════════
+// UN DOCUMENTO POR PRÉSTAMO
+// ═══════════════════════════════════════════════════════════════════
+// Hasta aquí el pipeline entero —101 archivos— vivía dentro de UN documento.
+// Dos consecuencias, y la segunda es la que de verdad importa:
+//
+//   1. El techo. Firestore no acepta documentos de más de 1 MB, y ese
+//      límite NO se compra: es de diseño, no una cuota. A 5.4 KB por
+//      archivo, el documento reventaba a los 182.
+//
+//   2. El pisón. `setDoc(..., {files}, {merge:true})` fusiona campos de
+//      primer nivel, pero `files` es un ARREGLO: se reemplaza entero. Si
+//      Tina registra a las 10:02 y Martha guarda a las 10:03 con una copia
+//      de las 10:00, Martha BORRA el registro de Tina. Sin error y sin
+//      aviso. Con un usuario no se nota; con cinco a la vez, sí.
+//
+// Ahora cada préstamo es su propio documento en `loans`. Dos personas solo
+// chocan si están en el MISMO archivo, que casi nunca pasa.
+//
+// `pipeline/main` NO se borra: sigue guardando payroll y el detalle de DPA
+// —que no son de ningún préstamo— y conserva el arreglo viejo intacto como
+// respaldo. Volver atrás es cambiar una línea.
 const PIPELINE_DOC = doc(db, "pipeline", "main");
+const LOANS = collection(db, "loans");
+
+// Firestore acepta 500 operaciones por lote. Se parte antes por margen.
+const LOTE = 400;
+async function escribirLote(cambiados, borrados) {
+  const ops = [
+    ...cambiados.map(f => ({ tipo: "set", f })),
+    ...borrados.map(id => ({ tipo: "del", id })),
+  ];
+  for (let i = 0; i < ops.length; i += LOTE) {
+    const lote = writeBatch(db);
+    for (const op of ops.slice(i, i + LOTE)) {
+      if (op.tipo === "set") lote.set(doc(LOANS, String(op.f.id)), op.f);
+      else lote.delete(doc(LOANS, String(op.id)));
+    }
+    await lote.commit();
+  }
+}
 
 // ─── TEAM ROSTER ───
 // `lang` decide en que idioma aterriza cada persona en su primer login.
@@ -636,6 +676,10 @@ export default function App() {
   // debe cambiar aunque después se edite un archivo.
   const [payrollLog,setPayrollLog]=useState([]);
   const [docBytes,setDocBytes]=useState(0);
+  const [migrado,setMigrado]=useState(null);
+  // Lo que ya está en el servidor, por archivo. Es contra esto que se
+  // compara para saber qué escribir.
+  const huella = useRef(new Map());
   const [sizeAlert,setSizeAlert]=useState(null);
   const [idsBackfilled,setIdsBackfilled]=useState(0);
   // Detalle de DPA capturado a mano. Vive junto al pipeline, NO en
@@ -682,62 +726,40 @@ export default function App() {
   const isAssistant = profile?.role === "assistant" || profile?.role === "processor";
   const isProcessor = profile?.role === "processor";
 
+  // Payroll y el detalle de DPA no son de ningún préstamo: siguen en el
+  // documento de configuración de siempre.
   useEffect(()=>{
     if (!currentUser) return;
     const unsub = onSnapshot(PIPELINE_DOC, (snap) => {
-      if(snap.exists()){
-        const data = snap.data();
-        if(Array.isArray(data.payrollRequests)) setPayrollLog(data.payrollRequests);
-        if(data.dpaDetails && typeof data.dpaDetails==="object") setDpaDetails(data.dpaDetails);
-        if(data.files && data.files.length > 0){
-          // Un archivo sin id no se puede editar en masa: la búsqueda por id
-          // no lo encuentra y la operación falla sin decir nada. Se le asigna
-          // uno estable al cargar, una sola vez.
-          let missing = 0;
-          const withIds = data.files.map((f,i) => {
-            if (f && f.id) return f;
-            missing++;
-            return { ...f, id: `f_r${i}_${String(f?.borrower||"x").replace(/\W/g,"").slice(0,8)}` };
-          });
-          if (missing > 0) setIdsBackfilled(missing);
-          setFiles(withIds);
-          setLoaded(true);
-        } else {
-          try {
-            const local = localStorage.getItem("pipe_v3");
-            if(local){
-              const parsed = JSON.parse(local);
-              if(parsed && parsed.length > 0){
-                setFiles(parsed);
-                setDoc(PIPELINE_DOC, {files: parsed}, {merge:true});
-                setLoaded(true);
-                return;
-              }
-            }
-          } catch{}
-          setFiles(SAMPLE);
-          setDoc(PIPELINE_DOC, {files: SAMPLE}, {merge:true});
-          setLoaded(true);
-        }
-      } else {
-        try {
-          const local = localStorage.getItem("pipe_v3");
-          if(local){
-            const parsed = JSON.parse(local);
-            if(parsed && parsed.length > 0){
-              setFiles(parsed);
-              setDoc(PIPELINE_DOC, {files: parsed}, {merge:true});
-              setLoaded(true);
-              return;
-            }
-          }
-        } catch{}
-        setFiles(SAMPLE);
-        setDoc(PIPELINE_DOC, {files: SAMPLE}, {merge:true});
+      if(!snap.exists()) return;
+      const data = snap.data();
+      if(Array.isArray(data.payrollRequests)) setPayrollLog(data.payrollRequests);
+      if(data.dpaDetails && typeof data.dpaDetails==="object") setDpaDetails(data.dpaDetails);
+    }, ()=>{});
+    return ()=>unsub();
+  },[currentUser]);
+
+  // ─── LOS PRÉSTAMOS ───
+  // Un documento por archivo. El listener entrega la colección entera la
+  // primera vez y después SOLO lo que cambió — que es justo lo contrario de
+  // lo que hacía el documento único.
+  useEffect(()=>{
+    if (!currentUser) return;
+    const unsub = onSnapshot(LOANS, (snap) => {
+      const vivos = snap.docs.map(d2 => ({ ...d2.data(), id: d2.id }));
+      if (vivos.length > 0) {
+        setFiles(vivos);
+        // La huella de lo que YA está en el servidor. Sin esto, el primer
+        // guardado creería que los 101 archivos cambiaron y los reescribiría
+        // todos — o sea, el mismo problema con otro nombre.
+        huella.current = new Map(vivos.map(f => [String(f.id), JSON.stringify(f)]));
         setLoaded(true);
+        return;
       }
+      // Colección vacía: o es la primera vez, o hay que migrar.
+      migrarSiHaceFalta();
     }, ()=>{
-      try {
+      try{
         const local = localStorage.getItem("pipe_v3");
         if(local) setFiles(JSON.parse(local));
       } catch{}
@@ -747,36 +769,91 @@ export default function App() {
     return ()=>unsub();
   },[currentUser]);
 
+  // ─── MIGRACIÓN ───
+  // Una sola vez, y solo si hace falta: la colección está vacía y el
+  // documento viejo trae archivos. El documento viejo NO se toca — queda de
+  // respaldo, y volver atrás es revertir el despliegue.
+  const [migrando,setMigrando]=useState(false);
+  async function migrarSiHaceFalta(){
+    if (migrando) return;
+    try{
+      const previo = await getDocs(LOANS);
+      if (!previo.empty) return;                 // otro navegador ya migró
+      const snap = await new Promise((res)=>{
+        const u = onSnapshot(PIPELINE_DOC, x => { u(); res(x); }, ()=>res(null));
+      });
+      const viejos = snap?.exists() ? (snap.data().files || []) : [];
+      if (!viejos.length) {
+        // Ni colección ni documento viejo: pipeline nuevo de verdad.
+        setFiles(SAMPLE); setLoaded(true);
+        await escribirLote(SAMPLE.map((f,i)=>({...f,id:f.id||`f_seed_${i}`})), []);
+        return;
+      }
+      setMigrando(true);
+      // Un archivo sin id no se puede guardar como documento: el id ES el
+      // nombre del documento. Se le asigna uno estable, igual que antes.
+      let sinId = 0;
+      const conIds = viejos.map((f,i)=>{
+        if (f && f.id) return f;
+        sinId++;
+        return { ...f, id: `f_r${i}_${String(f?.borrower||"x").replace(/\W/g,"").slice(0,8)}` };
+      });
+      if (sinId > 0) setIdsBackfilled(sinId);
+      await escribirLote(conIds, []);
+      setMigrado(conIds.length);
+      setMigrando(false);
+    }catch{
+      setSaveStatus("error");
+      setMigrando(false);
+    }
+  }
+
   useEffect(()=>{
     if(!loaded || !currentUser) return;
     setDoc(PIPELINE_DOC, {payrollRequests: payrollLog}, {merge:true}).catch(()=>{});
   },[payrollLog,loaded,currentUser]);
 
+  // ─── GUARDADO POR DIFERENCIA ───
+  // La clave de que NINGUNA pantalla cambie: las veinte funciones que mueven
+  // archivos —avanzar, cerrar, archivar, rellenar— siguen llamando a
+  // setFiles como siempre. Aquí se compara contra lo que ya está en el
+  // servidor y se escribe SOLO lo que cambió.
+  //
+  // Un toque escribía 533 KB. Ahora escribe 5.
   useEffect(()=>{
-    if(!loaded || !currentUser)return;
-    setSaveStatus("saving");
-    // Firestore rechaza documentos de más de 1 MB. Cuando eso pasa la
-    // escritura falla, el estado local cambia un instante y el listener lo
-    // revierte — se ve exactamente como "hice clic y no pasó nada".
+    if(!loaded || !currentUser) return;
+    const antes = huella.current;
+    const ahora = new Map();
+    const cambiados = [];
+    for (const f of files) {
+      if (!f || !f.id) continue;
+      const id = String(f.id);
+      const json = JSON.stringify(f);
+      ahora.set(id, json);
+      if (antes.get(id) !== json) cambiados.push(f);
+    }
+    const borrados = [...antes.keys()].filter(id => !ahora.has(id));
+    // Cuánto pesa el archivo MÁS GRANDE, no la suma: el techo de 1 MB es por
+    // documento. Un archivo con cientos de notas es el único que puede
+    // acercarse, y ahora se ve cuál.
     try{
-      const bytes = new Blob([JSON.stringify({files})]).size;
-      setDocBytes(bytes);
-      if(bytes > 1000000){
-        setSaveStatus("error");
-        setSizeAlert(bytes);
-        return;
-      }
-      setSizeAlert(bytes > 850000 ? bytes : null);
+      const mayor = files.reduce((a,f)=> Math.max(a, JSON.stringify(f||{}).length), 0);
+      setDocBytes(mayor);
+      setSizeAlert(mayor > 850000 ? mayor : null);
     }catch{}
-    setDoc(PIPELINE_DOC, {files}, {merge:true}).then(()=>{
+    if (!cambiados.length && !borrados.length) return;
+
+    setSaveStatus("saving");
+    escribirLote(cambiados, borrados).then(()=>{
+      huella.current = ahora;
       try{localStorage.setItem("pipe_v3",JSON.stringify(files));}catch{}
       setSaveStatus("saved");
-      setTimeout(()=>setSaveStatus(s=>s==="saved"?"idle":s), 2000);
+      setTimeout(()=>setSaveStatus(s2=>s2==="saved"?"idle":s2), 2000);
     }).catch(()=>{
       try{localStorage.setItem("pipe_v3",JSON.stringify(files));}catch{}
       setSaveStatus("error");
     });
-  },[files,loaded]);
+  },[files,loaded,currentUser]);
 
   // ─── HOJA DE MARTHA ───
   // Genera SU Excel con las columnas que ya sabemos. ExcelJS se baja del
@@ -1316,6 +1393,14 @@ export default function App() {
         </div>
       </div>
 
+      {migrado!==null&&(
+        <div style={{margin:"0 24px 10px",background:"rgba(126,200,164,.1)",
+          border:"1px solid #7EC8A4",borderRadius:8,padding:"11px 14px",
+          fontSize:"var(--fs-3)",color:"#7EC8A4",lineHeight:1.6}}>
+          {TX("migrated",{n:migrado})}
+        </div>
+      )}
+
       {idsBackfilled>0&&(
         <div style={{margin:"0 24px 10px",background:"rgba(74,144,217,.1)",border:"1px solid #4A90D9",
           borderRadius:8,padding:"10px 14px",fontSize:"var(--fs-3)",color:"#4A90D9",lineHeight:1.6}}>
@@ -1374,7 +1459,9 @@ export default function App() {
             const nextLog = [...payrollLog, entry];
             setFiles(nextFiles);
             setPayrollLog(nextLog);
-            setDoc(PIPELINE_DOC, {files:nextFiles, payrollRequests:nextLog}, {merge:true})
+            // El request va al documento de configuración; los archivos, a
+            // su colección. El efecto de arriba se encarga de los segundos.
+            setDoc(PIPELINE_DOC, {payrollRequests:nextLog}, {merge:true})
               .catch(()=>setSaveStatus("error"));
             return matched;
           }}
@@ -1825,8 +1912,8 @@ export default function App() {
             const u=mapa.get(f.id);
             return u ? stampEdit(u.file, profile, "backfilled", {fields:u.fields}) : f;
           });
+          // setFiles basta: el guardado por diferencia escribe los nueve.
           setFiles(next);
-          setDoc(PIPELINE_DOC,{files:next},{merge:true}).catch(()=>setSaveStatus("error"));
           return updates.length;
         }}/>}
     </div>
