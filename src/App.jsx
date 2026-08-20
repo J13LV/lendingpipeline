@@ -18,6 +18,7 @@ const TX = (k, v) => tr(k, CURRENT_LANG, v);
 const PN = o => o ? (o["note_" + CURRENT_LANG] ?? o.note_es ?? o.note_en ?? "") : "";
 import {
   stageUrgency, stageClock, daysInStage, fileAge, stampStage, today,
+  leadStandard, LEAD_STANDARD_DAYS, leadStandardReport, inPreQual,
   daysBetween, addDays as addDaysISO,
   // ─── 2B-1 contingencies ───
   CONTINGENCIES, CONTINGENCY_OUTCOMES, CONTRACT_DAY_BASIS,
@@ -1797,9 +1798,23 @@ export default function App() {
                               <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{f.type} · ${(f.loan/1000).toFixed(0)}k</div>
                               {f.lo&&<div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:1}}>{f.lo.split(" ")[0]}{f.referralPartner?` · ${f.referralPartner.split(" ")[0]}`:""}</div>}
                             </div>
-                            {u!=="normal"&&<span style={{background:uc,color:"#0D1117",borderRadius:4,padding:"2px 6px",fontSize:"var(--fs-2)",fontWeight:500}}>
-                              {u==="critical"?"CRITICAL":u==="warning"?"WARN":"STALE"}
-                            </span>}
+                            {/* En Pre-Qual la etiqueta dice los DÍAS contra el
+                                estándar, no "CRITICAL". Un lead parado seis
+                                días y un archivo que firma en tres eran la
+                                misma palabra, y por eso la palabra no decía
+                                nada. */}
+                            {(()=>{const ld=leadStandard(f);
+                              if(ld.applies&&ld.days!==null){
+                                if(ld.signal==="idle") return null;
+                                const c=signalColor(ld.signal);
+                                return <span style={{background:c,color:"#0D1117",borderRadius:4,
+                                  padding:"2px 7px",fontSize:"var(--fs-2)",fontWeight:500,
+                                  whiteSpace:"nowrap"}}>{ld.days}d / {LEAD_STANDARD_DAYS}d</span>;
+                              }
+                              return u!=="normal"?<span style={{background:uc,color:"#0D1117",
+                                borderRadius:4,padding:"2px 6px",fontSize:"var(--fs-2)",fontWeight:500}}>
+                                {u==="critical"?"CRITICAL":u==="warning"?"WARN":"STALE"}
+                              </span>:null;})()}
                           </div>
                           <div style={{display:"flex",gap:3}}>
                             {ph.stages.map((_,i)=><div key={i} style={{height:4,flex:1,borderRadius:2,background:i<=si?ph.color:"var(--t4)"}}/>)}
@@ -2409,6 +2424,41 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           {isAdmin ? "ADMIN VIEW · ALL DATA VISIBLE" : isLO ? "LO VIEW · YOUR COMP ONLY" : "ASSISTANT VIEW · NO COMP"}
         </div>
       </div>
+
+      {/* EL ESTÁNDAR DE RESPUESTA */}
+      {prodTab==="team"&&(()=>{
+        const r=leadStandardReport(files);
+        if(!r.total) return null;
+        const col=r.pct===null?"var(--t3)":r.pct>=90?"#7EC8A4":r.pct>=70?"#F5A623":"#E85D75";
+        return (
+          <div style={{background:"#161B22",border:`1px solid ${col}44`,
+            borderTop:`3px solid ${col}`,borderRadius:10,padding:"14px 18px",
+            display:"flex",flexDirection:"column",gap:9}}>
+            <div style={{display:"flex",alignItems:"baseline",gap:12,flexWrap:"wrap"}}>
+              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-4)",
+                color:col,letterSpacing:"1px"}}>{TX("leadReportTitle")}</span>
+              <span style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",
+                color:col,marginLeft:"auto"}}>
+                {r.pct===null?"—":r.pct+"%"}
+              </span>
+            </div>
+            <div style={{fontSize:"var(--fs-2)",color:"var(--t2)"}}>
+              {TX("leadCounts",{m:r.met,b:r.broken,o:r.open})}
+              {r.avgDays!==null?` · ${TX("leadAvg",{n:r.avgDays})}`:""}
+            </div>
+            {/* Los que llevan más tiempo, arriba. Es la lista de llamadas. */}
+            {r.rows.filter(x=>x.open).slice(0,6).map(x=>(
+              <div key={x.file.id} style={{display:"flex",gap:10,alignItems:"baseline",
+                fontSize:"var(--fs-2)",fontFamily:"DM Mono"}}>
+                <span style={{color:x.met===false?"#E85D75":"var(--t3)",minWidth:34}}>{x.days}d</span>
+                <span style={{color:"var(--t1)",flex:1,overflow:"hidden",
+                  textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{x.file.borrower}</span>
+                <span style={{color:"var(--t4)",fontSize:"var(--fs-1)"}}>{x.file.lo?.split(" ")[0]||""}</span>
+              </div>
+            ))}
+            <div className="sys">{TX("leadReportLead",{n:r.standard})}</div>
+          </div>
+        );})()}
 
       {/* TEAM PRODUCTION TAB */}
       {prodTab==="team"&&<div style={{display:"flex",flexDirection:"column",gap:14}}>

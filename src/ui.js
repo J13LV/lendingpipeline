@@ -771,6 +771,28 @@ export const UI = {
   extraPayroll:{ es:"Barrett procesa un Extra Payroll fuera de ciclo. La solicitud entra antes de la 1PM del jueves y el depósito cae el martes siguiente.",
                  en:"Barrett runs an off-cycle Extra Payroll. The request goes in before 1PM Thursday and the deposit lands the following Tuesday." },
 
+  // ─── el estándar de tres días ───
+  leadStd:{ es:"ESTÁNDAR DE {n} DÍAS", en:"{n}-DAY STANDARD" },
+  leadClock:{ es:"{n}d hábiles en Pre-Qual", en:"{n} business days in Pre-Qual" },
+  leadDueBy:{ es:"se decide el {d}", en:"decide by {d}" },
+  leadOver:{ es:"{n}d sobre el estándar", en:"{n}d over the standard" },
+  leadExits:{ es:"precalifica, prepara o archiva — quedarse no es una salida",
+              en:"pre-qualify, prepare or archive — staying is not an exit" },
+  leadMet:{ es:"dentro del estándar", en:"within the standard" },
+  leadReportTitle:{ es:"⏱ ESTÁNDAR DE RESPUESTA", en:"⏱ RESPONSE STANDARD" },
+  leadReportLead:{ es:"Lo que la sucursal le promete a un agente: un lead que entra se decide en {n} días hábiles. Decidido es precalificado, mandado a preparación o archivado — lo que cuenta es que alguien decidió.",
+                   en:"What the branch promises an agent: a lead that comes in gets decided within {n} business days. Decided means pre-qualified, sent to preparation or archived — what counts is that somebody decided." },
+  leadPct:{ es:"{p}% dentro del estándar", en:"{p}% within the standard" },
+  leadCounts:{ es:"{m} cumplidos · {b} rotos · {o} todavía abiertos",
+               en:"{m} met · {b} broken · {o} still open" },
+  leadAvg:{ es:"promedio {n} días hábiles", en:"average {n} business days" },
+  leadNoData:{ es:"Todavía no hay leads con fecha de entrada sellada.",
+               en:"No leads with a stamped entry date yet." },
+  leadGatePrequal:{ es:"precalificado", en:"pre-qualified" },
+  leadGatePrep:{ es:"a preparación", en:"to preparation" },
+  leadGateArch:{ es:"archivado", en:"archived" },
+  leadGateOpen:{ es:"todavía abierto", en:"still open" },
+
   // ─── tiempo ───
   inStage:     { es:"d en la etapa", en:"d in stage" },
   total:       { es:"d total",       en:"d total" },

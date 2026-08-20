@@ -318,7 +318,127 @@ export function stageClock(stage, file) {
   return b ? { ...b, owner: resolveOwner(STAGE_OWNERS[stage], file) || null } : null;
 }
 
-// ─── 2C. PROJECTED CLOSE AND SLACK ─────────────────────────────────
+// ─── 2Z. EL ESTÁNDAR DE TRES DÍAS ──────────────────────────────────
+// La promesa que la sucursal le hace a un agente: un lead que entra se
+// decide en tres días hábiles. Es lo que se le dice a Abdel, a Lela y a
+// APG, y por eso el sistema tiene que poder medirlo — un estándar que solo
+// vive como un color en el tablero es una intención que se rompe callada.
+//
+// El reloj es de FASE, no de etapa. Las cinco etapas de Pre-Qual tenían un
+// reloj cada una que sumaba siete días, así que un archivo podía saltar de
+// escalón en escalón sin disparar nada nunca y llevar tres semanas ahí.
+// Contando desde que el lead ENTRÓ, eso deja de poder pasar.
+//
+// DÍAS HÁBILES, no calendario, y con la definición del contrato —lunes a
+// viernes menos feriados federales— no la de TRID, que cuenta el sábado
+// porque es para el CD. Un lead que entra el viernes vence el miércoles y
+// nadie tiene que trabajar el fin de semana para sostener la promesa.
+export const LEAD_STANDARD_DAYS = 3;
+export const PREQUAL_STAGES = [
+  "Lead Inquiry", "Needs Assessment", "Credit Pull",
+  "Income Verification", "Pre-Qualification",
+];
+export const inPreQual = file => PREQUAL_STAGES.includes(file?.stage);
+
+// Cuándo entró el lead a la fase. Se relee del sello de la PRIMERA etapa
+// que tocó: un lead que entró directo a Needs Assessment no tiene sello de
+// Lead Inquiry, y contar desde hoy lo daría por recién llegado.
+//
+// Al volver de Preparación el reloj SE REINICIA: un cliente que estuvo dos
+// meses arreglando crédito es un lead nuevo en la práctica, y arrastrarle
+// el tiempo viejo lo dejaría en rojo el día que regresa.
+export function preQualEnteredAt(file) {
+  if (!inPreQual(file)) return null;
+  const log = stageLogOf(file);
+  const sellos = PREQUAL_STAGES.map(s => okDate(log[s])).filter(Boolean).sort();
+  const primero = sellos[0] || null;
+  // Si volvió de Preparación, manda la fecha de regreso.
+  const regreso = okDate(file?.stageEnteredAt);
+  if (primero && regreso && regreso > primero && (file?.prep?.reschedules !== undefined || !file?.prep)) {
+    const volvio = (file?.history || []).some(h => h?.action === "returned_from_prep");
+    if (volvio) return regreso;
+  }
+  return primero || regreso;
+}
+
+// Días hábiles transcurridos. El día de entrada es CERO, no uno: quien
+// promete 72 horas cuenta así.
+export function leadBusinessDays(file) {
+  const desde = preQualEnteredAt(file);
+  if (!desde) return null;
+  return contractDaysBetween("FL", desde, today());   // FL = base de días hábiles
+}
+
+// El estado del lead contra el estándar. `broken` es rojo DE RITMO: nadie
+// perdió dinero, pero la promesa se rompió y eso también cuesta.
+export function leadStandard(file) {
+  if (!inPreQual(file)) return { applies: false };
+  const dias = leadBusinessDays(file);
+  if (dias === null) return { applies: true, days: null, signal: "idle", met: null };
+  const met = dias <= LEAD_STANDARD_DAYS;
+  return {
+    applies: true, days: dias, met,
+    over: Math.max(0, dias - LEAD_STANDARD_DAYS),
+    enteredAt: preQualEnteredAt(file),
+    dueBy: addBusinessDays(preQualEnteredAt(file), LEAD_STANDARD_DAYS, "contract"),
+    signal: dias > LEAD_STANDARD_DAYS ? "broken"
+      : dias === LEAD_STANDARD_DAYS ? "soon" : "idle",
+  };
+}
+
+// ─── LA MEDIDA ─────────────────────────────────────────────────────
+// Un lead está DECIDIDO cuando salió de Pre-Qual por cualquiera de las tres
+// puertas: precalificó y siguió, se mandó a Preparación, o se archivó. Lo
+// que cuenta no es que califique — es que alguien decidió.
+//
+// Quedarse no es una salida, y por eso los que siguen en Pre-Qual pasados
+// los tres días cuentan como incumplidos aunque todavía no se sepa el final.
+export function leadStandardReport(files, { dias = LEAD_STANDARD_DAYS } = {}) {
+  const salidas = [];
+  for (const f of files || []) {
+    const log = stageLogOf(f);
+    const sellos = PREQUAL_STAGES.map(s => okDate(log[s])).filter(Boolean).sort();
+    const entro = sellos[0];
+    if (!entro) continue;
+
+    let salio = null, puerta = null;
+    // Salió hacia adelante: el primer sello de una etapa posterior.
+    const despues = ALL_STAGE_ORDER.slice(ALL_STAGE_ORDER.indexOf("Realtor Connected"));
+    const adelante = despues.map(s => okDate(log[s])).filter(Boolean).sort()[0];
+    if (adelante) { salio = adelante; puerta = "prequalified"; }
+    if (f.prep?.enteredAt && (!salio || okDate(f.prep.enteredAt) < salio)) {
+      salio = okDate(f.prep.enteredAt); puerta = "preparation";
+    }
+    if (f.archived && f.archivedAt && (!salio || okDate(f.archivedAt) < salio)) {
+      salio = okDate(f.archivedAt); puerta = "archived";
+    }
+
+    const abierto = !salio && inPreQual(f);
+    const transcurrido = contractDaysBetween("FL", entro, salio || today());
+    if (transcurrido === null) continue;
+    salidas.push({
+      file: f, enteredAt: entro, exitedAt: salio, gate: puerta,
+      days: transcurrido, open: abierto,
+      met: salio ? transcurrido <= dias : (transcurrido <= dias ? null : false),
+    });
+  }
+  const decididos = salidas.filter(x => x.exitedAt);
+  const cumplidos = salidas.filter(x => x.met === true).length;
+  const rotos = salidas.filter(x => x.met === false).length;
+  const medibles = cumplidos + rotos;
+  return {
+    standard: dias,
+    rows: salidas.sort((a, b) => b.days - a.days),
+    total: salidas.length,
+    decided: decididos.length,
+    open: salidas.filter(x => x.open).length,
+    met: cumplidos, broken: rotos,
+    pct: medibles ? Math.round(100 * cumplidos / medibles) : null,
+    avgDays: decididos.length
+      ? Math.round(10 * decididos.reduce((a, x) => a + x.days, 0) / decididos.length) / 10
+      : null,
+  };
+}
 // The alert that was missing. Not "is this stage slow" but "will this
 // file make its contract date" — the only question the borrower's
 // earnest money depends on.
@@ -2741,6 +2861,16 @@ export function restartHouseHuntWindow(file, newAgent) {
 
 // ─── 4. URGENCY ────────────────────────────────────────────────────
 export function stageUrgency(file) {
+  // En Pre-Qual manda el reloj de FASE. Los cinco relojes de etapa siguen
+  // ahí para informar, pero no deciden el color: con seis relojes sobre el
+  // mismo archivo, los rojos dejan de significar algo.
+  if (inPreQual(file)) {
+    const ld = leadStandard(file);
+    if (ld.days !== null) return {
+      level: ld.signal === "broken" ? "late" : ld.signal === "soon" ? "watch" : "normal",
+      days: ld.days, lead: ld,
+    };
+  }
   const clock = stageClock(file?.stage, file);
   if (!clock) return { level: "normal", days: null };
   if (clock.houseHunt) {
