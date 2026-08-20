@@ -50,9 +50,18 @@ const mk = lang => ({
 const md = iso => iso ? `${iso.slice(5, 7)}/${iso.slice(8, 10)}` : "—";
 // Las notas del motor viven como note_es / note_en.
 const PN = (o, lang) => o ? (o["note_" + lang] ?? "") : "";
+// Superficies y bordes en hex —son fondos, no texto— y los CUATRO tonos
+// de texto salen de los tokens de App.jsx, que es donde vive la escala.
+// Antes esta pantalla tenia su propia paleta: las etiquetas del intake en
+// 9px sobre #484F58 quedaban casi del mismo valor que el fondo y habia que
+// fijar la vista para leerlas. Martha vive aqui ocho horas.
+//
+// Los SEIS colores de señal NO cambian: rojo roto, dorado se avecina,
+// verde hecho, azul dato, morado legal, gris estancado. Esos son
+// significado, no tipografia.
 const C = {
   bg: "#0D1117", card: "#161B22", line: "#21262D", edge: "#30363D",
-  dim: "#484F58", mid: "#6E7681", soft: "#8B949E", text: "#E6EDF3",
+  dim: "var(--t4)", mid: "var(--t3)", soft: "var(--t2)", text: "var(--t1)",
   gold: "#F5A623", green: "#7EC8A4", red: "#E85D75", ok: "#06D6A0",
 };
 
@@ -70,7 +79,7 @@ function OrderRow({ file, def, lang, onSave, readOnly }) {
     const armado = confirm === which;
     if (readOnly) {
       return (
-        <span style={{ fontSize: 10, padding: "4px 9px", borderRadius: 4,
+        <span style={{ fontSize: "var(--fs-2)", padding: "4px 9px", borderRadius: 4,
           background: hecho ? "rgba(6,214,160,.12)" : "transparent",
           color: hecho ? C.ok : C.dim, fontFamily: "DM Mono" }}>
           {hecho ? `${label} ${md(fecha)}` : label}
@@ -90,7 +99,7 @@ function OrderRow({ file, def, lang, onSave, readOnly }) {
         }}
         title={hecho ? T("orderUndo") : ""}
         style={{
-          fontSize: 10, padding: "4px 9px", borderRadius: 4, cursor: "pointer",
+          fontSize: "var(--fs-2)", padding: "4px 9px", borderRadius: 4, cursor: "pointer",
           fontFamily: "DM Mono", whiteSpace: "nowrap",
           background: armado ? "rgba(232,93,117,.15)" : hecho ? "rgba(6,214,160,.12)" : "#21262D",
           color: armado ? C.red : hecho ? C.ok : C.soft,
@@ -111,10 +120,10 @@ function OrderRow({ file, def, lang, onSave, readOnly }) {
   return (
     <div style={{ background: C.card, padding: "8px 11px", borderRadius: 5 }}>
       <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto auto", gap: 7, alignItems: "center" }}>
-        <span style={{ color: C.text, fontSize: 11 }}>
+        <span style={{ color: C.text, fontSize: "var(--fs-3)" }}>
           {P(def)}
           {o.state === "ordered" && (
-            <span style={{ color: vencido ? C.red : tarde ? C.gold : C.dim, fontSize: 9, marginLeft: 7 }}>
+            <span style={{ color: vencido ? C.red : tarde ? C.gold : C.dim, fontSize: "var(--fs-1)", marginLeft: 7 }}>
               {vencido ? T("orderLate") : T("orderWaiting", { n: o.days })}
             </span>
           )}
@@ -125,7 +134,7 @@ function OrderRow({ file, def, lang, onSave, readOnly }) {
           <button className="hov" onClick={() => setAbierta(v => !v)}
             title={T("orderNoteHint")}
             style={{ background: "transparent", border: "none", cursor: "pointer",
-              color: o.note ? C.gold : C.dim, fontSize: 12, padding: "0 2px" }}>
+              color: o.note ? C.gold : C.dim, fontSize: "var(--fs-3)", padding: "0 2px" }}>
             {o.note ? "✎" : "+"}
           </button>
         )}
@@ -133,21 +142,21 @@ function OrderRow({ file, def, lang, onSave, readOnly }) {
 
       {def.id === "appraisal" && !readOnly && o.req && (
         <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 6 }}>
-          <span style={{ fontSize: 9, color: C.dim }}>{T("orderDue")}</span>
+          <span style={{ fontSize: "var(--fs-1)", color: C.dim }}>{T("orderDue")}</span>
           <input type="date" value={orderDue(file, def.id) || ""}
             onChange={e => onSave(setOrderDue(file, def.id, e.target.value))}
             title={T("orderDueHint")}
             style={{ background: C.bg, border: `1px solid ${vencido ? C.red : C.edge}`,
               borderRadius: 4, color: vencido ? C.red : C.text, padding: "3px 7px",
-              fontSize: 10, fontFamily: "DM Mono" }} />
+              fontSize: "var(--fs-2)", fontFamily: "DM Mono" }} />
         </div>
       )}
 
       {o.note && !abierta && (
-        <div style={{ fontSize: 10, color: C.gold, lineHeight: 1.45, marginTop: 5,
+        <div style={{ fontSize: "var(--fs-2)", color: C.gold, lineHeight: 1.45, marginTop: 5,
           borderLeft: `2px solid ${C.gold}`, paddingLeft: 7 }}>
           {o.note}
-          <span style={{ color: C.dim, fontSize: 9 }}>
+          <span style={{ color: C.dim, fontSize: "var(--fs-1)" }}>
             {o.noteAt ? `  ${o.noteAt}` : ""}{o.noteBy ? ` · ${String(o.noteBy).split(" ")[0]}` : ""}
           </span>
         </div>
@@ -158,11 +167,11 @@ function OrderRow({ file, def, lang, onSave, readOnly }) {
           <input value={nota} onChange={e => setNota(e.target.value)}
             placeholder={T("orderNotePlaceholder")}
             style={{ flex: 1, background: C.bg, border: `1px solid ${C.edge}`, borderRadius: 4,
-              color: C.text, padding: "5px 8px", fontSize: 10.5, fontFamily: "DM Mono" }} />
+              color: C.text, padding: "5px 8px", fontSize: "var(--fs-2)", fontFamily: "DM Mono" }} />
           <button className="hov"
             onClick={() => { onSave(setOrderNote(file, def.id, nota, null)); setAbierta(false); }}
             style={{ background: C.gold, color: C.bg, border: "none", borderRadius: 4,
-              padding: "5px 11px", fontSize: 10, fontFamily: "DM Mono", cursor: "pointer" }}>
+              padding: "5px 11px", fontSize: "var(--fs-2)", fontFamily: "DM Mono", cursor: "pointer" }}>
             {T("save")}
           </button>
         </div>
@@ -198,7 +207,7 @@ export function IntakePane({ file, lang, onSave, readOnly }) {
   const cov = intakeCompleteness(file);
   const listoDpa = dpaReady(file);
   const fs = { background: C.bg, border: `1px solid ${C.edge}`, borderRadius: 5,
-    color: C.text, padding: "6px 8px", fontSize: 11, fontFamily: "DM Mono", width: "100%" };
+    color: C.text, padding: "6px 8px", fontSize: "var(--fs-3)", fontFamily: "DM Mono", width: "100%" };
 
   const campo = f => {
     const v = intakeValue(file, f.id);
@@ -208,7 +217,7 @@ export function IntakePane({ file, lang, onSave, readOnly }) {
         : f.type === "yesno" ? (v === "yes" ? T("yesShort") : v === "no" ? T("noShort") : "—")
         : v === null ? "—" : f.type === "money" ? "$" + Number(v).toLocaleString()
         : f.type === "pct" ? v + "%" : String(v);
-      return <div style={{ fontSize: 11, color: v === null ? C.dim : C.text }}>{txt}</div>;
+      return <div style={{ fontSize: "var(--fs-3)", color: v === null ? C.dim : C.text }}>{txt}</div>;
     }
     if (f.type === "pick") {
       return (
@@ -225,7 +234,7 @@ export function IntakePane({ file, lang, onSave, readOnly }) {
             <button key={val} className="hov" onClick={() => set(v === val ? null : val)}
               style={{ flex: 1, background: v === val ? C.green : "transparent",
                 color: v === val ? C.bg : C.mid, border: `1px solid ${v === val ? C.green : C.edge}`,
-                borderRadius: 4, padding: "5px 0", fontSize: 10, fontFamily: "DM Mono",
+                borderRadius: 4, padding: "5px 0", fontSize: "var(--fs-2)", fontFamily: "DM Mono",
                 cursor: "pointer" }}>{lbl}</button>
           ))}
         </div>
@@ -240,10 +249,10 @@ export function IntakePane({ file, lang, onSave, readOnly }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 10, color: cov.pct === 100 ? C.green : C.soft }}>
+        <span style={{ fontSize: "var(--fs-2)", color: cov.pct === 100 ? C.green : C.soft }}>
           {T("intakeCoverage", { f: cov.filled, t: cov.total })}
         </span>
-        <span style={{ fontSize: 9.5, color: listoDpa ? C.green : C.gold, marginLeft: "auto" }}>
+        <span style={{ fontSize: "var(--fs-1)", color: listoDpa ? C.green : C.gold, marginLeft: "auto" }}>
           {listoDpa ? T("dpaDataYes") : T("dpaDataNo")}
         </span>
       </div>
@@ -253,23 +262,23 @@ export function IntakePane({ file, lang, onSave, readOnly }) {
         if (!campos.length) return null;
         return (
           <div key={g.id}>
-            <div style={{ fontSize: 9, color: C.soft, letterSpacing: "1px", marginBottom: 7 }}>
+            <div style={{ fontSize: "var(--fs-1)", color: C.soft, letterSpacing: "1px", marginBottom: 7 }}>
               {P(g).toUpperCase()}
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 9 }}>
               {campos.map(f => (
                 <div key={f.id}>
-                  <div style={{ fontSize: 9, color: C.dim, marginBottom: 3 }}>
+                  <div style={{ fontSize: "var(--fs-1)", color: C.dim, marginBottom: 3 }}>
                     {P(f)}{f.dpa ? <span style={{ color: C.gold }}> ◆</span> : ""}
                   </div>
                   {campo(f)}
                   {f.note_es && (
-                    <div style={{ fontSize: 8.5, color: C.dim, marginTop: 2, lineHeight: 1.4 }}>
+                    <div style={{ fontSize: "var(--fs-1)", color: C.dim, marginTop: 2, lineHeight: 1.4 }}>
                       {lang === "en" ? f.note_en : f.note_es}
                     </div>
                   )}
                   {f.id === "miPct" && miLooksWrong(file) && (
-                    <div style={{ fontSize: 8.5, color: C.red, marginTop: 2, lineHeight: 1.4 }}>
+                    <div style={{ fontSize: "var(--fs-1)", color: C.red, marginTop: 2, lineHeight: 1.4 }}>
                       {T("miWrong", { n: intakeValue(file, "miPct") })}
                     </div>
                   )}
@@ -279,7 +288,7 @@ export function IntakePane({ file, lang, onSave, readOnly }) {
           </div>
         );
       })}
-      <div style={{ fontSize: 9, color: C.dim, lineHeight: 1.5 }}>{T("intakeHintLo")}</div>
+      <div className="sys">{T("intakeHintLo")}</div>
     </div>
   );
 }
@@ -309,14 +318,14 @@ export function MilestonesPane({ file, lang, onSave, readOnly }) {
       style={{ background: hecho ? "rgba(6,214,160,.12)" : "transparent",
         color: hecho ? C.ok : roto ? C.red : C.soft,
         border: `1px solid ${hecho ? C.ok : roto ? C.red : C.edge}`,
-        borderRadius: 4, padding: "4px 9px", fontSize: 10, fontFamily: "DM Mono",
+        borderRadius: 4, padding: "4px 9px", fontSize: "var(--fs-2)", fontFamily: "DM Mono",
         cursor: readOnly ? "default" : "pointer", whiteSpace: "nowrap" }}>
       {label}
     </button>
   );
 
   const fs = { background: C.bg, border: `1px solid ${C.edge}`, borderRadius: 4,
-    color: C.text, padding: "5px 8px", fontSize: 10.5, fontFamily: "DM Mono", width: "100%" };
+    color: C.text, padding: "5px 8px", fontSize: "var(--fs-2)", fontFamily: "DM Mono", width: "100%" };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -324,11 +333,11 @@ export function MilestonesPane({ file, lang, onSave, readOnly }) {
       {/* DIVULGACIONES — el envio ya viene sellado del registro; la firma no */}
       {reg && (
         <div>
-          <div style={{ fontSize: 9, color: C.soft, letterSpacing: "1px", marginBottom: 7 }}>
+          <div style={{ fontSize: "var(--fs-1)", color: C.soft, letterSpacing: "1px", marginBottom: 7 }}>
             {T("discSent").toUpperCase()}
           </div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 10, padding: "4px 9px", borderRadius: 4, fontFamily: "DM Mono",
+            <span style={{ fontSize: "var(--fs-2)", padding: "4px 9px", borderRadius: 4, fontFamily: "DM Mono",
               background: reg.discSentAt ? "rgba(6,214,160,.12)" : "transparent",
               color: reg.discSentAt ? C.ok : C.dim,
               border: `1px solid ${reg.discSentAt ? C.ok : C.edge}` }}>
@@ -341,25 +350,25 @@ export function MilestonesPane({ file, lang, onSave, readOnly }) {
               `${T("barrettDisc")} ${reg.barrettDiscSentAt ? md(reg.barrettDiscSentAt) : ""}`.trim(),
               () => onSave(stampRegistrationDate(file, "barrettDiscSentAt")))}
           </div>
-          <div style={{ fontSize: 9, color: C.dim, marginTop: 5, lineHeight: 1.5 }}>{T("discHint")}</div>
+          <div className="sys">{T("discHint")}</div>
         </div>
       )}
 
       {/* NUMEROS DEL PRESTAMO — viven en el ciclo, no en el archivo */}
       {reg && !readOnly && (
         <div>
-          <div style={{ fontSize: 9, color: C.soft, letterSpacing: "1px", marginBottom: 7 }}>
+          <div style={{ fontSize: "var(--fs-1)", color: C.soft, letterSpacing: "1px", marginBottom: 7 }}>
             {T("loanNumbers")}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             <div>
-              <div style={{ fontSize: 9, color: C.dim, marginBottom: 3 }}>{T("loanNoInvestor")}</div>
+              <div className="sys">{T("loanNoInvestor")}</div>
               <input value={inv} onChange={e => setInv(e.target.value)}
                 onBlur={() => onSave(setRegistrationField(file, { loanNumberInvestor: inv }))}
                 style={fs} />
             </div>
             <div>
-              <div style={{ fontSize: 9, color: C.dim, marginBottom: 3 }}>
+              <div style={{ fontSize: "var(--fs-1)", color: C.dim, marginBottom: 3 }}>
                 {T("loanNoLender")} <span style={{ color: C.edge }}>· {T("loanNoOne")}</span>
               </div>
               <input value={len} onChange={e => setLen(e.target.value)}
@@ -367,13 +376,13 @@ export function MilestonesPane({ file, lang, onSave, readOnly }) {
                 style={fs} />
             </div>
           </div>
-          <div style={{ fontSize: 9, color: C.dim, marginTop: 5, lineHeight: 1.5 }}>{T("loanNoHint")}</div>
+          <div className="sys">{T("loanNoHint")}</div>
         </div>
       )}
 
       {/* RESULTADO DE UW — tres resultados, no una fecha */}
       <div>
-        <div style={{ fontSize: 9, color: C.soft, letterSpacing: "1px", marginBottom: 7 }}>
+        <div style={{ fontSize: "var(--fs-1)", color: C.soft, letterSpacing: "1px", marginBottom: 7 }}>
           {T("uwResult")}
         </div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
@@ -386,7 +395,7 @@ export function MilestonesPane({ file, lang, onSave, readOnly }) {
                   { outcome: id, note: nota, by: file.__who || null }))}
                 style={{ background: on ? col : "transparent", color: on ? C.bg : col,
                   border: `1px solid ${col}`, borderRadius: 4, padding: "4px 10px",
-                  fontSize: 10, fontFamily: "DM Mono",
+                  fontSize: "var(--fs-2)", fontFamily: "DM Mono",
                   cursor: readOnly ? "default" : "pointer" }}>
                 {P(m)}
               </button>
@@ -395,32 +404,32 @@ export function MilestonesPane({ file, lang, onSave, readOnly }) {
           {res && !readOnly && (
             <button className="hov" onClick={() => onSave(clearUwOutcome(file))}
               style={{ background: "transparent", border: "none", color: C.dim,
-                fontSize: 9.5, fontFamily: "DM Mono", cursor: "pointer" }}>
+                fontSize: "var(--fs-1)", fontFamily: "DM Mono", cursor: "pointer" }}>
               {T("uwClear")}
             </button>
           )}
         </div>
         {res ? (
-          <div style={{ fontSize: 10, color: signalColor(uwOutcomeMeta(res).signal), marginTop: 5 }}>
+          <div style={{ fontSize: "var(--fs-2)", color: signalColor(uwOutcomeMeta(res).signal), marginTop: 5 }}>
             {T("uwResultOn", { o: P(uwOutcomeMeta(res)), d: md(uwOutcomeAt(file)) })}
             {file.uwResult?.note ? ` · ${file.uwResult.note}` : ""}
             {PN(uwOutcomeMeta(res), lang) ? (
-              <div style={{ fontSize: 9, color: C.dim, marginTop: 2 }}>{PN(uwOutcomeMeta(res), lang)}</div>
+              <div style={{ fontSize: "var(--fs-1)", color: C.dim, marginTop: 2 }}>{PN(uwOutcomeMeta(res), lang)}</div>
             ) : null}
           </div>
         ) : (
-          <div style={{ fontSize: 10, color: C.dim, marginTop: 5 }}>{T("uwResultNone")}</div>
+          <div className="sys">{T("uwResultNone")}</div>
         )}
         {!readOnly && !res && (
           <input value={nota} onChange={e => setNota(e.target.value)}
             placeholder={T("uwResultNote")} style={{ ...fs, marginTop: 6 }} />
         )}
-        <div style={{ fontSize: 9, color: C.dim, marginTop: 5, lineHeight: 1.5 }}>{T("uwResultHint")}</div>
+        <div className="sys">{T("uwResultHint")}</div>
       </div>
 
       {/* HITOS SUELTOS */}
       <div>
-        <div style={{ fontSize: 9, color: C.soft, letterSpacing: "1px", marginBottom: 7 }}>
+        <div style={{ fontSize: "var(--fs-1)", color: C.soft, letterSpacing: "1px", marginBottom: 7 }}>
           {T("milestones")}
         </div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -430,7 +439,7 @@ export function MilestonesPane({ file, lang, onSave, readOnly }) {
               () => onSave(stampMilestone(file, m.id)));
           })}
         </div>
-        <div style={{ fontSize: 9, color: C.dim, marginTop: 5, lineHeight: 1.5 }}>{T("milestonesHint")}</div>
+        <div className="act">{T("milestonesHint")}</div>
       </div>
 
       {/* EL PAPEL. Sale de salida, no de entrada: se trabaja en pantalla y
@@ -447,11 +456,11 @@ export function MilestonesPane({ file, lang, onSave, readOnly }) {
           title={T("chkHint")}
           style={{ width: "100%", background: "#21262D",
             color: imprimiendo ? C.dim : C.soft, borderRadius: 5,
-            padding: "8px 0", fontFamily: "DM Mono", fontSize: 10.5,
+            padding: "8px 0", fontFamily: "DM Mono", fontSize: "var(--fs-2)",
             border: `1px solid ${C.edge}`, cursor: imprimiendo ? "wait" : "pointer" }}>
           {imprimiendo ? T("chkBusy") : T("chkPrint")}
         </button>
-        <div style={{ fontSize: 9, color: C.dim, marginTop: 5, lineHeight: 1.5 }}>{T("chkHint")}</div>
+        <div className="sys">{T("chkHint")}</div>
       </div>
     </div>
   );
@@ -471,8 +480,8 @@ function Gate1Grid({ file, lang, onSave, who, readOnly }) {
   return (
     <div style={{ marginBottom: 12 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 7, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 9, color: C.soft, letterSpacing: "1px" }}>{T("gate1Title")}</span>
-        <span style={{ fontSize: 9.5, color: cov.pending === 0 ? C.ok : C.soft, marginLeft: "auto" }}>
+        <span style={{ fontSize: "var(--fs-1)", color: C.soft, letterSpacing: "1px" }}>{T("gate1Title")}</span>
+        <span style={{ fontSize: "var(--fs-1)", color: cov.pending === 0 ? C.ok : C.soft, marginLeft: "auto" }}>
           {cov.pending === 0 && cov.findings === 0
             ? T("gate1AllDone", { t: cov.total })
             : T("gate1Coverage", { d: cov.done, t: cov.total, p: cov.pending })}
@@ -497,10 +506,10 @@ function Gate1Grid({ file, lang, onSave, who, readOnly }) {
                 cursor: readOnly || bloqueado ? "default" : "pointer",
                 fontFamily: "DM Mono", display: "flex", flexDirection: "column", gap: 1,
               }}>
-              <span style={{ fontSize: 10, color: st === "na" ? C.dim : C.text, lineHeight: 1.3 }}>
+              <span style={{ fontSize: "var(--fs-2)", color: st === "na" ? C.dim : C.text, lineHeight: 1.3 }}>
                 {P(gate1Item(id))}
               </span>
-              <span style={{ fontSize: 8.5, color: col }}>
+              <span style={{ fontSize: "var(--fs-1)", color: col }}>
                 {P(GATE1_STATES[st])}
                 {at && st !== "finding" ? ` · ${md(at)}` : ""}
               </span>
@@ -508,7 +517,7 @@ function Gate1Grid({ file, lang, onSave, who, readOnly }) {
           );
         })}
       </div>
-      <div style={{ fontSize: 9, color: C.dim, marginTop: 6, lineHeight: 1.5 }}>{T("gate1Hint")}</div>
+      <div className="act">{T("gate1Hint")}</div>
     </div>
   );
 }
@@ -521,7 +530,7 @@ function Findings({ file, lang, onSave, who, readOnly }) {
   const [waiting, setWaiting] = useState("lo");
   const abiertos = openFindings(file);
   const fs = { background: C.bg, border: `1px solid ${C.edge}`, borderRadius: 5,
-    color: C.text, padding: "6px 8px", fontSize: 11, fontFamily: "DM Mono", width: "100%" };
+    color: C.text, padding: "6px 8px", fontSize: "var(--fs-3)", fontFamily: "DM Mono", width: "100%" };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -532,19 +541,19 @@ function Findings({ file, lang, onSave, who, readOnly }) {
           <div key={f.id} style={{ background: "rgba(232,93,117,.08)",
             borderLeft: `2px solid ${C.red}`, borderRadius: "0 5px 5px 0", padding: "7px 10px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 9.5, color: C.soft }}>{P(gate1Item(f.item))}</span>
-              <span style={{ fontSize: 9.5, color: w?.color || C.soft }}>{P(w)}</span>
+              <span style={{ fontSize: "var(--fs-1)", color: C.soft }}>{P(gate1Item(f.item))}</span>
+              <span style={{ fontSize: "var(--fs-1)", color: w?.color || C.soft }}>{P(w)}</span>
             </div>
-            <div style={{ fontSize: 11, color: C.text, lineHeight: 1.45, margin: "3px 0" }}>{f.text}</div>
+            <div style={{ fontSize: "var(--fs-3)", color: C.text, lineHeight: 1.45, margin: "3px 0" }}>{f.text}</div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 9, color: edad >= 7 ? C.red : C.dim }}>
+              <span style={{ fontSize: "var(--fs-1)", color: edad >= 7 ? C.red : C.dim }}>
                 {f.at}{f.by ? " · " + String(f.by).split(" ")[0] : ""}
                 {edad !== null ? " · " + T("findingDaysOpen", { n: edad }) : ""}
               </span>
               {!readOnly && (
                 <button className="hov" onClick={() => onSave(resolveFinding(file, f.id, { by: who }))}
                   style={{ background: "#21262D", border: `1px solid ${C.green}`, borderRadius: 4,
-                    color: C.green, fontSize: 9, padding: "3px 9px", cursor: "pointer", fontFamily: "DM Mono" }}>
+                    color: C.green, fontSize: "var(--fs-1)", padding: "3px 9px", cursor: "pointer", fontFamily: "DM Mono" }}>
                   {T("findingResolve")}
                 </button>
               )}
@@ -556,7 +565,7 @@ function Findings({ file, lang, onSave, who, readOnly }) {
       {readOnly ? null : !open ? (
         <button className="hov" onClick={() => setOpen(true)}
           style={{ background: "transparent", border: `1px dashed ${C.edge}`, borderRadius: 5,
-            color: C.mid, fontSize: 10, fontFamily: "DM Mono", padding: "6px 0", cursor: "pointer" }}>
+            color: C.mid, fontSize: "var(--fs-2)", fontFamily: "DM Mono", padding: "6px 0", cursor: "pointer" }}>
           {T("findingAdd")}
         </button>
       ) : (
@@ -574,7 +583,7 @@ function Findings({ file, lang, onSave, who, readOnly }) {
                 <button key={id} className="hov" onClick={() => setWaiting(id)}
                   style={{ background: on ? m.color : "transparent", color: on ? C.bg : m.color,
                     border: `1px solid ${m.color}`, borderRadius: 4, padding: "3px 8px",
-                    fontSize: 9.5, fontFamily: "DM Mono", cursor: "pointer" }}>{P(m)}</button>
+                    fontSize: "var(--fs-1)", fontFamily: "DM Mono", cursor: "pointer" }}>{P(m)}</button>
               );
             })}
           </div>
@@ -586,11 +595,11 @@ function Findings({ file, lang, onSave, who, readOnly }) {
               }}
               style={{ flex: 2, background: text.trim() ? C.red : C.card,
                 color: text.trim() ? C.bg : C.edge, borderRadius: 5, padding: "7px 0",
-                fontFamily: "DM Mono", fontSize: 10.5, fontWeight: 500, border: "none",
+                fontFamily: "DM Mono", fontSize: "var(--fs-2)", fontWeight: 500, border: "none",
                 cursor: text.trim() ? "pointer" : "not-allowed" }}>{T("findingSave")}</button>
             <button className="hov" onClick={() => { setOpen(false); setText(""); }}
               style={{ flex: 1, background: "#21262D", color: C.soft, borderRadius: 5,
-                padding: "7px 0", fontFamily: "DM Mono", fontSize: 10.5, border: "none",
+                padding: "7px 0", fontFamily: "DM Mono", fontSize: "var(--fs-2)", border: "none",
                 cursor: "pointer" }}>{T("cancel")}</button>
           </div>
         </div>
@@ -625,21 +634,21 @@ function FilePane({ file, lang, onSave, who, readOnly, onOpenFull }) {
       <div style={{ borderBottom: `1px solid ${C.line}`, paddingBottom: 10 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, flexWrap: "wrap" }}>
           <div>
-            <div style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 15, color: C.text }}>{file.borrower}</div>
-            <div style={{ fontSize: 10, color: C.mid, marginTop: 3 }}>
+            <div style={{ fontFamily: "Syne", fontWeight: 700, fontSize: "var(--fs-6)", color: C.text }}>{file.borrower}</div>
+            <div style={{ fontSize: "var(--fs-2)", color: C.mid, marginTop: 3 }}>
               {file.type} · {lenderNameOf(file) || T("unassigned")} · {String(file.lo || "").split(" ")[0]}
             </div>
           </div>
           <div style={{ textAlign: "right" }}>
-            {coe && <div style={{ fontSize: 11, color: C.gold }}>COE {md(coe)}</div>}
-            <div style={{ fontSize: 9, color: C.dim, marginTop: 2 }}>
+            {coe && <div style={{ fontSize: "var(--fs-3)", color: C.gold }}>COE {md(coe)}</div>}
+            <div style={{ fontSize: "var(--fs-1)", color: C.dim, marginTop: 2 }}>
               {faltan !== null ? T("closeInDays", { n: faltan }) : ""}
               {dias !== null ? ` · ${T("stageDays", { n: dias })}` : ""}
               {clock ? ` / ${clock.late}d` : ""}
             </div>
           </div>
         </div>
-        <div style={{ fontSize: 10, color: C.mid, marginTop: 6 }}>{file.stage}</div>
+        <div style={{ fontSize: "var(--fs-2)", color: C.mid, marginTop: 6 }}>{file.stage}</div>
       </div>
 
       {/* SOLAPAS — un archivo se trabaja por partes, y la procesadora
@@ -660,7 +669,7 @@ function FilePane({ file, lang, onSave, who, readOnly, onOpenFull }) {
           return (
             <button key={id} className="hov" onClick={() => setTab(id)}
               style={{ background: "transparent", border: "none", cursor: "pointer",
-                color: on ? C.gold : C.soft, fontSize: 10.5, fontFamily: "Syne",
+                color: on ? C.gold : C.soft, fontSize: "var(--fs-2)", fontFamily: "Syne",
                 fontWeight: on ? 800 : 500, letterSpacing: "1.2px", padding: "0 0 6px",
                 borderBottom: `2px solid ${on ? C.gold : "transparent"}` }}>
               {String(label).replace(/^[^A-Za-zÁ-ú]+/, "")}
@@ -673,12 +682,12 @@ function FilePane({ file, lang, onSave, who, readOnly, onOpenFull }) {
       {tab === "orders" && (
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 9.5, color: C.soft, letterSpacing: "1px" }}>{T("orders")}</span>
+            <span style={{ fontSize: "var(--fs-1)", color: C.soft, letterSpacing: "1px" }}>{T("orders")}</span>
             {!readOnly && !oneShotDone(file) && (
               <button className="hov" onClick={() => onSave(stampOneShot(file, who))}
                 title={T("oneShotHint")}
                 style={{ marginLeft: "auto", background: C.gold, color: C.bg, border: "none",
-                  borderRadius: 5, padding: "5px 11px", fontFamily: "DM Mono", fontSize: 10,
+                  borderRadius: 5, padding: "5px 11px", fontFamily: "DM Mono", fontSize: "var(--fs-2)",
                   fontWeight: 500, cursor: "pointer" }}>{T("oneShot")}</button>
             )}
           </div>
@@ -688,7 +697,7 @@ function FilePane({ file, lang, onSave, who, readOnly, onOpenFull }) {
                 onSave={onSave} readOnly={readOnly} />
             ))}
           </div>
-          <div style={{ fontSize: 9, color: C.dim, marginTop: 6, lineHeight: 1.5 }}>{T("ordersHint")}</div>
+          <div className="act">{T("ordersHint")}</div>
         </div>
       )}
 
@@ -707,14 +716,14 @@ function FilePane({ file, lang, onSave, who, readOnly, onOpenFull }) {
 
       {tab === "dates" && (
         derivadas.length === 0
-          ? <div style={{ fontSize: 10.5, color: C.dim }}>{T("noDeadlines")}</div>
+          ? <div className="act">{T("noDeadlines")}</div>
           : (
             <div>
               {/* La leyenda va donde se usa el color, no en una pantalla de
                   ayuda que nadie abre. Es la misma del archivo completo. */}
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 8 }}>
                 {["done", "soon", "broken"].map(id => (
-                  <span key={id} style={{ fontSize: 8.5, color: signalColor(id), letterSpacing: ".4px" }}>
+                  <span key={id} style={{ fontSize: "var(--fs-1)", color: signalColor(id), letterSpacing: ".4px" }}>
                     ● {P(SIGNALS[id])}
                   </span>
                 ))}
@@ -724,19 +733,17 @@ function FilePane({ file, lang, onSave, who, readOnly, onOpenFull }) {
                 // el unico lugar donde se usa.
                 const col = r.legal ? signalColor("legal") : signalColor(deadlineSignal(r, file));
                 return (
-                  <div key={r.stage} style={{ display: "flex", gap: 8, fontSize: 10,
+                  <div key={r.stage} style={{ display: "flex", gap: 8, fontSize: "var(--fs-2)",
                     fontFamily: "DM Mono", color: col, marginBottom: 4, alignItems: "baseline" }}>
                     <span style={{ minWidth: 52 }}>{md(r.startBy)}</span>
                     <span style={{ flex: 1 }}>{r.stage}{r.legal ? " ⚖" : ""}</span>
-                    <span style={{ color: C.dim, fontSize: 9 }}>{r.owner || ""}</span>
+                    <span style={{ color: C.dim, fontSize: "var(--fs-1)" }}>{r.owner || ""}</span>
                   </div>
                 );
               })}
-              <div style={{ fontSize: 9, color: C.dim, marginTop: 7, lineHeight: 1.5 }}>
-                {T("derivedHint")}
-              </div>
+              <div className="sys" style={{ marginTop: 6 }}>{T("derivedHint")}</div>
               {head && (
-                <div style={{ fontSize: 9.5, color: C.dim, marginTop: 4 }}>
+                <div style={{ fontSize: "var(--fs-1)", color: C.dim, marginTop: 4 }}>
                   {head.short} {md(head.date)}
                 </div>
               )}
@@ -749,12 +756,12 @@ function FilePane({ file, lang, onSave, who, readOnly, onOpenFull }) {
           {noteEntries(file).slice(0, 4).map((n, i) => (
             <div key={i} style={{ borderLeft: `2px solid ${i === 0 ? C.green : C.line}`,
               paddingLeft: 9, marginBottom: 9 }}>
-              <div style={{ fontSize: 9, color: C.dim }}>
+              <div style={{ fontSize: "var(--fs-1)", color: C.dim }}>
                 {n.legacy ? T("noteLegacy")
                   : `${String(n.at).slice(0, 10)}${n.by ? " · " + n.by : ""}`}
                 {n.stage ? ` · ${n.stage}` : ""}
               </div>
-              <div style={{ fontSize: 11, color: i === 0 ? C.text : C.soft,
+              <div style={{ fontSize: "var(--fs-3)", color: i === 0 ? C.text : C.soft,
                 lineHeight: 1.5, marginTop: 2 }}>{n.text}</div>
             </div>
           ))}
@@ -763,13 +770,13 @@ function FilePane({ file, lang, onSave, who, readOnly, onOpenFull }) {
               <input value={note} onChange={e => setNote(e.target.value)}
                 placeholder={T("notePlaceholder")}
                 style={{ background: C.bg, border: `1px solid ${C.edge}`, borderRadius: 5,
-                  color: C.text, padding: "7px 9px", fontSize: 11, fontFamily: "DM Mono", width: "100%" }} />
-              <div style={{ fontSize: 9, color: C.gold, marginTop: 4 }}>{T("notesEnglishOnly")}</div>
+                  color: C.text, padding: "7px 9px", fontSize: "var(--fs-3)", fontFamily: "DM Mono", width: "100%" }} />
+              <div style={{ fontSize: "var(--fs-1)", color: C.gold, marginTop: 4 }}>{T("notesEnglishOnly")}</div>
               <button className="hov" disabled={!note.trim()}
                 onClick={() => { onSave(addNoteEntry(file, note, who, file.stage)); setNote(""); }}
                 style={{ marginTop: 6, width: "100%", background: note.trim() ? "rgba(126,200,164,.1)" : C.card,
                   color: note.trim() ? C.green : C.edge, borderRadius: 5, padding: "6px 0",
-                  fontFamily: "DM Mono", fontSize: 10.5,
+                  fontFamily: "DM Mono", fontSize: "var(--fs-2)",
                   border: `1px solid ${note.trim() ? C.green : C.line}`,
                   cursor: note.trim() ? "pointer" : "not-allowed" }}>{T("addUpdate")}</button>
             </>
@@ -780,7 +787,7 @@ function FilePane({ file, lang, onSave, who, readOnly, onOpenFull }) {
       {onOpenFull && (
         <button className="hov" onClick={() => onOpenFull(file)}
           style={{ background: "transparent", border: `1px solid ${C.edge}`, borderRadius: 5,
-            color: C.mid, fontSize: 10, fontFamily: "DM Mono", padding: "7px 0", cursor: "pointer" }}>
+            color: C.mid, fontSize: "var(--fs-2)", fontFamily: "DM Mono", padding: "7px 0", cursor: "pointer" }}>
           {T("openFullFile")}
         </button>
       )}
@@ -824,7 +831,7 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
                 <button key={id} className="hov" onClick={() => { setQuien(id); setSelId(null); }}
                   style={{ background: on ? C.gold : "transparent", color: on ? C.bg : C.mid,
                     border: `1px solid ${on ? C.gold : C.edge}`, borderRadius: 5,
-                    padding: "4px 10px", fontSize: 10, fontFamily: "DM Mono", cursor: "pointer" }}>
+                    padding: "4px 10px", fontSize: "var(--fs-2)", fontFamily: "DM Mono", cursor: "pointer" }}>
                   {PROCESSORS[id].name.toUpperCase()} {conteos[id] ?? 0}
                 </button>
               );
@@ -838,7 +845,7 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
                   <button key={l} className="hov" onClick={() => onSetLang(l)}
                     style={{ background: lang === l ? C.gold : "transparent",
                       color: lang === l ? C.bg : C.mid, border: "none",
-                      padding: "4px 8px", fontSize: 9, fontFamily: "DM Mono", cursor: "pointer" }}>
+                      padding: "4px 8px", fontSize: "var(--fs-1)", fontFamily: "DM Mono", cursor: "pointer" }}>
                     {l.toUpperCase()}
                   </button>))}
               </div>
@@ -846,14 +853,14 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
           </div>
 
           {cola.length === 0 && (
-            <div style={{ color: C.dim, fontSize: 11, padding: "24px 6px", textAlign: "center" }}>
+            <div style={{ color: C.dim, fontSize: "var(--fs-3)", padding: "24px 6px", textAlign: "center" }}>
               {T("queueEmpty")}
             </div>
           )}
 
           {cola.map(g => (
             <div key={g.id} style={{ marginBottom: 13 }}>
-              <div style={{ fontSize: 9, color: g.color, letterSpacing: "1px", marginBottom: 5 }}>
+              <div style={{ fontSize: "var(--fs-1)", color: g.color, letterSpacing: "1px", marginBottom: 5 }}>
                 {P(g).toUpperCase()} · {g.files.length}
               </div>
               {g.files.map(f => {
@@ -865,11 +872,11 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
                     style={{ background: on ? "#1C2530" : C.bg, borderLeft: `2px solid ${g.color}`,
                       padding: "7px 9px", marginBottom: 5, cursor: "pointer",
                       borderRadius: "0 4px 4px 0" }}>
-                    <div style={{ color: on ? C.gold : C.text, fontSize: 11,
+                    <div style={{ color: on ? C.gold : C.text, fontSize: "var(--fs-3)",
                       overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {f.borrower}
                     </div>
-                    <div style={{ color: C.mid, fontSize: 9, marginTop: 2 }}>
+                    <div style={{ color: C.mid, fontSize: "var(--fs-1)", marginTop: 2 }}>
                       {f.type}{coe ? ` · COE ${md(coe)}` : ""}
                       {abiertos ? ` · ⚑ ${abiertos}` : ""}
                     </div>
@@ -885,7 +892,7 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
           {sel
             ? <FilePane file={sel} lang={lang} onSave={guardar} who={who}
                 readOnly={readOnly} onOpenFull={onOpenFull} />
-            : <div style={{ color: C.dim, fontSize: 11, padding: "40px 20px", textAlign: "center" }}>
+            : <div style={{ color: C.dim, fontSize: "var(--fs-3)", padding: "40px 20px", textAlign: "center" }}>
                 {T("queuePick")}
               </div>}
         </div>

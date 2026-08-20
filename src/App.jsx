@@ -342,6 +342,27 @@ function LoginScreen() {
           --t4:#737F8C;
         }
         body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+
+        /* ─── DOS CLASES DE TEXTO PEQUENO ──────────────────────────
+           Hasta aqui, tres cosas distintas se veian identicas: lo que
+           explica como funciona un campo, lo que le pide a una persona
+           que haga algo, y lo que dice donde se edita. Todo gris chico.
+
+           .sys  nota del sistema. Explica. No pide nada. Si la borras,
+                 nadie deja de trabajar — solo entiende menos.
+           .act  instruccion. Dice que hacer o que escribir. Si la
+                 borras, alguien no sabe que hacer.
+
+           La flecha dorada le hace un alto a la lectura: obliga a fijar
+           la vista donde hay una tarea. No compite con el dorado de
+           señal porque aquel siempre cae sobre un DATO —una fecha, un
+           contador— y este sobre texto explicativo.
+
+           Dos clases y no tres: mas de dos y nadie las distingue. */
+        .sys{font-size:var(--fs-1);color:var(--t4);line-height:1.55;}
+        .act{font-size:var(--fs-2);color:var(--t3);line-height:1.6;font-style:italic;}
+        .act::before{content:"→";color:#F5A623;font-style:normal;
+          margin-right:6px;font-weight:500;}
         *{box-sizing:border-box;margin:0;padding:0;}
         @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
         .shake{animation:shake .5s ease;}
@@ -843,6 +864,27 @@ export default function App() {
           --t4:#737F8C;
         }
         body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+
+        /* ─── DOS CLASES DE TEXTO PEQUENO ──────────────────────────
+           Hasta aqui, tres cosas distintas se veian identicas: lo que
+           explica como funciona un campo, lo que le pide a una persona
+           que haga algo, y lo que dice donde se edita. Todo gris chico.
+
+           .sys  nota del sistema. Explica. No pide nada. Si la borras,
+                 nadie deja de trabajar — solo entiende menos.
+           .act  instruccion. Dice que hacer o que escribir. Si la
+                 borras, alguien no sabe que hacer.
+
+           La flecha dorada le hace un alto a la lectura: obliga a fijar
+           la vista donde hay una tarea. No compite con el dorado de
+           señal porque aquel siempre cae sobre un DATO —una fecha, un
+           contador— y este sobre texto explicativo.
+
+           Dos clases y no tres: mas de dos y nadie las distingue. */
+        .sys{font-size:var(--fs-1);color:var(--t4);line-height:1.55;}
+        .act{font-size:var(--fs-2);color:var(--t3);line-height:1.6;font-style:italic;}
+        .act::before{content:"→";color:#F5A623;font-style:normal;
+          margin-right:6px;font-weight:500;}
           @keyframes spin{to{transform:rotate(360deg)}}
           .spinner{width:40px;height:40px;border:3px solid #21262D;border-top-color:#F5A623;border-radius:50%;animation:spin .8s linear infinite;}
         `}</style>
@@ -885,6 +927,27 @@ export default function App() {
           --t4:#737F8C;
         }
         body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+
+        /* ─── DOS CLASES DE TEXTO PEQUENO ──────────────────────────
+           Hasta aqui, tres cosas distintas se veian identicas: lo que
+           explica como funciona un campo, lo que le pide a una persona
+           que haga algo, y lo que dice donde se edita. Todo gris chico.
+
+           .sys  nota del sistema. Explica. No pide nada. Si la borras,
+                 nadie deja de trabajar — solo entiende menos.
+           .act  instruccion. Dice que hacer o que escribir. Si la
+                 borras, alguien no sabe que hacer.
+
+           La flecha dorada le hace un alto a la lectura: obliga a fijar
+           la vista donde hay una tarea. No compite con el dorado de
+           señal porque aquel siempre cae sobre un DATO —una fecha, un
+           contador— y este sobre texto explicativo.
+
+           Dos clases y no tres: mas de dos y nadie las distingue. */
+        .sys{font-size:var(--fs-1);color:var(--t4);line-height:1.55;}
+        .act{font-size:var(--fs-2);color:var(--t3);line-height:1.6;font-style:italic;}
+        .act::before{content:"→";color:#F5A623;font-style:normal;
+          margin-right:6px;font-weight:500;}
           @keyframes spin{to{transform:rotate(360deg)}}
           @keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
           .spinner{width:40px;height:40px;border:3px solid #21262D;border-top-color:#F5A623;border-radius:50%;animation:spin .8s linear infinite;}
@@ -1047,6 +1110,27 @@ export default function App() {
           --t4:#737F8C;
         }
         body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+
+        /* ─── DOS CLASES DE TEXTO PEQUENO ──────────────────────────
+           Hasta aqui, tres cosas distintas se veian identicas: lo que
+           explica como funciona un campo, lo que le pide a una persona
+           que haga algo, y lo que dice donde se edita. Todo gris chico.
+
+           .sys  nota del sistema. Explica. No pide nada. Si la borras,
+                 nadie deja de trabajar — solo entiende menos.
+           .act  instruccion. Dice que hacer o que escribir. Si la
+                 borras, alguien no sabe que hacer.
+
+           La flecha dorada le hace un alto a la lectura: obliga a fijar
+           la vista donde hay una tarea. No compite con el dorado de
+           señal porque aquel siempre cae sobre un DATO —una fecha, un
+           contador— y este sobre texto explicativo.
+
+           Dos clases y no tres: mas de dos y nadie las distingue. */
+        .sys{font-size:var(--fs-1);color:var(--t4);line-height:1.55;}
+        .act{font-size:var(--fs-2);color:var(--t3);line-height:1.6;font-style:italic;}
+        .act::before{content:"→";color:#F5A623;font-style:normal;
+          margin-right:6px;font-weight:500;}
         *{box-sizing:border-box;margin:0;padding:0;}
         ::-webkit-scrollbar{width:4px;height:4px;}::-webkit-scrollbar-track{background:#161B22;}::-webkit-scrollbar-thumb{background:#30363D;border-radius:2px;}
         .hov{transition:all .15s;cursor:pointer;border:none;}
@@ -2573,7 +2657,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 letterSpacing:"1px",borderBottom:"1px solid #30363D",display:"flex",
                 justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
                 <span>{TX("byGroup")}</span>
-                <span style={{color:"var(--t3)",fontSize:"var(--fs-1)"}}>{TX("planEdit")}</span>
+                <span className="act">{TX("planEdit")}</span>
               </div>
               <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
                 <thead><tr style={{borderBottom:"1px solid #21262D"}}>
@@ -3010,7 +3094,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                   {(
                     <div style={{background:"rgba(126,200,164,.08)",border:"1px solid #7EC8A455",
                       borderRadius:8,padding:"10px 14px",fontSize:"var(--fs-3)",color:"#7EC8A4",lineHeight:1.55}}>
-                      {isDpa?TX("dpaFillHere"):TX("specFillHere")}
+                      <span className="act">{isDpa?TX("dpaFillHere"):TX("specFillHere")}</span>
                     </div>
                   )}
                   {thin&&(
@@ -3277,7 +3361,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                       fontFamily:"DM Mono",fontSize:"var(--fs-3)",border:"1px solid #30363D",cursor:"pointer"}}>CERRAR</button>
                 </div>
                 <div style={{padding:"0 22px 14px",fontSize:"var(--fs-1)",color:"var(--t3)"}}>
-                  {TX("sendYourself")}
+                  <span className="act">{TX("sendYourself")}</span>
                 </div>
               </div>
             </div>
@@ -5303,9 +5387,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
                 {chkBusy?TX("chkBusy"):TX("chkPrint")}
               </button>
             )}
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t4)",lineHeight:1.55}}>
-              {TX("procWhere")}
-            </div>
+            <div className="sys">{TX("procWhere")}</div>
           </div>
         )}
 
@@ -5348,7 +5430,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
                 </label>
               ))}
             </div>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",lineHeight:1.5}}>{TX("complianceHint")}</div>
+            <div className="sys">{TX("complianceHint")}</div>
           </div>
         )}
 
