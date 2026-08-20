@@ -20,6 +20,7 @@ import {
   stageUrgency, stageClock, daysInStage, fileAge, stampStage, today,
   leadStandard, LEAD_STANDARD_DAYS, leadStandardReport, inPreQual, fileClock,
   CONTRACT_CANCEL_REASONS, canCancelContract, cancelContract, cancelCount,
+  cancelReason, lastCancellation,
   daysBetween, addDays as addDaysISO,
   // ─── 2B-1 contingencies ───
   CONTINGENCIES, CONTINGENCY_OUTCOMES, CONTRACT_DAY_BASIS,
@@ -1846,6 +1847,22 @@ export default function App() {
                                 </span>;})()}
                             </span>}
                           </div>
+                          {(()=>{const c=lastCancellation(f);
+                            if(!c||f.stage!=="Active Search") return null;
+                            return (
+                              <div style={{background:"rgba(245,166,35,.07)",
+                                border:"1px solid #F5A62333",borderLeft:"2px solid #F5A623",
+                                borderRadius:"0 5px 5px 0",padding:"6px 9px",marginTop:8}}>
+                                <div style={{fontSize:"var(--fs-2)",color:"#F5A623",lineHeight:1.45}}>
+                                  {TX("cancelWas",{d:c.at,r:P(cancelReason(c.reasonId))})}
+                                </div>
+                                {cancelCount(f)>1&&(
+                                  <div style={{fontSize:"var(--fs-1)",color:"var(--t4)",marginTop:2}}>
+                                    {TX("cancelNth",{n:cancelCount(f)})}
+                                  </div>
+                                )}
+                              </div>
+                            );})()}
                           <LenderStrip file={f}/>
                           {(()=>{ const w=worstFinding(f); if(!w) return null;
                             const m=waitingMeta(w.waitingOn), edad=findingAge(w);
@@ -6293,9 +6310,11 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
               contingencies:null, contingencyResults:null, contingencyLog:null,
               closing:null, closedAt:null,
               lenderId:null, lenderOther:null, lenderSince:null, backupLenderId:null,
-              lockState:"float", lockedAt:null, lockTermDays:null, lockExpires:null,
+              channel:null, rate:null, bps:null,
+              lockState:null, lockedAt:null, lockTermDays:null, lockExpires:null,
               comp:null, registrations:null, registeredAt:null, registeredBy:null,
               orders:null, milestones:null, uwResult:null,
+              noteLog:next.noteLog,
               lastContactAt:next.lastContactAt, contactCount:0,
               contractCancellations:next.contractCancellations});
             setShowCancel(false); onClose();
