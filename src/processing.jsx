@@ -886,20 +886,27 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
               que manda —el mismo del tablero del LO— y de quien se espera. */}
           {cola.map(g => (
             <div key={g.id} style={{ marginBottom: 15 }}>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 7,
-                marginBottom: 7, flexWrap: "wrap" }}>
-                <span style={{ fontSize: "var(--fs-1)", color: g.color, letterSpacing: "1px" }}>
+              {/* El encabezado del grupo estaba en --fs-1 y el nombre del
+                  cliente en --fs-3: el titulo era MAS CHICO que lo que
+                  agrupa. Para quien construyo el sistema el color basta;
+                  para alguien que entra hoy, no. Ahora es una barra solida
+                  en Syne 800, mas grande que los nombres. */}
+              <div style={{ background: g.color, borderRadius: 5, padding: "7px 10px",
+                marginBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontFamily: "Syne", fontWeight: 800, fontSize: "var(--fs-3)",
+                  color: C.bg, letterSpacing: "1.2px" }}>
                   {P(g).toUpperCase()}
                 </span>
-                <span style={{ background: g.color, color: C.bg, borderRadius: 9,
-                  padding: "0 7px", fontSize: "var(--fs-1)", fontWeight: 600 }}>
+                <span style={{ background: "rgba(13,17,23,.22)", color: C.bg, borderRadius: 9,
+                  padding: "0 7px", fontSize: "var(--fs-2)", fontWeight: 800, marginLeft: "auto" }}>
                   {g.files.length}
                 </span>
-                {/* Cuantos hay en cada etapa, sin abrir nada. */}
-                <span style={{ fontSize: "var(--fs-1)", color: C.dim, marginLeft: "auto",
-                  fontFamily: "DM Mono", textAlign: "right" }}>
-                  {stageBreakdownLabel(g.files)}
-                </span>
+              </div>
+              {/* El desglose baja a su propia linea: a la derecha del titulo
+                  se apretaba y en pantalla angosta se partia. */}
+              <div style={{ fontSize: "var(--fs-1)", color: C.dim, fontFamily: "DM Mono",
+                margin: "0 0 8px 3px" }}>
+                {stageBreakdownLabel(g.files)}
               </div>
               {g.files.map(f => {
                 const on = sel && f.id === sel.id;
@@ -926,10 +933,10 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
                         {f.borrower}
                       </span>
                       {reloj && (
-                        <span style={{ background: signalColor(ck.signal), color: C.bg,
-                          borderRadius: 4, padding: "1px 6px", fontSize: "var(--fs-1)",
-                          fontFamily: "DM Mono", fontWeight: 500, whiteSpace: "nowrap",
-                          flexShrink: 0 }}>{reloj}</span>
+                        <span style={{ color: signalColor(ck.signal),
+                          border: `1px solid ${signalColor(ck.signal)}55`, borderRadius: 4,
+                          padding: "1px 6px", fontSize: "var(--fs-1)", fontFamily: "DM Mono",
+                          fontWeight: 500, whiteSpace: "nowrap", flexShrink: 0 }}>{reloj}</span>
                       )}
                     </div>
                     <div style={{ color: stageColor(f.stage), fontSize: "var(--fs-2)", marginTop: 3 }}>
