@@ -129,16 +129,16 @@ export const PRODUCT_TARGETS = {
 };
 
 export function productKeyForLoanType(type = "") {
-  const t = String(type).toLowerCase();
-  if (/dpa|hip|chenoa|nhf|hometown heroes|tsahc|tdhca|seth|chfa|metrodpa|home in five|home at last|hfa|tvlb/.test(t)) return "dpa";
-  if (/streamline|irrrl|refinow|refi possible|streamlined assist/.test(t)) return "refi";
-  if (/heloc|second/.test(t)) return "heloc";
-  if (/dscr/.test(t)) return "dscr";
-  if (/non-qm|nonqm|bank statement|1099|p&l/.test(t)) return "nonqm";
-  if (/jumbo/.test(t)) return "jumbo";
-  if (/usda/.test(t)) return "usda";
-  if (/\bva\b/.test(t)) return "va";
-  if (/fha/.test(t)) return "fha";
+  const tipo = String(type).toLowerCase();
+  if (/dpa|hip|chenoa|nhf|hometown heroes|tsahc|tdhca|seth|chfa|metrodpa|home in five|home at last|hfa|tvlb/.test(tipo)) return "dpa";
+  if (/streamline|irrrl|refinow|refi possible|streamlined assist/.test(tipo)) return "refi";
+  if (/heloc|second/.test(tipo)) return "heloc";
+  if (/dscr/.test(tipo)) return "dscr";
+  if (/non-qm|nonqm|bank statement|1099|p&l/.test(tipo)) return "nonqm";
+  if (/jumbo/.test(tipo)) return "jumbo";
+  if (/usda/.test(tipo)) return "usda";
+  if (/\bva\b/.test(tipo)) return "va";
+  if (/fha/.test(tipo)) return "fha";
   return "conventional";
 }
 export function targetsFor(file) {
@@ -274,7 +274,7 @@ export function criticalPathDays(file, mode = "warn") {
   let d = 0;
   for (const [k, v] of Object.entries(STAGE_DAYS))
     if (!IN_TRACKS.has(k) && !v.offPath) d += day(k);
-  for (const g of CONCURRENT_TRACKS) d += Math.max(...g.map(t => trackCost(t, day)));
+  for (const g of CONCURRENT_TRACKS) d += Math.max(...g.map(tr2 => trackCost(tr2, day)));
   return d;
 }
 
@@ -330,29 +330,29 @@ export function addDays(iso, n) {
 }
 
 export function closingOutlook(file) {
-  const t = targetsFor(file);
+  const meta = targetsFor(file);
   const state = file?.state || "NV";
-  if (!file?.contractDate) return { targets: t, state, ready: false };
+  if (!file?.contractDate) return { targets: meta, state, ready: false };
 
-  const projected = addDays(file.contractDate, t.internal);
+  const projected = addDays(file.contractDate, meta.internal);
   const contracted = file.closing || null;
   const slack = contracted ? daysBetween(projected, contracted) : null;
   const short = contracted && new Date(contracted) < new Date(projected);
 
   return {
-    ready: true, state, targets: t,
+    ready: true, state, targets: meta,
     projectedClose: projected,
     contractedClose: contracted,
     slackDays: short ? -daysBetween(contracted, projected) : slack,
     tooShort: !!short,
     // What to ask for on the contract, in the units that state uses.
-    askForContractDays: calendarToContractDays(state, t.committed),
-    askForCalendarDays: t.committed,
-    gate1Required: !!t.requiresGate1PreContract,
+    askForContractDays: calendarToContractDays(state, meta.committed),
+    askForCalendarDays: meta.committed,
+    gate1Required: !!meta.requiresGate1PreContract,
     gate1Ready: !!file?.gate1CompletedAt,
     // A DPA on a 45-day APG contract has zero buffer. If the file was
     // not Gate-1 ready before the offer, do not promise 45.
-    promiseRisk: !!t.requiresGate1PreContract && !file?.gate1CompletedAt,
+    promiseRisk: !!meta.requiresGate1PreContract && !file?.gate1CompletedAt,
   };
 }
 
@@ -668,14 +668,29 @@ export function derivedStageDeadlines(file) {
   return map;
 }
 
+// Las fechas derivadas ordenadas para leerse. Empatadas en el mismo día
+// —y empatan seguido, porque salen de la misma cadena— el desempate lo
+// decidía el orden del mapa, o sea el azar: CD Issued salía DESPUÉS de
+// Signing con la misma fecha, cuando en la vida real el CD va antes.
+// Dentro del mismo día manda la secuencia real del préstamo.
+export function sortedDeadlines(file) {
+  const orden = st => {
+    const i = ALL_STAGE_ORDER.indexOf(st);
+    return i === -1 ? 999 : i;
+  };
+  return Object.values(derivedStageDeadlines(file))
+    .filter(r => r.startBy)
+    .sort((a, b) => a.startBy.localeCompare(b.startBy) || orden(a.stage) - orden(b.stage));
+}
+
 // What is due next, in order. This is the list the LO works from.
 export function upcomingDeadlines(file, limit = 4) {
   const map = derivedStageDeadlines(file);
-  const t = today();
+  const hoy = today();
   return Object.values(map)
     .filter(r => r.startBy)
     .sort((a, b) => a.startBy < b.startBy ? -1 : 1)
-    .map(r => ({ ...r, daysOut: daysBetween(t, r.startBy), overdue: r.startBy < t }))
+    .map(r => ({ ...r, daysOut: daysBetween(hoy, r.startBy), overdue: r.startBy < hoy }))
     .slice(0, limit);
 }
 
@@ -696,8 +711,8 @@ export function contingencyStatus(file, id) {
   const rec = (file?.contingencyResults || {})[id] || {};
   const outcome = rec.outcome || "pending";
   const o = outcomeById(outcome);
-  const t = today();
-  const daysLeft = date ? (date >= t ? daysBetween(t, date) : -daysBetween(date, t)) : null;
+  const hoy = today();
+  const daysLeft = date ? (date >= hoy ? daysBetween(hoy, date) : -daysBetween(date, hoy)) : null;
   const anchor = okDate(box.contractAccepted);
   const band = CONTINGENCY_BANDS[def.kind];
 
@@ -755,11 +770,11 @@ export function contingencyConflicts(file) {
   const fundingDate        = okDate(b.fundingDate);
 
   if (contractAccepted && coe) {
-    const t = targetsFor(file);
-    const need = addDays(contractAccepted, t.internal);
+    const meta = targetsFor(file);
+    const need = addDays(contractAccepted, meta.internal);
     if (need > coe) add("critical",
-      `El producto necesita ${t.internal} días desde el contrato y el COE llega antes (${daysBetween(coe, need)} días corto)`,
-      `The product needs ${t.internal} days from contract and the COE arrives sooner (${daysBetween(coe, need)} days short)`);
+      `El producto necesita ${meta.internal} días desde el contrato y el COE llega antes (${daysBetween(coe, need)} días corto)`,
+      `The product needs ${meta.internal} days from contract and the COE arrives sooner (${daysBetween(coe, need)} days short)`);
   }
   if (appraisalContingency && loanContingency && appraisalContingency > loanContingency)
     add("warn", "La contingencia de tasación vence después que la de préstamo — revisar el contrato",
@@ -792,17 +807,17 @@ export function contingencyConflicts(file) {
   // A derived deadline that is already behind us, for a stage the file
   // has not reached. Sorted so the worst one reads first.
   const map = derivedStageDeadlines(file);
-  const t = today();
+  const hoy = today();
   const reached = ALL_STAGE_ORDER.indexOf(file?.stage);
   for (const r of Object.values(map)) {
     const idx = ALL_STAGE_ORDER.indexOf(r.stage);
     if (idx > -1 && reached > -1 && idx <= reached) continue;   // already done
-    if (r.startBy && r.startBy < t) add("critical",
+    if (r.startBy && r.startBy < hoy) add("critical",
       `${r.stage}: el último día para empezar era ${r.startBy}`,
       `${r.stage}: the last day to start was ${r.startBy}`);
   }
   const rank = { critical: 0, warn: 1 };
-  return out.sort((a, b) => rank[a.sev] - rank[b.sev]);
+  return out.sort((x, y) => rank[x.sev] - rank[y.sev]);
 }
 
 // Stage order for "has this file already passed that stage" checks.
@@ -893,12 +908,12 @@ export const CHANNEL_IDS = Object.keys(CHANNELS);
 // the same vocabulary. A streamline is still an FHA loan to the lender;
 // a HELOC is a "second"; a DSCR lives under non-QM.
 export function lenderProductKey(type = "") {
-  const t = String(type).toLowerCase();
-  if (/irrrl/.test(t)) return "va";
-  if (/fha streamline/.test(t)) return "fha";
-  if (/usda streamlined/.test(t)) return "usda";
-  if (/refinow|refi possible/.test(t)) return "conventional";
-  if (/heloc|second/.test(t)) return "second";
+  const tipo = String(type).toLowerCase();
+  if (/irrrl/.test(tipo)) return "va";
+  if (/fha streamline/.test(tipo)) return "fha";
+  if (/usda streamlined/.test(tipo)) return "usda";
+  if (/refinow|refi possible/.test(tipo)) return "conventional";
+  if (/heloc|second/.test(tipo)) return "second";
   const k = productKeyForLoanType(type);
   return ({ dscr: "nonqm", refi: "conventional", heloc: "second" })[k] || k;
 }
@@ -1166,11 +1181,11 @@ export function lockExpiration(lockedAt, termDays) {
 export function lockTermsCovering(file, fromISO) {
   const from = okDate(fromISO) || today();
   const coe = okDate(file?.contingencies?.coe) || okDate(file?.closing);
-  return LOCK_TERMS.map(t => {
-    const exp = lockExpiration(from, t);
+  return LOCK_TERMS.map(dias => {
+    const exp = lockExpiration(from, dias);
     const covers = !!(coe && exp && exp >= coe);
     return {
-      term: t, expires: exp, covers,
+      term: dias, expires: exp, covers,
       shortBy: coe && exp && exp < coe ? daysBetween(exp, coe) : 0,
       spare:   coe && exp && exp >= coe ? daysBetween(coe, exp) : 0,
     };
@@ -1180,22 +1195,22 @@ export function lockTermsCovering(file, fromISO) {
 export function lockStatus(file) {
   const state = file?.lockState === "locked" ? "locked" : "float";
   const coe = okDate(file?.contingencies?.coe) || okDate(file?.closing);
-  const t = today();
+  const hoy = today();
 
   if (state === "float") {
     const by = lastDayToLock(file);
-    const daysLeft = by ? (by >= t ? daysBetween(t, by) : -daysBetween(by, t)) : null;
+    const daysLeft = by ? (by >= hoy ? daysBetween(hoy, by) : -daysBetween(by, hoy)) : null;
     return {
       state, meta: LOCK_STATES.float, mustLockBy: by, daysLeft, coe,
       // No closing date means no derivable deadline. Blank, not a guess.
       level: by === null ? "unknown" : daysLeft < 0 ? "critical" : daysLeft <= 5 ? "warn" : "normal",
-      terms: lockTermsCovering(file, t),
+      terms: lockTermsCovering(file, hoy),
     };
   }
 
   const lockedAt = okDate(file?.lockedAt);
   const expires  = okDate(file?.lockExpires) || lockExpiration(lockedAt, file?.lockTermDays);
-  const daysLeft = expires ? (expires >= t ? daysBetween(t, expires) : -daysBetween(expires, t)) : null;
+  const daysLeft = expires ? (expires >= hoy ? daysBetween(hoy, expires) : -daysBetween(expires, hoy)) : null;
   const covers   = !!(coe && expires && expires >= coe);
   return {
     state, meta: LOCK_STATES.locked, lockedAt, expires, daysLeft, coe,
@@ -1292,14 +1307,14 @@ export function backupViability(file) {
   if (!cd) return { ready: false };
   const { best, worst, steps } = reregistrationCost(file);
   const bestBy = addDays(cd, -best), worstBy = addDays(cd, -worst);
-  const t = today();
+  const hoy = today();
   const loanC = okDate(file?.contingencies?.loanContingency);
   return {
     ready: true, coe, cdDeadline: cd, steps,
     bestDays: best, worstDays: worst,
     decideByBest: bestBy, decideByWorst: worstBy,
-    daysToBest: bestBy >= t ? daysBetween(t, bestBy) : -daysBetween(bestBy, t),
-    daysToWorst: worstBy >= t ? daysBetween(t, worstBy) : -daysBetween(worstBy, t),
+    daysToBest: bestBy >= hoy ? daysBetween(hoy, bestBy) : -daysBetween(bestBy, hoy),
+    daysToWorst: worstBy >= hoy ? daysBetween(hoy, worstBy) : -daysBetween(worstBy, hoy),
     // The trap: the cushion can expire while the contingency still looks alive.
     loanContingency: loanC,
     expiresBeforeContingency: !!(loanC && worstBy < loanC),
@@ -1311,11 +1326,11 @@ export function backupViability(file) {
     //   after decideByBest    — cannot make the closing at all
     // The first version returned "normal" right up to the safe date and
     // then jumped straight to critical, so five days out read as green.
-    window: t >= bestBy ? "impossible" : t >= worstBy ? "best_case_only" : "safe",
-    level: t >= bestBy ? "critical"
-         : t >= worstBy ? "warn"
-         : daysBetween(t, worstBy) <= 5 ? "warn" : "normal",
-    urgent: t < worstBy && daysBetween(t, worstBy) <= 5,
+    window: hoy >= bestBy ? "impossible" : hoy >= worstBy ? "best_case_only" : "safe",
+    level: hoy >= bestBy ? "critical"
+         : hoy >= worstBy ? "warn"
+         : daysBetween(hoy, worstBy) <= 5 ? "warn" : "normal",
+    urgent: hoy < worstBy && daysBetween(hoy, worstBy) <= 5,
   };
 }
 
@@ -1431,8 +1446,8 @@ export const noteCount = file => noteEntries(file).length;
 // underwriter estan todos en ingles. El sistema traduce SU propio texto,
 // nunca el que escribe la gente.
 export function addNoteEntry(file, text, by, stage) {
-  const t = String(text || "").trim();
-  if (!t) return file;
+  const txt = String(text || "").trim();
+  if (!txt) return file;
   // Seed the log with whatever was already in the old field, so the first
   // new entry does not appear to be the only thing ever written.
   const existing = Array.isArray(file?.noteLog) ? file.noteLog : [];
@@ -1442,7 +1457,7 @@ export function addNoteEntry(file, text, by, stage) {
   return {
     ...file,
     noteLog: [...seed, ...existing, {
-      at: new Date().toISOString(), by: by || null, text: t,
+      at: new Date().toISOString(), by: by || null, text: txt,
       stage: stage || file?.stage || null,
     }],
   };
@@ -2407,8 +2422,8 @@ export function setSpecDetail(details, lenderId, category, specialty, patch, by)
   for (const f of ["minFico","maxLtv","maxDti","reservesMonths","pct","forgivenessMonths"])
     if (patch[f] !== undefined) next[f] = num(patch[f]);
   next.notes = Array.isArray(cur.notes) ? cur.notes : [];
-  const t = String(patch.newNote || "").trim();
-  if (t) next.notes = [...next.notes, { at: today(), by: by || null, text: t }];
+  const txt = String(patch.newNote || "").trim();
+  if (txt) next.notes = [...next.notes, { at: today(), by: by || null, text: txt }];
   delete next.newNote;
   next.updatedAt = today();
   next.updatedBy = by || null;
@@ -2517,8 +2532,8 @@ export const BASE_PRODUCTS = [
   { id: "second",       es: "Segunda / HELOC", en: "Second / HELOC", match: /heloc|second|piggyback/i },
 ];
 export function baseProductOf(type) {
-  const t = String(type || "");
-  for (const p of BASE_PRODUCTS) if (p.match.test(t)) return p.id;
+  const tipo = String(type || "");
+  for (const p of BASE_PRODUCTS) if (p.match.test(tipo)) return p.id;
   return "other";
 }
 export const baseProductLabel = id =>
