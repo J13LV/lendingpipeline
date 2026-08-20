@@ -18,6 +18,7 @@ const TX = (k, v) => tr(k, CURRENT_LANG, v);
 const PN = o => o ? (o["note_" + CURRENT_LANG] ?? o.note_es ?? o.note_en ?? "") : "";
 import {
   stageUrgency, stageClock, stageCeilingLabel, daysInStage, fileAge, stampStage, today,
+  hasContract, coeOf,
   leadStandard, LEAD_STANDARD_DAYS, leadStandardReport, inPreQual, fileClock,
   CONTRACT_CANCEL_REASONS, canCancelContract, cancelContract, cancelCount,
   cancelReason, lastCancellation,

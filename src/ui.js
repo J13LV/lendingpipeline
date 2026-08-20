@@ -771,6 +771,9 @@ export const UI = {
   extraPayroll:{ es:"Barrett procesa un Extra Payroll fuera de ciclo. La solicitud entra antes de la 1PM del jueves y el depósito cae el martes siguiente.",
                  en:"Barrett runs an off-cycle Extra Payroll. The request goes in before 1PM Thursday and the deposit lands the following Tuesday." },
 
+  noCoeYet:{ es:"Sin contrato no hay fecha de cierre. Se llena cuando el archivo llegue a Under Contract.",
+             en:"No contract, no closing date. It fills in when the file reaches Under Contract." },
+
   // ─── contrato cancelado ───
   cancelBtn:{ es:"⤺ CONTRATO CANCELADO", en:"⤺ CONTRACT CANCELLED" },
   cancelTitle:{ es:"El contrato se cayó", en:"The contract fell through" },

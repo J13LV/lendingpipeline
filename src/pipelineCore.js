@@ -266,8 +266,9 @@ export function fileClock(file) {
   if (okDate(file.closedAt) || file.stage === "CLOSED — FUNDED") return { applies: false };
   if (file.prep || file.stage === "PREPARATION — NOT READY YET") return { applies: false };
 
-  // 1 · El contrato manda. Cerca del cierre, lo único que importa es el COE.
-  const coe = okDate(file?.contingencies?.coe) || okDate(file?.closing);
+  // 1 · El contrato manda, pero SOLO si existe. Antes de Under Contract no
+  // hay cierre, y creerle a una fecha vieja tapa el reloj que sí gobierna.
+  const coe = coeOf(file);
   if (coe) {
     const faltan = coe >= today() ? daysBetween(today(), coe) : -daysBetween(coe, today());
     if (faltan <= COE_CLOCK_DAYS) return {
@@ -287,7 +288,22 @@ export function fileClock(file) {
     return { applies: false };
   }
 
-  // 3 · La etapa, con quien nos hace esperar.
+  // 3 · En House Hunt manda el plazo de APG, no la etapa. Son 60 días para
+  // encontrar casa, y pasados esos el agente puede perder al cliente.
+  const c0 = stageClock(file?.stage, file);
+  if (c0?.houseHunt) {
+    const hh = houseHuntStatus(file);
+    const ventana = HOUSE_HUNT.ladder[HOUSE_HUNT.ladder.length - 1].day;
+    if (hh.daysSearching === null) return { applies: false };
+    return {
+      applies: true, kind: "hunt", days: hh.daysSearching, ceiling: ventana,
+      signal: hh.level === "critical" ? "broken" : hh.level === "warn" ? "soon"
+        : hh.level === "watch" ? "soon" : "info",
+      waitOn: { es: "ventana APG", en: "APG window" },
+    };
+  }
+
+  // 4 · La etapa, con quien nos hace esperar.
   const sp = stagePace(file);
   if (!sp.applies) return { applies: false };
   return {
@@ -2962,8 +2978,30 @@ export function nextContactTarget(file) {
   return HOUSE_HUNT.alternate[n % HOUSE_HUNT.alternate.length];
 }
 
+export const HOUSE_HUNT_STAGES = ["Realtor Connected", "Active Search"];
+
+// Cuándo empezó a buscar casa. Es un reloj de FASE, no de etapa: la ventana
+// de 60 días de APG es sobre la BÚSQUEDA, no sobre en cuál de los dos
+// escalones esté hoy. Karina lo dejó a la vista — 7 días en Active Search
+// y 94 de archivo, y el sistema decía 7.
+//
+// Se reinicia cuando APG reasigna al comprador a otro agente
+// (`restartHouseHuntWindow`) y cuando se cae un contrato: en los dos casos
+// empieza una búsqueda nueva.
+export function houseHuntEnteredAt(file) {
+  const log = stageLogOf(file);
+  const sellos = HOUSE_HUNT_STAGES.map(x => okDate(log[x])).filter(Boolean).sort();
+  const primero = sellos[0] || null;
+  // Un reinicio explícito manda sobre el primer sello.
+  const reinicio = (file?.agentHistory || []).length
+    || (file?.contractCancellations || []).length;
+  if (reinicio) return okDate(file?.stageEnteredAt) || primero;
+  return primero || okDate(file?.stageEnteredAt);
+}
+
 export function houseHuntStatus(file) {
-  const searching = daysInStage(file);
+  const desde = houseHuntEnteredAt(file);
+  const searching = desde ? daysBetween(desde) : daysInStage(file);
   const sinceContact = file?.lastContactAt ? daysBetween(file.lastContactAt) : null;
   let rung = null;
   for (const step of HOUSE_HUNT.ladder) if (searching !== null && searching >= step.day) rung = step;
@@ -3038,7 +3076,21 @@ export const CONTRACT_CANCEL_LANDING = "Active Search";
 //
 // `coe` manda porque es el que vive con las demás contingencias. `closing`
 // se mantiene como espejo para lo que todavía lo lee.
-export const coeOf = file => okDate(file?.contingencies?.coe) || okDate(file?.closing) || null;
+// Un archivo ANTES de Under Contract no tiene cierre: no hay propiedad ni
+// contrato del cual salga esa fecha. Karina lo dejó a la vista — en Active
+// Search, buscando casa, con "COE 49d past due" encima. Ese 07/02 era una
+// fecha aspiracional que alguien escribió meses atrás y el reloj se la creía.
+export function hasContract(file) {
+  const i = ALL_STAGE_ORDER.indexOf(file?.stage);
+  return i > -1 && i >= ALL_STAGE_ORDER.indexOf("Under Contract");
+}
+
+export const coeOf = file =>
+  hasContract(file) ? (okDate(file?.contingencies?.coe) || okDate(file?.closing) || null) : null;
+
+// El dato crudo, sin la guarda. Solo para limpiar o migrar — nada que se
+// pinte en pantalla debería usarlo.
+export const rawCoe = file => okDate(file?.contingencies?.coe) || okDate(file?.closing) || null;
 
 // Escribe el cierre en los DOS campos a la vez, incluido el vacío. Sin
 // esto, "borrar la fecha" es borrar la mitad de la fecha.
@@ -4661,6 +4713,22 @@ export function stageLogFromHistory(file) {
   return out;
 }
 
+// Retroceder antes de Under Contract mata el cierre. Un archivo que vuelve
+// a buscar casa con el COE viejo colgando es justo lo que producía el
+// "COE 49d past due" de Karina.
+function limpiarCoeSiRetrocede(file, nuevaEtapa) {
+  const antes = ALL_STAGE_ORDER.indexOf(file?.stage);
+  const ahora = ALL_STAGE_ORDER.indexOf(nuevaEtapa);
+  const bajo = ALL_STAGE_ORDER.indexOf("Under Contract");
+  if (antes <= -1 || ahora <= -1) return null;
+  if (antes >= bajo && ahora < bajo) return {
+    closing: null,
+    contingencies: file?.contingencies
+      ? { ...file.contingencies, coe: null } : null,
+  };
+  return null;
+}
+
 export function stampStage(file, newStage) {
   // El orden importa: lo rescatado de history es la BASE y stageLog lo
   // pisa, porque stageLog es el dato bueno y history es una reconstruccion.
@@ -4669,6 +4737,7 @@ export function stampStage(file, newStage) {
 
   return {
     ...file,
+    ...(limpiarCoeSiRetrocede(file, newStage) || {}),
     stage: newStage,
     stageEnteredAt: today(),
     daysInStage: 0,                                  // legacy field, kept for old views
