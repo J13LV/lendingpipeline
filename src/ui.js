@@ -793,6 +793,19 @@ export const UI = {
   cancelNth:{ es:"contrato caído {n} de este cliente", en:"contract {n} to fall through for this client" },
   cancelWas:{ es:"Contrato caído el {d} · {r}", en:"Contract fell through {d} · {r}" },
 
+  // ─── tareas vencidas ───
+  overdueLine:{ es:"{n} tareas vencidas", en:"{n} overdue tasks" },
+  overdueOne:{ es:"1 tarea vencida", en:"1 overdue task" },
+  overdueNone:{ es:"Nada vencido en esta cola.", en:"Nothing overdue in this queue." },
+  overdueAsOf:{ es:"al {d}", en:"as of {d}" },
+  overdueShow:{ es:"VER", en:"SHOW" },
+  overdueAll:{ es:"VER TODO", en:"SHOW ALL" },
+  overdueTab:{ es:"⏱ TAREAS VENCIDAS", en:"⏱ OVERDUE TASKS" },
+  overdueLead:{ es:"Lo que ya pasó su plazo, ordenado por lo que cuesta. El depósito del cliente pesa más que un techo de etapa, y un plazo de ley no negocia.",
+                en:"What has passed its deadline, ordered by what it costs. The client's deposit outweighs a stage ceiling, and a legal deadline does not negotiate." },
+  overdueClean:{ es:"✓ Nada vencido en todo el pipeline.", en:"✓ Nothing overdue across the pipeline." },
+  overdueFiles:{ es:"{n} tareas en {f} archivos", en:"{n} tasks across {f} files" },
+
   // ─── el estándar de tres días ───
   leadStd:{ es:"ESTÁNDAR DE {n} DÍAS", en:"{n}-DAY STANDARD" },
   leadClock:{ es:"{n}d hábiles en Pre-Qual", en:"{n} business days in Pre-Qual" },
