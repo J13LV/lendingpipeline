@@ -31,6 +31,7 @@ import {
   derivedStageDeadlines, deadlineSignal, SIGNALS,
   setOrderNote, miLooksWrong, INTAKE_GROUPS, INTAKE_FIELDS, intakeValue, intakeApplies,
   setIntake, intakeCompleteness, dpaReady, allOrderStates, pendingOrders,
+  downPaymentLooksWrong, downPaymentFromAmounts,
   currentRegistration, stampRegistrationDate, setRegistrationField,
   loanNumberInvestor, loanNumberLender, MILESTONES, visibleMilestones,
   milestoneAt, stampMilestone, UW_OUTCOME_IDS, uwOutcomeMeta, uwOutcome,
@@ -281,6 +282,25 @@ export function IntakePane({ file, lang, onSave, readOnly }) {
                     <div style={{ fontSize: "var(--fs-1)", color: C.red, marginTop: 2, lineHeight: 1.4 }}>
                       {T("miWrong", { n: intakeValue(file, "miPct") })}
                     </div>
+                  )}
+                  {/* El campo pide un PORCENTAJE y alguien escribió 32000 —el
+                      enganche en dólares— que acabó en el papel de Barrett
+                      como "Other 32000%". El sistema ya sabe la respuesta:
+                      precio menos préstamo, sobre precio. Un toque la acepta. */}
+                  {f.id === "downPaymentPct" && downPaymentLooksWrong(file) && (
+                    <div style={{ fontSize: "var(--fs-1)", color: C.red, marginTop: 3, lineHeight: 1.45 }}>
+                      {T("dpWrong", { n: intakeValue(file, "downPaymentPct") })}
+                    </div>
+                  )}
+                  {f.id === "downPaymentPct" && !readOnly && downPaymentFromAmounts(file) !== null
+                    && Number(intakeValue(file, "downPaymentPct")) !== downPaymentFromAmounts(file) && (
+                    <button className="hov"
+                      onClick={() => onSave(setIntake(file, "downPaymentPct", downPaymentFromAmounts(file)))}
+                      style={{ marginTop: 4, background: "transparent", border: `1px solid ${C.gold}66`,
+                        borderRadius: 4, color: C.gold, fontSize: "var(--fs-1)",
+                        fontFamily: "DM Mono", padding: "3px 9px", cursor: "pointer" }}>
+                      {T("dpUse", { n: downPaymentFromAmounts(file) })}
+                    </button>
                   )}
                 </div>
               ))}

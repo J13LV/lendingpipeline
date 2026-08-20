@@ -3437,6 +3437,60 @@ export const miLooksWrong = file => {
   return v !== null && Number(v) > 10;
 };
 
+// ─── EL ENGANCHE ───────────────────────────────────────────────────
+// El campo dice "Enganche %" y alguien escribio 32000 — el enganche en
+// DOLARES de una casa de $640,000. En el checklist de Barrett salio
+// "Other 32000%" y ninguna casilla marcada.
+//
+// El fallo no es de quien lo escribio: es del campo, que pedia un
+// porcentaje sin decir que pasaba si le daban otra cosa. El MI ya tenia
+// su guardia desde el dia del decimal caido; el enganche no tenia ninguno.
+//
+// Y aqui hay algo mejor que un aviso: el sistema YA SABE la respuesta.
+// Con precio y monto del prestamo el porcentaje se calcula solo.
+export function downPaymentFromAmounts(file) {
+  const precio = Number(intakeValue(file, "salesPrice")) || 0;
+  const prestamo = Number(file?.loan) || 0;
+  if (precio <= 0 || prestamo <= 0 || prestamo > precio) return null;
+  return Math.round(((precio - prestamo) / precio) * 1000) / 10;   // un decimal
+}
+
+// Arriba de 100 es imposible; arriba de 50 no existe en esta sucursal.
+export const downPaymentLooksWrong = file => {
+  const v = intakeValue(file, "downPaymentPct");
+  return v !== null && Number(v) > 50;
+};
+
+// El porcentaje que de verdad se imprime: lo capturado si es creible, y
+// si no, lo calculado. Un dato malo no debe llegar al papel de Barrett.
+export function downPaymentPct(file) {
+  const v = intakeValue(file, "downPaymentPct");
+  if (v !== null && Number(v) > 0 && Number(v) <= 50) return Number(v);
+  return downPaymentFromAmounts(file);
+}
+
+// ─── PROJECTED COE ─────────────────────────────────────────────────
+// La forma de Barrett lo pide y en el PDF salia SIEMPRE en blanco: le
+// pasabamos cadena vacia. `closingOutlook` sabia calcularlo, pero lee
+// `file.contractDate` — un campo que no existe en este modelo, porque el
+// nuestro es `contingencies.contractAccepted`. Nunca se conectaron.
+//
+// Es la fecha en que el archivo cerraria al ritmo INTERNO del producto,
+// contra la que dice el contrato. La distancia entre las dos es el colchon.
+export function projectedCoe(file) {
+  const ancla = okDate(file?.contingencies?.[CONTINGENCY_ANCHOR_FIELD]);
+  return ancla ? addDays(ancla, targetsFor(file).internal) : null;
+}
+
+// Dias de colchon contra el COE del contrato. Negativo = el contrato pide
+// mas rapido de lo que el producto da.
+export function coeCushionDays(file) {
+  const proy = projectedCoe(file);
+  const coe = okDate(file?.contingencies?.coe) || okDate(file?.closing);
+  if (!proy || !coe) return null;
+  return coe >= proy ? daysBetween(proy, coe) : -daysBetween(coe, proy);
+}
+
 // ─── 7W. PEDIDOS A VENDORS ─────────────────────────────────────────
 // Martha ordena titulo, HOI y tasacion el MISMO DIA que recibe el
 // archivo — su "one day, one shot". En sus ocho archivos, la fecha de

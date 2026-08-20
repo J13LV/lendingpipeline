@@ -309,6 +309,9 @@ export const UI = {
   noDpaRow:{ es:"sin DPA", en:"no DPA" },
   miWrong:{ es:"¿{n}%? El MI casi nunca pasa de un dígito — revisa si se cayó un decimal.",
             en:"{n}%? MI almost never goes above a single digit — check for a lost decimal." },
+  dpWrong:{ es:"¿{n}%? Este campo es el PORCENTAJE, no los dólares. Un enganche arriba de 50% no existe aquí.",
+            en:"{n}%? This field is the PERCENTAGE, not the dollars. A down payment above 50% does not exist here." },
+  dpUse:{ es:"USAR {n}% · del precio y el monto", en:"USE {n}% · from price and loan amount" },
   // ─── solapas del archivo ───
   tabLoan:{ es:"PRÉSTAMO", en:"LOAN" },
   tabLender:{ es:"LENDER", en:"LENDER" },

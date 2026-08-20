@@ -23,6 +23,7 @@
 import {
   okDate, today, lenderNameOf, CHANNELS, intakeValue, isCondo,
   registeredAt, discSentAt, discEsignedAt, barrettDiscSentAt,
+  projectedCoe, downPaymentPct,
   loanNumberInvestor, loanNumberLender, orderState, orderDue,
   milestoneAt, uwOutcome, uwOutcomeAt, contractSignalDate,
   GATE1_VERIFY_IDS, GATE1_STATES, gate1State, gate1At, gate1By, gate1Item,
@@ -228,7 +229,10 @@ export function dibujarPagina1(page, fonts, PDFLib, file) {
   p.campo("Contract Signal Date:", mmddyy(contractSignalDate(file)), M, c1 - 8);
   p.campo("Contract Date:", mmddyy(c.contractAccepted), M + c1, c2 - 8);
   p.campo("Contract COE:", mmddyy(c.coe || file?.closing), M + c1 + c2, c3 - 8);
-  p.campo("Projected COE:", "", M + c1 + c2 + c3, ANCHO - c1 - c2 - c3);
+  // Salia siempre en blanco: le pasabamos cadena vacia. Es la fecha a la
+  // que el archivo cerraria al ritmo interno del producto — el numero que
+  // dice si el COE del contrato tiene colchon o no.
+  p.campo("Projected COE:", mmddyy(projectedCoe(file)), M + c1 + c2 + c3, ANCHO - c1 - c2 - c3);
   p.salto();
   p.campo("Loan Contingency Removal:", mmddyy(c.loanContingency), M, ANCHO / 2 - 10);
   p.campo("Appraisal Contingency Removal:", mmddyy(c.appraisalContingency), MED, ANCHO / 2);
@@ -250,7 +254,10 @@ export function dibujarPagina1(page, fonts, PDFLib, file) {
   p.salto(1.3);
 
   const px = p.opciones("Loan Term:", PLAZO_MARCAS, String(intakeValue(file, "loanTerm") || ""), M);
-  const dp = intakeValue(file, "downPaymentPct");
+  // El porcentaje CREIBLE, no el crudo. Alguien escribio 32000 —el enganche
+  // en dolares— y el papel salio con "Other 32000%". Ahora un valor
+  // imposible se descarta y se usa el que sale de precio y monto.
+  const dp = downPaymentPct(file);
   const dpStr = dp === null || dp === undefined ? "" : String(dp);
   const dx = p.opciones("Down Payment:", ENGANCHE_MARCAS, dpStr, px + 18);
   const otro = dpStr && !ENGANCHE_MARCAS.some(([v]) => v === dpStr);
