@@ -211,6 +211,22 @@ export const UI = {
   discHint:{ es:"Salen el mismo día del registro. Solo la firma es un toque aparte — nadie más sabe cuándo firmó.",
              en:"They go out the same day as registration. Only the signature is a separate tap — nobody else knows when they signed." },
 
+  // ─── relleno de archivos anteriores ───
+  bfBtn:{ es:"↻ RELLENAR", en:"↻ BACKFILL" },
+  bfTitle:{ es:"RELLENO DE ARCHIVOS ANTERIORES", en:"BACKFILL OF EARLIER FILES" },
+  bfLead:{ es:"Estos archivos se registraron y se sometieron de verdad — nadie lo anotó, porque los botones todavía no existían. Aquí se cierran de una sentada.",
+           en:"These files really were registered and submitted — nobody recorded it, because the buttons did not exist yet. Here they get closed in one sitting." },
+  bfOnlyPast:{ es:"Solo se pregunta por lo que TUVO que ocurrir. Si el archivo está en CD Issued, pasó por underwriting por fuerza; si está en UW Review, la fecha de fondeo no se pregunta.",
+               en:"It only asks for what MUST have happened. A file at CD Issued went through underwriting by force; a file at UW Review is not asked for a funding date." },
+  bfCount:{ es:"{f} archivo(s) · {n} fecha(s) sin anotar", en:"{f} file(s) · {n} date(s) unrecorded" },
+  bfNone:{ es:"No hay nada que rellenar. Todos los archivos tienen sus fechas.",
+           en:"Nothing to backfill. Every file has its dates." },
+  bfSave:{ es:"GUARDAR RELLENO", en:"SAVE BACKFILL" },
+  bfSaved:{ es:"{n} archivo(s) actualizado(s)", en:"{n} file(s) updated" },
+  bfBlank:{ es:"Lo que no sepas déjalo en blanco. Una fecha inventada es peor que una celda vacía.",
+            en:"Leave blank what you do not know. An invented date is worse than an empty cell." },
+  bfWasBackfilled:{ es:"rellenado {d}", en:"backfilled {d}" },
+
   // ─── resumen de procesamiento, del lado del LO ───
   procStatus:{ es:"⚙ ESTADO DE PROCESAMIENTO", en:"⚙ PROCESSING STATUS" },
   procReadOnly:{ es:"solo lectura", en:"read only" },
