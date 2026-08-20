@@ -28,7 +28,7 @@ import {
   WAITING_IDS, waitingMeta, openFindings, addFinding, resolveFinding, findingAge,
   lenderNameOf, daysBetween, daysInStage, stageClock, today, okDate,
   noteEntries, addNoteEntry, contingencyHeadline, upcomingDeadlines,
-  derivedStageDeadlines, deadlineSignal, SIGNALS,
+  derivedStageDeadlines, sortedDeadlines, deadlineSignal, SIGNALS,
   setOrderNote, miLooksWrong, INTAKE_GROUPS, INTAKE_FIELDS, intakeValue, intakeApplies,
   setIntake, intakeCompleteness, dpaReady, allOrderStates, pendingOrders,
   downPaymentLooksWrong, downPaymentFromAmounts,
@@ -642,9 +642,7 @@ function FilePane({ file, lang, onSave, who, readOnly, onOpenFull }) {
   // tres primeras devolvia siempre las mas viejas —o sea, lo que ya se
   // hizo— y dejaba fuera todo lo que viene. La procesadora abria la solapa
   // y veia su pasado.
-  const derivadas = Object.values(derivedStageDeadlines(file))
-    .filter(r => r.startBy)
-    .sort((a, b) => a.startBy < b.startBy ? -1 : 1);
+  const derivadas = sortedDeadlines(file);
   // Roto es lo que dice `deadlineSignal`, no "la fecha quedo atras". Una
   // etapa ya alcanzada esta HECHA aunque el calendario haya pasado.
   const rotas = derivadas.filter(r => deadlineSignal(r, file) === "broken").length;
