@@ -23,7 +23,7 @@ import {
   CONTINGENCIES, CONTINGENCY_OUTCOMES, CONTRACT_DAY_BASIS,
   contingencyById, outcomeById, allContingencyStatus, contingencyStatus,
   contingencyConflicts, contingencyHeadline, hasContingencies,
-  derivedStageDeadlines, upcomingDeadlines, recordContingencyOutcome,
+  derivedStageDeadlines, sortedDeadlines, upcomingDeadlines, recordContingencyOutcome,
   contingencyExtensionCount, cdIssueDeadline, cdMailDeadline,
   federalHolidayName, contractDaysBetween, isValidISO, okDate,
   // ─── 2B-2a lender, channel, rate, lock ───
@@ -211,15 +211,26 @@ function prepDue(f){
 function prepLocked(f){ return prepAge(f) >= PREP_MAX_DAYS; }
 
 // ─── AUDIT HELPERS ───
+// El historial se come el 38% del peso de un archivo, y la mayor parte es
+// relleno: guardaba el UID de Firebase —28 caracteres— VEINTE veces por
+// archivo, un dato que ninguna pantalla muestra. Lo que se ve es el nombre,
+// que ya está al lado.
+//
+// Sin UID y con diez entradas, un archivo baja de 7.3 KB a 5.5 KB. Sobre el
+// techo de 1 MB de Firestore eso son 134 archivos → 176. No resuelve el
+// techo, pero mueve la fecha en que llega.
+//
+// Y no se pierde nada real: lo que de verdad importa vive en stageLog,
+// noteLog, uwLog, findings y el ciclo de registro, cada uno con su fecha y
+// su autor. `history` es solo el rastro de ediciones sueltas.
 function stampEdit(file, profile, action, extra={}){
   const entry = {
-    uid: profile.uid,
     name: profile.name,
     action: action,
     at: new Date().toISOString(),
     ...extra,
   };
-  const newHistory = [...(file.history||[]), entry].slice(-20);
+  const newHistory = [...(file.history||[]), entry].slice(-10);
   return {
     ...file,
     lastEditedBy: { uid: profile.uid, name: profile.name },
@@ -1195,7 +1206,10 @@ export default function App() {
               {marthaBusy ? TX("marthaBusy") : TX("marthaBtn")}
             </button>
           )}
-          {isAdmin && backfillCount(files) > 0 && (
+          {/* Las nueve fechas son de TINA: registro, divulgaciones,
+              sometimiento. Ella las tiene en Arive. Un LO no sabe cuándo
+              Tina registró, y Martha recibe el archivo ya registrado. */}
+          {(isAdmin || isAssistant) && backfillCount(files) > 0 && (
             <button className="hov" onClick={()=>setShowBackfill(true)}
               title={TX("bfLead")}
               style={{background:"rgba(245,166,35,.1)",color:"#F5A623",borderRadius:6,
@@ -4572,7 +4586,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
   const draft={...file,state,contingencies:{...box,...d}};
   const rows=allContingencyStatus(draft);
   const conflicts=contingencyConflicts(draft);
-  const derived=Object.values(derivedStageDeadlines(draft)).sort((a,b)=>a.startBy<b.startBy?-1:1);
+  const derived=sortedDeadlines(draft);
   const cd=d.coe?cdIssueDeadline(d.coe):null;
   const basis=CONTRACT_DAY_BASIS[state];
 
