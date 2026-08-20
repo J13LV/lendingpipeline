@@ -4287,7 +4287,7 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
 
   // Los bps sin guardar del bloque de lender mandan sobre los del archivo.
   const effBps = Number.isFinite(Number(pendingBps)) && pendingBps!==null ? Number(pendingBps) : null;
-  const draft={...file,leadOrigin:origin,financedFeePct:feePct===""?null:Number(feePct),
+  const draft={...file,leadOrigin:origin,financedFeePct:feePct===""?0:(Number(feePct)||0),
     ...(effBps!==null?{bps:effBps}:{}),absorbedFees:[
     ...fees.filter(f=>f.on).map(f=>({id:f.id,amount:f.amount})),
     ...extras.filter(e=>e.amount>0&&e.label.trim())
@@ -4301,7 +4301,7 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
   // este archivo conserva la que tenía cuando se pagó.
   useEffect(()=>{ onDraft&&onDraft({
     absorbedFees:draft.absorbedFees, leadOrigin:origin,
-    financedFeePct:feePct===""?null:Number(feePct),
+    financedFeePct:feePct===""?0:(Number(feePct)||0),
     leadClass:leadOrigin(origin)?.klass==="pending"?(file.leadClass||null):leadOrigin(origin)?.klass,
   }); },[sig,origin]);
 
@@ -4351,7 +4351,11 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
         )}
       </div>
 
-      {financedFeeAmount(draft)>0&&(
+      {/* El renglón se muestra si el PRODUCTO financia un cargo —FHA, VA,
+          USDA— no si el cargo es mayor que cero. Colgarlo del monto era una
+          trampa: al poner 0 desaparecía el renglón, y con él el campo para
+          volver a ponerlo. Un Conventional no lo ve nunca, que es correcto. */}
+      {financedFeeMeta(draft)&&(
         <div style={{borderTop:"1px solid #21262D",paddingTop:9,fontSize:"var(--fs-3)"}}>
           <div style={{display:"flex",justifyContent:"space-between",color:"var(--t2)",marginBottom:3}}>
             <span>{TX("baseLoan")}</span>

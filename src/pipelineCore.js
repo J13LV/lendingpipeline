@@ -2771,14 +2771,14 @@ export const FINANCED_FEES = {
 export function financedFeePct(file) {
   const o = file?.financedFeePct;
   if (o !== undefined && o !== null && o !== "" && Number.isFinite(Number(o))) return Number(o);
-  // VACIADO A PROPOSITO. El campo existe y esta en null: alguien lo borro
-  // porque el cliente paga el cargo en efectivo. Antes esto caia al default
-  // del producto y el cargo reaparecia calculado solo — el campo se sentia
-  // inmovil, se borraba en pantalla y volvia el mismo numero.
+  // El default del producto SOLO cuando nadie ha tocado el campo.
   //
-  // NUNCA TOCADO es distinto: la clave no existe, y ahi si manda el default
-  // del producto, que es lo correcto para un FHA recien creado.
-  if (o === null && Object.prototype.hasOwnProperty.call(file || {}, "financedFeePct")) return 0;
+  // Aqui hubo un intento mas listo y peor: distinguir "nunca tocado" de
+  // "vaciado" preguntando si la clave existia en el objeto. Eso depende de
+  // que un null sobreviva intacto el viaje a Firestore y de vuelta, y es
+  // justo el tipo de mecanismo que falla sin avisar. La pantalla ahora
+  // manda 0 explicito cuando el campo se vacia, y esto solo tiene que
+  // resolver el caso de un archivo recien creado.
   return FINANCED_FEES[baseProductOf(file?.type)]?.pct ?? 0;
 }
 export const financedFeeMeta = file => FINANCED_FEES[baseProductOf(file?.type)] || null;
