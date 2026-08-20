@@ -39,7 +39,7 @@ import {
   setOrderDue, orderDue, orderPastDue,
   GATE1_VERIFY_IDS, GATE1_STATES, gate1State, gate1At, cycleGate1, gate1Coverage,
   fileClock, stageColor, stageBreakdownLabel,
-  overdueReport, overdueTasks,
+  overdueReport, overdueTasks, worstOverdue, TASK_SEVERITY,
 } from "./pipelineCore";
 
 // Autocontenido a proposito: recibe `lang` y traduce solo. Asi no
@@ -891,7 +891,7 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
                   gap: 8, textAlign: "left" }}>
                 <span style={{ fontFamily: "Syne", fontWeight: 800, fontSize: "var(--fs-3)",
                   color: soloVencidas ? C.bg : C.red, letterSpacing: ".5px" }}>
-                  {r.total === 1 ? T("overdueOne") : T("overdueLine", { n: r.total })}
+                  {r.files === 1 ? T("overdueOne") : T("overdueLine", { n: r.files })}
                 </span>
                 <span style={{ fontSize: "var(--fs-1)", marginLeft: "auto",
                   color: soloVencidas ? C.bg : C.dim, fontFamily: "DM Mono" }}>
@@ -977,6 +977,26 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
                       {ck.waitOn ? ` · ${P(ck.waitOn)}` : ""}
                       {abiertos ? <span style={{ color: C.red }}>{` · ⚑ ${abiertos}`}</span> : null}
                     </div>
+                    {/* Con el filtro puesto, el MOTIVO. Filtrar y no decir
+                        por que esta ahi cada archivo deja a la procesadora
+                        adivinando: Yanet sale en morado 3d/5d, que va bien,
+                        y no habia forma de saber que le faltaba.
+                        Sin el filtro no se muestra: ahi lo que importa es la
+                        etapa, y una linea mas por archivo haria la cola el
+                        doble de larga. */}
+                    {soloVencidas && (() => {
+                      const w = worstOverdue(f);
+                      if (!w) return null;
+                      return (
+                        <div style={{ marginTop: 4, fontSize: "var(--fs-1)",
+                          color: signalColor(w.signal), lineHeight: 1.45 }}>
+                          {P(TASK_SEVERITY[w.kind])}
+                          {w.owner ? <span style={{ color: C.dim }}>{` · ${P(w.owner)}`}</span> : null}
+                          {w.alsoCount ? <span style={{ color: C.dim }}>{` · +${w.alsoCount}`}</span> : null}
+                          <div style={{ color: C.mid, marginTop: 1 }}>{P(w)}</div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 );
               })}

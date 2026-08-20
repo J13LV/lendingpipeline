@@ -305,6 +305,21 @@ function stagePatch(file, newStage, extra = {}){
   };
 }
 
+// La rueda del raton sobre una fila que se desplaza de lado deberia
+// moverla de lado. Por defecto el navegador hace scroll VERTICAL de la
+// pagina y la fila no se entera, asi que la unica forma de moverla es
+// agarrar la barra — que es justo lo que costaba trabajo.
+function ruedaHorizontal(e){
+  const el = e.currentTarget;
+  if (el.scrollWidth <= el.clientWidth) return;   // cabe entera, no hay que mover
+  // Un raton normal manda deltaY; un trackpad de lado manda deltaX. Se
+  // toma el que traiga movimiento.
+  const paso = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+  if (!paso) return;
+  el.scrollLeft += paso;
+  e.preventDefault();
+}
+
 function timeAgo(iso){
   if(!iso) return "";
   const diff = Date.now() - new Date(iso).getTime();
@@ -334,7 +349,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.08.21f";
+const APP_VERSION = "2026.08.21g";
 
 function huellaTexto(s) {
   let h = 0;
@@ -1327,7 +1342,19 @@ export default function App() {
         .act::before{content:"→";color:#F5A623;font-style:normal;
           margin-right:6px;font-weight:500;}
         *{box-sizing:border-box;margin:0;padding:0;}
-        ::-webkit-scrollbar{width:4px;height:4px;}::-webkit-scrollbar-track{background:#161B22;}::-webkit-scrollbar-thumb{background:#30363D;border-radius:2px;}
+        /* De 4px a 10. Cuatro pixeles es imposible de agarrar: al
+           arrastrar la fila de pestanas el cursor se sale de la barra y el
+           clic cae en otra cosa. Y el pulgar va SIEMPRE visible, no solo al
+           pasar el raton: con cinco personas entrando esta semana, una
+           barra que hay que encontrar es una barra que no se usa. */
+        ::-webkit-scrollbar{width:10px;height:10px;}
+        ::-webkit-scrollbar-track{background:#161B22;border-radius:5px;}
+        ::-webkit-scrollbar-thumb{background:#484F58;border-radius:5px;
+          border:2px solid #161B22;}
+        ::-webkit-scrollbar-thumb:hover{background:#6E7681;}
+        ::-webkit-scrollbar-thumb:active{background:#F5A623;}
+        /* Firefox no usa las reglas de arriba. */
+        *{scrollbar-width:thin;scrollbar-color:#484F58 #161B22;}
         .hov{transition:all .15s;cursor:pointer;border:none;}
         .hov:hover{opacity:.85;transform:translateY(-1px);}
         .card{transition:transform .15s,box-shadow .15s;cursor:pointer;}
@@ -1475,7 +1502,9 @@ export default function App() {
       </div>
 
       {/* TAB BAR — added REFERRED OUT and INBOUND filters */}
-      <div style={{background:"#161B22",borderBottom:"1px solid #21262D",padding:"10px 24px",display:"flex",gap:8,alignItems:"center",overflowX:"auto"}}>
+      <div onWheel={ruedaHorizontal}
+        style={{background:"#161B22",borderBottom:"1px solid #21262D",padding:"10px 24px 12px",
+          display:"flex",gap:8,alignItems:"center",overflowX:"auto",overscrollBehaviorX:"contain"}}>
         {[
           ["ACTIVE PIPELINE",active.length,"active","#4A90D9"],
           ["CLOSED FILES",closed.length,"closed","#06D6A0"],
