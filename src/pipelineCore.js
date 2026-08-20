@@ -185,6 +185,64 @@ export function targetsFor(file) {
 //            these; the client does not set the pace.
 export const CEILING_BY_WAIT = { team: 1.35, vendor: 1.6, client: 2.0, legal: 1.0 };
 
+// ─── QUIÉN TE HACE ESPERAR ─────────────────────────────────────────
+// El techo de una etapa lo pone quien te hace esperar, y por eso el mismo
+// número de días rojos significa cosas distintas. Once días sobre ocho en
+// Condition Clearing es un cliente que no manda documentos: hay que
+// llamarlo a él. Cuatro días sobre dos en Submitted to UW es nuestro, y esa
+// sí es conversación de coaching.
+//
+// Sin decir de quién se espera, esos dos rojos mandan a hablar con la
+// persona equivocada. Y peor: dejan mal medido a quien no controla nada.
+//
+// En `team` va el NOMBRE —Tina, Martha— porque el trabajo es suyo. En
+// `vendor` y `client` va el rol, nunca un nombre del equipo: poner "Tina"
+// en Condition Clearing sería culparla de que un cliente no contesta.
+export const WAIT_LABELS = {
+  team:   { es: "el equipo",  en: "the team" },
+  vendor: { es: "el vendor",  en: "the vendor" },
+  client: { es: "el cliente", en: "the client" },
+  legal:  { es: "por ley",    en: "by law" },
+};
+
+// Cuando el vendor tiene cara conocida, se dice cuál. "El tasador" mueve a
+// llamar al tasador; "el vendor" no mueve a nada.
+const VENDOR_POR_ETAPA = {
+  "Appraisal Ordered": { es: "el tasador", en: "the appraiser" },
+  "Title Ordered":     { es: "título",     en: "title" },
+  "UW Review":         { es: "el underwriter", en: "the underwriter" },
+};
+
+export function stageWaitOn(stage, file) {
+  const c = stageClock(stage, file);
+  if (!c) return null;
+  if (c.legal || c.wait === "legal") return { ...WAIT_LABELS.legal, kind: "legal", legal: true };
+  if (c.wait === "vendor")
+    return { ...(VENDOR_POR_ETAPA[stage] || WAIT_LABELS.vendor), kind: "vendor" };
+  if (c.wait === "client") return { ...WAIT_LABELS.client, kind: "client" };
+  // `team` y las etapas de pre-contrato: el dueño tiene nombre.
+  const quien = c.owner || null;
+  return quien
+    ? { es: quien, en: quien, kind: "team", named: true }
+    : { ...WAIT_LABELS.team, kind: "team" };
+}
+
+// El reloj de la etapa listo para pintarse: días, techo, señal y dueño.
+// Es el mismo cuadrito del estándar de Pre-Qual, con la diferencia de que
+// aquí el techo no es una promesa nuestra sino el tiempo que da quien nos
+// hace esperar.
+export function stagePace(file) {
+  if (inPreQual(file)) return { applies: false };
+  const c = stageClock(file?.stage, file);
+  const d = daysInStage(file);
+  if (!c || d === null || c.houseHunt) return { applies: false };
+  return {
+    applies: true, days: d, ceiling: c.late, target: c.warn,
+    legal: !!c.legal, waitOn: stageWaitOn(file?.stage, file),
+    signal: d > c.late ? "broken" : d >= c.warn ? "soon" : "idle",
+  };
+}
+
 // ─── 2B-0. PROCESADORAS ────────────────────────────────────────────
 // Siete etapas decian owner: "Martha" escrito a mano. Con una sola
 // procesadora eso funcionaba; con dos, un archivo de Laura decia que el
@@ -2892,7 +2950,7 @@ export function stageUrgency(file) {
 // Only LENDER-category losses belong in the scorecard. Mixing the two
 // would let a hard borrower make a good lender look bad.
 export const REASON_CATEGORIES = {
-  borrower: { es: "Del prestatario", en: "Borrower",  note_es: "Viaja con el archivo a cualquier lender", note_en: "Follows the file to any lender" },
+  borrower: { es: "Del cliente", en: "Borrower",  note_es: "Viaja con el archivo a cualquier lender", note_en: "Follows the file to any lender" },
   lender:   { es: "Del lender",      en: "Lender",    note_es: "El archivo estaba limpio — este lender dijo no", note_en: "File was clean — this lender alone said no" },
   property: { es: "De la propiedad", en: "Property",  note_es: "Cambiar de lender no lo resuelve", note_en: "Changing lenders does not fix it" },
   other:    { es: "Otro",            en: "Other",     note_es: "No es rechazo", note_en: "Not a decline" },
@@ -3222,7 +3280,7 @@ export const gate1Complete = file => gate1Coverage(file).pending === 0
 // De quien se espera la solucion. Un hallazgo sin dueño es una queja.
 export const FINDING_WAITING = {
   lo:        { es: "del LO",           en: "on the LO",        color: "#4A90D9" },
-  borrower:  { es: "del prestatario",  en: "on the borrower",  color: "#F5A623" },
+  borrower:  { es: "del cliente",      en: "on the borrower",  color: "#F5A623" },
   processor: { es: "de procesamiento", en: "on processing",    color: "#BD65E8" },
   lender:    { es: "del lender",       en: "on the lender",    color: "#E85D75" },
   title:     { es: "de titulo",        en: "on title",         color: "#7EC8A4" },
@@ -3486,7 +3544,7 @@ export const INTAKE_FIELDS = [
   { id: "firstTimeBuyer", group: "borrower", type: "yesno", dpa: true,
     es: "Primer comprador", en: "First-time buyer" },
   { id: "coBorrower", group: "borrower", type: "text",
-    es: "Co-prestatario", en: "Co-borrower" },
+    es: "Co-cliente", en: "Co-borrower" },
   { id: "creditFileNumber", group: "borrower", type: "text",
     es: "Reporte de credito #", en: "Credit report file #" },
 
@@ -4302,7 +4360,7 @@ export const QUEUE_GROUPS = [
     note_en: "With the underwriter" },
   { id: "conditions", order: 6, color: "#FFD166",
     es: "Condiciones abiertas", en: "Open conditions",
-    note_es: "Aprobado, esperando al prestatario",
+    note_es: "Aprobado, esperando al cliente",
     note_en: "Approved, waiting on the borrower" },
   { id: "closing",  order: 7, color: "#7EC8A4",
     es: "Camino al cierre", en: "Heading to closing",

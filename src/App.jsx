@@ -18,7 +18,7 @@ const TX = (k, v) => tr(k, CURRENT_LANG, v);
 const PN = o => o ? (o["note_" + CURRENT_LANG] ?? o.note_es ?? o.note_en ?? "") : "";
 import {
   stageUrgency, stageClock, daysInStage, fileAge, stampStage, today,
-  leadStandard, LEAD_STANDARD_DAYS, leadStandardReport, inPreQual,
+  leadStandard, LEAD_STANDARD_DAYS, leadStandardReport, inPreQual, stagePace,
   daysBetween, addDays as addDaysISO,
   // ─── 2B-1 contingencies ───
   CONTINGENCIES, CONTINGENCY_OUTCOMES, CONTRACT_DAY_BASIS,
@@ -1810,6 +1810,22 @@ export default function App() {
                                 return <span style={{background:c,color:"#0D1117",borderRadius:4,
                                   padding:"2px 7px",fontSize:"var(--fs-2)",fontWeight:500,
                                   whiteSpace:"nowrap"}}>{ld.days}d / {LEAD_STANDARD_DAYS}d</span>;
+                              }
+                              // Fuera de Pre-Qual el techo lo pone quien
+                              // hace esperar, así que va su nombre debajo.
+                              const sp=stagePace(f);
+                              if(sp.applies&&sp.signal!=="idle"){
+                                const c=sp.legal?signalColor("legal"):signalColor(sp.signal);
+                                return <div style={{textAlign:"right",flexShrink:0}}>
+                                  <span style={{background:c,color:"#0D1117",borderRadius:4,
+                                    padding:"2px 7px",fontSize:"var(--fs-2)",fontWeight:500,
+                                    whiteSpace:"nowrap",fontFamily:"DM Mono"}}>
+                                    {sp.days}d / {sp.ceiling}d{sp.legal?" ⚖":""}
+                                  </span>
+                                  {sp.waitOn&&<div style={{fontSize:"var(--fs-1)",
+                                    color:"var(--t4)",marginTop:3,whiteSpace:"nowrap"}}>
+                                    {P(sp.waitOn)}</div>}
+                                </div>;
                               }
                               return u!=="normal"?<span style={{background:uc,color:"#0D1117",
                                 borderRadius:4,padding:"2px 6px",fontSize:"var(--fs-2)",fontWeight:500}}>
