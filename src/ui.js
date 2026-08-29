@@ -31,6 +31,17 @@ export const UI = {
   search:      { es:"Buscar cliente…", en:"Search borrower…" },
   newFile:     { es:"+ ARCHIVO NUEVO", en:"+ NEW FILE" },
   help:        { es:"AYUDA",          en:"HELP" },
+  training:    { es:"ENTRENAMIENTO",  en:"TRAINING" },
+
+  // ─── recorrido guiado ───
+  // El texto de los 24 pasos vive en `tour.jsx` junto al catalogo: cada
+  // paso nombra un campo, y separarlos garantizaba que uno cambiara sin
+  // el otro. Aqui solo lo que la interfaz dice ALREDEDOR del recorrido.
+  trainResetAsk: { es:"Empezar de nuevo borra tu archivo de entrenamiento. ¿Seguir?",
+                   en:"Starting over deletes your training file. Continue?" },
+  trainBadge:    { es:"ENTRENAMIENTO", en:"TRAINING" },
+  trainNote:     { es:"Este archivo no entra a producción, ni al scorecard, ni a la cola de nadie.",
+                   en:"This file never enters production, the scorecard, or anyone's queue." },
   signOut:     { es:"SALIR",          en:"SIGN OUT" },
   backup:      { es:"RESPALDO",       en:"BACKUP" },
 
