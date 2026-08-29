@@ -160,6 +160,9 @@ function getProfile(uid){ return TEAM[uid] || { name:"Unknown User", short:"Unkn
 // Millones en M y miles en k. Con jumbo en la mezcla, "$7500k" vuelve
 // a salir en un archivo real.
 const fmtLoan = n => Number(n)>=1e6 ? "$"+(n/1e6).toFixed(2)+"M" : "$"+Math.round(n/1000)+"k";
+// La clave lleva el uid: sin el, dos personas en el mismo navegador
+// compartian idioma, que es justo lo contrario de lo que se queria.
+const LANG_KEY = uid => "pipe_lang:" + (uid || "anon");
 const BPS_RATE = 150;
 const OVERRIDE_RATE = 0.0025;
 const JOSE_LO = "Jose Del Valle";
@@ -382,7 +385,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.08.30d";
+const APP_VERSION = "2026.08.30e";
 
 function huellaTexto(s) {
   let h = 0;
@@ -789,12 +792,13 @@ export default function App() {
   const [dpaDetails,setDpaDetails]=useState({});
   // El idioma es del usuario, no de la sesión: Ana entra siempre en español
   // aunque Jose haya usado el mismo navegador en inglés.
-  const [lang,setLang]=useState(()=>{
-    try{ return localStorage.getItem("pipe_lang") || "es"; }catch{ return "es"; }
-  });
+  // Arranca en español y se corrige en cuanto se sabe quien entro. No
+  // puede leer el perfil aqui: `profile` se arma mas abajo.
+  const [lang,setLang]=useState("es");
+  const [langReady,setLangReady]=useState(false);
   const L=(k,v)=>tr(k,lang,v);
   CURRENT_LANG = lang;
-  useEffect(()=>{ try{localStorage.setItem("pipe_lang",lang);}catch{} },[lang]);
+  useEffect(()=>{ if(langReady) try{localStorage.setItem(LANG_KEY(langUid),lang);}catch{} },[lang,langReady,langUid]);
   const [view,setView]=useState("active");
   const [activePhase,setActivePhase]=useState(null);
   const [search,setSearch]=useState("");
@@ -854,6 +858,15 @@ export default function App() {
   const profile = currentUser
     ? { uid: currentUser.uid, email: currentUser.email, ...getProfile(currentUser.uid) }
     : null;
+  const langUid = profile?.uid || null;
+  useEffect(()=>{
+    if(!profile){ setLangReady(false); return; }
+    let guardado = null;
+    try{ guardado = localStorage.getItem(LANG_KEY(profile.uid)); }catch{ /* modo privado */ }
+    setLang(guardado || defaultLang(profile));
+    setLangReady(true);
+  }, [profile?.uid]);
+
   const isAdmin     = profile?.role === "admin";
   const isLO        = profile?.role === "lo";
   const isAssistant = profile?.role === "assistant" || profile?.role === "processor";
@@ -2173,7 +2186,7 @@ export default function App() {
         onConfirm={(payload)=>{sendToPrep(prepFor.id,payload);setPrepFor(null);}}/>}
       {archiveFor&&<ArchiveModal file={archiveFor} onClose={()=>setArchiveFor(null)}
         onConfirm={(reason)=>{archiveFile(archiveFor.id,reason);setArchiveFor(null);}}/>}
-      {showHelp&&<HelpModal profile={profile} onClose={()=>setShowHelp(false)}/>}
+      {showHelp&&<HelpModal profile={profile} lang={lang} onSetLang={setLang} onClose={()=>setShowHelp(false)}/>}
       {showBackfill&&<BackfillModal files={excludeTraining(files)} profile={profile} lang={lang}
         onClose={()=>setShowBackfill(false)}
         onApply={(updates)=>{
@@ -6932,12 +6945,12 @@ function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
   );
 }
 
-function HelpModal({profile, onClose}){
+function HelpModal({profile, lang, onSetLang, onClose}){
   // El contenido vive en helpContent.js. Los números que también conoce el
   // motor se le pasan desde aquí, así la guía no puede quedar desfasada.
-  // El idioma sale del perfil, no de un default fijo: quien trabaja en
-  // ingles abria la ayuda en español y tenia que cambiarla cada vez.
-  const [lang,setLang]=useState(()=>defaultLang(profile));
+  // Sin estado propio de idioma: llega por props y el toggle lo cambia
+  // arriba, para que el titulo y los articulos no puedan discrepar.
+  const setLang = onSetLang;
   const [secId,setSecId]=useState("start");
   const [q,setQ]=useState("");
   const sections=helpSections({
