@@ -6,7 +6,7 @@ import { tr, defaultLang } from "./ui";
 import { downloadMarthaSheet } from "./marthaExport";
 import ProcessingView, { IntakePane, HistoryPane, SubmissionPane } from "./processing";
 import { downloadChecklist } from "./barrettChecklist";
-import { TourPanel, useTour, trainingFileId, trainingSampleName, isTraining,
+import { TourPanel, useTour, useTourTab, trainingFileId, trainingSampleName, isTraining,
          excludeTraining, clearProgress } from "./tour";
 
 // Idioma vigente, a nivel de módulo. El motor devuelve {es, en} en 84 lugares
@@ -385,7 +385,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.08.31c";
+const APP_VERSION = "2026.08.31d";
 
 function huellaTexto(s) {
   let h = 0;
@@ -5694,6 +5694,11 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
   // contra que reloj, cuanto deja, y el expediente que lo acompaña),
   // pero se aterriza en la ultima.
   const [tab, setTab] = useState("file");
+  // Segundo recorrido: solo sobre el archivo de entrenamiento. En un
+  // archivo real no aparece, asi que no estorba a quien ya sabe.
+  const enTour = isTraining(file);
+  const tourDet = useTour(profile, enTour, "detail");
+  useTourTab(tourDet.step, setTab, enTour);
   // Whatever the sub-panels are currently showing, ready for the single SAVE.
   const panelDrafts = useRef({});
   // Los bps que el bloque de lender tiene escritos pero aún no guardados. Con
@@ -5870,7 +5875,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
           ].map(([id,label],i)=>{
             const on=tab===id;
             return (
-              <button key={id} className="hov" onClick={()=>setTab(id)}
+              <button key={id} className="hov" data-tour={id} onClick={()=>setTab(id)}
                 style={{background:on?"#171D26":"transparent",border:"none",cursor:"pointer",
                   color:on?"#F5A623":"var(--t2)",fontSize:"var(--fs-3)",fontFamily:"Syne",
                   fontWeight:on?800:500,letterSpacing:"1.6px",padding:"12px 0",
@@ -5882,6 +5887,12 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
             );
           })}
         </div>
+
+        {enTour && (
+          <div style={{padding:"12px 22px 0"}}>
+            <TourPanel profile={profile} lang={lang} tour={tourDet} onExit={onClose}/>
+          </div>
+        )}
 
         {/* CUERPO — retícula fija 53/47. Los bloques se reparten por
             solapa; dentro de cada una, las columnas se llenan solas y en

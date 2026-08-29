@@ -150,11 +150,126 @@ export const TOUR_STEPS = [
     es: "Tu archivo está en el tablero. Ahí se queda. La próxima lección lo retoma." },
 ];
 
+// ─── EL RECORRIDO DEL MODAL DEL ARCHIVO ────────────────────────────
+// NEW FILE son cinco minutos de la vida de un prestamo. Este modal son
+// las siguientes seis semanas, y hasta ahora no se enseñaba en ninguna
+// parte.
+//
+// `tab` hace que el recorrido cambie de solapa solo. `roles` limita un
+// paso a ciertos puestos: DINERO no lo ve procesamiento, asi que esos
+// tres pasos se saltan y el contador se ajusta.
+export const DETAIL_STEPS = [
+  { id: 1, concept: true,
+    en: "This is the file. Everything you can change about a loan lives inside this window.",
+    es: "Esto es el archivo. Todo lo que se puede cambiar de un préstamo vive dentro de esta ventana." },
+  { id: 2, tab: "file", concept: true,
+    en: "Six tabs across the top, in the order you work a file: LOAN, LENDER, DATES, MONEY, DOCUMENTS, FILE.",
+    es: "Seis solapas arriba, en el orden en que se trabaja un archivo: PRÉSTAMO, LENDER, FECHAS, DINERO, DOCUMENTOS, EXPEDIENTE." },
+  { id: 3, tab: "file", concept: true,
+    en: "It opens on FILE on purpose — the notes are here, and what happened is the first thing anyone wants to read.",
+    es: "Abre en EXPEDIENTE a propósito — aquí están las notas, y qué pasó es lo primero que uno quiere leer." },
+  { id: 4, tab: "file", concept: true,
+    en: "One rule holds in all six tabs: on the LEFT is what you capture, on the RIGHT is what the system works out. Learn it once and six screens explain themselves.",
+    es: "Una regla se cumple en las seis solapas: a la IZQUIERDA lo que capturas, a la DERECHA lo que el sistema deriva. Apréndela una vez y seis pantallas se explican solas." },
+
+  { id: 5, tab: "file",
+    en: "The notes. Each update is a new entry with its date and its author.",
+    es: "Las notas. Cada actualización es una entrada nueva con su fecha y su autor." },
+  { id: 6, tab: "file",
+    en: "Write what happened, who said it, and what comes next. Three lines is enough.",
+    es: "Escribe qué pasó, quién lo dijo y qué sigue. Tres líneas bastan." },
+  { id: 7, tab: "file", concept: true,
+    en: "A note that only says \"pending\" forces someone to call you to find out pending on what.",
+    es: "Una nota que solo dice \"pendiente\" obliga a alguien a llamarte para saber pendiente de qué." },
+  { id: 8, tab: "file",
+    en: "The add button saves instantly. It does not wait for SAVE, because a note is an event and not a field.",
+    es: "El botón de agregar guarda al instante. No espera al SAVE, porque una nota es un evento y no un campo." },
+  { id: 9, tab: "file", concept: true,
+    en: "Never delete what came before. If something was written wrong, write a new entry correcting it — the full history is what lets you reconstruct a file that fell apart.",
+    es: "Nunca borres lo anterior. Si algo salió mal escrito, escribe una entrada nueva corrigiéndola — el historial completo es lo que permite reconstruir un archivo que se cayó." },
+
+  { id: 10, tab: "loan",
+    en: "LOAN — the client, the product and the amount. This is the identity of the file.",
+    es: "PRÉSTAMO — el cliente, el producto y el monto. Esta es la identidad del archivo." },
+  { id: 11, tab: "loan",
+    en: "The stage. This is the field that gets touched most, and it drives every clock on the card.",
+    es: "La etapa. Es el campo que más se toca, y de él salen todos los relojes de la tarjeta." },
+  { id: 12, tab: "loan", concept: true,
+    en: "ADVANCE moves to the next stage and resets that stage's clock. The file's total age is never reset — that is the number you quote the agent.",
+    es: "ADVANCE mueve a la siguiente etapa y reinicia el reloj de esa etapa. La edad total del archivo nunca se reinicia — ese es el número que le citas al agente." },
+  { id: 13, tab: "loan",
+    en: "PREP takes the file out of the averages without deleting it, for live clients who are not ready yet. It comes back on its review date.",
+    es: "PREP saca el archivo de los promedios sin borrarlo, para clientes vivos que todavía no están listos. Regresa en su fecha de revisión." },
+  { id: 14, tab: "loan", concept: true,
+    en: "PREP is not for a file that is merely slow. If you or someone you can push is the holdup, it stays active.",
+    es: "PREP no es para un archivo que solo está lento. Si depende de ti o de alguien a quien puedes empujar, sigue activo." },
+  { id: 15, tab: "loan",
+    en: "ARCH removes it from counts and averages, and it can be restored. REFER sends it to another banker and records the fee.",
+    es: "ARCH lo saca de conteos y promedios, y se puede restaurar. REFER lo manda a otro banquero y registra el fee." },
+
+  { id: 16, tab: "lender",
+    en: "LENDER — the channel comes first, because it decides which lenders you can even see.",
+    es: "LENDER — el canal va primero, porque decide qué lenders puedes siquiera ver." },
+  { id: 17, tab: "lender", concept: true,
+    en: "Broker has about 180 lenders; correspondent only 11. Pick correspondent and most of them disappear — the system tells you which ones were left out.",
+    es: "En broker hay unos 180 lenders; en correspondent solo 11. Escoges correspondent y la mayoría desaparece — el sistema te dice cuáles quedaron fuera." },
+  { id: 18, tab: "lender", concept: true,
+    en: "Floating has a deadline. The CD carries the final rate, so you cannot float past the day the CD has to go out — and the system works that day out from the closing date.",
+    es: "Flotar tiene fecha límite. El CD lleva la tasa final, así que no se puede flotar más allá del día en que el CD tiene que salir — y el sistema calcula ese día desde la fecha de cierre." },
+  { id: 19, tab: "lender", concept: true,
+    en: "A lock that expires before closing gives the savings back in the extension. The system tells you which terms reach closing and which do not.",
+    es: "Un lock que vence antes del cierre devuelve lo ganado en la extensión. El sistema te dice cuáles términos llegan al cierre y cuáles no." },
+  { id: 20, tab: "lender",
+    en: "If the lender is not in the catalog, the last option in the menu lets you type it in by hand.",
+    es: "Si el lender no está en el catálogo, la última opción del menú te deja escribirlo a mano." },
+
+  { id: 21, tab: "dates",
+    en: "DATES — five contingencies, and all of them hang from one: the contract acceptance date.",
+    es: "FECHAS — cinco contingencias, y todas cuelgan de una sola: la fecha de aceptación del contrato." },
+  { id: 22, tab: "dates", concept: true,
+    en: "Appraisal and Loan come from the contract. If they pass unresolved, the client's deposit is exposed. That is not the same as being late to a CTC.",
+    es: "Tasación y Préstamo son del contrato. Si se pasan sin resolver, el depósito del cliente queda expuesto. No es lo mismo que llegar tarde a un CTC." },
+  { id: 23, tab: "dates", concept: true,
+    en: "The engine works backward from each date — using the ceiling, not the average — and gives you the deadline to start each prior stage. That is the list on the card.",
+    es: "El motor calcula hacia atrás desde cada fecha —usando el techo, no el promedio— y te da la fecha tope para empezar cada etapa previa. Esa es la lista que sale en la tarjeta." },
+  { id: 24, tab: "dates",
+    en: "Close each contingency with an outcome: met, waived, extended, missed or N/A. Like a note, it saves on its own.",
+    es: "Cierra cada contingencia con un resultado: cumplida, renunciada, extendida, incumplida o no aplica. Como la nota, guarda sola." },
+
+  { id: 25, tab: "money", roles: ["lo", "admin"],
+    en: "MONEY — the chain runs gross, then adjustments, then NET, then your percentage.",
+    es: "DINERO — la cadena va bruto, después ajustes, después NET, después tu porcentaje." },
+  { id: 26, tab: "money", roles: ["lo", "admin"], concept: true,
+    en: "Your split applies to the NET, not the gross. On most files nothing is adjusted and the two are the same — but when the branch absorbs a fee, it comes out first.",
+    es: "Tu split se aplica al NET, no al bruto. En la mayoría de los archivos no hay ajustes y los dos son iguales — pero cuando la sucursal absorbe un cargo, sale primero." },
+  { id: 27, tab: "money", roles: ["lo", "admin"],
+    en: "Every adjustment shows with its name and its amount. There is never an unlabeled deduction.",
+    es: "Cada ajuste aparece con su nombre y su monto. Nunca hay un descuento sin etiqueta." },
+
+  { id: 28, tab: "docs",
+    en: "DOCUMENTS — the submission checklist. You do not build it: it derives from the product, how income is documented, and the contract terms.",
+    es: "DOCUMENTOS — la lista de sometimiento. No la armas tú: se deriva del producto, de cómo se documenta el ingreso y de los términos del contrato." },
+  { id: 29, tab: "docs", concept: true,
+    en: "Each document carries a moment: PTA before registering, PTC before the Clear to Close, PTF before funding. The moment is what tells you how hard to chase it today.",
+    es: "Cada documento lleva su momento: PTA antes de registrar, PTC antes del Clear to Close, PTF antes de fondear. El momento es lo que te dice con cuánta fuerza perseguirlo hoy." },
+  { id: 30, tab: "docs",
+    en: "It also flags risk: a deposit over half the monthly income, a six-month employment gap, a P&L past the quarter. Each one cites its source.",
+    es: "También marca riesgos: un depósito sobre la mitad del ingreso mensual, un hueco de empleo de seis meses, un P&L pasado el trimestre. Cada uno cita su fuente." },
+
+  { id: 31, concept: true,
+    en: "One gold SAVE at the bottom saves the whole window at once. The only two exceptions are the note and the contingency outcome — both are events, and they save themselves.",
+    es: "Un solo SAVE dorado abajo guarda toda la ventana de una vez. Las dos únicas excepciones son la nota y el resultado de contingencia — los dos son eventos, y guardan solos." },
+];
+
 // Los pasos con `owner` solo le salen a ese rol. Tina ve 24; un LO ve
 // 23. El mismo recorrido sirve a los cuatro sin escribir cuatro.
-export function stepsFor(profile) {
+export function stepsFor(profile, catalog = TOUR_STEPS) {
   const role = profile?.role || "lo";
-  return TOUR_STEPS.filter(s => !s.owner || s.owner === role);
+  return catalog.filter(s => {
+    if (s.owner) return s.owner === role;      // un solo puesto
+    if (s.roles) return s.roles.includes(role); // varios puestos
+    return true;
+  });
 }
 
 // ─── 3. PUNTO DE RETOMAR ───────────────────────────────────────────
@@ -163,35 +278,43 @@ export function stepsFor(profile) {
 // navegador y no en Firestore a propósito: el archivo de muestra no
 // existe hasta el paso 22, así que no hay documento donde escribirlo
 // todavía. Costo: quien cambie de computadora empieza de cero.
-const KEY = uid => "tour:newfile:" + (uid || "anon");
+const KEY = (uid, which) => "tour:" + (which || "newfile") + ":" + (uid || "anon");
 
-export function readProgress(uid) {
+export function readProgress(uid, which) {
   try {
-    const v = parseInt(window.localStorage.getItem(KEY(uid)), 10);
+    const v = parseInt(window.localStorage.getItem(KEY(uid, which)), 10);
     return Number.isFinite(v) && v > 0 ? v : 0;
   } catch { return 0; }
 }
 
-export function writeProgress(uid, idx) {
-  try { window.localStorage.setItem(KEY(uid), String(idx)); } catch { /* modo privado */ }
+export function writeProgress(uid, idx, which) {
+  try { window.localStorage.setItem(KEY(uid, which), String(idx)); } catch { /* modo privado */ }
 }
 
-export function clearProgress(uid) {
-  try { window.localStorage.removeItem(KEY(uid)); } catch { /* modo privado */ }
+export function clearProgress(uid, which) {
+  try { window.localStorage.removeItem(KEY(uid, which)); } catch { /* modo privado */ }
 }
 
-export function useTour(profile, active) {
+export function useTour(profile, active, which = "newfile") {
   const uid = profile?.uid;
-  const steps = stepsFor(profile);
-  const [idx, setIdx] = useState(() => Math.min(readProgress(uid), steps.length - 1));
+  const steps = stepsFor(profile, which === "detail" ? DETAIL_STEPS : TOUR_STEPS);
+  const [idx, setIdx] = useState(() => Math.min(readProgress(uid, which), steps.length - 1));
 
-  useEffect(() => { if (active) writeProgress(uid, idx); }, [uid, idx, active]);
+  useEffect(() => { if (active) writeProgress(uid, idx, which); }, [uid, idx, active, which]);
 
   const next = useCallback(() => setIdx(i => Math.min(i + 1, steps.length - 1)), [steps.length]);
   const back = useCallback(() => setIdx(i => Math.max(i - 1, 0)), []);
-  const restart = useCallback(() => { clearProgress(uid); setIdx(0); }, [uid]);
+  const restart = useCallback(() => { clearProgress(uid, which); setIdx(0); }, [uid, which]);
 
   return { idx, setIdx, next, back, restart, steps, step: steps[idx] || null };
+}
+
+// El recorrido cambia de solapa solo. Pedirle a alguien que busque la
+// solapa correcta en el paso 16 es donde se pierde: son seis y estan
+// arriba, fuera de donde tiene la vista puesta.
+export function useTourTab(step, setTab, active) {
+  const wanted = step?.tab;
+  useEffect(() => { if (active && wanted) setTab(wanted); }, [wanted, active, setTab]);
 }
 
 // ─── 4. RESALTADO DEL CAMPO ────────────────────────────────────────
@@ -221,7 +344,8 @@ export function useTourHighlight(fieldId, active) {
 // lo marca. Es el mismo tropiezo que ya costó una entrega.
 export function TourPanel({ profile, lang, tour, onExit }) {
   const { idx, next, back, steps, step } = tour;
-  useTourHighlight(step?.field, true);
+  // En NEW FILE el ancla es un campo; en el modal es la solapa.
+  useTourHighlight(step?.field || step?.tab, true);
   if (!step) return null;
 
   const T = k => (lang === "en" ? k.en : k.es);
