@@ -6,6 +6,8 @@ import { tr, defaultLang } from "./ui";
 import { downloadMarthaSheet } from "./marthaExport";
 import ProcessingView, { IntakePane, HistoryPane, SubmissionPane } from "./processing";
 import { downloadChecklist } from "./barrettChecklist";
+import { TourPanel, useTour, trainingFileId, trainingSampleName, isTraining,
+         excludeTraining, clearProgress } from "./tour";
 
 // Idioma vigente, a nivel de módulo. El motor devuelve {es, en} en 84 lugares
 // y la interfaz leía siempre `.es`. Pasar `lang` por props a los seis paneles
@@ -377,7 +379,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.08.29i";
+const APP_VERSION = "2026.08.30a";
 
 function huellaTexto(s) {
   let h = 0;
@@ -794,6 +796,7 @@ export default function App() {
   const [activePhase,setActivePhase]=useState(null);
   const [search,setSearch]=useState("");
   const [showAdd,setShowAdd]=useState(false);
+  const [trainingMode,setTrainingMode]=useState(false);
   const [showHelp,setShowHelp]=useState(false);
   const [showBackfill,setShowBackfill]=useState(false);
   // Hay un despliegue más nuevo que el que este navegador tiene cargado.
@@ -1205,7 +1208,11 @@ export default function App() {
   // Inbound = loans another banker sent to us (flag, can be in any stage)
   // Archived files are out of every count. Preparation files are out of the
   // active board but still very much alive — they have their own view.
-  const live=files.filter(f=>!isArchived(f));
+  // El archivo de entrenamiento SI se ve en el tablero — es persistente y
+  // crece con la persona. Pero solo lo ve su dueno: el de Ana no aparece
+  // en el tablero de Marelis ni en el mio.
+  const myTraining=trainingFileId(profile);
+  const live=files.filter(f=>!isArchived(f) && (!isTraining(f) || f.id===myTraining));
   const active=live.filter(f=>f.stage!==CLOSED_STAGE && f.stage!==REFERRED_OUT_STAGE && f.stage!==PREP_STAGE);
   const closed=live.filter(f=>f.stage===CLOSED_STAGE);
   const referredOut=live.filter(f=>f.stage===REFERRED_OUT_STAGE);
@@ -1310,6 +1317,16 @@ export default function App() {
     }
     setFiles(p=>p.filter(f=>f.id!==id));
     setDetail(null);
+  };
+
+  const startTraining=()=>{
+    const id=trainingFileId(profile);
+    if(files.some(f=>f.id===id)){
+      if(!window.confirm(TX("trainResetAsk"))) return;
+      setFiles(p=>p.filter(f=>f.id!==id));
+    }
+    clearProgress(profile?.uid);
+    setTrainingMode(true); setShowAdd(true);
   };
 
   const vol=active.reduce((s,f)=>s+(f.loan||0),0);
@@ -1490,6 +1507,11 @@ export default function App() {
             + NEW FILE
           </button>
 
+          <button className="hov" onClick={startTraining}
+            style={{background:"transparent",color:"#F5A623",border:"1px solid #F5A623",borderRadius:6,padding:"8px 14px",fontFamily:"DM Mono",fontSize:"var(--fs-4)",fontWeight:500}}>
+            {TX("training")}
+          </button>
+
           <div style={{display:"flex",border:"1px solid #30363D",borderRadius:6,overflow:"hidden",marginRight:2}}>
             {["es","en"].map(l=>(
               <button key={l} className="hov" onClick={()=>setLang(l)}
@@ -1621,18 +1643,20 @@ export default function App() {
       <div style={{padding:"20px 24px"}}>
 
         {view==="processing"&&(isAdmin||isProcessor)&&<ProcessingView
-          files={files} profile={profile} lang={lang} onSetLang={setLang}
+          files={excludeTraining(files)} profile={profile} lang={lang} onSetLang={setLang}
           onSaveFile={(id,next)=>updateFile(id,next)}
           onOpenFull={f=>setDetail(f)}
         />}
 
+        {/* Produccion, scorecard, mezcla y payroll no cuentan entrenamiento:
+            un archivo falso en las 100 del ano es peor que no entrenar. */}
         {view==="production"&&<ProductionDashboard
           profile={profile}
-          files={files}
-          closed={closed}
-          active={active}
-          referredOut={referredOut}
-          inbound={inbound}
+          files={excludeTraining(files)}
+          closed={excludeTraining(closed)}
+          active={excludeTraining(active)}
+          referredOut={excludeTraining(referredOut)}
+          inbound={excludeTraining(inbound)}
           onOpenFile={setDetail}
           payrollLog={payrollLog}
           dpaDetails={dpaDetails}
@@ -2129,17 +2153,18 @@ export default function App() {
         onContinuePrep={()=>continueFromPrep(detail.id)}
         isClosed={detail.stage===CLOSED_STAGE}
       />}
-      {showAdd&&<AddModal profile={profile} existingFiles={files} onClose={()=>setShowAdd(false)} onAdd={f=>{
+      {showAdd&&<AddModal profile={profile} existingFiles={files} training={trainingMode} lang={lang}
+        onClose={()=>{setShowAdd(false);setTrainingMode(false);}} onAdd={f=>{
         const stamped = stampEdit(f, profile, "created");
-        setFiles(p=>[...p, {...stamped, createdBy:{uid:profile.uid,name:profile.name}, createdAt:new Date().toISOString()}]);
-        setShowAdd(false);
+        setFiles(p=>[...p.filter(x=>x.id!==stamped.id), {...stamped, createdBy:{uid:profile.uid,name:profile.name}, createdAt:new Date().toISOString()}]);
+        setShowAdd(false); setTrainingMode(false);
       }}/>}
       {prepFor&&<PrepModal file={prepFor} onClose={()=>setPrepFor(null)}
         onConfirm={(payload)=>{sendToPrep(prepFor.id,payload);setPrepFor(null);}}/>}
       {archiveFor&&<ArchiveModal file={archiveFor} onClose={()=>setArchiveFor(null)}
         onConfirm={(reason)=>{archiveFile(archiveFor.id,reason);setArchiveFor(null);}}/>}
       {showHelp&&<HelpModal profile={profile} onClose={()=>setShowHelp(false)}/>}
-      {showBackfill&&<BackfillModal files={files} profile={profile} lang={lang}
+      {showBackfill&&<BackfillModal files={excludeTraining(files)} profile={profile} lang={lang}
         onClose={()=>setShowBackfill(false)}
         onApply={(updates)=>{
           // Una sola escritura para todos los archivos: en tandas separadas,
@@ -6679,8 +6704,12 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
   );
 }
 
-function AddModal({profile, onClose, onAdd, existingFiles}){
-  const [borrower,setBorrower]=useState("");
+function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
+  // El recorrido solo existe si se entro por el boton de entrenamiento.
+  // La bandera isTraining la pone el motor por eso, no un checkbox que
+  // alguien pueda marcar por error ni olvidar marcar.
+  const tour = useTour(profile, !!training);
+  const [borrower,setBorrower]=useState(training ? trainingSampleName(profile) : "");
   const [loan,setLoan]=useState("");
   const [type,setType]=useState("Conventional");
   const [stage,setStage]=useState("Lead Inquiry");
@@ -6717,8 +6746,10 @@ function AddModal({profile, onClose, onAdd, existingFiles}){
 
         <div style={{flex:1,overflowY:"auto",padding:"16px 24px",display:"flex",flexDirection:"column",gap:14}}>
 
+          {training && <TourPanel profile={profile} lang={lang} tour={tour} onExit={onClose}/>}
+
           {/* INBOUND REFERRAL TOGGLE — at top so it's visible */}
-          <label style={{
+          <label data-tour="inbound" style={{
             display:"flex",alignItems:"center",gap:10,
             background: isInbound ? "rgba(255,209,102,.08)" : "#0D1117",
             border: isInbound ? "1px solid #FFD16655" : "1px solid #21262D",
@@ -6761,28 +6792,28 @@ function AddModal({profile, onClose, onAdd, existingFiles}){
             </div>
           )}
 
-          <div>
+          <div data-tour="borrower">
             <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>BORROWER NAME *</div>
             <input value={borrower} onChange={e=>setBorrower(e.target.value)} placeholder="Full legal name" style={IS} autoFocus/>
           </div>
 
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-            <div>
+            <div data-tour="phone">
               <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>📱 PHONE</div>
               <input type="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="(702) 555-1234" style={IS}/>
             </div>
-            <div>
+            <div data-tour="email">
               <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>✉ EMAIL</div>
               <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="borrower@email.com" style={IS}/>
             </div>
           </div>
 
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-            <div>
+            <div data-tour="amount">
               <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>LOAN AMOUNT</div>
               <input value={loan} onChange={e=>setLoan(e.target.value)} placeholder="350000" style={IS}/>
             </div>
-            <div>
+            <div data-tour="type">
               <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>LOAN TYPE</div>
               <select value={type} onChange={e=>setType(e.target.value)} style={IS}>
                 {LOAN_TYPE_GROUPS.map(g=><optgroup key={g.group} label={g.group}>{g.types.map(x=><option key={x}>{x}</option>)}</optgroup>)}
@@ -6790,14 +6821,14 @@ function AddModal({profile, onClose, onAdd, existingFiles}){
             </div>
           </div>
 
-          <div>
+          <div data-tour="stage">
             <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>STARTING STAGE</div>
             <select value={stage} onChange={e=>setStage(e.target.value)} style={IS}>
               {ALL_STAGES.map((s,i)=><option key={i} value={s.stage}>[{s.phase.short}] {s.stage}</option>)}
             </select>
           </div>
 
-          <div>
+          <div data-tour="lo">
             <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>
               LOAN OFFICER {isAssistant && <span style={{color:"#F5A623"}}>· assigning on behalf of</span>}
             </div>
@@ -6806,17 +6837,17 @@ function AddModal({profile, onClose, onAdd, existingFiles}){
             </select>
           </div>
 
-          <div>
+          <div data-tour="partner">
             <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>REFERRAL PARTNER</div>
             <input value={referralPartner} onChange={e=>setReferralPartner(e.target.value)} placeholder="Agent name, CPA, Smart Bee, walk-in..." style={IS}/>
           </div>
 
-          <div>
+          <div data-tour="closing">
             <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>EXPECTED CLOSING DATE</div>
             <input type="date" value={closing} onChange={e=>setClosing(e.target.value)} style={IS}/>
           </div>
 
-          <div>
+          <div data-tour="note">
             <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>
               NOTES <span style={{color:"var(--t4)"}}>· STATUS · BLOCKER · NEXT</span>
             </div>
@@ -6826,7 +6857,7 @@ function AddModal({profile, onClose, onAdd, existingFiles}){
         </div>
 
         <div style={{padding:"14px 24px",borderTop:"1px solid #21262D",background:"#161B22",flexShrink:0,display:"flex",gap:8}}>
-          <button className="hov" onClick={()=>{
+          <button className="hov" data-tour="submit" onClick={()=>{
             if(!borrower.trim()){
               alert(TX("borrowerRequired"));
               return;
@@ -6866,6 +6897,9 @@ function AddModal({profile, onClose, onAdd, existingFiles}){
               email:email.trim()||null,
               closedAt:null,
             };
+            // Id fijo por persona: reentrar al entrenamiento reemplaza el
+            // archivo anterior en vez de acumular muestras sueltas.
+            if(training){ newFile.id=trainingFileId(profile); newFile.isTraining=true; }
             if(isInbound){
               newFile.isInbound = true;
               newFile.referringBanker = {
