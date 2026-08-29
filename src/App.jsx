@@ -209,21 +209,29 @@ const PREP_STAGE = "PREPARATION — NOT READY YET";
 // Preparation quietly become the new graveyard.
 const PREP_MAX_DAYS = 120;
 
+// `id` es lo que se guarda en Firestore; `label` y `why` son pantalla y
+// por eso van bilingues. Traducir el id romperia archivos ya escritos —
+// la misma razon por la que "Withdrawn by Borrower" se queda en ingles.
 const PREP_REASONS = [
-  { id:"credit",   label:"Credit repair",         mode:"days", days:30,
-    why:"Credit reports on a monthly cycle. 30 days = one full cycle — earlier wastes the pull, later wastes the month." },
-  { id:"reserves", label:"Saving / reserves",     mode:"days", days:90,
-    why:"Calling a saver every 30 days only produces \"not yet\" and wears out the relationship." },
-  { id:"taxes",    label:"Taxes to be filed",     mode:"date",
-    why:"There is a real filing date on the calendar. Use it — don't guess at 30/60/90." },
-  { id:"income",   label:"New job / income",      mode:"date",
-    why:"First day of work + 30 days of pay stubs. This is a calculated date, not an estimate." },
-  { id:"docs",     label:"Missing documents",     mode:"days", days:30,
-    why:"" },
-  { id:"season",   label:"Buying next season",    mode:"date",
-    why:"Pick the month the client actually told you." },
-  { id:"other",    label:"Other",                 mode:"days", days:30,
-    why:"" },
+  { id:"credit",   label:{es:"Reparación de crédito",  en:"Credit repair"},      mode:"days", days:30,
+    why:{es:"El crédito se reporta en ciclo mensual. 30 días es un ciclo completo — antes desperdicias el pull, después desperdicias el mes.",
+         en:"Credit reports on a monthly cycle. 30 days = one full cycle — earlier wastes the pull, later wastes the month."} },
+  { id:"reserves", label:{es:"Ahorro / reservas",      en:"Saving / reserves"},  mode:"days", days:90,
+    why:{es:"Llamar cada 30 días a alguien que está ahorrando solo produce «todavía no» y desgasta la relación.",
+         en:"Calling a saver every 30 days only produces «not yet» and wears out the relationship."} },
+  { id:"taxes",    label:{es:"Taxes por presentar",    en:"Taxes to be filed"},  mode:"date",
+    why:{es:"Hay una fecha de presentación en el calendario. Úsala, no adivines 30/60/90.",
+         en:"There is a real filing date on the calendar. Use it — don't guess at 30/60/90."} },
+  { id:"income",   label:{es:"Trabajo o ingreso nuevo",en:"New job / income"},   mode:"date",
+    why:{es:"Primer día de trabajo más 30 días de talones. Es una fecha calculada, no una estimación.",
+         en:"First day of work + 30 days of pay stubs. This is a calculated date, not an estimate."} },
+  { id:"docs",     label:{es:"Faltan documentos",      en:"Missing documents"},  mode:"days", days:30,
+    why:null },
+  { id:"season",   label:{es:"Compra la próxima temporada", en:"Buying next season"}, mode:"date",
+    why:{es:"El mes que el cliente te dijo, no el que te conviene.",
+         en:"Pick the month the client actually told you."} },
+  { id:"other",    label:{es:"Otro",                   en:"Other"},              mode:"days", days:30,
+    why:null },
 ];
 function prepReasonById(id){ return PREP_REASONS.find(r=>r.id===id) || PREP_REASONS[PREP_REASONS.length-1]; }
 
@@ -385,7 +393,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.08.31d";
+const APP_VERSION = "2026.08.31e";
 
 function huellaTexto(s) {
   let h = 0;
@@ -420,7 +428,7 @@ function LoginScreen() {
 
   async function attempt() {
     if (!email.trim() || !pw) {
-      setError("Email and password required.");
+      setError(TX("errNeedBoth"));
       return;
     }
     setBusy(true);
@@ -431,12 +439,12 @@ function LoginScreen() {
       setBusy(false);
       const code = err.code || "";
       const msg = code === "auth/invalid-credential" || code === "auth/wrong-password" || code === "auth/user-not-found"
-        ? "Incorrect email or password."
+        ? TX("errBadLogin")
         : code === "auth/too-many-requests"
-          ? "Too many failed attempts. Try again in a few minutes or reset your password."
+          ? TX("errTooMany")
           : code === "auth/network-request-failed"
-            ? "No internet connection. Check your network and try again."
-            : "Sign in failed. Try again.";
+            ? TX("errNoNet")
+            : TX("errSignIn");
       setError(msg);
       setShake(true);
       setPw("");
@@ -446,7 +454,7 @@ function LoginScreen() {
 
   async function sendReset() {
     if (!email.trim()) {
-      setError("Enter your email above first, then click Reset.");
+      setError(TX("errNeedEmail"));
       return;
     }
     setBusy(true);
@@ -457,7 +465,7 @@ function LoginScreen() {
       setBusy(false);
     } catch (err) {
       setBusy(false);
-      setError("Could not send reset email. Check the email address.");
+      setError(TX("errResetFail"));
     }
   }
 
@@ -608,7 +616,7 @@ function LoginScreen() {
                   autoComplete="current-password"
                   onChange={e => { setPw(e.target.value); setError(""); }}
                   onKeyDown={e => e.key === "Enter" && attempt()}
-                  placeholder="Enter your password..."
+                  placeholder={TX("phPassword")}
                   disabled={busy}
                   style={{
                     background:"#0D1117",
@@ -740,7 +748,7 @@ const COMP_ROSTER = {
 };
 
 const SAMPLE = [
-  { id:"f1", lo:"Jose Del Valle", borrower:"Ariel Villalobos", loan:385000, type:"Conventional", stage:"Condition Clearing", daysInStage:3, closing:"2026-04-14", note:"Waiting on updated pay stubs", bps:null, closedAt:null },
+  { id:"f1", lo:"Jose Del Valle", borrower:"Ariel Villalobos", loan:385000, type:"Conventional", stage:"Condition Clearing", daysInStage:3, closing:"2026-04-14", note:TX("phNoteSample"), bps:null, closedAt:null },
   { id:"f2", lo:"Jose Del Valle", borrower:"Maria Santos", loan:420000, type:"FHA", stage:"Appraisal Ordered", daysInStage:6, closing:"2026-04-28", note:"", bps:null, closedAt:null },
 ];
 
@@ -1055,7 +1063,7 @@ export default function App() {
         const parsed = JSON.parse(e.target.result);
         const incomingFiles = Array.isArray(parsed) ? parsed : parsed.files;
         if(!Array.isArray(incomingFiles) || incomingFiles.length === 0){
-          alert("This file does not look like a valid pipeline backup. No files found.");
+          alert(TX("errNotBackup"));
           return;
         }
         const ok = confirm(
@@ -1068,7 +1076,7 @@ export default function App() {
           alert(`Restored ${incomingFiles.length} files from backup.`);
         }
       } catch(err){
-        alert("Could not read backup file. Make sure it is a valid JSON file exported from this app.");
+        alert(TX("errBadJson"));
       }
     };
     reader.readAsText(file);
@@ -1332,7 +1340,7 @@ export default function App() {
   }));
   const deleteFile=id=>{
     if(!isAdmin){
-      alert("Only admins can delete files. Ask Jose to delete this for you.");
+      alert(TX("errAdminOnly"));
       return;
     }
     setFiles(p=>p.filter(f=>f.id!==id));
@@ -1468,7 +1476,7 @@ export default function App() {
           ))}
           {/* Always visible. A hidden list never gets opened; a number up here does. */}
           <div className="hov" onClick={()=>{setView("review");setActivePhase(null);}}
-            title="Preparation files whose review date has arrived"
+            title={TX("reviewSub")}
             style={{textAlign:"center",cursor:"pointer",padding:"0 10px",borderLeft:"1px solid #30363D"}}>
             <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:dueReview.length>0?"#E85D75":"var(--t3)"}}>
               {dueReview.length}
@@ -1488,7 +1496,7 @@ export default function App() {
               {saveStatus==="saving" ? "● SAVING…" : saveStatus==="saved" ? "✓ SAVED" : "⚠ SAVE FAILED"}
             </div>
           )}
-          <input placeholder="Search borrower..." value={search} onChange={e=>setSearch(e.target.value)}
+          <input placeholder={TX("phSearch")} value={search} onChange={e=>setSearch(e.target.value)}
             style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:6,padding:"7px 12px",color:"var(--t1)",fontSize:"var(--fs-4)",width:170}}/>
           <button className="hov" onClick={exportBackup}
             title="Download a JSON backup of your entire pipeline. Save it to Google Drive weekly."
@@ -1516,7 +1524,7 @@ export default function App() {
           )}
           {isAdmin && (
             <label className="hov"
-              title="Admin only — restore your pipeline from a JSON backup file"
+              title={TX("backupHint")}
               style={{background:"#21262D",color:"var(--t2)",borderRadius:6,padding:"8px 12px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",border:"1px solid #30363D",cursor:"pointer"}}>
               ↑ RESTORE
               <input type="file" accept="application/json,.json" onChange={importBackup} style={{display:"none"}}/>
@@ -1796,8 +1804,8 @@ export default function App() {
             <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>Files sent TO us by external bankers. They follow normal pipeline stages.</span>
           </div>
           {display.length===0?<div style={{padding:40,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-5)"}}>
-            No inbound referrals yet.<br/><br/>
-            <span style={{fontSize:"var(--fs-3)"}}>To add an inbound: click "+ NEW FILE" → check "This is an inbound referral" at the top.</span>
+            {TX("inboundEmpty")}<br/><br/>
+            <span style={{fontSize:"var(--fs-3)"}}>{TX("inboundEmptyHow")}</span>
           </div>:(
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
               <thead>
@@ -1871,15 +1879,15 @@ export default function App() {
             </span>
             <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>
               {view==="review"
-                ? "The review date arrived. Decide: continue, reschedule, or archive."
-                : "Alive but not buyable yet. No stage clock — these wait against a review date."}
+                ? TX("reviewHint")
+                : TX("prepHint")}
             </span>
           </div>
           {display.length===0?(
             <div style={{padding:40,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-5)"}}>
               {view==="review"
-                ? "Nothing due today. ✓"
-                : <>No files in Preparation.<br/><br/><span style={{fontSize:"var(--fs-3)"}}>To send one here: open any active file → ⏸ PREP → pick a reason and a review date.</span></>}
+                ? TX("reviewEmpty")
+                : <>{TX("prepEmpty")}<br/><br/><span style={{fontSize:"var(--fs-3)"}}>{TX("prepEmptyHow")}</span></>}
             </div>
           ):(
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:12}}>
@@ -1906,7 +1914,7 @@ export default function App() {
                     </div>
 
                     <div style={{background:"rgba(126,200,164,.07)",border:"1px solid #7EC8A433",borderRadius:6,padding:"7px 9px"}}>
-                      <div style={{fontSize:"var(--fs-3)",color:"#7EC8A4",fontWeight:500}}>{r.label}</div>
+                      <div style={{fontSize:"var(--fs-3)",color:"#7EC8A4",fontWeight:500}}>{P(r.label)}</div>
                       <div style={{fontSize:"var(--fs-2)",color:"var(--t2)",marginTop:3}}>
                         Review {p.reviewOn||"—"}
                         {" · "}
@@ -2250,9 +2258,9 @@ function PrepModal({file, onClose, onConfirm}){
         <div>
           <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>WHY IS THIS CLIENT WAITING?</div>
           <select value={reason} onChange={e=>setReason(e.target.value)} style={fs}>
-            {PREP_REASONS.map(x=><option key={x.id} value={x.id}>{x.label}</option>)}
+            {PREP_REASONS.map(x=><option key={x.id} value={x.id}>{P(x.label)}</option>)}
           </select>
-          {r.why&&<div style={{fontSize:"var(--fs-2)",color:"var(--t2)",marginTop:6,lineHeight:1.5,fontStyle:"italic"}}>{r.why}</div>}
+          {r.why&&<div style={{fontSize:"var(--fs-2)",color:"var(--t2)",marginTop:6,lineHeight:1.5,fontStyle:"italic"}}>{P(r.why)}</div>}
         </div>
 
         <div>
@@ -5052,7 +5060,7 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
           <div style={{fontSize:"var(--fs-1)",color:"var(--t3)"}}>
             {comp.totalBps!=null
               ? TX("willWriteBps",{n:comp.totalBps})
-              : "Sin dato — los reportes usan el default de la sucursal."}
+              : TX("noDataBranch")}
           </div>
           {comp.model==="correspondent"&&(
             <div style={{fontSize:"var(--fs-1)",color:"var(--t2)"}}>
@@ -5459,7 +5467,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
 // ─── DPA ───
 // Tres casillas en escala, no cuatro. El producto NO va aqui: ya vive
 // en el tipo de prestamo, y tenerlo en dos lugares era lo que producia
-// "Conventional arriba, FHA DPA abajo" sin que nadie lo notara.
+// TX("dpaStackHint") sin que nadie lo notara.
 //
 // Cuando esta en No se queda en un renglon apagado. No todo prestamo
 // lleva asistencia, y un bloque abierto pidiendo datos que no aplican
@@ -6145,7 +6153,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
             puntos, los hitos, los números del préstamo y el resultado de UW,
             todos tocables. Era un error de montaje. Un LO que toca un botón
             ahí pisa el trabajo de otra persona, y el papel de Barrett acaba
-            diciendo "Jose revisó esto" cuando quien revisó fue Tina.
+            diciendo TX("reviewedBy") cuando quien revisó fue Tina.
             El LO ve el estado; el detalle vive en PROCESAMIENTO. */}
         {tab==="file" && !inPrep && !isReferredOut && (
           <div style={{background:"rgba(126,200,164,.04)",border:"1px solid #7EC8A433",
@@ -6316,7 +6324,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
           return(
             <div style={{background:"rgba(126,200,164,.06)",border:"1px solid #7EC8A444",borderRadius:8,padding:14,display:"flex",flexDirection:"column",gap:8}}>
               <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#7EC8A4",letterSpacing:"1px"}}>⏸ IN PREPARATION</div>
-              <div style={{fontSize:"var(--fs-4)",color:"var(--t1)"}}>{r.label}</div>
+              <div style={{fontSize:"var(--fs-4)",color:"var(--t1)"}}>{P(r.label)}</div>
               <div style={{fontSize:"var(--fs-3)",color:"var(--t2)"}}>
                 Review {p.reviewOn||"—"} · <span style={{color:dtr<=0?"#E85D75":"var(--t3)"}}>{dtr>0?`in ${dtr}d`:dtr===0?"today":`${Math.abs(dtr)}d overdue`}</span>
               </div>
@@ -6834,7 +6842,7 @@ function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
 
           <div data-tour="borrower">
             <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>BORROWER NAME *</div>
-            <input value={borrower} onChange={e=>setBorrower(e.target.value)} placeholder="Full legal name" style={IS} autoFocus/>
+            <input value={borrower} onChange={e=>setBorrower(e.target.value)} placeholder={TX("phLegalName")} style={IS} autoFocus/>
           </div>
 
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
@@ -6879,7 +6887,7 @@ function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
 
           <div data-tour="partner">
             <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>REFERRAL PARTNER</div>
-            <input value={referralPartner} onChange={e=>setReferralPartner(e.target.value)} placeholder="Agent name, CPA, Smart Bee, walk-in..." style={IS}/>
+            <input value={referralPartner} onChange={e=>setReferralPartner(e.target.value)} placeholder={TX("phPartner")} style={IS}/>
           </div>
 
           <div data-tour="closing">
