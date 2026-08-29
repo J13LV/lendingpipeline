@@ -394,7 +394,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.09.01b";
+const APP_VERSION = "2026.09.01c";
 
 function huellaTexto(s) {
   let h = 0;
@@ -1273,7 +1273,7 @@ export default function App() {
     const f0=files.find(x=>x.id===id);
     if(f0 && !override){
       const g=stageGate(f0);
-      if(g.blocked || g.soft.length){ setGateBlock({id, gate:g, borrower:f0.borrower}); if(g.blocked) return; }
+      if(g.blocked || g.soft.length){ setGateBlock({id, gate:g, borrower:f0.borrower}); if(g.blocked) return false; }
     }
     setFiles(p=>p.map(f=>{
     if(f.id!==id)return f;
@@ -1295,6 +1295,7 @@ export default function App() {
       ...(override?{override:true, overrideReason:override.reason, overrideBy:profile?.name}:{}),
     });
   }));
+    return true;
   };
   const closeFile=(id,fechaFondeo)=>{
     setFiles(p=>p.map(f=>{
@@ -2207,7 +2208,13 @@ export default function App() {
       {detail&&<DetailModal file={detail} profile={profile} allFiles={files} L={L} lang={lang} onSetLang={setLang} onClose={()=>setDetail(null)}
         onSave={p=>{updateFile(detail.id,p);setDetail(f=>({...f,...p}));}}
         onDelete={()=>deleteFile(detail.id)}
-        onAdvance={()=>{advance(detail.id);setDetail(f=>{const i=ALL_STAGES.findIndex(s=>s.stage===f.stage);const n=ALL_STAGES[i+1];return n?{...f,stage:n.stage,daysInStage:0}:f;});}}
+        onAdvance={()=>{
+          // La pantalla solo se mueve si el archivo se movio. Antes eran dos
+          // acciones sueltas y la puerta frenaba una sola: el archivo se
+          // quedaba y el modal mostraba la etapa siguiente.
+          if(!advance(detail.id)) return;
+          setDetail(f=>{const i=ALL_STAGES.findIndex(s=>s.stage===f.stage);const n=ALL_STAGES[i+1];return n?{...f,stage:n.stage,daysInStage:0}:f;});
+        }}
         onCloseFile={d=>closeFile(detail.id,d)}
         onReopen={()=>reopenFile(detail.id)}
         onPrep={()=>setPrepFor(detail)}
@@ -2217,6 +2224,13 @@ export default function App() {
         isClosed={detail.stage===CLOSED_STAGE}
       />}
       {gateBlock&&(()=>{ const g=gateBlock.gate; const dur=g.hard, sof=g.soft;
+        const seguir=razon=>{
+          const id=gateBlock.id; setGateBlock(null);
+          if(!advance(id,{reason:razon})) return;
+          setDetail(f=>{ if(!f||f.id!==id) return f;
+            const i=ALL_STAGES.findIndex(x=>x.stage===f.stage); const n=ALL_STAGES[i+1];
+            return n?{...f,stage:n.stage,daysInStage:0}:f; });
+        };
         return (
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.72)",zIndex:400,
           display:"flex",alignItems:"center",justifyContent:"center",padding:20}}
@@ -2263,7 +2277,7 @@ export default function App() {
                 {TX("gateGotIt")}
               </button>
               {dur.length===0&&(
-                <button className="hov" onClick={()=>{const id=gateBlock.id;setGateBlock(null);advance(id,{reason:null});}}
+                <button className="hov" onClick={()=>seguir(null)}
                   style={{background:"#F5A623",color:"#0D1117",border:"none",borderRadius:6,
                     padding:"8px 16px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",cursor:"pointer"}}>
                   {TX("gateAdvanceAnyway")}
@@ -2274,7 +2288,7 @@ export default function App() {
                     const el=document.getElementById("gateReason");
                     const razon=(el?.value||"").trim();
                     if(!razon){ window.alert(TX("gateNeedReason")); return; }
-                    const id=gateBlock.id; setGateBlock(null); advance(id,{reason:razon});
+                    seguir(razon);
                   }}
                   style={{background:"#E85D75",color:"#0D1117",border:"none",borderRadius:6,
                     padding:"8px 16px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",cursor:"pointer"}}>
