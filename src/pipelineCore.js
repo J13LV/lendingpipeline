@@ -360,8 +360,8 @@ export const STAGE_DAYS = {
   "Closing Scheduled":        { warn: 2, wait: "team",   owner: "Tina" },
   "Final Verifications":      { warn: 1, wait: "team",   owner: PROCESSOR_TOKEN },
   "Closing Docs Drawn":       { warn: 1, wait: "team",   owner: "Tina" },
-  "Signing":                  { warn: 2, wait: "client", owner: "Tina",  note: "borrower has to show up" },
-  "Funded":                   { warn: 1, wait: "team",   owner: "Tina" },
+  "Signing":                  { warn: 2, wait: "client", owner: "LO",    note: "borrower has to show up" },
+  "Funded":                   { warn: 1, wait: "team",   owner: PROCESSOR_TOKEN },
 };
 
 // Ordered together on day 1 — the block costs the slowest, not the sum.
@@ -424,9 +424,9 @@ export const FIXED_CLOCKS = {
   "Recorded":                { warn: 2,  late: 3,  owner: PROCESSOR_TOKEN },
   "Keys Delivered":          { warn: 1,  late: 2,  owner: "LO" },
 
-  "Welcome Sent":            { warn: 3,  late: 7,  owner: "Laura" },
+  "Welcome Sent":            { warn: 3,  late: 7,  owner: "LO" },
   "30-Day Follow-Up":        { warn: 30, late: 40, owner: "LO" },
-  "Review Requested":        { warn: 7,  late: 14, owner: "Laura" },
+  "Review Requested":        { warn: 7,  late: 14, owner: "LO" },
   "Nurture Active":          { warn: 90, late: 180, owner: "LO" },
 };
 
@@ -436,7 +436,7 @@ export const STAGE_OWNERS = {
   "Insurance Ordered": PROCESSOR_TOKEN, "Submitted to UW": PROCESSOR_TOKEN, "UW Review": PROCESSOR_TOKEN,
   "Conditional Approval": "Tina", "Condition Clearing": "Tina", "Clear to Close": "Tina",
   "CD Issued": "Tina", "Closing Scheduled": "Tina", "Final Verifications": PROCESSOR_TOKEN,
-  "Closing Docs Drawn": "Tina", "Signing": "Tina", "Funded": "Tina",
+  "Closing Docs Drawn": "Tina", "Signing": "LO", "Funded": PROCESSOR_TOKEN,
 };
 
 // El techo de una etapa en texto, listo para pintar. Las de House Hunt no
