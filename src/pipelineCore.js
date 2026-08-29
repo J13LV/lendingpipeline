@@ -3904,6 +3904,47 @@ const SE = f => incomeDocTypes(f).some(isSelfEmployedDoc);
 const ENT = f => incomeDocTypes(f).some(isEntityDoc);
 const W2 = f => incomeDocTypes(f).includes("w2");
 
+// ─── CUANDO SE PIDE ────────────────────────────────────────────────
+// La tabla de condiciones de Jose trae una dimension que faltaba: NO todo
+// se puede juntar antes de someter.
+//
+//   PTA · antes de la aprobacion — aqui SI se puede anticipar
+//   PTC · antes del cierre — reparaciones de tasacion, binder, titulo, HOA
+//   PTF · antes del fondeo — payoff de hipoteca
+//
+// Importa para la puerta de Tina: si los PTC contaran como faltantes, la
+// puerta NUNCA se pondria verde —el binder de seguro no puede existir
+// antes de que haya tasacion— y una puerta que no se puede completar es
+// una puerta que el equipo aprende a ignorar.
+export const DOC_TIMING = {
+  pta: { rank: 1, es: "Antes de la aprobación", en: "Prior to approval",
+         short_es: "PTA", short_en: "PTA" },
+  ptc: { rank: 2, es: "Antes del cierre", en: "Prior to closing",
+         short_es: "PTC", short_en: "PTC" },
+  ptf: { rank: 3, es: "Antes del fondeo", en: "Prior to funding",
+         short_es: "PTF", short_en: "PTF" },
+};
+export const docTiming = d => DOC_TIMING[d?.timing || "pta"] || DOC_TIMING.pta;
+
+// ─── QUIEN LO CONSIGUE ─────────────────────────────────────────────
+// Eran tres —cliente, oficina, agente— y la tabla real tiene diez. Con el
+// dueño correcto la lista deja de ser tareas y pasa a ser llamadas.
+export const DOC_OWNERS = {
+  client:   { es: "el cliente",   en: "the client" },
+  office:   { es: "la oficina",   en: "the office" },
+  agent:    { es: "el agente",    en: "the agent" },
+  employer: { es: "el empleador", en: "the employer" },
+  cpa:      { es: "el CPA",       en: "the CPA" },
+  donor:    { es: "el donante",   en: "the donor" },
+  seller:   { es: "el vendedor",  en: "the seller" },
+  title:    { es: "título",       en: "title" },
+  hoa:      { es: "la HOA",       en: "the HOA" },
+  appraiser:{ es: "el tasador",   en: "the appraiser" },
+  lender:   { es: "el lender",    en: "the lender" },
+  servicer: { es: "el servicer",  en: "the servicer" },
+};
+export const docOwner = id => DOC_OWNERS[id] || null;
+
 export const SUBMISSION_DOCS = [
   // ── identidad ──
   { id: "gov_id", group: "identity", who: "client",
@@ -3996,6 +4037,17 @@ export const SUBMISSION_DOCS = [
   // ── propiedad y divulgaciones ──
   { id: "hoi_quote", group: "property", who: "client",
     es: "Cotización de HOI", en: "HOI quote" },
+  { id: "nv_crmm", group: "property", who: "office",
+    when: f => (f?.state || "NV") === "NV",
+    es: "Formulario NV · Commercially Reasonable Means or Mechanism",
+    en: "NV form · Commercially Reasonable Means or Mechanism",
+    note_es: "Firmado por el cliente y el LO en Arive, antes del cierre",
+    note_en: "Signed by borrower and LO in Arive, before closing" },
+  { id: "homebuyer_ed", group: "property", who: "client",
+    only: f => intakeValue(f, "dpa") === "yes" || !!f?.dpaProgram,
+    es: "Certificado del curso de educación del comprador",
+    en: "Homebuyer education course certificate",
+    note_es: "Lo piden los programas de DPA", note_en: "Required by DPA programs" },
   { id: "fha_disclosure", group: "property", who: "office", when: FHA,
     es: "Divulgación FHA", en: "FHA disclosure" },
   { id: "srpds", group: "property", who: "agent",
@@ -4012,12 +4064,22 @@ export const submissionDoc = id => SUBMISSION_DOCS.find(d => d.id === id) || nul
 // La lista de ESTE archivo. Nadie la escoge: sale del producto, del tipo
 // de ingreso y de la admision.
 export function requiredDocs(file) {
-  return SUBMISSION_DOCS.filter(d => {
+  const base = SUBMISSION_DOCS.filter(d => {
     if (d.when && !d.when(file)) return false;
     if (d.only && !d.only(file)) return false;
     return true;
   });
+  // Tres capas: lo que se pide siempre, lo que dispara una bandera de
+  // riesgo, y lo que alguien escribio a mano para este archivo.
+  return [...base, ...riskDocs(file), ...customDocsOf(file)];
 }
+
+// Solo lo de ANTES DE LA APROBACION. Es lo que mide la puerta de Tina: si
+// los PTC contaran, la puerta nunca se pondria verde.
+export const requiredDocsPTA = file =>
+  requiredDocs(file).filter(d => (d.timing || "pta") === "pta");
+export const requiredDocsLater = file =>
+  requiredDocs(file).filter(d => (d.timing || "pta") !== "pta");
 
 // Los que NO aplican, con el motivo. Se muestran atenuados: que un
 // documento falte del listado sin explicacion deja al equipo dudando si
@@ -4026,6 +4088,355 @@ export function notApplicableDocs(file) {
   return SUBMISSION_DOCS.filter(d =>
     (d.when && !d.when(file)) || (d.only && !d.only(file)));
 }
+
+// ─── BANDERAS DE RIESGO ────────────────────────────────────────────
+// Este es el mecanismo de anticipacion, y viene del cierre de la tabla de
+// Jose: sus cinco "red flags". El objetivo que el dijo con sus palabras es
+// "encontrar las condiciones ANTES que UW las encuentre".
+//
+// Como NO se hace: cargar las 41 condiciones posibles en cada archivo. Una
+// condicion que sale sin aplicar es ruido, y el ruido enseña al equipo a
+// ignorar la lista entera —el mismo fallo que ya corregimos cuando la
+// mitad del tablero estaba en rojo.
+//
+// Como SI se hace: el LO o Laura marcan lo que VEN al mirar el archivo, y
+// el sistema saca las condiciones que ese hallazgo va a provocar, con su
+// documento y su dueño. Es lo mismo que ya funciona con las banderas del
+// contrato, pero para riesgo en vez de para papeleo.
+//
+// Tres se marcan solas porque el sistema las calcula y tienen fuente: el
+// deposito sobre el 50% del ingreso, el EMD sobre el 1% del precio, y el
+// hueco de empleo de seis meses.
+//
+// FUENTE: tabla de condiciones de underwriting de la sucursal, agosto
+// 2026, mas cuatro expedientes reales con condiciones emitidas. NO es
+// guideline: es lo que los underwriters de estos lenders pidieron. Donde
+// una condicion salga de Fannie o HUD, lo dice su propia nota.
+export const RISK_FLAGS = [
+  // ── identidad ──
+  { id: "name_ssn_var", group: "identity",
+    es: "Variaciones de nombre, SSN o direcciones",
+    en: "Name, SSN or address variations",
+    docs: [
+      { id: "loe_name_var", timing: "pta", who: "client",
+        es: "LOE de variación de nombre", en: "LOE for name variation" },
+      { id: "name_support", timing: "pta", who: "client",
+        es: "Documento soporte · ID, acta", en: "Supporting document · ID, certificate" },
+    ] },
+  { id: "id_expired", group: "identity",
+    es: "ID vencida o inconsistente", en: "ID expired or inconsistent",
+    docs: [
+      { id: "id_current", timing: "pta", who: "client",
+        es: "ID vigente", en: "Current ID" },
+    ] },
+
+  // ── credito ──
+  { id: "credit_late", group: "credit",
+    es: "Pagos tardíos o crédito nuevo", en: "Late payments or new credit",
+    docs: [
+      { id: "loe_credit", timing: "pta", who: "client",
+        es: "LOE de crédito", en: "Credit LOE" },
+    ] },
+  { id: "credit_dispute", group: "credit",
+    es: "Disputas activas en los burós", en: "Active bureau disputes",
+    docs: [
+      { id: "dispute_removal", timing: "pta", who: "client",
+        es: "Quitar la disputa o carta del buró", en: "Remove dispute or bureau letter",
+        note_es: "Puede pedir volver a puntuar el archivo",
+        note_en: "May require re-scoring the file" },
+    ] },
+  { id: "collections", group: "credit",
+    es: "Colecciones, charge-offs o juicios", en: "Collections, charge-offs or judgments",
+    docs: [
+      { id: "loe_collections", timing: "pta", who: "client",
+        es: "LOE de colecciones", en: "Collections LOE" },
+      { id: "collection_release", timing: "ptc", who: "client",
+        es: "Evidencia de pago, acuerdo o liberación",
+        en: "Evidence of payment, agreement or release" },
+    ] },
+  { id: "bk_foreclosure", group: "credit",
+    es: "Bancarrota, ejecución, venta corta o dación",
+    en: "Bankruptcy, foreclosure, short sale or deed-in-lieu",
+    docs: [
+      { id: "bk_discharge", timing: "pta", who: "client",
+        es: "Documentos de descarga con fechas", en: "Discharge documents with dates",
+        note_es: "Para verificar que el período de espera se cumplió",
+        note_en: "To verify the waiting period has been met" },
+    ] },
+
+  // ── empleo e ingreso ──
+  { id: "employment_gap_flag", group: "income",
+    es: "Hueco de empleo o trabajo nuevo", en: "Employment gap or new job",
+    auto: f => employmentGapsNeedingLOE(f).length > 0,
+    docs: [
+      { id: "loe_emp_gap", timing: "pta", who: "client",
+        es: "LOE del hueco", en: "LOE for the gap" },
+      { id: "reemployment_proof", timing: "pta", who: "employer",
+        es: "Oferta o VOE del empleo nuevo", en: "Offer letter or VOE for the new job" },
+    ] },
+  { id: "variable_income", group: "income",
+    es: "Horas extra, bonos, comisiones o propinas",
+    en: "Overtime, bonus, commission or tips",
+    docs: [
+      { id: "variable_history", timing: "pta", who: "client",
+        es: "Historial de 2 años + YTD", en: "Two-year history + YTD" },
+      { id: "loe_income_drop", timing: "pta", who: "client",
+        es: "LOE si el ingreso bajó", en: "LOE if income declined" },
+    ] },
+  { id: "business_continuity", group: "income",
+    es: "Negocio nuevo o continuidad dudosa", en: "New business or questionable continuity",
+    docs: [
+      { id: "biz_verification", timing: "pta", who: "cpa",
+        es: "Dos de tres: licencia, registro del estado, carta del CPA",
+        en: "Two of three: license, state registration, CPA letter",
+        note_es: "Dentro de 30 días del pagaré. Salió en tres de cuatro expedientes",
+        note_en: "Within 30 days of the note. Appeared in three of four files" },
+      { id: "loe_biz_active", timing: "pta", who: "client",
+        es: "LOE de que el negocio está operando", en: "LOE that the business is operating" },
+    ] },
+  { id: "depreciation", group: "income",
+    es: "Depreciación de vehículos o equipo · Forma 4562",
+    en: "Vehicle or equipment depreciation · Form 4562",
+    docs: [
+      { id: "cpa_depreciation", timing: "pta", who: "cpa",
+        es: "Lista de activos depreciables con valores",
+        en: "List of depreciable assets with values" },
+      { id: "asset_purchase_proof", timing: "pta", who: "client",
+        es: "Prueba de compra de equipo o vehículos",
+        en: "Proof of equipment or vehicle purchases" },
+    ] },
+  { id: "income_decline", group: "income",
+    es: "Caída de ingreso en las declaraciones o el P&L",
+    en: "Income decline in tax returns or P&L",
+    docs: [
+      { id: "loe_income_decline", timing: "pta", who: "client",
+        es: "LOE de la caída", en: "LOE for the decline",
+        note_es: "Una caída de más del 20% obliga a underwriting manual — HUD 4000.1 II.A.4.c.x(B)(2)",
+        note_en: "A decline over 20% forces manual underwriting — HUD 4000.1 II.A.4.c.x(B)(2)" },
+    ] },
+  { id: "other_income", group: "income",
+    es: "Renta, Seguro Social, pensión, discapacidad o manutención",
+    en: "Rental, Social Security, pension, disability or alimony",
+    docs: [
+      { id: "award_letters", timing: "pta", who: "client",
+        es: "Cartas de otorgamiento o contratos", en: "Award letters or leases" },
+      { id: "deposit_evidence", timing: "pta", who: "client",
+        es: "Evidencia de los depósitos", en: "Evidence of the deposits" },
+    ] },
+
+  // ── activos ──
+  { id: "large_deposit_flag", group: "assets",
+    es: "Depósito grande sin identificar", en: "Unidentified large deposit",
+    auto: f => largeDepositThreshold(f) !== null && docFlag(f, "hasLargeDeposit"),
+    docs: [
+      { id: "loe_large_deposit", timing: "pta", who: "client",
+        es: "LOE del depósito", en: "LOE for the deposit" },
+      { id: "deposit_paper_trail", timing: "pta", who: "client",
+        es: "Rastro del origen · venta, bono, transferencia",
+        en: "Paper trail of the source · sale, bonus, transfer" },
+    ] },
+  { id: "nsf", group: "assets",
+    es: "Sobregiros o NSF recientes", en: "Recent overdrafts or NSF",
+    docs: [
+      { id: "loe_nsf", timing: "pta", who: "client",
+        es: "LOE de los sobregiros", en: "LOE for the overdrafts" },
+    ] },
+  { id: "transfers", group: "assets",
+    es: "Transferencias entre cuentas", en: "Transfers between accounts",
+    docs: [
+      { id: "transfer_both_sides", timing: "pta", who: "client",
+        es: "Evidencia de salida Y entrada", en: "Evidence of both the debit AND the credit" },
+    ] },
+  { id: "asset_sale", group: "assets",
+    es: "Fondos de venta de un activo · auto, acciones, cripto",
+    en: "Funds from an asset sale · car, stocks, crypto",
+    docs: [
+      { id: "bill_of_sale", timing: "pta", who: "client",
+        es: "Contrato de venta o estado de cuenta", en: "Bill of sale or statement" },
+      { id: "conversion_proof", timing: "pta", who: "client",
+        es: "Prueba de conversión a efectivo", en: "Proof of conversion to cash" },
+    ] },
+
+  // ── deudas ──
+  { id: "student_loans", group: "debts",
+    es: "Préstamos estudiantiles diferidos o en indulgencia",
+    en: "Student loans in deferment or forbearance",
+    docs: [
+      { id: "servicer_docs", timing: "pta", who: "servicer",
+        es: "Documentos del servicer con el plan y el pago",
+        en: "Servicer documents with the plan and payment" },
+    ] },
+  { id: "irs_plan", group: "debts",
+    es: "Plan de pago con el IRS o el estado", en: "IRS or state payment plan",
+    docs: [
+      { id: "irs_agreement", timing: "pta", who: "client",
+        es: "Acuerdo con sus términos", en: "Agreement with its terms" },
+      { id: "irs_payments", timing: "pta", who: "client",
+        es: "Evidencia de los pagos", en: "Evidence of the payments" },
+    ] },
+  { id: "irs_payments_unid", group: "debts",
+    es: "Pagos al IRS sin identificar en el estado de cuenta",
+    en: "Unidentified IRS payments on the statement",
+    docs: [
+      { id: "loe_irs_payments", timing: "pta", who: "client",
+        es: "LOE explicando los pagos", en: "LOE explaining the payments" },
+    ] },
+  { id: "undisclosed_debt", group: "debts",
+    es: "Deudas no reportadas o acuerdos privados",
+    en: "Undisclosed debts or private agreements",
+    docs: [
+      { id: "debt_contract", timing: "pta", who: "client",
+        es: "Contrato y prueba de pagos", en: "Contract and proof of payments" },
+    ] },
+
+  // ── propiedad ──
+  { id: "appraisal_repairs", group: "property",
+    es: "Tasación sujeta a reparaciones", en: "Appraisal subject to repairs",
+    docs: [
+      { id: "repairs_done", timing: "ptc", who: "seller",
+        es: "Reparaciones completadas", en: "Repairs completed" },
+      { id: "reinspection", timing: "ptc", who: "appraiser",
+        es: "Re-inspección final · 1004D", en: "Final re-inspection · 1004D" },
+    ] },
+  { id: "condo_review", group: "property",
+    es: "Revisión de condominio", en: "Condo review",
+    docs: [
+      { id: "condo_questionnaire", timing: "pta", who: "hoa",
+        es: "Cuestionario del condominio", en: "Condo questionnaire" },
+      { id: "condo_budget", timing: "pta", who: "hoa",
+        es: "Presupuesto y póliza maestra", en: "Budget and master policy" },
+      { id: "condo_litigation", timing: "pta", who: "hoa",
+        es: "Litigios y ratios de morosidad", en: "Litigation and delinquency ratios" },
+    ] },
+  { id: "title_issues", group: "property",
+    es: "El compromiso de título trae problemas", en: "Title commitment has issues",
+    docs: [
+      { id: "title_cure", timing: "ptc", who: "title",
+        es: "Curar gravámenes, releases o endosos",
+        en: "Cure liens, releases or endorsements" },
+    ] },
+  { id: "flood", group: "property",
+    es: "La propiedad está en zona de inundación", en: "Property is in a flood zone",
+    docs: [
+      { id: "flood_determination", timing: "ptc", who: "office",
+        es: "Determinación de zona", en: "Flood zone determination" },
+      { id: "flood_policy", timing: "ptc", who: "client",
+        es: "Póliza de inundación", en: "Flood policy" },
+    ] },
+  { id: "hoa_status", group: "property",
+    es: "La propiedad tiene HOA", en: "The property has an HOA",
+    docs: [
+      { id: "hoa_status_letter", timing: "ptc", who: "hoa",
+        es: "Carta de estatus con el monto mensual",
+        en: "Status letter with the monthly amount" },
+    ] },
+  { id: "arms_length", group: "property",
+    es: "Hay relación entre las partes", en: "There is a relationship between the parties",
+    docs: [
+      { id: "arms_length_stmt", timing: "pta", who: "client",
+        es: "Declaración de independencia", en: "Arm's-length statement" },
+    ] },
+
+  // ── residencia que se deja ──
+  { id: "departing_rental", group: "departing",
+    es: "Convierte la residencia actual en renta",
+    en: "Converting the current residence to a rental",
+    docs: [
+      { id: "lease_signed", timing: "pta", who: "client",
+        es: "Contrato de arrendamiento firmado", en: "Signed lease agreement" },
+      { id: "rent_form_72", timing: "pta", who: "appraiser",
+        es: "Forma 72 o 1000 que soporte la renta del contrato",
+        en: "Form 72 or 1000 supporting the lease rent" },
+      { id: "rent_receipt", timing: "pta", who: "client",
+        es: "Dos pagos recibidos, o depósito más primer mes",
+        en: "Two rental payments received, or deposit plus first month" },
+      { id: "departing_piti", timing: "pta", who: "client",
+        es: "Estado de hipoteca, impuestos, seguro y HOA de la que deja",
+        en: "Mortgage statement, taxes, insurance and HOA of the departing home" },
+      { id: "loe_intent", timing: "pta", who: "client",
+        es: "Carta de intención · por qué compra y qué hará con la que deja",
+        en: "Letter of intent · why buying and plans for the departing home" },
+    ] },
+  { id: "departing_no_hoa", group: "departing",
+    es: "La residencia que deja NO tiene HOA",
+    en: "The departing residence has NO HOA",
+    docs: [
+      { id: "loe_no_hoa", timing: "pta", who: "client",
+        es: "LOE firmada de que no hay HOA", en: "Signed LOE that there is no HOA" },
+    ] },
+
+  // ── especificos del programa ──
+  { id: "amended_return", group: "program",
+    es: "Hay declaración de impuestos enmendada", en: "There is an amended tax return",
+    docs: [
+      { id: "transcripts_amended", timing: "pta", who: "office",
+        es: "Transcripciones que verifiquen la original y la enmendada",
+        en: "Transcripts verifying the original and the amended return" },
+    ] },
+  { id: "caivrs", group: "program",
+    es: "CAIVRS con hallazgo · FHA", en: "CAIVRS finding · FHA",
+    docs: [
+      { id: "caivrs_clear", timing: "pta", who: "lender",
+        es: "CAIVRS limpio o evidencia de resolución",
+        en: "Clear CAIVRS or evidence of resolution" },
+    ] },
+  { id: "fha_habitability", group: "program",
+    es: "Requisitos de habitabilidad de FHA", en: "FHA habitability requirements",
+    docs: [
+      { id: "fha_repairs", timing: "ptc", who: "seller",
+        es: "Reparaciones FHA y re-inspección", en: "FHA repairs and re-inspection" },
+    ] },
+  { id: "payoff_needed", group: "program",
+    es: "Hay hipoteca o HELOC que pagar", en: "There is a mortgage or HELOC to pay off",
+    docs: [
+      { id: "payoff_statement", timing: "ptf", who: "title",
+        es: "Payoff actualizado", en: "Updated payoff statement" },
+    ] },
+];
+
+export const riskFlag = id => RISK_FLAGS.find(f => f.id === id) || null;
+export const riskFlagOfDoc = id =>
+  RISK_FLAGS.find(f => f.docs.some(d => d.id === id)) || null;
+
+// Las banderas encendidas: las que alguien marco, mas las que el sistema
+// calcula solo porque tienen umbral y fuente.
+export function activeRiskFlags(file) {
+  return RISK_FLAGS.filter(f => docFlag(file, f.id) || (f.auto && f.auto(file)));
+}
+
+// Los documentos que producen las banderas encendidas.
+export function riskDocs(file) {
+  const out = [];
+  for (const f of activeRiskFlags(file))
+    for (const d of f.docs) out.push({ ...d, flag: f.id, flagLabel: { es: f.es, en: f.en } });
+  return out;
+}
+
+// ─── DOCUMENTOS ESCRITOS A MANO ────────────────────────────────────
+// Por muchas condiciones que tenga el catalogo, siempre sale una que no
+// esta. "El cliente vendio un carro", "el underwriter pidio foto del
+// medidor" — eso no se puede anticipar.
+//
+// Y hay algo que vale mas que el campo en si: lo que alguien escribe DOS O
+// TRES VECES ya no es de un archivo, es un patron. Guardarlos permite, en
+// un mes, ver cuales se repiten y ascenderlos al catalogo con datos en vez
+// de con adivinanza.
+export const customDocsOf = file =>
+  Array.isArray(file?.customDocs) ? file.customDocs : [];
+
+export function addCustomDoc(file, texto, opts = {}) {
+  const txt = String(texto || "").trim();
+  if (!txt) return file;
+  return { ...file, customDocs: [...customDocsOf(file), {
+    id: `cd_${Date.now().toString(36)}`, label: txt,
+    timing: opts.timing || "pta", who: opts.who || "client",
+    at: null, by: null, addedAt: today(), addedBy: opts.by || null,
+  }] };
+}
+export const removeCustomDoc = (file, id) =>
+  ({ ...file, customDocs: customDocsOf(file).filter(d => d.id !== id) });
+export const setCustomDoc = (file, id, patch) =>
+  ({ ...file, customDocs: customDocsOf(file).map(d => d.id === id ? { ...d, ...patch } : d) });
 
 // ─── LAS CARTAS QUE SE ANTICIPAN ───────────────────────────────────
 // Esto es lo que Jose pidio: "cualquier LOE que necesitemos, nos
@@ -4085,14 +4496,16 @@ export const docBy = (file, id) => submissionDocsOf(file)[id]?.by || null;
 // Un toque sella hoy; el segundo lo quita. Marcar por error es inevitable
 // y no puede costar una llamada.
 export function stampDoc(file, id, by) {
-  if (!submissionDoc(id) && !LOE_KINDS[id]) return file;
+  const conocido = submissionDoc(id) || LOE_KINDS[id] || riskFlagOfDoc(id)
+    || customDocsOf(file).some(d => d.id === id);
+  if (!conocido) return file;
   const cur = docHeld(file, id);
   return { ...file, submissionDocs: { ...submissionDocsOf(file),
     [id]: cur ? null : { at: today(), by: by || null } } };
 }
 
 export function submissionCoverage(file) {
-  const req = requiredDocs(file);
+  const req = requiredDocsPTA(file);
   const cartas = anticipatedLetters(file);
   const todos = [...req.map(d => d.id), ...cartas.map(c => c.kind)];
   const hechos = todos.filter(id => docHeld(file, id)).length;
