@@ -778,6 +778,23 @@ export const UI = {
   noCoeYet:{ es:"Sin contrato no hay fecha de cierre. Se llena cuando el archivo llegue a Under Contract.",
              en:"No contract, no closing date. It fills in when the file reaches Under Contract." },
 
+  // ─── historial de empleo y residencia ───
+  years:{ es:"AÑOS", en:"YEARS" },
+  histCovered:{ es:"{n} meses cubiertos ✓", en:"{n} months covered ✓" },
+  histShort:{ es:"{n} de {t} meses", en:"{n} of {t} months" },
+  histFrom:{ es:"DESDE", en:"FROM" },
+  histTo:{ es:"HASTA", en:"TO" },
+  histCurrent:{ es:"actual", en:"current" },
+  histAdd:{ es:"+ otro renglón", en:"+ another row" },
+  histAddShort:{ es:"+ renglón anterior · faltan {n} meses",
+                 en:"+ earlier row · {n} months missing" },
+  histGap:{ es:"⚑ Hueco de {n} meses — pide carta de explicación",
+            en:"⚑ {n}-month gap — needs a letter of explanation" },
+  histEmpHint:{ es:"Un hueco de 6 meses o más pide carta. El sistema los detecta solo.",
+                en:"A gap of 6 months or more needs a letter. The system finds them on its own." },
+  histResHint:{ es:"Las direcciones del reporte de crédito que no aparezcan aquí piden carta.",
+                en:"Addresses on the credit report that are not listed here need a letter." },
+
   // ─── contrato cancelado ───
   cancelBtn:{ es:"⤺ CONTRATO CANCELADO", en:"⤺ CONTRACT CANCELLED" },
   cancelTitle:{ es:"El contrato se cayó", en:"The contract fell through" },

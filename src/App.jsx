@@ -4,7 +4,7 @@ import { getFirestore, doc, setDoc, onSnapshot, collection, writeBatch, getDocs 
 import { helpSections, searchHelp } from "./helpContent";
 import { tr, defaultLang } from "./ui";
 import { downloadMarthaSheet } from "./marthaExport";
-import ProcessingView, { IntakePane } from "./processing";
+import ProcessingView, { IntakePane, HistoryPane } from "./processing";
 import { downloadChecklist } from "./barrettChecklist";
 
 // Idioma vigente, a nivel de módulo. El motor devuelve {es, en} en 84 lugares
@@ -349,7 +349,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.08.21h";
+const APP_VERSION = "2026.08.29a";
 
 function huellaTexto(s) {
   let h = 0;
@@ -5975,6 +5975,13 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
                 procesamiento si falta algo — lo dice el propio texto del
                 bloque. `readOnly={isAssistant}` bloqueaba justamente a Tina
                 y a Laura, que son quienes la terminan. */}
+            {/* El historial va JUNTO a la admision: lo captura la misma
+                persona en el mismo momento, y de estas fechas salen las
+                cartas que el sistema anticipa. */}
+            <div style={{display:"grid",gap:12,marginBottom:12}}>
+              <HistoryPane file={file} kind="employment" lang={lang} onSave={onSave}/>
+              <HistoryPane file={file} kind="residence" lang={lang} onSave={onSave}/>
+            </div>
             <IntakePane file={file} lang={lang} readOnly={false}
               onSave={next=>onSave({intake:next.intake})}/>
           </div>

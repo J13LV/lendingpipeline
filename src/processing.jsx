@@ -40,6 +40,9 @@ import {
   GATE1_VERIFY_IDS, GATE1_STATES, gate1State, gate1At, cycleGate1, gate1Coverage,
   fileClock, stageColor, stageBreakdownLabel,
   overdueReport, overdueTasks, worstOverdue, TASK_SEVERITY,
+  HISTORY_KINDS, HISTORY_MONTHS_REQUIRED, historyOf, historyMonths,
+  historyCoversTwoYears, historyShortBy, historyGaps, EMPLOYMENT_GAP_MONTHS,
+  setHistoryRow, addHistoryRow, removeHistoryRow,
 } from "./pipelineCore";
 
 // Autocontenido a proposito: recibe `lang` y traduce solo. Asi no
@@ -311,6 +314,98 @@ export function IntakePane({ file, lang, onSave, readOnly }) {
         );
       })}
       <div className="sys">{T("intakeHintLo")}</div>
+    </div>
+  );
+}
+
+// ─── HISTORIAL DE EMPLEO Y RESIDENCIA ──────────────────────────────
+// FHA pide DOS AÑOS de los dos. Con fechas el sistema calcula el hueco y
+// pide la carta solo cuando hace falta; con una marca dependeria de que
+// alguien se acuerde.
+//
+// El mes basta: pedir el dia exacto de una mudanza de hace dos años es
+// pedir que se invente.
+export function HistoryPane({ file, kind, lang, onSave, readOnly }) {
+  const { T, P } = mk(lang);
+  const meta = HISTORY_KINDS[kind];
+  const filas = historyOf(file, kind);
+  const meses = historyMonths(file, kind);
+  const cubre = historyCoversTwoYears(file, kind);
+  const faltan = historyShortBy(file, kind);
+  const huecos = historyGaps(file, kind).filter(g => g.months >= EMPLOYMENT_GAP_MONTHS);
+
+  const campo = { background: C.bg, border: `1px solid ${C.edge}`, borderRadius: 5,
+    color: C.text, padding: "7px 9px", fontSize: "var(--fs-2)",
+    fontFamily: "'DM Mono','Courier New',monospace", width: "100%" };
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${cubre ? C.line : C.red + "44"}`,
+      borderRadius: 9, padding: "14px 15px" }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10,
+        marginBottom: 11, flexWrap: "wrap" }}>
+        <span style={{ fontFamily: "Syne", fontWeight: 800, fontSize: "var(--fs-3)",
+          color: C.gold, letterSpacing: "1px" }}>
+          {P(meta).toUpperCase()} · {HISTORY_MONTHS_REQUIRED / 12} {T("years")}
+        </span>
+        <span style={{ marginLeft: "auto", fontSize: "var(--fs-2)", fontFamily: "DM Mono",
+          color: cubre ? C.green : C.red }}>
+          {cubre ? T("histCovered", { n: meses })
+                 : T("histShort", { n: meses, t: HISTORY_MONTHS_REQUIRED })}
+        </span>
+      </div>
+
+      {filas.length > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr 1fr 30px",
+          gap: 8, marginBottom: 5 }}>
+          {[P(meta.label_es ? { es: meta.label_es, en: meta.label_en } : meta),
+            T("histFrom"), T("histTo"), ""].map((h, i) => (
+            <span key={i} style={{ fontSize: "var(--fs-1)", color: C.dim,
+              letterSpacing: ".5px" }}>{h}</span>
+          ))}
+        </div>
+      )}
+
+      {filas.map((r, i) => (
+        <div key={i} style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr 1fr 30px",
+          gap: 8, marginBottom: 7, alignItems: "center" }}>
+          <input value={r.label || ""} disabled={readOnly} style={campo}
+            onChange={e => onSave(setHistoryRow(file, kind, i, { label: e.target.value }))} />
+          <input type="month" value={r.from || ""} disabled={readOnly} style={campo}
+            onChange={e => onSave(setHistoryRow(file, kind, i, { from: e.target.value }))} />
+          {/* Vacio significa ACTUAL. Es lo que el equipo escribe en papel y
+              evita inventar una fecha de salida que no existe. */}
+          <input type="month" value={r.to || ""} disabled={readOnly}
+            placeholder={T("histCurrent")}
+            style={{ ...campo, ...(r.to ? {} : { color: C.green, borderColor: C.green }) }}
+            onChange={e => onSave(setHistoryRow(file, kind, i, { to: e.target.value }))} />
+          {!readOnly && (
+            <button className="hov" onClick={() => onSave(removeHistoryRow(file, kind, i))}
+              style={{ background: "transparent", border: "none", color: C.dim,
+                fontSize: "var(--fs-5)", cursor: "pointer" }}>×</button>
+          )}
+        </div>
+      ))}
+
+      {!readOnly && (
+        <button className="hov" onClick={() => onSave(addHistoryRow(file, kind))}
+          style={{ width: "100%", background: "transparent", borderRadius: 5,
+            border: `1px dashed ${cubre ? C.edge : C.red + "66"}`,
+            color: cubre ? C.dim : C.red, fontSize: "var(--fs-2)", padding: "7px 12px",
+            fontFamily: "DM Mono", cursor: "pointer", marginTop: 3 }}>
+          {cubre ? T("histAdd") : T("histAddShort", { n: faltan })}
+        </button>
+      )}
+
+      {huecos.length > 0 && (
+        <div style={{ marginTop: 9, fontSize: "var(--fs-2)", color: C.red, lineHeight: 1.5 }}>
+          {huecos.map((g, i) => (
+            <div key={i}>{T("histGap", { n: g.months })}</div>
+          ))}
+        </div>
+      )}
+      <div className="act" style={{ marginTop: 8 }}>
+        {kind === "employment" ? T("histEmpHint") : T("histResHint")}
+      </div>
     </div>
   );
 }

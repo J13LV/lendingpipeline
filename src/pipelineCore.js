@@ -3645,8 +3645,10 @@ export const isEntityDoc = id => ENTIDAD.includes(id);
 // cuando el co-cliente documenta distinto —una pareja donde uno es W-2 y
 // el otro tiene negocio propio, que en este mercado pasa seguido.
 export function incomeDocTypes(file) {
-  const a = file?.incomeDocType || null;
-  const b = file?.coIncomeDocSplit ? (file?.coIncomeDocType || null) : null;
+  const a = intakeValue(file, "incomeDocType") || file?.incomeDocType || null;
+  const parte = intakeValue(file, "coIncomeDocSplit") === "yes" || file?.coIncomeDocSplit;
+  const b = parte
+    ? (intakeValue(file, "coIncomeDocType") || file?.coIncomeDocType || null) : null;
   return [...new Set([a, b].filter(Boolean))];
 }
 
@@ -3693,6 +3695,30 @@ export function historyMonths(file, kind) {
   let n = 0;
   for (let m = hoy; m > hoy - 120; m--) { if (cubierto.has(m)) n++; else break; }
   return n;
+}
+
+export const HISTORY_KINDS = {
+  employment: { es: "Empleo", en: "Employment",
+    label_es: "Empleador", label_en: "Employer" },
+  residence:  { es: "Residencia", en: "Residence",
+    label_es: "Dirección", label_en: "Address" },
+};
+const claveDe = kind => kind === "employment" ? "employment" : "residence";
+
+export function setHistoryRow(file, kind, i, patch) {
+  const k = claveDe(kind);
+  const a = [...historyOf(file, kind)];
+  if (i < 0 || i >= a.length) return file;
+  a[i] = { ...a[i], ...patch };
+  return { ...file, [k]: a };
+}
+export function addHistoryRow(file, kind) {
+  const k = claveDe(kind);
+  return { ...file, [k]: [...historyOf(file, kind), { label: "", from: "", to: "" }] };
+}
+export function removeHistoryRow(file, kind, i) {
+  const k = claveDe(kind);
+  return { ...file, [k]: historyOf(file, kind).filter((_, j) => j !== i) };
 }
 
 export const historyCoversTwoYears = (file, kind) =>
@@ -3823,6 +3849,31 @@ export const INQUIRY_SOURCE = "branch";   // no verificado en guideline
 //
 // `who` dice quien lo consigue: el cliente, la oficina o el agente. Sirve
 // para ordenar la lista por llamadas en vez de por categoria.
+// Las condiciones que deciden si un documento aplica. NO van en admision:
+// la contraoferta, el SRPDS y la pintura con plomo llegan con el RPA, no
+// se saben al precalificar, y el bloque de admision dice justamente que el
+// LO los sabe al precalificar. Viven aqui, donde esta quien los conoce.
+export const DOC_FLAGS = [
+  { id: "residentCard",  es: "El cliente tiene tarjeta de residente",
+                         en: "Borrower has a resident card" },
+  { id: "giftFunds",     es: "Hay fondos de regalo", en: "There are gift funds" },
+  { id: "counteroffer",  es: "Hubo contraoferta", en: "There was a counteroffer" },
+  { id: "srpdsInRpa",    es: "El RPA refleja SRPDS", en: "The RPA reflects SRPDS" },
+  { id: "leadPaintInRpa",es: "El RPA refleja pintura con plomo",
+                         en: "The RPA reflects lead-based paint" },
+  { id: "hasLargeDeposit", es: "Hay un depósito grande sin identificar",
+                           en: "There is an unidentified large deposit",
+    note_es: "El umbral se calcula solo: 50% del ingreso mensual",
+    note_en: "The threshold is calculated: 50% of monthly income" },
+  { id: "recentInquiries", es: "Hay consultas de crédito recientes",
+                           en: "There are recent credit inquiries" },
+];
+export const docFlagsOf = file =>
+  (file?.docFlags && typeof file.docFlags === "object") ? file.docFlags : {};
+export const docFlag = (file, id) => docFlagsOf(file)[id] === true;
+export const setDocFlag = (file, id, on) =>
+  ({ ...file, docFlags: { ...docFlagsOf(file), [id]: !!on } });
+
 const FHA = f => baseProductOf(f?.type) === "fha";
 const CONV = f => baseProductOf(f?.type) === "conventional";
 const SE = f => incomeDocTypes(f).some(isSelfEmployedDoc);
@@ -3835,7 +3886,7 @@ export const SUBMISSION_DOCS = [
     es: "ID del gobierno", en: "Government-issued ID" },
   { id: "resident_card", group: "identity", who: "client",
     es: "Tarjeta de residente", en: "Resident card",
-    only: f => intakeValue(f, "residentCard") === "yes",
+    only: f => docFlag(f, "residentCard"),
     note_es: "Solo si aplica", note_en: "Only if applicable" },
 
   // ── ingreso: W-2 ──
@@ -3901,13 +3952,13 @@ export const SUBMISSION_DOCS = [
     es: "Prueba de EMD despejado", en: "EMD cleared proof" },
   { id: "gift_letter", group: "assets", who: "client",
     es: "Carta de regalo", en: "Gift letter",
-    only: f => intakeValue(f, "giftFunds") === "yes",
+    only: f => docFlag(f, "giftFunds"),
     note_es: "En FHA la firman el donante Y el cliente. Nombre, dirección, teléfono, parentesco, monto y que no se devuelve",
     note_en: "In FHA both donor AND borrower sign. Name, address, phone, relationship, amount, and no repayment" },
   { id: "donor_ability", group: "assets", who: "client",
     es: "Capacidad del donante o prueba de transferencia",
     en: "Donor ability or transfer proof",
-    only: f => intakeValue(f, "giftFunds") === "yes",
+    only: f => docFlag(f, "giftFunds"),
     note_es: "El efectivo en mano NO sirve como fuente del donante en FHA",
     note_en: "Cash on hand is NOT an acceptable donor source in FHA" },
 
@@ -3916,7 +3967,7 @@ export const SUBMISSION_DOCS = [
     es: "RPA firmado", en: "Executed RPA" },
   { id: "counteroffer", group: "contract", who: "agent",
     es: "Contraoferta firmada", en: "Executed counteroffer",
-    only: f => intakeValue(f, "counteroffer") === "yes" },
+    only: f => docFlag(f, "counteroffer") },
 
   // ── propiedad y divulgaciones ──
   { id: "hoi_quote", group: "property", who: "client",
@@ -3925,11 +3976,11 @@ export const SUBMISSION_DOCS = [
     es: "Divulgación FHA", en: "FHA disclosure" },
   { id: "srpds", group: "property", who: "agent",
     es: "SRPDS", en: "SRPDS",
-    only: f => intakeValue(f, "srpdsInRpa") === "yes",
+    only: f => docFlag(f, "srpdsInRpa"),
     note_es: "Solo si el RPA lo refleja", note_en: "Only if the RPA reflects it" },
   { id: "lead_paint", group: "property", who: "agent",
     es: "Divulgación de pintura con plomo", en: "Lead-based paint disclosure",
-    only: f => intakeValue(f, "leadPaintInRpa") === "yes" },
+    only: f => docFlag(f, "leadPaintInRpa") },
 ];
 
 export const submissionDoc = id => SUBMISSION_DOCS.find(d => d.id === id) || null;
@@ -3985,12 +4036,12 @@ export function anticipatedLetters(file) {
       en: `${falta} months missing from the residence history` });
 
   const umbral = largeDepositThreshold(file);
-  if (umbral !== null && file?.hasLargeDeposit === true)
+  if (umbral !== null && docFlag(file, "hasLargeDeposit"))
     out.push({ kind: "large_deposit", threshold: umbral,
       es: `Hay un depósito sobre $${umbral.toLocaleString("en-US")}`,
       en: `There is a deposit over $${umbral.toLocaleString("en-US")}` });
 
-  if (file?.recentInquiries === true)
+  if (docFlag(file, "recentInquiries"))
     out.push({ kind: "inquiries", days: INQUIRY_DAYS[P],
       es: `Consultas dentro de los ${INQUIRY_DAYS[P]} días — regla de la sucursal, no del guideline`,
       en: `Inquiries within ${INQUIRY_DAYS[P]} days — branch rule, not from the guideline` });
@@ -4256,6 +4307,20 @@ export const INTAKE_FIELDS = [
     es: "MI requerido", en: "MI required" },
   { id: "miPct", group: "loan", type: "pct", only: { miRequired: "yes" },
     es: "MI %", en: "MI %" },
+  { id: "incomeDocType", group: "borrower", type: "pick",
+    es: "Cómo documenta el ingreso", en: "How income is documented",
+    note_es: "Decide qué documentos pedirle al cliente desde el primer día",
+    note_en: "Decides which documents to ask the client for from day one",
+    opts: INCOME_DOC_TYPES.map(x => ({ v: x.id, es: x.es, en: x.en })) },
+  { id: "coIncomeDocSplit", group: "borrower", type: "yesno",
+    es: "El co-cliente documenta distinto", en: "The co-borrower documents differently",
+    note_es: "Casi siempre es no. Márcalo solo cuando uno es W-2 y el otro tiene negocio",
+    note_en: "Almost always no. Mark it only when one is W-2 and the other has a business",
+    only: f => String(intakeValue(f, "coBorrower") || "").trim().length > 0 },
+  { id: "coIncomeDocType", group: "borrower", type: "pick",
+    es: "Cómo documenta el co-cliente", en: "How the co-borrower documents",
+    opts: INCOME_DOC_TYPES.map(x => ({ v: x.id, es: x.es, en: x.en })),
+    only: { coIncomeDocSplit: "yes" } },
   { id: "purposeOfLoan", group: "loan", type: "pick",
     es: "Proposito del prestamo", en: "Purpose of loan",
     note_es: "Decide si la hoja de procesamiento dice PURCHASE o REFINANCE",
@@ -4284,6 +4349,9 @@ export const intakeValue = (file, id) => {
 export function intakeApplies(file, id) {
   const f = intakeField(id);
   if (!f?.only) return true;
+  // Una funcion cubre lo que la igualdad no puede: "hay co-cliente" es
+  // que el campo de texto tenga algo, no que valga "yes".
+  if (typeof f.only === "function") return !!f.only(file);
   return Object.entries(f.only).every(([k, want]) => String(intakeValue(file, k)) === String(want));
 }
 export const intakeVisible = file => INTAKE_FIELDS.filter(f => intakeApplies(file, f.id));
