@@ -394,7 +394,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.09.01c";
+const APP_VERSION = "2026.09.01e";
 
 function huellaTexto(s) {
   let h = 0;
@@ -2224,6 +2224,12 @@ export default function App() {
         isClosed={detail.stage===CLOSED_STAGE}
       />}
       {gateBlock&&(()=>{ const g=gateBlock.gate; const dur=g.hard, sof=g.soft;
+        const marcarFalta=()=>{
+          const el=document.getElementById("gateReason");
+          const av=document.getElementById("gateReasonErr");
+          if(el){ el.style.border="1px solid #E85D75"; el.focus(); }
+          if(av) av.style.display="block";
+        };
         const seguir=razon=>{
           const id=gateBlock.id; setGateBlock(null);
           if(!advance(id,{reason:razon})) return;
@@ -2264,10 +2270,15 @@ export default function App() {
                 <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>
                   {TX("gateReason")}
                 </div>
-                <input id="gateReason" placeholder={TX("gateReasonPh")}
+                <input id="gateReason" placeholder={TX("gateReasonPh")} autoFocus
+                  onInput={()=>{const a=document.getElementById("gateReasonErr");
+                    const e2=document.getElementById("gateReason");
+                    if(a) a.style.display="none"; if(e2) e2.style.border="1px solid #30363D";}}
                   style={{width:"100%",background:"#0D1117",border:"1px solid #30363D",
                     borderRadius:6,padding:"8px 10px",color:"var(--t1)",
                     fontFamily:"IBM Plex Sans",fontSize:"var(--fs-3)"}}/>
+                <div id="gateReasonErr" style={{display:"none",fontSize:"var(--fs-2)",
+                  color:"#E85D75",marginTop:6}}>{TX("gateNeedReason")}</div>
               </div>
             )}
             <div style={{display:"flex",gap:8,marginTop:16,justifyContent:"flex-end"}}>
@@ -2287,7 +2298,7 @@ export default function App() {
                 <button className="hov" onClick={()=>{
                     const el=document.getElementById("gateReason");
                     const razon=(el?.value||"").trim();
-                    if(!razon){ window.alert(TX("gateNeedReason")); return; }
+                    if(!razon){ marcarFalta(); return; }
                     seguir(razon);
                   }}
                   style={{background:"#E85D75",color:"#0D1117",border:"none",borderRadius:6,
@@ -5832,6 +5843,13 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
   const entries=noteEntries(file);
   const [closing,setClosing]=useState(file.closing||"");
   const [stage,setStage]=useState(file.stage);
+  // Si el archivo cambia de etapa por debajo (ADVANCE, override), el menu
+  // sigue el cambio. Sin esto la pantalla se queda en la etapa vieja.
+  useEffect(()=>{ setStage(file.stage); },[file.stage]);
+  // La contradiccion que hay que impedir: menu en una etapa, archivo en
+  // otra. ADVANCE trabaja sobre el guardado, asi que avanzar con esto
+  // abierto produce un salto que nadie pidio.
+  const etapaSinGuardar = stage !== file.stage;
   const [loanType,setLoanType]=useState(file.type);
   const [loanAmt,setLoanAmt]=useState(String(file.loan||""));
   const [bps,setBps]=useState(String(file.bps||""));
@@ -6777,7 +6795,15 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
                   why_en:`Past the ${PREP_MAX_DAYS}-day cap — return it or archive it`})}
                 {btn("arch",TX("archBtn"),"var(--t2)",onArchive,{on:true})}
               </>):(<>
-                {btn("advance",L("advance")+" →","var(--t2)",onAdvance,A.advance)}
+                {etapaSinGuardar&&(
+                  <div style={{width:"100%",order:-1,fontSize:"var(--fs-2)",color:"#E85D75",
+                    background:"rgba(232,93,117,.08)",border:"1px solid #E85D7544",
+                    borderRadius:6,padding:"6px 10px",marginBottom:6}}>
+                    ⚑ {TX("stageDirty")}
+                  </div>
+                )}
+                {btn("advance",L("advance")+" →",etapaSinGuardar?"#E85D75":"var(--t2)",
+                  ()=>{ if(etapaSinGuardar) return; onAdvance(); },A.advance)}
                 {btn("close",L("closeFile")+" ✓","#06D6A0",
                   ()=>{
                     if(!confirm(TX("closeAsk",{n:file.borrower}))) return;

@@ -44,8 +44,12 @@ export const UI = {
                  en:"Only Jose can unlock this, and it is recorded with the reason." },
   gateOverride:{ es:"DESBLOQUEAR COMO ADMIN", en:"OVERRIDE AS ADMIN" },
   gateReason:  { es:"RAZÓN DEL DESBLOQUEO", en:"REASON FOR THE OVERRIDE" },
-  gateReasonPh:{ es:"El portal del lender está caído desde el viernes",
-                 en:"The lender portal has been down since Friday" },
+  // El placeholder anterior era una frase completa y bien redactada, asi
+  // que se leia como un campo YA LLENO. Se toca OVERRIDE, el codigo exige
+  // razon escrita, no la encuentra, y parece que el boton no hace nada.
+  gateReasonPh:{ es:"Escribe aquí por qué…", en:"Type why here…" },
+  stageDirty:  { es:"Cambiaste la etapa y no la has guardado. Dale a SAVE antes de avanzar — si no, la pantalla dice una cosa y el archivo tiene otra.",
+                 en:"You changed the stage and have not saved it. Hit SAVE before advancing — otherwise the screen says one thing and the file holds another." },
   gateNeedReason:{ es:"Escribe la razón. Un desbloqueo sin razón no sirve de nada dentro de tres meses.",
                    en:"Write the reason. An override with no reason is worthless three months from now." },
   closeDateAsk:{ es:"¿En qué fecha fondeó de verdad? (AAAA-MM-DD)\n\nEsta fecha decide en qué corte de payroll entra — no es la fecha de cierre esperada.",
