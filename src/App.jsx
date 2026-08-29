@@ -385,7 +385,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.08.30e";
+const APP_VERSION = "2026.08.30f";
 
 function huellaTexto(s) {
   let h = 0;
@@ -798,7 +798,6 @@ export default function App() {
   const [langReady,setLangReady]=useState(false);
   const L=(k,v)=>tr(k,lang,v);
   CURRENT_LANG = lang;
-  useEffect(()=>{ if(langReady) try{localStorage.setItem(LANG_KEY(langUid),lang);}catch{} },[lang,langReady,langUid]);
   const [view,setView]=useState("active");
   const [activePhase,setActivePhase]=useState(null);
   const [search,setSearch]=useState("");
@@ -859,6 +858,11 @@ export default function App() {
     ? { uid: currentUser.uid, email: currentUser.email, ...getProfile(currentUser.uid) }
     : null;
   const langUid = profile?.uid || null;
+  // Guardar el idioma vive AQUI y no arriba con el resto del estado:
+  // su lista de dependencias nombra `langUid`, y una lista se evalua
+  // durante el render. Declarado despues, era ReferenceError y
+  // pantalla blanca. Compila igual — solo revienta al ejecutar.
+  useEffect(()=>{ if(langReady) try{localStorage.setItem(LANG_KEY(langUid),lang);}catch{} },[lang,langReady,langUid]);
   useEffect(()=>{
     if(!profile){ setLangReady(false); return; }
     let guardado = null;
