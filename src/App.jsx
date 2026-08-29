@@ -379,7 +379,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.08.30b";
+const APP_VERSION = "2026.08.30c";
 
 function huellaTexto(s) {
   let h = 0;
@@ -1569,7 +1569,7 @@ export default function App() {
             {l} · {c}
           </button>
         ))}
-        {(isAdmin||isProcessor)&&(
+        {(isAdmin||isAssistant)&&(
           <button className="hov" onClick={()=>{setView("processing");setActivePhase(null);}}
             style={{background:view==="processing"?"#F5A623":"#21262D",color:view==="processing"?"#0D1117":"#F5A623",borderRadius:6,padding:"6px 14px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",fontWeight:500,whiteSpace:"nowrap"}}>
             {TX("processingTab")}
@@ -1642,7 +1642,7 @@ export default function App() {
       {/* CONTENT */}
       <div style={{padding:"20px 24px"}}>
 
-        {view==="processing"&&(isAdmin||isProcessor)&&<ProcessingView
+        {view==="processing"&&(isAdmin||isAssistant)&&<ProcessingView
           files={excludeTraining(files)} profile={profile} lang={lang} onSetLang={setLang}
           onSaveFile={(id,next)=>updateFile(id,next)}
           onOpenFull={f=>setDetail(f)}
@@ -2491,7 +2491,9 @@ function ArchiveModal({file, onClose, onConfirm}){
 function ProductionDashboard({profile, files, closed, active, referredOut, inbound, onOpenFile, onBulkUpdate, payrollLog, onLogPayroll, onClosePeriod, onDeletePayrollLog, dpaDetails, onSaveDpa}){
   const isAdmin = profile?.role === "admin";
   const isLO = profile?.role === "lo";
-  const isAssistant = profile?.role === "assistant";
+  // Igual que la linea 856. Estaban separadas y por eso Laura veia
+  // Monthly y Referral Partners y Tina no.
+  const isAssistant = profile?.role === "assistant" || profile?.role === "processor";
   const [compYear,setCompYear]=useState(1);
   const [justClaimed,setJustClaimed]=useState(null);
   const [picked,setPicked]=useState(()=>new Set());
@@ -2512,7 +2514,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
   const [filesMo,setFilesMo]=useState(8);
   const payroll=payrollSummary(files,{year:compYear,filesPerMonth:filesMo,roster:COMP_ROSTER});
   const [duenoFiltro,setDuenoFiltro]=useState(null);
-  const [prodTab,setProdTab]=useState(profile?.role==="assistant"?"scorecard":"team");
+  const [prodTab,setProdTab]=useState(isAssistant?"scorecard":"team");
   const [showAutoFixPreview, setShowAutoFixPreview] = useState(false);
 
   const thisMonth=new Date().toISOString().slice(0,7);
@@ -2710,7 +2712,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           !isAssistant && ["monthly","📅 MONTHLY"],
           !isAssistant && ["referrals","🤝 REFERRAL PARTNERS"],
           !isAssistant && ["bankrefs","🏦 BANK REFERRALS"],
-          isLO && ["mycomp","💵 MY COMP"],
+          (isLO||isAdmin) && ["mycomp","💵 MY COMP"],
           isAdmin && ["override","💰 OVERRIDE & COMP"],
           ["scorecard",TX("scorecardTab")],
           !isAssistant && ["mix",TX("mixTab")],
@@ -4225,7 +4227,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
       </div>}
 
       {/* MY COMP TAB */}
-      {prodTab==="mycomp"&&isLO&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
+      {prodTab==="mycomp"&&(isLO||isAdmin)&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
         <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
           <div style={{background:"#1a2a3a",borderBottom:"2px solid #4A90D9",padding:"10px 16px",display:"flex",alignItems:"center",gap:10}}>
             <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#4A90D9",letterSpacing:"1px"}}>MY PERSONAL COMP — {profile.name.toUpperCase()}</span>
