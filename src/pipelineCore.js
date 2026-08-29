@@ -4394,6 +4394,21 @@ export const RISK_FLAGS = [
     ] },
 ];
 
+// Las ocho categorias, en el orden en que un archivo se revisa.
+export const RISK_GROUPS = [
+  { id: "identity",  es: "Identidad",            en: "Identity" },
+  { id: "credit",    es: "Crédito",              en: "Credit" },
+  { id: "income",    es: "Ingreso y empleo",     en: "Income and employment" },
+  { id: "assets",    es: "Activos",              en: "Assets" },
+  { id: "debts",     es: "Deudas",               en: "Debts" },
+  { id: "property",  es: "Propiedad",            en: "Property" },
+  { id: "departing", es: "Residencia que deja",  en: "Departing residence" },
+  { id: "program",   es: "Del programa",         en: "Program-specific" },
+];
+export const riskFlagsIn = g => RISK_FLAGS.filter(f => f.group === g);
+export const activeInGroup = (file, g) =>
+  riskFlagsIn(g).filter(f => docFlag(file, f.id) || (f.auto && f.auto(file))).length;
+
 export const riskFlag = id => RISK_FLAGS.find(f => f.id === id) || null;
 export const riskFlagOfDoc = id =>
   RISK_FLAGS.find(f => f.docs.some(d => d.id === id)) || null;
