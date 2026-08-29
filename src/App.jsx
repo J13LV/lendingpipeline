@@ -379,7 +379,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.08.30a";
+const APP_VERSION = "2026.08.30b";
 
 function huellaTexto(s) {
   let h = 0;
@@ -1993,12 +1993,15 @@ export default function App() {
                       const uc=u==="critical"?"#E85D75":u==="warning"?"#F5A623":u==="stale"?"var(--t3)":"#21262D";
                       return(
                         <div key={f.id} className="card" onClick={()=>setDetail(f)}
-                          style={{background:"#0D1117",border:`1px solid ${uc}`,borderRadius:8,padding:"12px 14px",display:"flex",flexDirection:"column",gap:8}}>
+                          style={{background:"#0D1117",
+                            border: isTraining(f) ? "1px dashed #F5A623" : `1px solid ${uc}`,
+                            borderRadius:8,padding:"12px 14px",display:"flex",flexDirection:"column",gap:8}}>
                           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
                             <div>
                               <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--t1)",lineHeight:1.2}}>
                                 {f.borrower}
                                 {f.isInbound && <span title="Inbound referral" style={{marginLeft:6,fontSize:"var(--fs-2)",color:"#FFD166"}}>🤝</span>}
+                                {isTraining(f) && <span style={{marginLeft:8,fontSize:"var(--fs-1)",fontFamily:"DM Mono",fontWeight:400,color:"#F5A623",border:"1px solid #F5A623",borderRadius:4,padding:"1px 6px",verticalAlign:"middle"}}>{TX("trainBadge")}</span>}
                               </div>
                               <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{f.type} · ${(f.loan/1000).toFixed(0)}k</div>
                               {f.lo&&<div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:1}}>{f.lo.split(" ")[0]}{f.referralPartner?` · ${f.referralPartner.split(" ")[0]}`:""}</div>}
@@ -2125,7 +2128,11 @@ export default function App() {
                               style={{flex:1,background:"rgba(255,255,255,.05)",border:"1px solid #21262D",borderRadius:5,color:"var(--t2)",fontSize:"var(--fs-2)",padding:"5px 0"}}>
                               ADVANCE →
                             </button>
-                            <button className="hov" onClick={e=>{e.stopPropagation();if(confirm(`Mark ${f.borrower} as CLOSED?`))closeFile(f.id);}}
+                            <button className="hov" onClick={e=>{e.stopPropagation();
+                              const ask = isTraining(f)
+                                ? TX("trainCloseAsk",{n:f.borrower})
+                                : TX("closeAsk",{n:f.borrower});
+                              if(window.confirm(ask))closeFile(f.id);}}
                               style={{background:"rgba(6,214,160,.1)",border:"1px solid #06D6A0",borderRadius:5,color:"#06D6A0",fontSize:"var(--fs-2)",padding:"5px 10px"}}>
                               CLOSE ✓
                             </button>

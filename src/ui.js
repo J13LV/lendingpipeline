@@ -40,6 +40,8 @@ export const UI = {
   trainResetAsk: { es:"Empezar de nuevo borra tu archivo de entrenamiento. ¿Seguir?",
                    en:"Starting over deletes your training file. Continue?" },
   trainBadge:    { es:"ENTRENAMIENTO", en:"TRAINING" },
+  trainCloseAsk: { es:"{n} es tu archivo de entrenamiento. Si lo cierras, el recorrido de las próximas semanas se acaba aquí. ¿Cerrarlo de todas formas?",
+                   en:"{n} is your training file. Closing it ends the walkthrough for the coming weeks. Close it anyway?" },
   trainNote:     { es:"Este archivo no entra a producción, ni al scorecard, ni a la cola de nadie.",
                    en:"This file never enters production, the scorecard, or anyone's queue." },
   signOut:     { es:"SALIR",          en:"SIGN OUT" },
