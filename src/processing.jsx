@@ -62,6 +62,20 @@ const mk = lang => ({
 });
 
 const md = iso => iso ? `${iso.slice(5, 7)}/${iso.slice(8, 10)}` : "—";
+
+// Cuando se marco un documento, en tiempo y no en fecha. "08/28" al lado
+// del 19/22 grande se lee como otro contador; "ayer" no se confunde con
+// nada. La fecha exacta vuelve pasada la semana, que es cuando deja de
+// importar si fue lunes o martes.
+const cuando = (iso, lang) => {
+  if (!iso) return "";
+  const d = daysBetween(iso, today());
+  if (d === null || d < 0) return md(iso);
+  if (d === 0) return lang === "en" ? "today" : "hoy";
+  if (d === 1) return lang === "en" ? "yesterday" : "ayer";
+  if (d <= 6) return lang === "en" ? `${d}d ago` : `hace ${d}d`;
+  return md(iso);
+};
 // Las notas del motor viven como note_es / note_en.
 const PN = (o, lang) => o ? (o["note_" + lang] ?? "") : "";
 // Y los rotulos cortos —PTA, PTC, PTF— como short_es / short_en.
@@ -389,7 +403,13 @@ export function SubmissionPane({ file, lang, onSave, who, readOnly }) {
         </div>
         {hecho && docAt(file, id) && (
           <span style={{ fontSize: "var(--fs-1)", color: C.dim, fontFamily: "DM Mono",
-            flexShrink: 0 }}>{md(docAt(file, id))}</span>
+            flexShrink: 0, textAlign: "right", whiteSpace: "nowrap" }}
+            title={docAt(file, id)}>
+            {cuando(docAt(file, id), lang)}
+            {docBy(file, id) && (
+              <span style={{ color: C.mid }}>{` · ${String(docBy(file, id)).split(" ")[0]}`}</span>
+            )}
+          </span>
         )}
       </div>
     );

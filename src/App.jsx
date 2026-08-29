@@ -350,7 +350,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.08.29e";
+const APP_VERSION = "2026.08.29f";
 
 function huellaTexto(s) {
   let h = 0;
