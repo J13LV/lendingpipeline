@@ -61,6 +61,7 @@ import {
   submissionCoverage, submissionReady, stampSubmissionComplete,
   gate1Coverage, visibleMilestones, milestoneAt, uwOutcome, uwOutcomeAt,
   uwOutcomeMeta, discEsignedAt,
+  stageGate,
   openFindings, resolvedFindings, hasOpenFindings, addFinding, resolveFinding,
   findingAge, worstFinding, canRegister, isRegistered, stampRegistration,
   registeredAt, registeredBy, registrationCount, needsReRegistration,
@@ -393,7 +394,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.08.31e";
+const APP_VERSION = "2026.09.01a";
 
 function huellaTexto(s) {
   let h = 0;
@@ -1261,7 +1262,17 @@ export default function App() {
     .filter(f=>!search||f.borrower.toLowerCase().includes(search.toLowerCase()))
     .filter(f=>!activePhase||getPhase(f.stage).id===activePhase);
 
-  const advance=id=>setFiles(p=>p.map(f=>{
+  // La puerta se evalua ANTES de tocar el estado: si bloquea, no se
+  // avanza y se abre el aviso. `override` solo llega desde el boton de
+  // admin, y trae la razon escrita que queda en el historial.
+  const [gateBlock,setGateBlock]=useState(null);
+  const advance=(id,override)=>{
+    const f0=files.find(x=>x.id===id);
+    if(f0 && !override){
+      const g=stageGate(f0);
+      if(g.blocked || g.soft.length){ setGateBlock({id, gate:g, borrower:f0.borrower}); if(g.blocked) return; }
+    }
+    setFiles(p=>p.map(f=>{
     if(f.id!==id)return f;
     // Don't auto-advance referred-out or closed files
     if(f.stage===CLOSED_STAGE || f.stage===REFERRED_OUT_STAGE || f.stage===PREP_STAGE)return f;
@@ -1270,14 +1281,24 @@ export default function App() {
     if(i===-1)return f; // unknown stage — don't silently drop it back to the start
     const n=ALL_STAGES[i+1];
     if(!n)return f;
-    return stampEdit(stampStage(f, n.stage), profile, "stage_advanced", {from:f.stage, to:n.stage});
+    const g=stageGate(f);
+    // Queda escrito QUE quedo abierto al avanzar. Sin esto el archivo se
+    // ve sano y en tres meses no se puede contar cuantas veces se salto
+    // cada paso — que es el dato que dice si el proceso esta mal puesto.
+    const pend=[...g.hard,...g.soft].map(r=>r.id);
+    return stampEdit(stampStage(f, n.stage), profile, "stage_advanced", {
+      from:f.stage, to:n.stage,
+      ...(pend.length?{skipped:pend}:{}),
+      ...(override?{override:true, overrideReason:override.reason, overrideBy:profile?.name}:{}),
+    });
   }));
-  const closeFile=id=>{
+  };
+  const closeFile=(id,fechaFondeo)=>{
     setFiles(p=>p.map(f=>{
       if(f.id!==id) return f;
       if(f.stage===REFERRED_OUT_STAGE) return f; // un archivo referido afuera lo cierra el otro banco, no nosotros
       // No llamarla fundedDate: ese nombre ya existe importado del motor.
-      const fundedOn = f.closing || today();
+      const fundedOn = okDate(fechaFondeo) || f.closing || today();
       return stampEdit({...f, stage:CLOSED_STAGE, closedAt:fundedOn, daysInStage:0}, profile, "closed", {from:f.stage, closedAt:fundedOn});
     }));
     setDetail(null);
@@ -2160,7 +2181,11 @@ export default function App() {
                               const ask = isTraining(f)
                                 ? TX("trainCloseAsk",{n:f.borrower})
                                 : TX("closeAsk",{n:f.borrower});
-                              if(window.confirm(ask))closeFile(f.id);}}
+                              if(!window.confirm(ask)) return;
+                              const d=window.prompt(TX("closeDateAsk"), f.closing||today());
+                              if(d===null) return;
+                              if(!okDate(d)){ window.alert(TX("closeDateBad")); return; }
+                              closeFile(f.id,d);}}
                               style={{background:"rgba(6,214,160,.1)",border:"1px solid #06D6A0",borderRadius:5,color:"#06D6A0",fontSize:"var(--fs-2)",padding:"5px 10px"}}>
                               CLOSE ✓
                             </button>
@@ -2180,7 +2205,7 @@ export default function App() {
         onSave={p=>{updateFile(detail.id,p);setDetail(f=>({...f,...p}));}}
         onDelete={()=>deleteFile(detail.id)}
         onAdvance={()=>{advance(detail.id);setDetail(f=>{const i=ALL_STAGES.findIndex(s=>s.stage===f.stage);const n=ALL_STAGES[i+1];return n?{...f,stage:n.stage,daysInStage:0}:f;});}}
-        onCloseFile={()=>closeFile(detail.id)}
+        onCloseFile={d=>closeFile(detail.id,d)}
         onReopen={()=>reopenFile(detail.id)}
         onPrep={()=>setPrepFor(detail)}
         onArchive={()=>setArchiveFor(detail)}
@@ -2188,6 +2213,75 @@ export default function App() {
         onContinuePrep={()=>continueFromPrep(detail.id)}
         isClosed={detail.stage===CLOSED_STAGE}
       />}
+      {gateBlock&&(()=>{ const g=gateBlock.gate; const dur=g.hard, sof=g.soft;
+        return (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.72)",zIndex:400,
+          display:"flex",alignItems:"center",justifyContent:"center",padding:20}}
+          onClick={()=>setGateBlock(null)}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#0D1117",
+            border:`1px solid ${dur.length?"#E85D75":"#F5A623"}`,borderRadius:10,
+            maxWidth:560,width:"100%",padding:"18px 20px"}}>
+            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-5)",
+              color:dur.length?"#E85D75":"#F5A623",letterSpacing:"1px",marginBottom:4}}>
+              {dur.length?TX("gateTitle"):TX("gateSoftTitle")}
+            </div>
+            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginBottom:14}}>
+              {gateBlock.borrower}{dur.length?" · "+TX("gateSub"):""}
+            </div>
+            {[...dur,...sof].map(r=>(
+              <div key={r.id} style={{borderLeft:`2px solid ${r.hard?"#E85D75":"#F5A623"}`,
+                paddingLeft:10,marginBottom:12}}>
+                <div style={{fontSize:"var(--fs-4)",color:"var(--t1)",marginBottom:3}}>{P(r)}</div>
+                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",lineHeight:1.5}}>
+                  {CURRENT_LANG==="en"?r.en_why:r.es_why}
+                </div>
+              </div>
+            ))}
+            {dur.length>0&&!isAdmin&&(
+              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",fontStyle:"italic",marginTop:10}}>
+                {TX("gateAskAdmin")}
+              </div>
+            )}
+            {dur.length>0&&isAdmin&&(
+              <div style={{marginTop:14,paddingTop:12,borderTop:"1px solid #21262D"}}>
+                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>
+                  {TX("gateReason")}
+                </div>
+                <input id="gateReason" placeholder={TX("gateReasonPh")}
+                  style={{width:"100%",background:"#0D1117",border:"1px solid #30363D",
+                    borderRadius:6,padding:"8px 10px",color:"var(--t1)",
+                    fontFamily:"IBM Plex Sans",fontSize:"var(--fs-3)"}}/>
+              </div>
+            )}
+            <div style={{display:"flex",gap:8,marginTop:16,justifyContent:"flex-end"}}>
+              <button className="hov" onClick={()=>setGateBlock(null)}
+                style={{background:"transparent",color:"var(--t2)",border:"1px solid #30363D",
+                  borderRadius:6,padding:"8px 16px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",cursor:"pointer"}}>
+                {TX("gateGotIt")}
+              </button>
+              {dur.length===0&&(
+                <button className="hov" onClick={()=>{const id=gateBlock.id;setGateBlock(null);advance(id,{reason:null});}}
+                  style={{background:"#F5A623",color:"#0D1117",border:"none",borderRadius:6,
+                    padding:"8px 16px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",cursor:"pointer"}}>
+                  {TX("gateAdvanceAnyway")}
+                </button>
+              )}
+              {dur.length>0&&isAdmin&&(
+                <button className="hov" onClick={()=>{
+                    const el=document.getElementById("gateReason");
+                    const razon=(el?.value||"").trim();
+                    if(!razon){ window.alert(TX("gateNeedReason")); return; }
+                    const id=gateBlock.id; setGateBlock(null); advance(id,{reason:razon});
+                  }}
+                  style={{background:"#E85D75",color:"#0D1117",border:"none",borderRadius:6,
+                    padding:"8px 16px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",cursor:"pointer"}}>
+                  {TX("gateOverride")}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>);})()}
+
       {showAdd&&<AddModal profile={profile} existingFiles={files} training={trainingMode} lang={lang}
         onClose={()=>{setShowAdd(false);setTrainingMode(false);}} onAdd={f=>{
         const stamped = stampEdit(f, profile, "created");
@@ -6668,7 +6762,13 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
               </>):(<>
                 {btn("advance",L("advance")+" →","var(--t2)",onAdvance,A.advance)}
                 {btn("close",L("closeFile")+" ✓","#06D6A0",
-                  ()=>{if(confirm(TX("closeAsk",{n:file.borrower})))onCloseFile();},A.close)}
+                  ()=>{
+                    if(!confirm(TX("closeAsk",{n:file.borrower}))) return;
+                    const d=window.prompt(TX("closeDateAsk"), file.closing||today());
+                    if(d===null) return;
+                    if(!okDate(d)){ window.alert(TX("closeDateBad")); return; }
+                    onCloseFile(d);
+                  },A.close)}
                 {btn("refer",TX("referBtn"),"#A78BFA",()=>{
                   if(confirm(TX("referAsk",{n:file.borrower}))){
                     setStage(REFERRED_OUT_STAGE);
