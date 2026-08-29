@@ -5104,6 +5104,72 @@ export const registeredBy = file => currentRegistration(file)?.by || null;
 export const discSentAt = file => okDate(currentRegistration(file)?.discSentAt) || null;
 export const discEsignedAt = file => okDate(currentRegistration(file)?.discEsignedAt) || null;
 
+// ─── PUERTAS DE ETAPA ──────────────────────────────────────────────
+// Cinco momentos donde saltarse el paso deja un hueco que nadie puede
+// llenar despues. La regla que decide si se bloquea o solo se avisa no
+// es la importancia del dato: es si el dato SE PUEDE SABER en ese
+// momento. Bloquear pidiendo algo que todavia no existe produce datos
+// inventados, que es peor que el hueco.
+//
+// Por eso la firma del cliente solo avisa —depende de el— y todo lo
+// demas bloquea, porque es nuestro y esta a la mano.
+//
+// El bloqueo es al SALIR de una etapa, no al entrar. Un archivo de
+// relleno que nace en Clear to Close nunca sale de Full Application, asi
+// que nunca se le pide nada.
+export const STAGE_GATES = {
+  "Under Contract": [
+    { id: "gate1", hard: true, test: f => gate1Complete(f),
+      es: "La verificación del 1003 no está en 12 de 12",
+      en: "The 1003 verification is not at 12 of 12",
+      es_why: "Sin ella, el reloj de 48 horas del Asistente arranca sobre un archivo incompleto y sale en rojo por documentos que debía traer el cliente.",
+      en_why: "Without it, the Assistant's 48-hour clock starts on an incomplete file and goes red over documents the client owed." },
+    { id: "contract_dates", hard: true,
+      test: f => !!okDate(f?.appraisalContingency) && !!okDate(f?.loanContingency),
+      es: "Faltan las fechas de contingencia de tasación o préstamo",
+      en: "The appraisal or loan contingency date is missing",
+      es_why: "Son las dos del contrato. El motor calcula hacia atrás desde ellas, y sin ellas el depósito del cliente queda sin vigilancia.",
+      en_why: "These two come from the contract. The engine works backward from them, and without them the client's deposit goes unwatched." },
+  ],
+  "Full Application": [
+    { id: "registered", hard: true, test: f => isRegistered(f),
+      es: "El archivo no está registrado con el lender",
+      en: "The file is not registered with the lender",
+      es_why: "El ciclo de registro nunca se abre. Después no hay fecha ni quién, y el archivo se ve igual que uno correcto.",
+      en_why: "The registration cycle never opens. There is no date and no author afterward, and the file looks just like a correct one." },
+  ],
+  "Initial Disclosures Sent": [
+    { id: "disc_sent", hard: true, test: f => !!discSentAt(f),
+      es: "No hay fecha de envío de las disclosures",
+      en: "There is no disclosures sent date",
+      es_why: "Es un plazo de ley y el envío es nuestro. La fecha existe en el momento en que se manda.",
+      en_why: "It is a statutory deadline and sending is on us. The date exists the moment it goes out." },
+    { id: "disc_signed", hard: false, test: f => !!discEsignedAt(f),
+      es: "El cliente todavía no ha firmado las disclosures",
+      en: "The client has not signed the disclosures yet",
+      es_why: "Esto solo avisa: la firma depende del cliente, no de ti. Bloquearte aquí produciría una fecha inventada.",
+      en_why: "This only warns: the signature depends on the client, not on you. Blocking here would produce an invented date." },
+  ],
+  "Appraisal Ordered": [
+    { id: "appr_req", hard: true, test: f => !!orderState(f, "appraisal").req,
+      es: "La tasación no está marcada como pedida",
+      en: "The appraisal is not marked as ordered",
+      es_why: "Sin la fecha del pedido no se puede saber si veinte días fueron del tasador o nuestros. Es el reloj más largo de la fase más larga.",
+      en_why: "Without the order date you cannot tell whether twenty days were the appraiser's or ours. It is the longest clock in the longest phase." },
+  ],
+};
+
+// Lo que falta para salir de la etapa en que esta el archivo.
+export function stageGate(file) {
+  const reglas = STAGE_GATES[file?.stage] || [];
+  const falta = reglas.filter(r => { try { return !r.test(file); } catch { return false; } });
+  return {
+    hard: falta.filter(r => r.hard),
+    soft: falta.filter(r => !r.hard),
+    blocked: falta.some(r => r.hard),
+  };
+}
+
 export const canRegister = file =>
   file?.stage === REGISTRATION_STAGE && !isRegistered(file) && !file?.archived;
 
