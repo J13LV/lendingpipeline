@@ -157,6 +157,9 @@ const TEAM = {
 };
 function getProfile(uid){ return TEAM[uid] || { name:"Unknown User", short:"Unknown", role:"assistant", nmls:"", color:"#ADBAC7", lang:"es" }; }
 
+// Millones en M y miles en k. Con jumbo en la mezcla, "$7500k" vuelve
+// a salir en un archivo real.
+const fmtLoan = n => Number(n)>=1e6 ? "$"+(n/1e6).toFixed(2)+"M" : "$"+Math.round(n/1000)+"k";
 const BPS_RATE = 150;
 const OVERRIDE_RATE = 0.0025;
 const JOSE_LO = "Jose Del Valle";
@@ -379,7 +382,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.08.30c";
+const APP_VERSION = "2026.08.30d";
 
 function huellaTexto(s) {
   let h = 0;
@@ -1739,7 +1742,7 @@ export default function App() {
                     <tr key={f.id} className="row" style={{borderBottom:"1px solid #21262D",cursor:"pointer"}} onClick={()=>setDetail(f)}>
                       <td style={{padding:"11px 14px",fontFamily:"Syne",fontWeight:700,color:"var(--t1)",background:i%2===0?"#0D1117":"#161B22"}}>{f.borrower}</td>
                       <td style={{padding:"11px 14px",color:"var(--t2)",background:i%2===0?"#0D1117":"#161B22"}}>{f.type}</td>
-                      <td style={{padding:"11px 14px",color:"#A78BFA",fontWeight:500,background:i%2===0?"#0D1117":"#161B22"}}>${(f.loan/1000).toFixed(0)}K</td>
+                      <td style={{padding:"11px 14px",color:"#A78BFA",fontWeight:500,background:i%2===0?"#0D1117":"#161B22"}}>{fmtLoan(f.loan)}</td>
                       <td style={{padding:"11px 14px",color:"var(--t1)",background:i%2===0?"#0D1117":"#161B22"}}>
                         {ro.bankerName||"—"}<br/>
                         <span style={{fontSize:"var(--fs-2)",color:"var(--t3)"}}>{ro.bankerCompany||""}</span>
@@ -1794,7 +1797,7 @@ export default function App() {
                     <tr key={f.id} className="row" style={{borderBottom:"1px solid #21262D",cursor:"pointer"}} onClick={()=>setDetail(f)}>
                       <td style={{padding:"11px 14px",fontFamily:"Syne",fontWeight:700,color:"var(--t1)",background:i%2===0?"#0D1117":"#161B22"}}>{f.borrower}</td>
                       <td style={{padding:"11px 14px",color:"var(--t2)",background:i%2===0?"#0D1117":"#161B22"}}>{f.type}</td>
-                      <td style={{padding:"11px 14px",color:"#FFD166",fontWeight:500,background:i%2===0?"#0D1117":"#161B22"}}>${(f.loan/1000).toFixed(0)}K</td>
+                      <td style={{padding:"11px 14px",color:"#FFD166",fontWeight:500,background:i%2===0?"#0D1117":"#161B22"}}>{fmtLoan(f.loan)}</td>
                       <td style={{padding:"11px 14px",color:"var(--t1)",background:i%2===0?"#0D1117":"#161B22"}}>
                         {rb.bankerName||"—"}<br/>
                         <span style={{fontSize:"var(--fs-2)",color:"var(--t3)"}}>{rb.bankerCompany||""}</span>
@@ -1877,7 +1880,7 @@ export default function App() {
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:6}}>
                       <div>
                         <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--t1)",lineHeight:1.2}}>{f.borrower}</div>
-                        <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{f.type} · ${(f.loan/1000).toFixed(0)}k</div>
+                        <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{f.type} · {fmtLoan(f.loan)}</div>
                         {f.lo&&<div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:1}}>{f.lo.split(" ")[0]}</div>}
                       </div>
                       {locked
@@ -2003,7 +2006,7 @@ export default function App() {
                                 {f.isInbound && <span title="Inbound referral" style={{marginLeft:6,fontSize:"var(--fs-2)",color:"#FFD166"}}>🤝</span>}
                                 {isTraining(f) && <span style={{marginLeft:8,fontSize:"var(--fs-1)",fontFamily:"DM Mono",fontWeight:400,color:"#F5A623",border:"1px solid #F5A623",borderRadius:4,padding:"1px 6px",verticalAlign:"middle"}}>{TX("trainBadge")}</span>}
                               </div>
-                              <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{f.type} · ${(f.loan/1000).toFixed(0)}k</div>
+                              <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{f.type} · {fmtLoan(f.loan)}</div>
                               {f.lo&&<div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:1}}>{f.lo.split(" ")[0]}{f.referralPartner?` · ${f.referralPartner.split(" ")[0]}`:""}</div>}
                             </div>
                             {/* UN SOLO RELOJ, siempre visible, y el que manda:
@@ -2715,7 +2718,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           (isLO||isAdmin) && ["mycomp","💵 MY COMP"],
           isAdmin && ["override","💰 OVERRIDE & COMP"],
           ["scorecard",TX("scorecardTab")],
-          !isAssistant && ["mix",TX("mixTab")],
+          ["mix",TX("mixTab")],
         ].filter(Boolean).map(([t,l])=>(
           <button key={t} className="hov" onClick={()=>setProdTab(t)}
             style={{background:prodTab===t?"#F5A623":"#21262D",color:prodTab===t?"#0D1117":"var(--t2)",borderRadius:6,padding:"6px 14px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",fontWeight:500}}>
@@ -2723,7 +2726,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           </button>
         ))}
         <div style={{marginLeft:"auto",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",alignSelf:"center"}}>
-          {isAdmin ? "ADMIN VIEW · ALL DATA VISIBLE" : isLO ? "LO VIEW · YOUR COMP ONLY" : "ASSISTANT VIEW · NO COMP"}
+          {prodTab==="mycomp" ? "" : isAdmin ? "ADMIN VIEW · ALL DATA VISIBLE" : isLO ? "LO VIEW · YOUR COMP ONLY" : "ASSISTANT VIEW · NO COMP"}
         </div>
       </div>
 
@@ -2829,7 +2832,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                     style={{borderBottom:"1px solid #21262D",background:i%2===0?"#0D1117":"#161B22",cursor:"pointer"}}>
                     <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"var(--t1)"}}>{f.borrower}</td>
                     <td style={{padding:"10px 14px",color:"var(--t2)"}}>{f.type}</td>
-                    <td style={{padding:"10px 14px",textAlign:"center",color:"#06D6A0",fontWeight:500}}>${(f.loan/1000).toFixed(0)}K</td>
+                    <td style={{padding:"10px 14px",textAlign:"center",color:"#06D6A0",fontWeight:500}}>{fmtLoan(f.loan)}</td>
                     <td style={{padding:"10px 14px",color:"var(--t2)"}}>{f.stage}</td>
                     <td style={{padding:"10px 14px",color:"#E85D75",fontWeight:500,fontStyle:"italic"}}>{f.lo ? `"${f.lo}"` : "(blank)"}</td>
                     <td style={{padding:"10px 14px"}}>
@@ -6932,7 +6935,9 @@ function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
 function HelpModal({profile, onClose}){
   // El contenido vive en helpContent.js. Los números que también conoce el
   // motor se le pasan desde aquí, así la guía no puede quedar desfasada.
-  const [lang,setLang]=useState("es");
+  // El idioma sale del perfil, no de un default fijo: quien trabaja en
+  // ingles abria la ayuda en español y tenia que cambiarla cada vez.
+  const [lang,setLang]=useState(()=>defaultLang(profile));
   const [secId,setSecId]=useState("start");
   const [q,setQ]=useState("");
   const sections=helpSections({
@@ -7058,280 +7063,6 @@ function HelpModal({profile, onClose}){
           fontSize:"var(--fs-2)",color:"var(--t3)",flexShrink:0}}>
           {TX("guideLive")}
         </div>
-      </div>
-    </div>
-  );
-}
-
-function _HelpModalLegacy({profile, onClose}){
-  const [tab, setTab] = useState("notes");
-  const isAdmin = profile?.role === "admin";
-  const isLO = profile?.role === "lo";
-  const isAssistant = profile?.role === "assistant";
-
-  const tabs = [
-    {id:"notes", label:"📝 Notes Format", color:"#F5A623"},
-    {id:"abbrev", label:"📖 Abbreviations", color:"#4A90D9"},
-    {id:"workflow", label:"🔄 Daily Workflow", color:"#06D6A0"},
-    {id:"refs", label:"🏦 Bank Referrals", color:"#A78BFA"},
-    {id:"roles", label:"👥 Roles & Access", color:"#BD65E8"},
-    {id:"faq", label:"❓ FAQ", color:"#E85D75"},
-  ];
-
-  return (
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
-      <div className="fi" style={{background:"#161B22",border:"1px solid #30363D",borderRadius:12,width:"100%",maxWidth:720,maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
-
-        <div style={{padding:"20px 24px 16px",borderBottom:"1px solid #21262D",flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-          <div>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",color:"var(--t1)",letterSpacing:"-0.5px"}}>HELP & BEST PRACTICES</div>
-            <div style={{fontSize:"var(--fs-3)",color:"var(--t3)",letterSpacing:"1px",marginTop:3}}>PIPELINE · DEL VALLE LENDING CO. · BARRETT FINANCIAL GROUP</div>
-          </div>
-          <button onClick={onClose} style={{background:"transparent",border:"none",color:"var(--t3)",fontSize:"var(--fs-9)",cursor:"pointer",padding:"0 0 0 12px"}}>✕</button>
-        </div>
-
-        <div style={{padding:"12px 24px",borderBottom:"1px solid #21262D",display:"flex",gap:6,flexWrap:"wrap",flexShrink:0,background:"#0D1117"}}>
-          {tabs.map(t=>(
-            <button key={t.id} className="hov" onClick={()=>setTab(t.id)}
-              style={{
-                background: tab===t.id ? t.color : "#21262D",
-                color: tab===t.id ? "#0D1117" : "var(--t2)",
-                borderRadius:6, padding:"6px 12px", fontSize:"var(--fs-3)", fontFamily:"DM Mono", fontWeight:500,
-                border:"none", cursor:"pointer"
-              }}>
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        <div style={{flex:1,overflowY:"auto",padding:"20px 24px"}}>
-
-          {tab==="notes" && (
-            <div style={{display:"flex",flexDirection:"column",gap:18,fontSize:"var(--fs-5)",color:"var(--t1)",lineHeight:1.6}}>
-              <div>
-                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-7)",color:"#F5A623",marginBottom:8}}>The STATUS · BLOCKER · NEXT format</div>
-                <div style={{color:"var(--t2)"}}>
-                  Every loan note follows three short pieces, separated by the <span style={{color:"#F5A623"}}>·</span> character.
-                  Goal: anyone scanning the pipeline can understand a file in 3 seconds.
-                </div>
-              </div>
-              <div style={{background:"#0D1117",border:"1px solid #21262D",borderRadius:8,padding:14}}>
-                <div style={{display:"grid",gridTemplateColumns:"100px 1fr",gap:10,fontSize:"var(--fs-4)"}}>
-                  <div style={{color:"#F5A623",fontWeight:500}}>STATUS</div>
-                  <div style={{color:"var(--t2)"}}>One phrase about where the file substantively is right now (not just the stage name).</div>
-                  <div style={{color:"#F5A623",fontWeight:500}}>BLOCKER</div>
-                  <div style={{color:"var(--t2)"}}>The single thing holding it up. If clean, write "<span style={{color:"#06D6A0"}}>none</span>" or "<span style={{color:"#06D6A0"}}>clean</span>".</div>
-                  <div style={{color:"#F5A623",fontWeight:500}}>NEXT</div>
-                  <div style={{color:"var(--t2)"}}>The immediate next action — what + who + by when.</div>
-                </div>
-              </div>
-              <div>
-                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--t1)",marginBottom:10}}>EXAMPLES BY STAGE</div>
-                <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                  {[
-                    {stage:"Submitted to UW", note:"Subm 4/12 · UW queue · review by 4/15"},
-                    {stage:"Conditional Approval", note:"CA 4/14 · 3 conds (PS, VOE, GL) · Bo upload by 4/19"},
-                    {stage:"Condition Clearing", note:"Conds in · BS rejected (stale) · Maria reupload by 4/18"},
-                    {stage:"Clear to Close", note:"CTC 4/17 · title prelim pending · COE 4/25"},
-                  ].map(ex=>(
-                    <div key={ex.stage} style={{display:"grid",gridTemplateColumns:"180px 1fr",gap:10,padding:"8px 12px",background:"#0D1117",borderRadius:6,fontSize:"var(--fs-4)",alignItems:"center"}}>
-                      <div style={{color:"var(--t3)",fontSize:"var(--fs-2)",letterSpacing:"1px"}}>{ex.stage.toUpperCase()}</div>
-                      <div style={{color:"#06D6A0",fontFamily:"DM Mono"}}>{ex.note}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {tab==="abbrev" && (
-            <div style={{display:"flex",flexDirection:"column",gap:18,fontSize:"var(--fs-5)",color:"var(--t1)"}}>
-              <div style={{color:"var(--t2)",lineHeight:1.6}}>
-                Standard abbreviations everyone on the team uses. Stick to these so notes stay scannable and consistent.
-              </div>
-              {[
-                {title:"Documents", color:"#4A90D9", items:[
-                  ["PS","Paystubs"],["W2","W-2 forms"],["BS","Bank statements"],["TR","Tax returns"],
-                  ["VOE","Verification of Employment"],["VOR","Verification of Rent"],["VOD","Verification of Deposit"],
-                  ["GL","Gift letter"],["TC","Title commitment"],["HOI","Homeowner's insurance"],
-                  ["CD","Closing disclosure"],["LE","Loan estimate"],["AppR","Appraisal report"],
-                ]},
-                {title:"Stages & Actions", color:"#F5A623", items:[
-                  ["Subm","Submitted"],["CA","Conditional Approval"],["CTC","Clear to Close"],
-                  ["COE","Close of Escrow / closing date"],["Reissue","Reissue disclosures"],
-                  ["Locked","Rate locked"],["Floating","Rate floating"],
-                  ["UW","Underwriting / Underwriter"],["Conds","Conditions"],
-                ]},
-                {title:"People", color:"#BD65E8", items:[
-                  ["LO","Loan Officer"],["LP","Loan Processor"],["TC","Title Coordinator"],
-                  ["UW","Underwriter"],["Bo","Borrower"],["CB","Co-borrower"],
-                  ["RA","Real estate agent"],
-                ]},
-              ].map(group=>(
-                <div key={group.title}>
-                  <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:group.color,marginBottom:8,letterSpacing:"1px"}}>{group.title.toUpperCase()}</div>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:6}}>
-                    {group.items.map(([abbr,full])=>(
-                      <div key={abbr} style={{display:"flex",gap:10,padding:"6px 10px",background:"#0D1117",borderRadius:5,fontSize:"var(--fs-4)",alignItems:"center"}}>
-                        <span style={{color:group.color,fontFamily:"DM Mono",fontWeight:500,minWidth:55}}>{abbr}</span>
-                        <span style={{color:"var(--t2)"}}>{full}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {tab==="workflow" && (
-            <div style={{display:"flex",flexDirection:"column",gap:18,fontSize:"var(--fs-5)",color:"var(--t1)",lineHeight:1.6}}>
-              <div>
-                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-7)",color:"#06D6A0",marginBottom:8}}>Daily morning routine (5 min)</div>
-                <ol style={{color:"var(--t2)",paddingLeft:18,lineHeight:1.8}}>
-                  <li>Open the pipeline. Check the <strong style={{color:"#E85D75"}}>CRITICAL</strong> count at the top — files closing in ≤3 days.</li>
-                  <li>Check phase tabs (PQ, HH, PR, UW, CP, CL, PC) — any phase with too many files in <strong style={{color:"#F5A623"}}>STALE</strong> status (5d+) needs attention.</li>
-                  <li>Click any file showing CRITICAL or STALE → read its note → decide today's action.</li>
-                  <li>Update notes for any file you touched yesterday so today's note reflects current state.</li>
-                </ol>
-              </div>
-            </div>
-          )}
-
-          {tab==="refs" && (
-            <div style={{display:"flex",flexDirection:"column",gap:18,fontSize:"var(--fs-5)",color:"var(--t1)",lineHeight:1.6}}>
-              <div>
-                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-7)",color:"#A78BFA",marginBottom:8}}>🏦 Bank-to-Bank Referrals</div>
-                <div style={{color:"var(--t2)"}}>
-                  When the branch can't place a file (product, credit, niche), refer it out to another banker and track everything.
-                  When other bankers send you deals, tag the inbound so you can measure reciprocity at year end.
-                </div>
-              </div>
-
-              <div style={{background:"rgba(167,139,250,.06)",border:"1px solid #A78BFA44",borderRadius:8,padding:14}}>
-                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#A78BFA",marginBottom:8}}>🔀 Outbound — Referring a file OUT</div>
-                <ol style={{color:"var(--t2)",paddingLeft:18,lineHeight:1.8,fontSize:"var(--fs-4)"}}>
-                  <li>Open the file → change STAGE to <strong style={{color:"#A78BFA"}}>REFERRED OUT — EXTERNAL BANK</strong></li>
-                  <li>Fill in the receiving banker's name, company, phone, and email</li>
-                  <li>Select a REFERRAL REASON (credit, product, property type, etc.)</li>
-                  <li>Set STATUS to "Pending at Banker" while you wait for outcome</li>
-                  <li>Once the deal closes, update STATUS to "Closed (Funded)" + enter FINAL LOAN AMOUNT at banker + CLOSE DATE</li>
-                  <li>Your <strong style={{color:"#F5A623"}}>{REFERRAL_FEE_BPS} bps referral fee</strong> auto-calculates. Lost comp shows alongside.</li>
-                </ol>
-              </div>
-
-              <div style={{background:"rgba(255,209,102,.06)",border:"1px solid #FFD16644",borderRadius:8,padding:14}}>
-                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#FFD166",marginBottom:8}}>🤝 Inbound — A banker sends YOU a file</div>
-                <ol style={{color:"var(--t2)",paddingLeft:18,lineHeight:1.8,fontSize:"var(--fs-4)"}}>
-                  <li>Click <strong style={{color:"#F5A623"}}>+ NEW FILE</strong> as usual</li>
-                  <li>At the top, check the box <strong style={{color:"#FFD166"}}>"This is an inbound referral from another banker"</strong></li>
-                  <li>Fill in the referring banker's name, company, phone, and email</li>
-                  <li>Continue with normal borrower info → ADD TO PIPELINE</li>
-                  <li>The file lives in <strong style={{color:"#FFD166"}}>🤝 INBOUND</strong> tab + the normal pipeline (it has a 🤝 badge on its card)</li>
-                  <li>Process and close normally — you earn your full comp on inbound closed deals</li>
-                </ol>
-              </div>
-
-              <div>
-                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--t1)",marginBottom:8}}>Year-end view</div>
-                <div style={{color:"var(--t2)",fontSize:"var(--fs-4)",lineHeight:1.7}}>
-                  Production → <strong style={{color:"#F5A623"}}>🏦 BANK REFERRALS</strong> tab shows:
-                </div>
-                <ul style={{color:"var(--t2)",paddingLeft:18,lineHeight:1.8,fontSize:"var(--fs-4)",marginTop:6}}>
-                  <li>Outbound totals: # sent out, $ fees earned, $ lost comp</li>
-                  <li>Inbound totals: # received, $ closed, $ comp earned</li>
-                  <li>Reciprocity table: per-banker balance (who's sending who what)</li>
-                  <li>Year-end comp impact summary (admin only)</li>
-                </ul>
-              </div>
-            </div>
-          )}
-
-          {tab==="roles" && (
-            <div style={{display:"flex",flexDirection:"column",gap:16,fontSize:"var(--fs-5)",color:"var(--t1)",lineHeight:1.6}}>
-              <div style={{color:"var(--t2)"}}>
-                You are signed in as <strong style={{color:profile.color}}>{profile.name}</strong> with role <strong style={{color:profile.color,textTransform:"uppercase"}}>{profile.role}</strong>.
-              </div>
-              {[
-                {role:"Admin", color:"#4A90D9", who:"Jose Del Valle (Branch Manager)", can:[
-                  "Create, edit, advance, close, reopen, and DELETE any file",
-                  "See the OVERRIDE & COMP dashboard (reparto Barrett por % del NET, cortes del 1 y el 15)",
-                  "Set the gross bps and the per-file adjustments that produce the NET",
-                  "Restore the entire pipeline from a backup file",
-                  "View the My Personal LO Comp report",
-                  "See all LOs' production data on the Team Production tab",
-                  "See the year-end LOST COMP from outbound bank referrals",
-                ]},
-                {role:"LO (Loan Officer)", color:"#BD65E8", who:"Ana M Plasencia, Marelis Pinales", can:[
-                  "Create, edit, advance, and close any file in the branch",
-                  "See the FULL pipeline (all LOs' files visible for collaboration)",
-                  "View MY COMP tab — your personal commission breakdown for closed files",
-                  "Track bank referrals (outbound + inbound)",
-                  "Cannot see other LOs' personal comp",
-                  "Cannot edit BPS rates (set by admin)",
-                ]},
-                {role:"Assistant", color:"#F5A623", who:"Laura de Armas", can:[
-                  "Create, edit, and advance files",
-                  "Update notes, closing dates, stage progression",
-                  "See the full pipeline and team production stats (counts/volume)",
-                  "Cannot see ANY compensation data (BPS, override, personal comp, referral fee detail)",
-                  "Cannot delete files",
-                ]},
-              ].map(r=>(
-                <div key={r.role} style={{
-                  background: profile.role.toLowerCase() === r.role.split(" ")[0].toLowerCase() ? `${r.color}15` : "#0D1117",
-                  border: `1px solid ${profile.role.toLowerCase() === r.role.split(" ")[0].toLowerCase() ? r.color : "#21262D"}`,
-                  borderRadius:8, padding:14
-                }}>
-                  <div style={{display:"flex",alignItems:"baseline",gap:10,marginBottom:6}}>
-                    <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:r.color}}>{r.role.toUpperCase()}</div>
-                    <div style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>{r.who}</div>
-                  </div>
-                  <ul style={{color:"var(--t2)",paddingLeft:18,lineHeight:1.7,fontSize:"var(--fs-4)"}}>
-                    {r.can.map((c,i)=><li key={i}>{c}</li>)}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {tab==="faq" && (
-            <div style={{display:"flex",flexDirection:"column",gap:14,fontSize:"var(--fs-5)",color:"var(--t1)"}}>
-              {[
-                {q:"How do I refer a file out to another banker?",
-                 a:"Open the file → change STAGE to 'REFERRED OUT — EXTERNAL BANK' (the last option in the stage dropdown). A purple banker info section appears. Fill in banker name, company, phone, email, reason, and status. Save."},
-                {q:"How do I track an inbound referral from a banker?",
-                 a:"Click '+ NEW FILE'. At the top, check 'This is an inbound referral from another banker'. Fill in the referring banker's info. Add the borrower normally. The file gets a 🤝 badge in the pipeline and shows up under the 🤝 INBOUND tab."},
-                {q:"How does the 50 bps referral fee calculate?",
-                 a:"When you mark a referred-out file as 'Closed (Funded)' and enter the final loan amount at the banker, the system auto-calculates 50 bps × that loan amount. You'll see this on the BANK REFERRALS dashboard."},
-                {q:"What does 'lost comp' mean on the dashboard?",
-                 a:"For each referred-out closed deal: lost comp = (your normal bps × loan) − (50 bps referral fee). It shows what you would have earned closing it in house. Use it to decide which products are worth adding."},
-                {q:"What's the difference between Referral Partner and Bank Referral?",
-                 a:"Referral Partner = the source who sent you the borrower (Smart Bee client, agent, CPA, family member). Tracked on the existing REFERRAL PARTNERS tab. Bank Referral = formal bank-to-bank deal flow with another mortgage banker. Tracked on the new BANK REFERRALS tab. Both can coexist on the same file."},
-                {q:"I made a change but don't see SAVED — did it save?",
-                 a:"Watch the top-right corner of the header. You'll see ● SAVING… briefly, then ✓ SAVED in green for 2 seconds."},
-                {q:"I forgot my password.",
-                 a:"On the login screen, type your email, then click FORGOT? next to the password label. Click SEND RESET LINK."},
-              ].map((item,i)=>(
-                <div key={i} style={{background:"#0D1117",border:"1px solid #21262D",borderRadius:8,padding:14}}>
-                  <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#E85D75",marginBottom:6}}>Q: {item.q}</div>
-                  <div style={{color:"var(--t2)",fontSize:"var(--fs-4)",lineHeight:1.6}}>{item.a}</div>
-                </div>
-              ))}
-            </div>
-          )}
-
-        </div>
-
-        <div style={{padding:"12px 24px",borderTop:"1px solid #21262D",background:"#0D1117",flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px"}}>
-            DEL VALLE LENDING CO. · BARRETT FINANCIAL GROUP · NMLS 181106
-          </div>
-          <button onClick={onClose} className="hov"
-            style={{background:"#F5A623",color:"#0D1117",borderRadius:6,padding:"8px 18px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",fontWeight:500,border:"none",cursor:"pointer"}}>
-            GOT IT ✓
-          </button>
-        </div>
-
       </div>
     </div>
   );
