@@ -43,6 +43,10 @@ import {
   SUBMISSION_DOCS, requiredDocs, notApplicableDocs, docHeld, docAt, docBy,
   stampDoc, submissionCoverage, anticipatedLetters, LOE_KINDS,
   DOC_FLAGS, docFlag, setDocFlag, emdThreshold, emdNeedsSourcing,
+  RISK_GROUPS, RISK_FLAGS, riskFlagsIn, activeInGroup, activeRiskFlags,
+  DOC_TIMING, docTiming, DOC_OWNERS, docOwner,
+  requiredDocsPTA, requiredDocsLater,
+  customDocsOf, addCustomDoc, removeCustomDoc,
   largeDepositThreshold, monthlyQualifyingIncome, incomeDocTypes, incomeDocMeta,
   HISTORY_KINDS, HISTORY_MONTHS_REQUIRED, historyOf, historyMonths,
   historyCoversTwoYears, historyShortBy, historyGaps, EMPLOYMENT_GAP_MONTHS,
@@ -60,6 +64,8 @@ const mk = lang => ({
 const md = iso => iso ? `${iso.slice(5, 7)}/${iso.slice(8, 10)}` : "—";
 // Las notas del motor viven como note_es / note_en.
 const PN = (o, lang) => o ? (o["note_" + lang] ?? "") : "";
+// Y los rotulos cortos —PTA, PTC, PTF— como short_es / short_en.
+const PS = (o, lang) => o ? (o["short_" + lang] ?? o[lang] ?? o.es ?? "") : "";
 // Superficies y bordes en hex —son fondos, no texto— y los CUATRO tonos
 // de texto salen de los tokens de App.jsx, que es donde vive la escala.
 // Antes esta pantalla tenia su propia paleta: las etiquetas del intake en
@@ -346,7 +352,17 @@ const QUIEN = {
 export function SubmissionPane({ file, lang, onSave, who, readOnly }) {
   const { T, P } = mk(lang);
   const [verNoAplica, setVerNoAplica] = useState(false);
+  const [grupoAbierto, setGrupoAbierto] = useState(null);
+  const [nuevoDoc, setNuevoDoc] = useState("");
   const req = requiredDocs(file);
+  // La puerta mide PTA. Lo de despues del cierre se ve, pero no cuenta:
+  // el binder de seguro no puede existir antes de que haya tasacion.
+  const reqPTA = requiredDocsPTA(file);
+  const reqLater = requiredDocsLater(file);
+  // Los que salen de una bandera no tienen `group`, asi que van en su
+  // propia seccion — y ahi se lee de que bandera vinieron.
+  const deRiesgo = reqPTA.filter(d => d.flag);
+  const aMano = customDocsOf(file);
   const noAplica = notApplicableDocs(file);
   const cartas = anticipatedLetters(file);
   const cov = submissionCoverage(file);
@@ -433,9 +449,75 @@ export function SubmissionPane({ file, lang, onSave, who, readOnly }) {
         </div>
       )}
 
+      {/* LAS BANDERAS DE RIESGO, por categoria.
+          Treinta y dos casillas planas no las mira nadie. Ocho renglones
+          que se abren al tocarlos, si. El contador dice cuantas hay
+          encendidas en cada categoria sin abrirla. */}
+      {!readOnly && (
+        <div style={{ background: C.card, border: `1px solid ${C.line}`,
+          borderRadius: 8, padding: "11px 13px" }}>
+          <div style={{ fontSize: "var(--fs-1)", color: C.soft, letterSpacing: "1px",
+            marginBottom: 3 }}>{T("riskTitle")}</div>
+          <div className="sys" style={{ marginBottom: 8 }}>{T("riskHint")}</div>
+          {RISK_GROUPS.map(g => {
+            const abierto = grupoAbierto === g.id;
+            const enGrupo = riskFlagsIn(g.id);
+            const n = activeInGroup(file, g.id);
+            return (
+              <div key={g.id} style={{ borderTop: `1px solid ${C.line}` }}>
+                <button className="hov" onClick={() => setGrupoAbierto(abierto ? null : g.id)}
+                  style={{ width: "100%", display: "flex", alignItems: "center", gap: 8,
+                    background: "transparent", border: "none", cursor: "pointer",
+                    padding: "8px 2px", textAlign: "left" }}>
+                  <span style={{ color: C.dim, fontSize: "var(--fs-2)" }}>
+                    {abierto ? "▾" : "▸"}
+                  </span>
+                  <span style={{ fontSize: "var(--fs-2)", color: n ? C.text : C.mid }}>
+                    {P(g)}
+                  </span>
+                  <span style={{ marginLeft: "auto", fontSize: "var(--fs-1)",
+                    fontFamily: "DM Mono", color: n ? C.gold : C.dim }}>
+                    {n ? `${n} / ${enGrupo.length}` : enGrupo.length}
+                  </span>
+                </button>
+                {abierto && (
+                  <div style={{ paddingBottom: 8, display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 5 }}>
+                    {enGrupo.map(fl => {
+                      const auto = fl.auto && fl.auto(file);
+                      const on = docFlag(file, fl.id) || auto;
+                      return (
+                        <button key={fl.id} className="hov" disabled={auto}
+                          onClick={auto ? undefined
+                            : () => onSave(setDocFlag(file, fl.id, !docFlag(file, fl.id)))}
+                          style={{ display: "flex", gap: 8, alignItems: "flex-start",
+                            textAlign: "left",
+                            background: on ? "rgba(232,93,117,.10)" : "transparent",
+                            border: `1px solid ${on ? C.red : C.edge}`, borderRadius: 5,
+                            padding: "6px 9px", cursor: auto ? "default" : "pointer" }}>
+                          <span style={{ color: on ? C.red : C.dim, fontSize: "var(--fs-2)",
+                            flexShrink: 0 }}>{on ? "⚑" : "○"}</span>
+                          <span style={{ fontSize: "var(--fs-1)", color: on ? C.text : C.mid,
+                            lineHeight: 1.4 }}>
+                            {P(fl)}
+                            {/* El sistema la calcula: no se puede apagar a mano
+                                porque el umbral tiene fuente. */}
+                            {auto && <span style={{ color: C.dim }}> · {T("riskAuto")}</span>}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* LOS DOCUMENTOS, por grupo */}
       {Object.keys(GRUPOS).map(g => {
-        const enGrupo = req.filter(d => d.group === g);
+        const enGrupo = reqPTA.filter(d => (d.group || "other") === g);
         if (!enGrupo.length) return null;
         const hechos = enGrupo.filter(d => docHeld(file, d.id)).length;
         return (
@@ -457,6 +539,81 @@ export function SubmissionPane({ file, lang, onSave, who, readOnly }) {
           </div>
         );
       })}
+
+      {/* LO QUE PIDEN LAS BANDERAS. Con la bandera al lado: sin eso, el
+          documento aparece y nadie sabe por que. */}
+      {deRiesgo.length > 0 && (
+        <div style={{ background: "rgba(232,93,117,.05)", border: `1px solid ${C.red}44`,
+          borderRadius: 8, padding: "11px 13px" }}>
+          <div style={{ fontSize: "var(--fs-1)", color: C.red, letterSpacing: "1px",
+            fontFamily: "DM Mono", marginBottom: 6 }}>
+            {T("riskDocs", { n: deRiesgo.length })}
+          </div>
+          {deRiesgo.map(d => sello(d.id, P(d),
+            [P(d.flagLabel), d.who ? P(docOwner(d.who)) : null].filter(Boolean).join(" · "),
+            C.red))}
+        </div>
+      )}
+
+      {/* DESPUES DE LA APROBACION. Se ve para poder ir pidiendolo, pero
+          NO cuenta como faltante: si contara, la puerta de Tina nunca se
+          pondria verde y el equipo aprenderia a ignorarla. */}
+      {reqLater.length > 0 && (
+        <div style={{ background: C.card, border: `1px solid ${C.line}`,
+          borderRadius: 8, padding: "11px 13px" }}>
+          <div style={{ fontSize: "var(--fs-1)", color: C.soft, letterSpacing: "1px",
+            marginBottom: 3 }}>{T("laterTitle")}</div>
+          <div className="sys" style={{ marginBottom: 6 }}>{T("laterHint")}</div>
+          {reqLater.map(d => sello(d.id,
+            `${PS(DOC_TIMING[d.timing || "pta"], lang)} · ${P(d)}`,
+            [d.flag ? P(d.flagLabel) : null, d.who ? P(docOwner(d.who)) : null]
+              .filter(Boolean).join(" · ")))}
+        </div>
+      )}
+
+      {/* A MANO. Por muchas condiciones que tenga el catalogo, siempre
+          sale una que no esta. */}
+      <div style={{ background: C.card, border: `1px solid ${C.line}`,
+        borderRadius: 8, padding: "11px 13px" }}>
+        <div style={{ fontSize: "var(--fs-1)", color: C.soft, letterSpacing: "1px",
+          marginBottom: 6 }}>{T("customTitle")}</div>
+        {aMano.map(d => (
+          <div key={d.id} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+            <div style={{ flex: 1 }}>{sello(d.id, d.label,
+              [PS(DOC_TIMING[d.timing || "pta"], lang),
+               d.who ? P(docOwner(d.who)) : null].filter(Boolean).join(" · "))}</div>
+            {!readOnly && (
+              <button className="hov" onClick={() => onSave(removeCustomDoc(file, d.id))}
+                style={{ background: "transparent", border: "none", color: C.dim,
+                  fontSize: "var(--fs-4)", cursor: "pointer" }}>×</button>
+            )}
+          </div>
+        ))}
+        {!readOnly && (
+          <div style={{ display: "flex", gap: 7, marginTop: aMano.length ? 8 : 0 }}>
+            <input value={nuevoDoc} onChange={e => setNuevoDoc(e.target.value)}
+              placeholder={T("customPlaceholder")}
+              onKeyDown={e => {
+                if (e.key === "Enter" && nuevoDoc.trim()) {
+                  onSave(addCustomDoc(file, nuevoDoc, { by: who }));
+                  setNuevoDoc("");
+                }
+              }}
+              style={{ flex: 1, background: C.bg, border: `1px solid ${C.edge}`,
+                borderRadius: 5, color: C.text, padding: "7px 9px",
+                fontSize: "var(--fs-2)" }} />
+            <button className="hov" disabled={!nuevoDoc.trim()}
+              onClick={() => { onSave(addCustomDoc(file, nuevoDoc, { by: who }));
+                setNuevoDoc(""); }}
+              style={{ background: nuevoDoc.trim() ? C.gold : C.line,
+                color: nuevoDoc.trim() ? C.bg : C.dim, border: "none", borderRadius: 5,
+                padding: "7px 14px", fontFamily: "DM Mono", fontSize: "var(--fs-2)",
+                cursor: nuevoDoc.trim() ? "pointer" : "not-allowed" }}>
+              {T("customAdd")}
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* LAS CARTAS QUE SE ANTICIPAN. Esto es lo que ahorra dias: el
           sistema las nombra antes de que underwriting las pida. */}
