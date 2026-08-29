@@ -350,7 +350,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.08.29b";
+const APP_VERSION = "2026.08.29c";
 
 function huellaTexto(s) {
   let h = 0;
@@ -5905,7 +5905,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
                   mano, y por eso el presupuesto de 24 días se sostiene.
                   NO bloquea — un bloqueo duro se salta poniendo marcas
                   falsas, y ahí se pierde el dato. */}
-              {canRegister(file)&&(isAdmin||isAssistant)&&(()=>{
+              {registerReady(file)&&(isAdmin||isAssistant)&&(()=>{
                 const cov=submissionCoverage(file);
                 if(!cov.total) return null;
                 const ok=cov.complete;
