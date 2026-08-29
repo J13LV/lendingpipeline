@@ -4,7 +4,7 @@ import { getFirestore, doc, setDoc, onSnapshot, collection, writeBatch, getDocs 
 import { helpSections, searchHelp } from "./helpContent";
 import { tr, defaultLang } from "./ui";
 import { downloadMarthaSheet } from "./marthaExport";
-import ProcessingView, { IntakePane, HistoryPane } from "./processing";
+import ProcessingView, { IntakePane, HistoryPane, SubmissionPane } from "./processing";
 import { downloadChecklist } from "./barrettChecklist";
 
 // Idioma vigente, a nivel de módulo. El motor devuelve {es, en} en 84 lugares
@@ -350,7 +350,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.08.29c";
+const APP_VERSION = "2026.08.29d";
 
 function huellaTexto(s) {
   let h = 0;
@@ -5784,6 +5784,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
             ["lender",TX("tabLender")],
             ["dates", TX("tabDates")],
             ["money", TX("tabMoney")],
+            ["docs",  TX("subTab")],
             ["file",  TX("tabFile")],
           ].map(([id,label],i)=>{
             const on=tab===id;
@@ -5792,7 +5793,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
                 style={{background:on?"#171D26":"transparent",border:"none",cursor:"pointer",
                   color:on?"#F5A623":"var(--t2)",fontSize:"var(--fs-3)",fontFamily:"Syne",
                   fontWeight:on?800:500,letterSpacing:"1.6px",padding:"12px 0",
-                  textAlign:"center",borderRight:i<4?"1px solid #21262D":"none",
+                  textAlign:"center",borderRight:i<5?"1px solid #21262D":"none",
                   boxShadow:on?"inset 0 -2px 0 #F5A623":"none",
                   transition:"color .12s"}}>
                 {label}
@@ -6001,6 +6002,18 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
 
         {/* ADMISION — el LO las sabe al precalificar. La procesadora las
             completa si faltan, pero la captura nace aqui. */}
+        {/* DOCUMENTOS. Solapa propia porque el bloque es largo y porque
+            lo trabajan el LO y Laura, no procesamiento. Antes vivia solo
+            en la pantalla de dos paneles, donde el LO no entra. */}
+        {tab==="docs" && !inPrep && !isReferredOut && (
+          <div style={{gridColumn:"1 / -1"}}>
+            <SubmissionPane file={file} lang={lang}
+              onSave={next=>onSave({submissionDocs:next.submissionDocs||null,
+                docFlags:next.docFlags||null})}
+              who={profile?.name||null} readOnly={false}/>
+          </div>
+        )}
+
         {tab==="file" && !inPrep && !isReferredOut && (
           <div style={{background:"rgba(189,101,232,.04)",border:"1px solid #BD65E833",
             borderRadius:8,padding:14,display:"flex",flexDirection:"column",gap:10,
@@ -6015,8 +6028,10 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
                 persona en el mismo momento, y de estas fechas salen las
                 cartas que el sistema anticipa. */}
             <div style={{display:"grid",gap:12,marginBottom:12}}>
-              <HistoryPane file={file} kind="employment" lang={lang} onSave={onSave}/>
-              <HistoryPane file={file} kind="residence" lang={lang} onSave={onSave}/>
+              <HistoryPane file={file} kind="employment" lang={lang}
+                onSave={next=>onSave({employment:next.employment||null})}/>
+              <HistoryPane file={file} kind="residence" lang={lang}
+                onSave={next=>onSave({residence:next.residence||null})}/>
             </div>
             <IntakePane file={file} lang={lang} readOnly={false}
               onSave={next=>onSave({intake:next.intake})}/>
