@@ -800,6 +800,20 @@ export const UI = {
   subNoIncome:{ es:"falta capturar el ingreso", en:"income not captured yet" },
   subNotApplicable:{ es:"{n} no aplican a este archivo", en:"{n} do not apply to this file" },
 
+  riskTitle:{ es:"BANDERAS DE RIESGO", en:"RISK FLAGS" },
+  riskHint:{ es:"Marca lo que ves al mirar el archivo. El sistema saca las condiciones que underwriting va a pedir por eso — antes de que las pida.",
+             en:"Mark what you see when you look at the file. The system produces the conditions underwriting will ask for — before they ask." },
+  riskAuto:{ es:"la calcula el sistema", en:"calculated by the system" },
+  riskDocs:{ es:"{n} CONDICIONES QUE PIDEN LAS BANDERAS",
+             en:"{n} CONDITIONS THE FLAGS CALL FOR" },
+  laterTitle:{ es:"DESPUÉS DE LA APROBACIÓN", en:"AFTER APPROVAL" },
+  laterHint:{ es:"No cuentan para registrar: la tasación y el título todavía no existen. Se ven aquí para ir pidiéndolos.",
+              en:"These do not count toward registering: the appraisal and title do not exist yet. They are here so you can start asking." },
+  customTitle:{ es:"ESCRITOS A MANO", en:"WRITTEN IN" },
+  customPlaceholder:{ es:"Otra condición que pidió el underwriter…",
+                      en:"Another condition the underwriter asked for…" },
+  customAdd:{ es:"AÑADIR", en:"ADD" },
+
   // ─── la puerta antes de registrar ───
   subGate:{ es:"DOCUMENTOS ANTES DE REGISTRAR", en:"DOCUMENTS BEFORE REGISTERING" },
   subGateOk:{ es:"Todo en el expediente — listo para registrar",
