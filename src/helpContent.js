@@ -904,6 +904,99 @@ export function helpSections(v = {}) {
   },
 
   // ─────────────────────────────────────────────────────────────────
+  // Un articulo por PUESTO, no por persona: el asiento no cambia cuando
+  // cambia quien lo ocupa. Los tres son visibles para todos a proposito —
+  // quien solo conoce su pedazo entrega el archivo y se desentiende.
+  {
+    id: "seats", icon: "◈", color: "#F5A623",
+    es: "Tu puesto, fase por fase", en: "Your seat, phase by phase",
+    articles: [
+
+      {
+        id: "puesto-lo",
+        es: "El Loan Officer", en: "The Loan Officer",
+        blocks: [
+          { k:"lead",
+            es:"Abre el archivo y lo cierra. Las fases 1, 2, 6 y 7 son suyas; el medio es del Asistente y del Procesador.",
+            en:"Opens the file and closes it. Phases 1, 2, 6 and 7 are theirs; the middle belongs to the Assistant and the Processor." },
+          { k:"table",
+            head:{ es:["Fase","Quién trabaja","Qué pasa"], en:["Phase","Who works it","What happens"] },
+            rows:[
+              ["1 · Pre-Qual", {es:"Loan Officer",en:"Loan Officer"}, {es:"Suya de punta a punta. El reloj es de la fase completa: tres días hábiles desde que entró el lead. Cambiar de etapa no compra tiempo.",en:"Theirs end to end. The clock is on the whole phase: three business days from when the lead arrived. Moving between stages buys no time."}],
+              ["2 · House Hunt", {es:"Loan Officer",en:"Loan Officer"}, {es:"Contacto cada 7 días alternando cliente y agente. En Under Contract completa la VERIFICACIÓN DEL 1003 y junta los documentos.",en:"Contact every 7 days, alternating client and agent. At Under Contract they complete the 1003 VERIFICATION and gather the documents."}],
+              ["3 · Processing", {es:"Asistente · Procesador",en:"Assistant · Processor"}, {es:"No es suya. Pero si el agente pregunta por qué nada avanza, casi siempre es la tasación esperando el pago del cliente.",en:"Not theirs. But when the agent asks why nothing is moving, it is usually the appraisal waiting on the client's payment."}],
+              ["4 · Underwriting", {es:"Procesador · Asistente",en:"Processor · Assistant"}, {es:"No es suya, y aun así el cliente le llama. Abrir el archivo y leer la línea de espera antes de contestar.",en:"Not theirs, and the client calls them anyway. Open the file and read the wait line before answering."}],
+              ["5 · Close Prep", {es:"Asistente · Procesador",en:"Assistant · Processor"}, {es:"No es suya. El CD tiene que llegarle al cliente 3 días hábiles antes de firmar, y el sábado cuenta.",en:"Not theirs. The CD must reach the client 3 business days before signing, and Saturday counts."}],
+              ["6 · Closing", {es:"Loan Officer · Procesador",en:"Loan Officer · Processor"}, {es:"Signing es suya: espera al cliente, que tiene que presentarse. El Procesador fondea y graba; el LO entrega las llaves.",en:"Signing is theirs: it waits on the client, who has to show up. The Processor funds and records; the LO delivers the keys."}],
+              ["7 · Post-Close", {es:"Loan Officer",en:"Loan Officer"}, {es:"Suya de punta a punta: bienvenida a 3 días, reseña dentro de 7, seguimiento a 30, después el cultivo largo.",en:"Theirs end to end: welcome within 3 days, review within 7, follow-up at 30, then the long nurture."}],
+            ] },
+          { k:"list",
+            es:["Nunca entrega con el 1003 en menos de 12 de 12. El reloj de 48 horas del Asistente arranca con la entrega y cuenta como culpa del equipo.","Nunca estima una fecha de contingencia. Se captura la del contrato, aunque parezca rara.","Nunca mete un archivo lento en Preparación. Eso es para tiempo que no controla, no para trabajo atrasado.","Nunca borra una nota. Se escribe una entrada nueva corrigiéndola."],
+            en:["Never hands off with the 1003 under 12 of 12. The Assistant's 48-hour clock starts on handoff and counts as the team's fault.","Never estimates a contingency date. Enter what the contract says, even if it looks odd.","Never parks a slow file in Preparation. That is for time they do not control, not for backlog.","Never deletes a note. Add a new entry correcting it."] },
+          { k:"p",
+            es:"Busca en la guía: Los cuatro relojes · Preparación y seguimiento · El contador DUE REVIEW · Tu compensación.",
+            en:"Search the guide: The four clocks · Preparation and follow-up · The DUE REVIEW counter · Your compensation." },
+        ],
+      },
+
+      {
+        id: "puesto-asistente",
+        es: "El Asistente", en: "The Assistant",
+        blocks: [
+          { k:"lead",
+            es:"Dueño de ocho de las dieciocho etapas con reloj: del registro con el lender hasta que salen los documentos de cierre.",
+            en:"Owns eight of the eighteen timed stages: from registering with the lender through to the closing docs being drawn." },
+          { k:"table",
+            head:{ es:["Fase","Quién trabaja","Qué pasa"], en:["Phase","Who works it","What happens"] },
+            rows:[
+              ["1 · Pre-Qual", {es:"Loan Officer",en:"Loan Officer"}, {es:"No la toca. Lo que le llega ya trae crédito, ingreso y precalificación hechos.",en:"Not touched. What reaches them already has credit, income and a pre-qual behind it."}],
+              ["2 · House Hunt", {es:"Loan Officer",en:"Loan Officer"}, {es:"Ahí nace su archivo. Su reloj arranca cuando el contador del 1003 llega a 12 de 12, no antes.",en:"This is where their file is born. Their clock starts when the 1003 counter hits 12 of 12, not before."}],
+              ["3 · Processing", {es:"Asistente · Procesador",en:"Assistant · Processor"}, {es:"Full Application: captura las cinco fechas del contrato y registra con el lender, 48 horas desde el 1003 completo. Después Initial Disclosures, y las órdenes pasan al Procesador.",en:"Full Application: capture the five contract dates and register with the lender, 48 hours from a complete 1003. Then Initial Disclosures, and the orders go to the Processor."}],
+              ["4 · Underwriting", {es:"Procesador · Asistente",en:"Processor · Assistant"}, {es:"El Procesador somete. Cuando baja el Conditional Approval vuelve al Asistente: reparte condiciones en 1 día y persigue al cliente hasta el Clear to Close.",en:"The Processor submits. When the Conditional Approval comes down it returns to the Assistant: split conditions in 1 day and chase the client to Clear to Close."}],
+              ["5 · Close Prep", {es:"Asistente · Procesador",en:"Assistant · Processor"}, {es:"Emite el CD y programa la firma. Closing Docs Drawn es su última etapa.",en:"Issue the CD and book the signing. Closing Docs Drawn is their last stage."}],
+              ["6 · Closing", {es:"Loan Officer · Procesador",en:"Loan Officer · Processor"}, {es:"Ya soltó. La firma es del LO y el fondeo del Procesador.",en:"Already let go. The signing is the LO's and the funding the Processor's."}],
+              ["7 · Post-Close", {es:"Loan Officer",en:"Loan Officer"}, {es:"Nada suyo.",en:"Nothing theirs."}],
+            ] },
+          { k:"list",
+            es:["Nunca arranca con el 1003 a medias. Si el contador no dice 12 de 12, el archivo se devuelve al Loan Officer.","Nunca cambia lender, tasa ni lock. Eso es del Loan Officer.","Nunca cuenta el CD de lunes a viernes. Regulación Z excluye domingos y feriados; el sábado cuenta.","Nunca borra una nota. Se escribe una entrada nueva corrigiéndola."],
+            en:["Never starts on a half-done 1003. If the counter does not read 12 of 12, hand the file back to the Loan Officer.","Never changes lender, rate or lock. That belongs to the Loan Officer.","Never counts the CD Monday to Friday. Regulation Z excludes Sundays and holidays; Saturday counts.","Never deletes a note. Add a new entry correcting it."] },
+          { k:"p",
+            es:"Busca en la guía: Los cuatro relojes · Las seis señales · Las cinco fechas · Tres definiciones de día hábil.",
+            en:"Search the guide: The four clocks · The six signals · The five dates · Three definitions of business day." },
+        ],
+      },
+
+      {
+        id: "puesto-procesador",
+        es: "El Procesador", en: "The Processor",
+        blocks: [
+          { k:"lead",
+            es:"Ocho etapas van a quien tenga asignado el archivo — se abre y se mira el campo del procesador. Doc Collection es del procesador interno, y solo por excepción.",
+            en:"Eight stages belong to whichever Processor is assigned the file — open it and check the processor field. Doc Collection is the internal Processor's, and exceptions only." },
+          { k:"table",
+            head:{ es:["Fase","Quién trabaja","Qué pasa"], en:["Phase","Who works it","What happens"] },
+            rows:[
+              ["1 · Pre-Qual", {es:"Loan Officer",en:"Loan Officer"}, {es:"Procesamiento no empieza aquí. El primer archivo llega en la fase 3, después de que el Asistente lo registró.",en:"Processing does not start here. The first file arrives in phase 3, after the Assistant has registered it."}],
+              ["2 · House Hunt", {es:"Loan Officer",en:"Loan Officer"}, {es:"Nada llega hasta que el Asistente registró el archivo con el lender.",en:"Nothing arrives until the Assistant has registered the file with the lender."}],
+              ["3 · Processing", {es:"Asistente · Procesador",en:"Assistant · Processor"}, {es:"Título 2 días · Tasación 6 — de 5 a 7 en Las Vegas, y no se mueve hasta que el cliente paga · Seguro 2, el cliente escoge la póliza. La tasación marca el paso de la fase.",en:"Title 2 days · Appraisal 6 — 5 to 7 in Las Vegas, and it does not move until the client pays · Insurance 2, the client picks the policy. The appraisal sets the pace."}],
+              ["4 · Underwriting", {es:"Procesador · Asistente",en:"Processor · Assistant"}, {es:"Submitted to UW en 1 día, UW Review en 3, 5 si es DPA. El Conditional Approval pasa al Asistente.",en:"Submitted to UW in 1 day, UW Review in 3, 5 if DPA. The Conditional Approval goes to the Assistant."}],
+              ["5 · Close Prep", {es:"Asistente · Procesador",en:"Assistant · Processor"}, {es:"Final Verifications es suya: 1 día, y es la última mirada antes de sacar los documentos. Tarde aquí y se mueve la fecha de firma.",en:"Final Verifications is theirs: 1 day, and the last look before the docs are drawn. Late here and the signing date moves."}],
+              ["6 · Closing", {es:"Loan Officer · Procesador",en:"Loan Officer · Processor"}, {es:"El LO corre la firma. Funded es del Procesador en 1 día y Recorded 2 días después — esa es su última etapa.",en:"The LO runs the signing. Funded is the Processor's in 1 day and Recorded 2 days after — that is their last stage."}],
+              ["7 · Post-Close", {es:"Loan Officer",en:"Loan Officer"}, {es:"Nada suyo.",en:"Nothing theirs."}],
+            ] },
+          { k:"list",
+            es:["Nunca pide la tasación antes de que el cliente pague. No se mueve, y el reloj de 6 días corre igual.","Nunca cambia lender, tasa ni lock. Eso es del Loan Officer.","Nunca devuelve un archivo sin nota. El Asistente lo retoma por lo que quedó escrito, no de memoria.","Nunca borra una nota. Se escribe una entrada nueva corrigiéndola."],
+            en:["Never orders the appraisal before the client has paid. It will not move, and the six-day clock runs anyway.","Never changes lender, rate or lock. That belongs to the Loan Officer.","Never hands a file back without a note. The Assistant picks it up from what was written, not from memory.","Never deletes a note. Add a new entry correcting it."] },
+          { k:"p",
+            es:"Busca en la guía: Los cuatro relojes · Las seis señales · Las cinco fechas · Tres definiciones de día hábil. La cola de Processing tiene pantalla propia.",
+            en:"Search the guide: The four clocks · The six signals · The five dates · Three definitions of business day. Processing has its own screen." },
+        ],
+      },
+
+    ],
+  },
+
+  // ─────────────────────────────────────────────────────────────────
   {
     id: "roles", icon: "◐", color: "#BD65E8",
     es: "Roles y acceso", en: "Roles and access",
@@ -1052,7 +1145,12 @@ export function searchHelp(sections, query, lang = "es") {
   const out = [];
   for (const sec of sections) {
     for (const a of sec.articles) {
-      const hay = [a[lang] || a.es, ...(a.blocks || []).flatMap(b => [
+      // El titulo de la seccion entra al indice: alguien que busca el nombre
+      // de la seccion —"puesto", "tablero", "glosario"— no encontraba nada.
+      // Y el titulo del articulo se indexa en los dos idiomas, para que
+      // buscar "seat" con la app en español tambien caiga aqui.
+      const hay = [a[lang] || a.es, a.es, a.en, sec[lang] || sec.es, sec.en,
+                   ...(a.blocks || []).flatMap(b => [
         flat(b[lang] ?? b.es), flat(b.en),
         ...(b.rows || []).flat().map(flat),
         ...((b.head && (b.head[lang] || b.head.es)) || []),
