@@ -33,6 +33,25 @@ export const UI = {
   help:        { es:"AYUDA",          en:"HELP" },
   training:    { es:"ENTRENAMIENTO",  en:"TRAINING" },
 
+  // ─── puertas de etapa ───
+  gateTitle:   { es:"FALTA ALGO PARA SALIR DE ESTA ETAPA", en:"SOMETHING IS MISSING TO LEAVE THIS STAGE" },
+  gateSub:     { es:"Saltarse esto deja un hueco que después nadie puede llenar.",
+                 en:"Skipping this leaves a hole nobody can fill later." },
+  gateSoftTitle:{ es:"Puedes avanzar, pero mira esto:", en:"You can advance, but look at this:" },
+  gateGotIt:   { es:"ENTENDIDO", en:"GOT IT" },
+  gateAdvanceAnyway:{ es:"AVANZAR DE TODAS FORMAS", en:"ADVANCE ANYWAY" },
+  gateAskAdmin:{ es:"Solo Jose puede desbloquear esto, y queda registrado con la razón.",
+                 en:"Only Jose can unlock this, and it is recorded with the reason." },
+  gateOverride:{ es:"DESBLOQUEAR COMO ADMIN", en:"OVERRIDE AS ADMIN" },
+  gateReason:  { es:"RAZÓN DEL DESBLOQUEO", en:"REASON FOR THE OVERRIDE" },
+  gateReasonPh:{ es:"El portal del lender está caído desde el viernes",
+                 en:"The lender portal has been down since Friday" },
+  gateNeedReason:{ es:"Escribe la razón. Un desbloqueo sin razón no sirve de nada dentro de tres meses.",
+                   en:"Write the reason. An override with no reason is worthless three months from now." },
+  closeDateAsk:{ es:"¿En qué fecha fondeó de verdad? (AAAA-MM-DD)\n\nEsta fecha decide en qué corte de payroll entra — no es la fecha de cierre esperada.",
+                 en:"What date did it actually fund? (YYYY-MM-DD)\n\nThis date decides which payroll cut it lands in — it is not the expected closing date." },
+  closeDateBad:{ es:"Esa fecha no se entiende. Usa AAAA-MM-DD.", en:"That date is not readable. Use YYYY-MM-DD." },
+
   // ─── textos que estaban fijos en App.jsx ───
   // Veinticuatro cadenas escritas directo en el JSX, fuera del diccionario.
   // Las de login son las que mas dolian: quien se equivoca de contraseña el
