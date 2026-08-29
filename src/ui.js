@@ -33,6 +33,58 @@ export const UI = {
   help:        { es:"AYUDA",          en:"HELP" },
   training:    { es:"ENTRENAMIENTO",  en:"TRAINING" },
 
+  // ─── textos que estaban fijos en App.jsx ───
+  // Veinticuatro cadenas escritas directo en el JSX, fuera del diccionario.
+  // Las de login son las que mas dolian: quien se equivoca de contraseña el
+  // primer dia recibe un mensaje que no entiende, antes de haber podido
+  // tocar ningun toggle.
+  errNeedBoth:  { es:"Hacen falta el correo y la contraseña.", en:"Email and password required." },
+  errBadLogin:  { es:"Correo o contraseña incorrectos.", en:"Incorrect email or password." },
+  errTooMany:   { es:"Demasiados intentos fallidos. Espera unos minutos o restablece tu contraseña.",
+                  en:"Too many failed attempts. Try again in a few minutes or reset your password." },
+  errNoNet:     { es:"Sin conexión a internet. Revisa tu red y vuelve a intentar.",
+                  en:"No internet connection. Check your network and try again." },
+  errSignIn:    { es:"No se pudo entrar. Vuelve a intentar.", en:"Sign in failed. Try again." },
+  errNeedEmail: { es:"Escribe tu correo arriba y después toca Restablecer.",
+                  en:"Enter your email above first, then click Reset." },
+  errResetFail: { es:"No se pudo mandar el correo de restablecimiento. Revisa la dirección.",
+                  en:"Could not send reset email. Check the email address." },
+  phPassword:   { es:"Tu contraseña...", en:"Enter your password..." },
+
+  errNotBackup: { es:"Este archivo no parece un respaldo válido del pipeline. No se encontró ningún préstamo.",
+                  en:"This file does not look like a valid pipeline backup. No files found." },
+  errBadJson:   { es:"No se pudo leer el respaldo. Asegúrate de que sea un JSON exportado por esta aplicación.",
+                  en:"Could not read backup file. Make sure it is a valid JSON file exported from this app." },
+  errAdminOnly: { es:"Solo los administradores pueden borrar archivos. Pídeselo a Jose.",
+                  en:"Only admins can delete files. Ask Jose to delete this for you." },
+  backupHint:   { es:"Solo administradores — restaura tu pipeline desde un respaldo JSON",
+                  en:"Admin only — restore your pipeline from a JSON backup file" },
+
+  reviewSub:    { es:"Archivos en Preparación cuya fecha de revisión ya llegó",
+                  en:"Preparation files whose review date has arrived" },
+  reviewHint:   { es:"Llegó la fecha de revisión. Decide: continuar, reprogramar o archivar.",
+                  en:"The review date arrived. Decide: continue, reschedule, or archive." },
+  prepHint:     { es:"Vivos pero todavía no compran. Sin reloj de etapa — estos esperan contra una fecha de revisión.",
+                  en:"Alive but not buyable yet. No stage clock — these wait against a review date." },
+  reviewEmpty:  { es:"Nada pendiente hoy. ✓", en:"Nothing due today. ✓" },
+  prepEmpty:    { es:"No hay archivos en Preparación.", en:"No files in Preparation." },
+  prepEmptyHow: { es:"Para mandar uno: abre cualquier archivo activo → ⏸ PREP → escoge una razón y una fecha de revisión.",
+                  en:"To send one here: open any active file → ⏸ PREP → pick a reason and a review date." },
+
+  phSearch:     { es:"Buscar cliente...", en:"Search borrower..." },
+  phLegalName:  { es:"Nombre legal completo", en:"Full legal name" },
+  phPartner:    { es:"Agente, contador, Smart Bee, cliente que llegó solo...",
+                  en:"Agent name, CPA, Smart Bee, walk-in..." },
+  phNoteSample: { es:"Esperando talones de pago actualizados", en:"Waiting on updated pay stubs" },
+  inboundLabel: { es:"Este es un referido entrante", en:"This is an inbound referral" },
+  inboundEmpty: { es:"Todavía no hay referidos entrantes.", en:"No inbound referrals yet." },
+  inboundEmptyHow:{ es:"Para agregar uno: toca «+ NEW FILE» → marca «Este es un referido entrante» arriba.",
+                    en:"To add an inbound: click «+ NEW FILE» → check «This is an inbound referral» at the top." },
+  noDataBranch: { es:"Sin dato — los reportes usan el default de la sucursal.",
+                  en:"No data — reports use the branch default." },
+  dpaStackHint: { es:"Conventional arriba, FHA DPA abajo", en:"Conventional on top, FHA DPA below" },
+  reviewedBy:   { es:"Jose revisó esto", en:"Jose reviewed this" },
+
   // ─── recorrido guiado ───
   // El texto de los 24 pasos vive en `tour.jsx` junto al catalogo: cada
   // paso nombra un campo, y separarlos garantizaba que uno cambiara sin
