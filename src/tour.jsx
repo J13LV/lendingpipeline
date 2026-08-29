@@ -37,9 +37,14 @@ export const excludeTraining = list => (list || []).filter(notTraining);
 // el detector de duplicados dispara sin que nadie lo pidiera y el
 // primer día se convierte en susto. La alerta se provoca a propósito
 // en el paso 23, cuando ya hay contexto para entenderla.
+//
+// Sin prefijo "TRAINING —": la ficha ya lo dice con el borde punteado
+// y con la etiqueta, y esas dos el trainee no las puede borrar. El
+// nombre sí es editable, así que era la señal más débil de las tres —
+// y encima repetía la palabra dos veces en la misma ficha.
 export function trainingSampleName(profile) {
   const first = String(profile?.name || "").trim().split(/\s+/)[0] || "Sample";
-  return `TRAINING — Maria ${first}`;
+  return `Maria ${first}`;
 }
 
 // ─── 2. EL CATÁLOGO DE PASOS ───────────────────────────────────────
