@@ -408,8 +408,8 @@ export function criticalPathDays(file, mode = "warn") {
 
 // Pre-contract and post-close stages are not part of the closing budget.
 export const FIXED_CLOCKS = {
-  "Lead Inquiry":            { warn: 1,  late: 2,  owner: "Laura" },
-  "Needs Assessment":        { warn: 2,  late: 3,  owner: "Laura" },
+  "Lead Inquiry":            { warn: 1,  late: 2,  owner: "LO" },
+  "Needs Assessment":        { warn: 2,  late: 3,  owner: "LO" },
   "Credit Pull":             { warn: 1,  late: 2,  owner: "LO" },
   "Income Verification":     { warn: 2,  late: 3,  owner: "LO" },
   "Pre-Qualification":       { warn: 1,  late: 2,  owner: "LO" },
