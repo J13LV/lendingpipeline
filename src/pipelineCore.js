@@ -599,10 +599,20 @@ export function addDays(iso, n) {
 export function closingOutlook(file) {
   const meta = targetsFor(file);
   const state = file?.state || "NV";
-  if (!file?.contractDate) return { targets: meta, state, ready: false };
+  // El ancla es `contingencies.contractAccepted`, no `contractDate`. Ese
+  // campo nunca existio en este modelo, asi que esta funcion devolvia
+  // `ready: false` SIEMPRE y el `promiseRisk` que calcula —el que dice si
+  // se puede prometer 45 dias en un DPA— no lo vio nadie nunca.
+  const ancla = okDate(file?.contingencies?.[CONTINGENCY_ANCHOR_FIELD])
+    || okDate(file?.contractDate);
+  if (!ancla) return { targets: meta, state, ready: false };
 
-  const projected = addDays(file.contractDate, meta.internal);
-  const contracted = file.closing || null;
+  const projected = addDays(ancla, meta.internal);
+  // Aqui ya sabemos que hay contrato —existe el ancla— asi que se lee el
+  // COE crudo. `coeOf` lo esconde antes de Under Contract, y esta funcion
+  // se usa tambien para responder "¿que COE puedo prometer?" antes de que
+  // el archivo avance.
+  const contracted = rawCoe(file) || null;
   const slack = contracted ? daysBetween(projected, contracted) : null;
   const short = contracted && new Date(contracted) < new Date(projected);
 

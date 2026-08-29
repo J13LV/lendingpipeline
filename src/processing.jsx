@@ -40,6 +40,10 @@ import {
   GATE1_VERIFY_IDS, GATE1_STATES, gate1State, gate1At, cycleGate1, gate1Coverage,
   fileClock, stageColor, stageBreakdownLabel,
   overdueReport, overdueTasks, worstOverdue, TASK_SEVERITY,
+  SUBMISSION_DOCS, requiredDocs, notApplicableDocs, docHeld, docAt, docBy,
+  stampDoc, submissionCoverage, anticipatedLetters, LOE_KINDS,
+  DOC_FLAGS, docFlag, setDocFlag, emdThreshold, emdNeedsSourcing,
+  largeDepositThreshold, monthlyQualifyingIncome, incomeDocTypes, incomeDocMeta,
   HISTORY_KINDS, HISTORY_MONTHS_REQUIRED, historyOf, historyMonths,
   historyCoversTwoYears, historyShortBy, historyGaps, EMPLOYMENT_GAP_MONTHS,
   setHistoryRow, addHistoryRow, removeHistoryRow,
@@ -314,6 +318,208 @@ export function IntakePane({ file, lang, onSave, readOnly }) {
         );
       })}
       <div className="sys">{T("intakeHintLo")}</div>
+    </div>
+  );
+}
+
+// ─── LOS DOCUMENTOS QUE SE JUNTAN ANTES DE REGISTRAR ───────────────
+// La lista NO la escoge nadie: sale del producto, del tipo de ingreso y
+// de las condiciones del contrato. Un FHA con Schedule C pide una cosa y
+// un Conventional 1120-S otra.
+//
+// Los "no aplica" se muestran atenuados con su motivo. Que un documento
+// desaparezca del listado sin explicacion deja al equipo dudando si el
+// sistema se lo comio.
+const GRUPOS = {
+  identity: { es: "Identificación", en: "Identity" },
+  income:   { es: "Ingreso",        en: "Income" },
+  assets:   { es: "Activos",        en: "Assets" },
+  contract: { es: "Contrato",       en: "Contract" },
+  property: { es: "Propiedad y divulgaciones", en: "Property and disclosures" },
+};
+const QUIEN = {
+  client: { es: "el cliente", en: "the client" },
+  office: { es: "la oficina", en: "the office" },
+  agent:  { es: "el agente",  en: "the agent" },
+};
+
+export function SubmissionPane({ file, lang, onSave, who, readOnly }) {
+  const { T, P } = mk(lang);
+  const [verNoAplica, setVerNoAplica] = useState(false);
+  const req = requiredDocs(file);
+  const noAplica = notApplicableDocs(file);
+  const cartas = anticipatedLetters(file);
+  const cov = submissionCoverage(file);
+  const tipos = incomeDocTypes(file);
+
+  const sello = (id, etiqueta, nota, color) => {
+    const hecho = docHeld(file, id);
+    return (
+      <div key={id} style={{ display: "flex", gap: 9, alignItems: "flex-start",
+        padding: "5px 0" }}>
+        <button className="hov" disabled={readOnly}
+          onClick={readOnly ? undefined : () => onSave(stampDoc(file, id, who))}
+          style={{ background: hecho ? C.ok : "transparent", flexShrink: 0,
+            border: `1px solid ${hecho ? C.ok : color || C.edge}`, borderRadius: 4,
+            width: 17, height: 17, marginTop: 1, cursor: readOnly ? "default" : "pointer",
+            color: C.bg, fontSize: 11, lineHeight: 1, padding: 0 }}>
+          {hecho ? "✓" : ""}
+        </button>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: "var(--fs-2)", color: hecho ? C.soft : C.text,
+            lineHeight: 1.45 }}>{etiqueta}</div>
+          {nota && <div style={{ fontSize: "var(--fs-1)", color: C.dim,
+            lineHeight: 1.45, marginTop: 1 }}>{nota}</div>}
+        </div>
+        {hecho && docAt(file, id) && (
+          <span style={{ fontSize: "var(--fs-1)", color: C.dim, fontFamily: "DM Mono",
+            flexShrink: 0 }}>{md(docAt(file, id))}</span>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+      {/* De donde sale esta lista. Sin esto parece arbitraria. */}
+      <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 8,
+        padding: "11px 13px" }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+          <span style={{ fontFamily: "Syne", fontWeight: 800, fontSize: "var(--fs-6)",
+            color: cov.complete ? C.green : C.gold }}>{cov.held}/{cov.total}</span>
+          <span style={{ fontSize: "var(--fs-2)", color: C.text }}>
+            {cov.complete ? T("subComplete") : T("subMissing", { n: cov.missing })}
+          </span>
+        </div>
+        <div style={{ background: C.bg, borderRadius: 3, height: 6, marginTop: 8,
+          overflow: "hidden" }}>
+          <div style={{ background: cov.complete ? C.ok : C.gold, height: "100%",
+            width: `${cov.pct}%` }} />
+        </div>
+        <div className="sys" style={{ marginTop: 7 }}>
+          {T("subDerived", { p: file?.type || "—",
+            i: tipos.map(x => P(incomeDocMeta(x))).join(" + ") || "—" })}
+        </div>
+      </div>
+
+      {/* LAS CONDICIONES. Van aqui y no en admision: la contraoferta y las
+          divulgaciones llegan con el RPA, no se saben al precalificar. */}
+      {!readOnly && (
+        <div style={{ background: C.card, border: `1px solid ${C.line}`,
+          borderRadius: 8, padding: "11px 13px" }}>
+          <div style={{ fontSize: "var(--fs-1)", color: C.soft, letterSpacing: "1px",
+            marginBottom: 8 }}>{T("subConditions")}</div>
+          <div style={{ display: "grid",
+            gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", gap: 5 }}>
+            {DOC_FLAGS.map(fl => {
+              const on = docFlag(file, fl.id);
+              return (
+                <button key={fl.id} className="hov"
+                  onClick={() => onSave(setDocFlag(file, fl.id, !on))}
+                  style={{ display: "flex", gap: 8, alignItems: "center", textAlign: "left",
+                    background: on ? "rgba(245,166,35,.10)" : "transparent",
+                    border: `1px solid ${on ? C.gold : C.edge}`, borderRadius: 5,
+                    padding: "6px 9px", cursor: "pointer" }}>
+                  <span style={{ color: on ? C.gold : C.dim, fontSize: "var(--fs-2)" }}>
+                    {on ? "✓" : "○"}
+                  </span>
+                  <span style={{ fontSize: "var(--fs-1)", color: on ? C.text : C.mid,
+                    lineHeight: 1.4 }}>{P(fl)}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* LOS DOCUMENTOS, por grupo */}
+      {Object.keys(GRUPOS).map(g => {
+        const enGrupo = req.filter(d => d.group === g);
+        if (!enGrupo.length) return null;
+        const hechos = enGrupo.filter(d => docHeld(file, d.id)).length;
+        return (
+          <div key={g} style={{ background: C.card, border: `1px solid ${C.line}`,
+            borderRadius: 8, padding: "11px 13px" }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 6 }}>
+              <span style={{ fontSize: "var(--fs-1)", color: C.blue || "#4A90D9",
+                letterSpacing: "1px", fontFamily: "DM Mono" }}>
+                {P(GRUPOS[g]).toUpperCase()}
+              </span>
+              <span style={{ marginLeft: "auto", fontSize: "var(--fs-1)",
+                fontFamily: "DM Mono",
+                color: hechos === enGrupo.length ? C.green : C.gold }}>
+                {hechos} / {enGrupo.length}
+              </span>
+            </div>
+            {enGrupo.map(d => sello(d.id, P(d),
+              [PN(d, lang), d.who ? P(QUIEN[d.who]) : null].filter(Boolean).join(" · ")))}
+          </div>
+        );
+      })}
+
+      {/* LAS CARTAS QUE SE ANTICIPAN. Esto es lo que ahorra dias: el
+          sistema las nombra antes de que underwriting las pida. */}
+      {cartas.length > 0 && (
+        <div style={{ background: "rgba(245,166,35,.06)", border: `1px solid ${C.gold}55`,
+          borderRadius: 8, padding: "11px 13px" }}>
+          <div style={{ fontSize: "var(--fs-1)", color: C.gold, letterSpacing: "1px",
+            fontFamily: "DM Mono" }}>{T("subLetters")}</div>
+          <div className="sys" style={{ marginBottom: 6 }}>{T("subLettersHint")}</div>
+          {cartas.map(c => sello(c.kind, P(LOE_KINDS[c.kind]), P(c), C.gold))}
+        </div>
+      )}
+
+      {/* LOS UMBRALES, con el numero. No dice "revisar depositos": dice
+          cual y por que. */}
+      <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 8,
+        padding: "11px 13px" }}>
+        <div style={{ fontSize: "var(--fs-1)", color: C.soft, letterSpacing: "1px",
+          marginBottom: 7 }}>{T("subThresholds")}</div>
+        {(() => {
+          const emd = emdThreshold(file);
+          const dep = largeDepositThreshold(file);
+          const ing = monthlyQualifyingIncome(file);
+          const fila = (k, v, alerta) => (
+            <div style={{ display: "flex", gap: 10, fontSize: "var(--fs-2)",
+              alignItems: "baseline", padding: "2px 0" }}>
+              <span style={{ color: C.dim, flex: 1 }}>{k}</span>
+              <span style={{ color: alerta ? C.red : C.text, fontFamily: "DM Mono" }}>{v}</span>
+            </div>
+          );
+          return (<>
+            {emd !== null
+              ? fila(T("subEmd"), `$${emd.toLocaleString("en-US",
+                  { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                  emdNeedsSourcing(file))
+              : fila(T("subEmd"), T("subEmdNa"))}
+            {dep !== null
+              ? fila(T("subLargeDep"), `$${dep.toLocaleString("en-US")}`)
+              : fila(T("subLargeDep"), ing ? T("subRefiNa") : T("subNoIncome"))}
+          </>);
+        })()}
+      </div>
+
+      {/* LOS QUE NO APLICAN, detras de un toque. */}
+      {noAplica.length > 0 && (
+        <div>
+          <button className="hov" onClick={() => setVerNoAplica(v => !v)}
+            style={{ background: "transparent", border: "none", color: C.dim,
+              fontSize: "var(--fs-1)", fontFamily: "DM Mono", cursor: "pointer",
+              padding: 0 }}>
+            {verNoAplica ? "▾ " : "▸ "}{T("subNotApplicable", { n: noAplica.length })}
+          </button>
+          {verNoAplica && (
+            <div style={{ marginTop: 6, paddingLeft: 12,
+              borderLeft: `2px solid ${C.line}` }}>
+              {noAplica.map(d => (
+                <div key={d.id} style={{ fontSize: "var(--fs-1)", color: C.dim,
+                  padding: "3px 0", lineHeight: 1.45 }}>{P(d)}</div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -776,6 +982,7 @@ function FilePane({ file, lang, onSave, who, readOnly, onOpenFull }) {
           ["intake",   T("intake"),      intakeCompleteness(file).total - intakeCompleteness(file).filled],
           ["findings", T("findings"),
             openFindings(file).length + gate1Coverage(file).pending],
+          ["docs",     T("subTab"), submissionCoverage(file).missing],
           ["checklist", T("milestones"),  0],
           ["dates",    T("derivedDates"), rotas],
           ["notes",    T("notes"),       noteEntries(file).length],
@@ -822,6 +1029,10 @@ function FilePane({ file, lang, onSave, who, readOnly, onOpenFull }) {
 
       {tab === "findings" && (
         <Findings file={file} lang={lang} onSave={onSave} who={who} readOnly={readOnly} />
+      )}
+
+      {tab === "docs" && (
+        <SubmissionPane file={file} lang={lang} onSave={onSave} who={who} readOnly={readOnly} />
       )}
 
       {tab === "checklist" && (

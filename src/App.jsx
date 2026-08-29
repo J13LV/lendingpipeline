@@ -56,6 +56,7 @@ import {
   setDpa, dpaLabel, dpaComplete, productionByDpa, productionByState,
   GATE1_ITEMS, gate1Item, FINDING_WAITING, WAITING_IDS, waitingMeta,
   backfillGaps, filesNeedingBackfill, backfillCount, applyBackfill, wasBackfilled,
+  submissionCoverage, submissionReady, stampSubmissionComplete,
   gate1Coverage, visibleMilestones, milestoneAt, uwOutcome, uwOutcomeAt,
   uwOutcomeMeta, discEsignedAt,
   openFindings, resolvedFindings, hasOpenFindings, addFinding, resolveFinding,
@@ -349,7 +350,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.08.29a";
+const APP_VERSION = "2026.08.29b";
 
 function huellaTexto(s) {
   let h = 0;
@@ -5899,6 +5900,35 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
                   que falta. Registrar es registrar CON alguien — no es una
                   accion desaconsejable, es imposible, asi que tampoco pregunta
                   "de todas formas". El boton es el mensaje. */}
+              {/* LA PUERTA. Los documentos se juntan ANTES de registrar:
+                  cuando el archivo llega a underwriting ya está todo en
+                  mano, y por eso el presupuesto de 24 días se sostiene.
+                  NO bloquea — un bloqueo duro se salta poniendo marcas
+                  falsas, y ahí se pierde el dato. */}
+              {canRegister(file)&&(isAdmin||isAssistant)&&(()=>{
+                const cov=submissionCoverage(file);
+                if(!cov.total) return null;
+                const ok=cov.complete;
+                return (
+                  <div style={{marginTop:9,background:ok?"rgba(126,200,164,.08)":"rgba(245,166,35,.08)",
+                    border:`1px solid ${ok?"#7EC8A4":"#F5A623"}55`,borderRadius:6,
+                    padding:"9px 11px"}}>
+                    <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap"}}>
+                      <span style={{fontSize:"var(--fs-1)",color:"var(--t4)",
+                        letterSpacing:"1px"}}>{TX("subGate")}</span>
+                      <span style={{marginLeft:"auto",fontFamily:"DM Mono",
+                        fontSize:"var(--fs-2)",color:ok?"#7EC8A4":"#F5A623"}}>
+                        {cov.held}/{cov.total}
+                      </span>
+                    </div>
+                    <div style={{fontSize:"var(--fs-2)",color:ok?"#7EC8A4":"#F5A623",
+                      marginTop:3,lineHeight:1.5}}>
+                      {ok?TX("subGateOk"):TX("subGateShort",{n:cov.missing,t:cov.total})}
+                    </div>
+                    {!ok&&<div className="sys" style={{marginTop:4}}>{TX("subGateWhere")}</div>}
+                  </div>
+                );})()}
+
               {registerBlocked(file)&&(isAdmin||isAssistant)&&(
                 <div title={TX("registerNoLenderHint")}
                   style={{marginTop:7,width:"100%",background:"transparent",
@@ -5912,12 +5942,18 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
                 <button className="hov"
                   onClick={()=>{
                     if(!confirm(TX("registerConfirm",{p:processorOf(file).full}))) return;
-                    const n=stampRegistration(file,profile?.name||null);
+                    let n=stampRegistration(file,profile?.name||null);
+                    // Si la puerta estaba completa, se sella. `closingOutlook`
+                    // lleva leyendo `gate1CompletedAt` desde el principio para
+                    // calcular el riesgo de la promesa, y nunca lo escribió nadie.
+                    if(submissionReady(file)) n=stampSubmissionComplete(n,profile?.name||null);
                     setStage(n.stage);
                     onSave({stage:n.stage, stageEnteredAt:n.stageEnteredAt, daysInStage:0,
                       stageLog:n.stageLog, fileOpenedAt:n.fileOpenedAt,
                       registrations:n.registrations, registeredAt:n.registeredAt,
-                      registeredBy:n.registeredBy, processor:n.processor});
+                      registeredBy:n.registeredBy, processor:n.processor,
+                      gate1CompletedAt:n.gate1CompletedAt||null,
+                      gate1CompletedBy:n.gate1CompletedBy||null});
                   }}
                   title={TX("registerHint")}
                   style={{marginTop:7,width:"100%",background:"rgba(126,200,164,.1)",

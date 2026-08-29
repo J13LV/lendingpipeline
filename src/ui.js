@@ -778,6 +778,38 @@ export const UI = {
   noCoeYet:{ es:"Sin contrato no hay fecha de cierre. Se llena cuando el archivo llegue a Under Contract.",
              en:"No contract, no closing date. It fills in when the file reaches Under Contract." },
 
+  // ─── checklist de sometimiento ───
+  subTab:{ es:"DOCUMENTOS", en:"DOCUMENTS" },
+  subComplete:{ es:"documentos en el expediente · completo",
+                en:"documents in the file · complete" },
+  subMissing:{ es:"documentos en el expediente · faltan {n}",
+               en:"documents in the file · {n} missing" },
+  subDerived:{ es:"La lista sale sola de: {p} · {i} · y las condiciones del contrato",
+               en:"The list is derived from: {p} · {i} · and the contract conditions" },
+  subConditions:{ es:"CONDICIONES DE ESTE ARCHIVO", en:"CONDITIONS ON THIS FILE" },
+  subLetters:{ es:"CARTAS QUE HAY QUE ANTICIPAR", en:"LETTERS TO PREPARE AHEAD" },
+  subLettersHint:{ es:"El sistema las nombra antes de que underwriting las pida. Prepararlas ahora ahorra días después.",
+                   en:"The system names them before underwriting asks. Preparing them now saves days later." },
+  subThresholds:{ es:"UMBRALES DE ESTE ARCHIVO", en:"THRESHOLDS ON THIS FILE" },
+  subEmd:{ es:"Depósito de buena fe · 1% del precio (FHA)",
+           en:"Earnest money · 1% of sales price (FHA)" },
+  subEmdNa:{ es:"el 1% es regla de FHA", en:"the 1% is an FHA rule" },
+  subLargeDep:{ es:"Depósito grande · 50% del ingreso mensual",
+                en:"Large deposit · 50% of monthly income" },
+  subRefiNa:{ es:"no se exige en refinanciamiento", en:"not required on a refinance" },
+  subNoIncome:{ es:"falta capturar el ingreso", en:"income not captured yet" },
+  subNotApplicable:{ es:"{n} no aplican a este archivo", en:"{n} do not apply to this file" },
+
+  // ─── la puerta antes de registrar ───
+  subGate:{ es:"DOCUMENTOS ANTES DE REGISTRAR", en:"DOCUMENTS BEFORE REGISTERING" },
+  subGateOk:{ es:"Todo en el expediente — listo para registrar",
+              en:"Everything in the file — ready to register" },
+  subGateShort:{ es:"Faltan {n} de {t}", en:"{n} of {t} missing" },
+  subGateHint:{ es:"Se puede registrar igual. Queda constancia de quién decidió seguir.",
+                en:"You can register anyway. It records who decided to proceed." },
+  subGateWhere:{ es:"El detalle está en la solapa DOCUMENTOS.",
+                 en:"The detail is on the DOCUMENTS tab." },
+
   // ─── historial de empleo y residencia ───
   years:{ es:"AÑOS", en:"YEARS" },
   histCovered:{ es:"{n} meses cubiertos ✓", en:"{n} months covered ✓" },
