@@ -3697,7 +3697,9 @@ function tramos(lista) {
 // veces los solapes —un cliente con dos trabajos a la vez no tiene 48
 // meses de historia, tiene 24.
 export function historyMonths(file, kind) {
-  const lista = tramos(historyOf(file, kind));
+  const malos = new Set(historyOpenErrors(file, kind));
+  const filas = historyOf(file, kind).filter((_, i) => !malos.has(i));
+  const lista = tramos(filas);
   if (!lista.length) return 0;
   const hoy = mesHoy();
   const cubierto = new Set();
@@ -3705,6 +3707,18 @@ export function historyMonths(file, kind) {
   let n = 0;
   for (let m = hoy; m > hoy - 120; m--) { if (cubierto.has(m)) n++; else break; }
   return n;
+}
+
+// Cuales renglones estan abiertos —sin fecha de salida— cuando NO son el
+// mas reciente. Nadie vive en dos direcciones a la vez ni deja dos
+// trabajos abiertos por error: si hay uno posterior, este ya termino.
+export function historyOpenErrors(file, kind) {
+  const filas = historyOf(file, kind);
+  const conMes = filas.map((r, i) => ({ i, r, a: mesA(r?.from) }))
+    .filter(x => x.a !== null);
+  if (conMes.length < 2) return [];
+  const masNuevo = Math.max(...conMes.map(x => x.a));
+  return conMes.filter(x => !x.r.to && x.a < masNuevo).map(x => x.i);
 }
 
 export const HISTORY_KINDS = {
