@@ -350,7 +350,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.08.29d";
+const APP_VERSION = "2026.08.29e";
 
 function huellaTexto(s) {
   let h = 0;
@@ -6024,15 +6024,6 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
                 procesamiento si falta algo — lo dice el propio texto del
                 bloque. `readOnly={isAssistant}` bloqueaba justamente a Tina
                 y a Laura, que son quienes la terminan. */}
-            {/* El historial va JUNTO a la admision: lo captura la misma
-                persona en el mismo momento, y de estas fechas salen las
-                cartas que el sistema anticipa. */}
-            <div style={{display:"grid",gap:12,marginBottom:12}}>
-              <HistoryPane file={file} kind="employment" lang={lang}
-                onSave={next=>onSave({employment:next.employment||null})}/>
-              <HistoryPane file={file} kind="residence" lang={lang}
-                onSave={next=>onSave({residence:next.residence||null})}/>
-            </div>
             <IntakePane file={file} lang={lang} readOnly={false}
               onSave={next=>onSave({intake:next.intake})}/>
           </div>
