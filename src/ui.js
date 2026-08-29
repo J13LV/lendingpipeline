@@ -778,6 +778,10 @@ export const UI = {
   noCoeYet:{ es:"Sin contrato no hay fecha de cierre. Se llena cuando el archivo llegue a Under Contract.",
              en:"No contract, no closing date. It fills in when the file reaches Under Contract." },
 
+  notInList:{ es:"no está en la lista", en:"not in the list" },
+  notInListHint:{ es:"Este valor no es de la lista. Escoge el correcto — mientras siga así, el archivo no cuenta en producción.",
+                  en:"This value is not from the list. Pick the right one — until then, the file does not count in production." },
+
   // ─── checklist de sometimiento ───
   subTab:{ es:"DOCUMENTOS", en:"DOCUMENTS" },
   subComplete:{ es:"documentos en el expediente · completo",
@@ -807,6 +811,11 @@ export const UI = {
   riskDocs:{ es:"{n} CONDICIONES QUE PIDEN LAS BANDERAS",
              en:"{n} CONDITIONS THE FLAGS CALL FOR" },
   laterTitle:{ es:"DESPUÉS DE LA APROBACIÓN", en:"AFTER APPROVAL" },
+  timing_pta:{ es:"cuenta para registrar", en:"counts toward registering" },
+  timing_ptc:{ es:"la tasación y el título todavía no existen — no bloquea",
+               en:"the appraisal and title do not exist yet — does not block" },
+  timing_ptf:{ es:"lo último, justo antes de que el dinero salga",
+               en:"the last step, right before the money moves" },
   laterHint:{ es:"No cuentan para registrar: la tasación y el título todavía no existen. Se ven aquí para ir pidiéndolos.",
               en:"These do not count toward registering: the appraisal and title do not exist yet. They are here so you can start asking." },
   customTitle:{ es:"ESCRITOS A MANO", en:"WRITTEN IN" },

@@ -321,6 +321,33 @@ function ruedaHorizontal(e){
   e.preventDefault();
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// UN VALOR QUE NO ESTA EN LA LISTA
+// ═══════════════════════════════════════════════════════════════════
+// Un <select> cuyo `value` no coincide con ninguna <option> muestra la
+// PRIMERA como si fuera el valor guardado. El navegador no avisa.
+//
+// Manuel Estrada lo dejo a la vista: el encabezado decia "Laura de Armas"
+// y el desplegable "Jose Del Valle". El dato guardado era Laura —que es
+// procesadora, no originadora— y venia de la migracion de los 102
+// archivos, donde el nombre entra como texto sin validar contra la lista.
+//
+// Peor todavia: al abrir y guardar sin tocar el control, React no manda
+// evento y el valor malo sobrevive. Habia que escoger otro y volver.
+//
+// Con 102 archivos migrados y una hoja de Excel que entra por fuera, esto
+// puede estar pasando en mas sitios de los que se ven. Y en produccion
+// significa numeros atribuidos a la persona equivocada.
+//
+// La opcion huerfana se añade al principio, en rojo y diciendo que no
+// esta en la lista. El archivo deja de mentir y se arregla con un toque.
+function orphanOption(valor, dentro, texto){
+  const v = String(valor ?? "").trim();
+  if (!v) return null;
+  if (dentro) return null;
+  return <option value={v}>{`⚑ ${v} — ${texto}`}</option>;
+}
+
 function timeAgo(iso){
   if(!iso) return "";
   const diff = Date.now() - new Date(iso).getTime();
@@ -350,7 +377,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.08.29f";
+const APP_VERSION = "2026.08.29i";
 
 function huellaTexto(s) {
   let h = 0;
@@ -5863,19 +5890,33 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
         <div style={{display:tab==="loan"?"grid":"none",gridTemplateColumns:"1fr 1fr",gap:10,alignSelf:"start"}}>
           <div style={{gridColumn:"1/-1"}}>
             <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{L("loanOfficer")}</div>
-            <select value={loAssigned} onChange={e=>setLoAssigned(e.target.value)} style={fs2}>
-              {LO_LIST.map(lo=><option key={lo.name} value={lo.name}>{lo.name} · {lo.role}</option>)}
-            </select>
+            {(()=>{const dentro=LO_LIST.some(x=>x.name===loAssigned);
+              return (<>
+                <select value={loAssigned} onChange={e=>setLoAssigned(e.target.value)}
+                  style={{...fs2, ...(dentro?{}:{borderColor:"#E85D75",color:"#E85D75"})}}>
+                  {orphanOption(loAssigned,dentro,TX("notInList"))}
+                  {LO_LIST.map(lo=><option key={lo.name} value={lo.name}>{lo.name} · {lo.role}</option>)}
+                </select>
+                {!dentro&&<div style={{fontSize:"var(--fs-1)",color:"#E85D75",marginTop:3,
+                  lineHeight:1.45}}>{TX("notInListHint")}</div>}
+              </>);})()}
           </div>
           {!inPrep && !isReferredOut && (
             <div style={{gridColumn:"1/-1"}}>
               <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{L("processor")}</div>
               {isAdmin?(
-                <select value={processor} onChange={e=>setProcessor(e.target.value)} style={fs2}>
-                  {PROCESSOR_IDS.map(id=>(
-                    <option key={id} value={id}>{PROCESSORS[id].full}</option>
-                  ))}
-                </select>
+                (()=>{const dentro=PROCESSOR_IDS.includes(processor);
+                  return (<>
+                    <select value={processor} onChange={e=>setProcessor(e.target.value)}
+                      style={{...fs2, ...(dentro?{}:{borderColor:"#E85D75",color:"#E85D75"})}}>
+                      {orphanOption(processor,dentro,TX("notInList"))}
+                      {PROCESSOR_IDS.map(id=>(
+                        <option key={id} value={id}>{PROCESSORS[id].full}</option>
+                      ))}
+                    </select>
+                    {!dentro&&<div style={{fontSize:"var(--fs-1)",color:"#E85D75",marginTop:3,
+                      lineHeight:1.45}}>{TX("notInListHint")}</div>}
+                  </>);})()
               ):(
                 <div style={{fontSize:"var(--fs-4)",color:processorOf(file).color}}>{processorOf(file).full}</div>
               )}
