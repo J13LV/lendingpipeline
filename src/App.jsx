@@ -394,7 +394,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.09.01a";
+const APP_VERSION = "2026.09.01b";
 
 function huellaTexto(s) {
   let h = 0;
@@ -812,6 +812,10 @@ export default function App() {
   const [search,setSearch]=useState("");
   const [showAdd,setShowAdd]=useState(false);
   const [trainingMode,setTrainingMode]=useState(false);
+  // Aqui arriba a la fuerza: mas abajo quedaria despues de los return
+  // tempranos de authReady, currentUser y loaded, y un hook que solo corre
+  // en algunos renders tumba React entero.
+  const [gateBlock,setGateBlock]=useState(null);
   const [showHelp,setShowHelp]=useState(false);
   const [showBackfill,setShowBackfill]=useState(false);
   // Hay un despliegue más nuevo que el que este navegador tiene cargado.
@@ -1265,7 +1269,6 @@ export default function App() {
   // La puerta se evalua ANTES de tocar el estado: si bloquea, no se
   // avanza y se abre el aviso. `override` solo llega desde el boton de
   // admin, y trae la razon escrita que queda en el historial.
-  const [gateBlock,setGateBlock]=useState(null);
   const advance=(id,override)=>{
     const f0=files.find(x=>x.id===id);
     if(f0 && !override){
