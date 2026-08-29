@@ -3597,6 +3597,447 @@ export function worstFinding(file) {
   return [...abiertos].sort((a, b) => String(a.at).localeCompare(String(b.at)))[0];
 }
 
+
+// ─── 7Z3. CHECKLIST DE SOMETIMIENTO ────────────────────────────────
+// Los documentos que el LO y Laura juntan ANTES de que Tina registre.
+// La idea es de Jose: llegar a underwriting con todo en mano para que,
+// cuando el underwriter pida algo, ya esté en el expediente.
+//
+// Esto NO es la pagina 2 del checklist de Barrett. Aquella son las doce
+// verificaciones del 1003 que hace Tina —revisar y marcar limpio— y ya
+// existe. Esta es la capa de ABAJO: la materia prima. Tina no puede
+// revisar el calculo de ingreso si no esta el P&L.
+//
+// Y llena `gate1CompletedAt`, el campo que `closingOutlook` lleva leyendo
+// desde el principio para calcular `promiseRisk` y que nunca escribio
+// nadie. El presupuesto de 24 dias de camino critico ASUME que esto ya
+// paso; sin la puerta, ese numero es una intencion.
+//
+// ═══ DE DONDE SALE CADA REGLA ═══
+// Nada de aqui es estimacion. Cada umbral tiene su fuente citada en el
+// comentario de su linea. Conventional de Fannie Mae Selling Guide; FHA
+// del HUD Handbook 4000.1, Seccion II.A.4, revisado 8/12/2026.
+// Donde no encontramos la fuente, el campo dice que es practica de la
+// sucursal y no norma —para que dentro de un año se sepa cual es cual.
+
+// Como se documenta el ingreso. Lo escoge el LO al precalificar: es lo
+// que decide que documentos pedirle al cliente desde el primer dia.
+export const INCOME_DOC_TYPES = [
+  { id: "w2",        es: "W-2 · asalariado",        en: "W-2 · wage earner" },
+  { id: "sched_c",   es: "Schedule C · por cuenta propia",
+                     en: "Schedule C · sole proprietor" },
+  { id: "form_1065", es: "1065 · sociedad o LLC",   en: "1065 · partnership or LLC" },
+  { id: "form_1120s",es: "1120-S · S corporation",  en: "1120-S · S corporation" },
+  { id: "form_1120c",es: "1120 · corporación",      en: "1120 · C corporation" },
+  { id: "other",     es: "Otro · pensión, renta, 1099",
+                     en: "Other · pension, rental, 1099" },
+];
+export const incomeDocMeta = id => INCOME_DOC_TYPES.find(x => x.id === id) || null;
+
+// Las tres formas de entidad piden lo mismo segun HUD 4000.1 II.A.4.c.x y
+// Fannie B3-3.2-01: declaraciones de la empresa con todos los anexos.
+// Se agrupan para no repetir catalogo, pero el rotulo dice cual es.
+const ENTIDAD = ["form_1065", "form_1120s", "form_1120c"];
+export const isSelfEmployedDoc = id => id === "sched_c" || ENTIDAD.includes(id);
+export const isEntityDoc = id => ENTIDAD.includes(id);
+
+// Los tipos de ingreso presentes en el archivo. Normalmente uno; dos
+// cuando el co-cliente documenta distinto —una pareja donde uno es W-2 y
+// el otro tiene negocio propio, que en este mercado pasa seguido.
+export function incomeDocTypes(file) {
+  const a = file?.incomeDocType || null;
+  const b = file?.coIncomeDocSplit ? (file?.coIncomeDocType || null) : null;
+  return [...new Set([a, b].filter(Boolean))];
+}
+
+// ─── HISTORIAL DE EMPLEO Y RESIDENCIA ──────────────────────────────
+// FHA pide DOS AÑOS de los dos (HUD 4000.1 II.A.4.c.i(C)). Con fechas el
+// sistema calcula el hueco y pide la carta solo cuando hace falta; con
+// una marca dependeria de que alguien se acuerde.
+//
+// Cada entrada: { label, from: "YYYY-MM", to: "YYYY-MM" | null }
+// `to` en null significa "actual".
+export const HISTORY_MONTHS_REQUIRED = 24;
+
+const mesA = s => {
+  const m = String(s || "").match(/^(\d{4})-(\d{2})/);
+  return m ? Number(m[1]) * 12 + Number(m[2]) - 1 : null;
+};
+const mesHoy = () => {
+  const hoy = today();
+  return Number(hoy.slice(0, 4)) * 12 + Number(hoy.slice(5, 7)) - 1;
+};
+
+export const historyOf = (file, kind) => {
+  const a = file?.[kind === "employment" ? "employment" : "residence"];
+  return Array.isArray(a) ? a : [];
+};
+
+// Los tramos ordenados del mas reciente al mas viejo, ya normalizados.
+function tramos(lista) {
+  return (lista || [])
+    .map(r => ({ ...r, a: mesA(r?.from), b: r?.to ? mesA(r.to) : mesHoy() }))
+    .filter(r => r.a !== null && r.b !== null && r.b >= r.a)
+    .sort((x, y) => y.b - x.b);
+}
+
+// Cuantos meses cubre el historial hacia atras desde hoy, sin contar dos
+// veces los solapes —un cliente con dos trabajos a la vez no tiene 48
+// meses de historia, tiene 24.
+export function historyMonths(file, kind) {
+  const lista = tramos(historyOf(file, kind));
+  if (!lista.length) return 0;
+  const hoy = mesHoy();
+  const cubierto = new Set();
+  for (const r of lista) for (let m = r.a; m <= Math.min(r.b, hoy); m++) cubierto.add(m);
+  let n = 0;
+  for (let m = hoy; m > hoy - 120; m--) { if (cubierto.has(m)) n++; else break; }
+  return n;
+}
+
+export const historyCoversTwoYears = (file, kind) =>
+  historyMonths(file, kind) >= HISTORY_MONTHS_REQUIRED;
+
+export const historyShortBy = (file, kind) =>
+  Math.max(0, HISTORY_MONTHS_REQUIRED - historyMonths(file, kind));
+
+// Los huecos entre tramos, dentro de la ventana de dos años.
+export function historyGaps(file, kind) {
+  const lista = tramos(historyOf(file, kind)).slice().sort((x, y) => x.a - y.a);
+  const out = [];
+  for (let i = 1; i < lista.length; i++) {
+    const finAnterior = Math.max(...lista.slice(0, i).map(r => r.b));
+    const hueco = lista[i].a - finAnterior - 1;
+    if (hueco > 0) out.push({ months: hueco, before: lista[i - 1], after: lista[i] });
+  }
+  return out;
+}
+
+// HUD 4000.1 II.A.4.c.xi(B): un hueco de SEIS MESES O MAS es "ausencia
+// prolongada" y pide carta, mas seis meses en la linea de trabajo actual
+// al asignarse el numero de caso y dos años de historia antes del hueco.
+export const EMPLOYMENT_GAP_MONTHS = 6;
+export const employmentGapsNeedingLOE = file =>
+  historyGaps(file, "employment").filter(g => g.months >= EMPLOYMENT_GAP_MONTHS);
+
+// HUD 4000.1 II.A.4.c.xi(A): mas de TRES cambios de empleador en 12 meses
+// —o cambio de rubro— obliga a analisis adicional. No aplica a oficios
+// que rotan por naturaleza (agencias temporales, sindicatos).
+export const EMPLOYER_CHANGES_LIMIT = 3;
+export function employerChangesLast12(file) {
+  const hoy = mesHoy();
+  return tramos(historyOf(file, "employment"))
+    .filter(r => r.a >= hoy - 11).length;
+}
+export const tooManyEmployerChanges = file =>
+  employerChangesLast12(file) > EMPLOYER_CHANGES_LIMIT;
+
+// ─── UMBRALES QUE EL SISTEMA CALCULA SOLO ──────────────────────────
+// Cinco numeros que hoy dependen de que alguien se acuerde. Con estos, el
+// sistema le dice al cliente ANTES de que deposite.
+
+// El ingreso mensual con el que se mide todo lo demas.
+export function monthlyQualifyingIncome(file) {
+  const anual = Number(file?.annualIncome) || 0;
+  if (anual > 0) return Math.round(anual / 12);
+  const mensual = Number(file?.monthlyIncome) || 0;
+  return mensual > 0 ? Math.round(mensual) : null;
+}
+
+// HUD 4000.1 II.A.4.d.i(A): en FHA hay que verificar el origen del
+// deposito de buena fe si pasa el UNO POR CIENTO del precio de venta, o
+// si es excesivo para el historial de ahorro del cliente.
+// Fannie no fija umbral para el EMD; ahi cae bajo deposito grande.
+export const EMD_PCT_FHA = 1;
+export function emdThreshold(file) {
+  const precio = Number(intakeValue(file, "salesPrice")) || Number(file?.loan) || 0;
+  if (!precio) return null;
+  return baseProductOf(file?.type) === "fha"
+    ? Math.round(precio * EMD_PCT_FHA) / 100
+    : null;
+}
+export function emdNeedsSourcing(file) {
+  const umbral = emdThreshold(file);
+  const emd = Number(intakeValue(file, "earnestMoney")) || 0;
+  return umbral !== null && emd > umbral;
+}
+
+// Deposito grande: 50% del ingreso mensual, en los DOS programas.
+// Fannie B3-4.2-02: "single deposit that exceeds 50% of the total monthly
+// qualifying income". HUD 4000.1 II.A.4.d.iii(A)(2): "individual deposits
+// of more than 50 percent of the total monthly Effective Income".
+// Solo aplica en COMPRAS; en refinanciamiento no se exige documentar.
+export const LARGE_DEPOSIT_PCT = 50;
+export function largeDepositThreshold(file) {
+  const ing = monthlyQualifyingIncome(file);
+  if (!ing) return null;
+  const proposito = intakeValue(file, "purposeOfLoan");
+  if (proposito === "cashout" || proposito === "rateterm") return null;
+  return Math.round(ing * LARGE_DEPOSIT_PCT) / 100;
+}
+
+// Fannie B3-4.2-01: si el estado mas reciente tiene mas de 45 dias
+// respecto a la solicitud, hace falta un documento suplementario del
+// banco con los ultimos cuatro digitos, el saldo y la fecha.
+export const STATEMENT_STALE_DAYS = 45;
+export function statementIsStale(file) {
+  const d = okDate(file?.lastStatementDate);
+  if (!d) return false;
+  return daysBetween(d, today()) > STATEMENT_STALE_DAYS;
+}
+
+// HUD 4000.1 II.A.4.c.x(C)(2) y Fannie B3-3.2-01: hace falta P&L del año
+// en curso —y balance— si paso MAS DE UN TRIMESTRE calendario desde el
+// cierre fiscal. El balance NO se exige en Schedule C.
+export function fiscalQuarterElapsed(ref = today()) {
+  const mes = Number(ref.slice(5, 7));
+  return mes > 3;
+}
+export const needsYtdPL = file =>
+  incomeDocTypes(file).some(isSelfEmployedDoc) && fiscalQuarterElapsed();
+export const needsBalanceSheet = file =>
+  incomeDocTypes(file).some(isEntityDoc) && fiscalQuarterElapsed();
+
+// HUD 4000.1 II.A.4.c.i(C)(1): la reverificacion de empleo se completa
+// dentro de los DIEZ DIAS anteriores a la fecha del pagare. Si es
+// electronica, los datos no pueden tener mas de 30 dias.
+export const VVOE_WINDOW_DAYS = 10;
+export function vvoeWindow(file) {
+  const cierre = coeOf(file);
+  if (!cierre) return null;
+  return { from: addDays(cierre, -VVOE_WINDOW_DAYS), to: cierre };
+}
+
+// Las consultas de credito que piden carta. NO encontramos esta regla en
+// el Selling Guide ni en el 4000.1: viene del checklist de la sucursal y
+// muy probablemente sea overlay de lender. Se marca como tal para que
+// nadie la tome por norma federal.
+export const INQUIRY_DAYS = { conventional: 90, fha: 120 };
+export const INQUIRY_SOURCE = "branch";   // no verificado en guideline
+
+// ─── EL CATALOGO ───────────────────────────────────────────────────
+// `only` decide si el documento aplica a ESTE archivo. Sin esa funcion,
+// la lista pediria carta de regalo cuando no hay regalo y numero de caso
+// FHA en un Conventional —el mismo ruido que ya se quito del bloque de
+// admision con el nombre del condominio.
+//
+// `who` dice quien lo consigue: el cliente, la oficina o el agente. Sirve
+// para ordenar la lista por llamadas en vez de por categoria.
+const FHA = f => baseProductOf(f?.type) === "fha";
+const CONV = f => baseProductOf(f?.type) === "conventional";
+const SE = f => incomeDocTypes(f).some(isSelfEmployedDoc);
+const ENT = f => incomeDocTypes(f).some(isEntityDoc);
+const W2 = f => incomeDocTypes(f).includes("w2");
+
+export const SUBMISSION_DOCS = [
+  // ── identidad ──
+  { id: "gov_id", group: "identity", who: "client",
+    es: "ID del gobierno", en: "Government-issued ID" },
+  { id: "resident_card", group: "identity", who: "client",
+    es: "Tarjeta de residente", en: "Resident card",
+    only: f => intakeValue(f, "residentCard") === "yes",
+    note_es: "Solo si aplica", note_en: "Only if applicable" },
+
+  // ── ingreso: W-2 ──
+  { id: "paystubs", group: "income", who: "client", when: W2,
+    es: "Talones de pago · 30 días", en: "Pay stubs · 30 days",
+    note_es: "Si cobra trimestral, cuatro talones",
+    note_en: "If paid quarterly, four stubs" },
+  { id: "w2_forms", group: "income", who: "client", when: W2,
+    es: "W-2 de 2025 y 2024 · todos los empleadores",
+    en: "2025 and 2024 W-2s · all employers" },
+  { id: "year_end_stubs", group: "income", who: "client", when: W2,
+    es: "Talones de fin de año", en: "Year-end pay stubs",
+    note_es: "Si hay horas variables, propinas, horas extra, bonos o comisiones — se promedia a 24 meses",
+    note_en: "If hours vary, or there are tips, overtime, bonus or commission — averaged over 24 months" },
+
+  // ── ingreso: por cuenta propia ──
+  { id: "tax_returns_personal", group: "income", who: "client", when: SE,
+    es: "Declaraciones personales 2025 y 2024 · con todos los anexos",
+    en: "Personal tax returns 2025 and 2024 · all schedules",
+    note_es: "Con cinco años de negocio y 25% de propiedad, puede bastar un año",
+    note_en: "With five years in business and 25% ownership, one year may suffice" },
+  { id: "tax_returns_business", group: "income", who: "client", when: ENT,
+    es: "Declaraciones de la empresa 2025 y 2024 · con K-1",
+    en: "Business tax returns 2025 and 2024 · with K-1",
+    note_es: "Se pueden omitir si el ingreso subió, los fondos no salen del negocio y no es cash-out",
+    note_en: "May be waived if income increased, funds are not from the business, and it is not cash-out" },
+  { id: "cpa_letter", group: "income", who: "client", when: SE,
+    es: "Carta del CPA", en: "CPA letter" },
+  { id: "ytd_pl", group: "income", who: "client",
+    es: "P&L del año en curso", en: "Year-to-date P&L",
+    only: needsYtdPL,
+    note_es: "Pasó más de un trimestre desde el cierre fiscal",
+    note_en: "More than a calendar quarter has elapsed since fiscal year end" },
+  { id: "balance_sheet", group: "income", who: "client",
+    es: "Balance general", en: "Balance sheet",
+    only: needsBalanceSheet,
+    note_es: "No se exige en Schedule C", note_en: "Not required for Schedule C" },
+  { id: "form_4506c", group: "income", who: "office",
+    es: "4506-C firmado", en: "Signed 4506-C",
+    note_es: "Uno por cliente cuyo ingreso califica. Vale 120 días. El de la empresa va aparte",
+    note_en: "One per borrower whose income qualifies. Valid 120 days. Business needs its own" },
+  { id: "irs_transcripts", group: "income", who: "office", when: SE,
+    es: "Transcripciones del IRS", en: "IRS transcripts",
+    note_es: "Alternativa a las declaraciones firmadas, no un añadido. Si el lender las exige además, es su overlay",
+    note_en: "An alternative to signed returns, not an addition. If the lender also requires them, that is their overlay" },
+  { id: "distribution_proof", group: "income", who: "client", when: ENT,
+    es: "Prueba de distribución o liquidez", en: "Proof of distribution or liquidity",
+    note_es: "El K-1 no basta: hay que probar que el dinero salió, o que el negocio tiene liquidez",
+    note_en: "The K-1 is not enough: prove the money was distributed, or that the business has liquidity" },
+
+  // ── activos ──
+  { id: "bank_statements", group: "assets", who: "client",
+    es: "Estados de banco · 2 meses completos",
+    en: "Bank statements · 2 full months",
+    note_es: "Todas las páginas. Uno solo si es refinanciamiento",
+    note_en: "All pages. One month only for a refinance" },
+  { id: "account_activity", group: "assets", who: "client",
+    es: "Impresión de actividad de la cuenta", en: "Account activity printout",
+    only: statementIsStale,
+    note_es: "El estado más reciente pasa de 45 días",
+    note_en: "The most recent statement is more than 45 days old" },
+  { id: "emd_proof", group: "assets", who: "agent",
+    es: "Prueba de EMD despejado", en: "EMD cleared proof" },
+  { id: "gift_letter", group: "assets", who: "client",
+    es: "Carta de regalo", en: "Gift letter",
+    only: f => intakeValue(f, "giftFunds") === "yes",
+    note_es: "En FHA la firman el donante Y el cliente. Nombre, dirección, teléfono, parentesco, monto y que no se devuelve",
+    note_en: "In FHA both donor AND borrower sign. Name, address, phone, relationship, amount, and no repayment" },
+  { id: "donor_ability", group: "assets", who: "client",
+    es: "Capacidad del donante o prueba de transferencia",
+    en: "Donor ability or transfer proof",
+    only: f => intakeValue(f, "giftFunds") === "yes",
+    note_es: "El efectivo en mano NO sirve como fuente del donante en FHA",
+    note_en: "Cash on hand is NOT an acceptable donor source in FHA" },
+
+  // ── contrato ──
+  { id: "executed_rpa", group: "contract", who: "agent",
+    es: "RPA firmado", en: "Executed RPA" },
+  { id: "counteroffer", group: "contract", who: "agent",
+    es: "Contraoferta firmada", en: "Executed counteroffer",
+    only: f => intakeValue(f, "counteroffer") === "yes" },
+
+  // ── propiedad y divulgaciones ──
+  { id: "hoi_quote", group: "property", who: "client",
+    es: "Cotización de HOI", en: "HOI quote" },
+  { id: "fha_disclosure", group: "property", who: "office", when: FHA,
+    es: "Divulgación FHA", en: "FHA disclosure" },
+  { id: "srpds", group: "property", who: "agent",
+    es: "SRPDS", en: "SRPDS",
+    only: f => intakeValue(f, "srpdsInRpa") === "yes",
+    note_es: "Solo si el RPA lo refleja", note_en: "Only if the RPA reflects it" },
+  { id: "lead_paint", group: "property", who: "agent",
+    es: "Divulgación de pintura con plomo", en: "Lead-based paint disclosure",
+    only: f => intakeValue(f, "leadPaintInRpa") === "yes" },
+];
+
+export const submissionDoc = id => SUBMISSION_DOCS.find(d => d.id === id) || null;
+
+// La lista de ESTE archivo. Nadie la escoge: sale del producto, del tipo
+// de ingreso y de la admision.
+export function requiredDocs(file) {
+  return SUBMISSION_DOCS.filter(d => {
+    if (d.when && !d.when(file)) return false;
+    if (d.only && !d.only(file)) return false;
+    return true;
+  });
+}
+
+// Los que NO aplican, con el motivo. Se muestran atenuados: que un
+// documento falte del listado sin explicacion deja al equipo dudando si
+// el sistema se lo comio.
+export function notApplicableDocs(file) {
+  return SUBMISSION_DOCS.filter(d =>
+    (d.when && !d.when(file)) || (d.only && !d.only(file)));
+}
+
+// ─── LAS CARTAS QUE SE ANTICIPAN ───────────────────────────────────
+// Esto es lo que Jose pidio: "cualquier LOE que necesitemos, nos
+// anticipamos a underwriting". No son documentos del cliente — son
+// cartas que la oficina PRODUCE porque ya sabe que se van a pedir.
+export const LOE_KINDS = {
+  employment_gap: { es: "LOE — hueco de empleo", en: "LOE — employment gap" },
+  large_deposit:  { es: "LOE — depósito grande", en: "LOE — large deposit" },
+  address_var:    { es: "LOE — direcciones del crédito", en: "LOE — credit address variations" },
+  inquiries:      { es: "LOE — consultas de crédito", en: "LOE — credit inquiries" },
+  employer_churn: { es: "LOE — cambios de empleador", en: "LOE — employer changes" },
+};
+
+export function anticipatedLetters(file) {
+  const out = [];
+  const P = baseProductOf(file?.type) === "fha" ? "fha" : "conventional";
+
+  for (const g of employmentGapsNeedingLOE(file))
+    out.push({ kind: "employment_gap", months: g.months,
+      es: `Hueco de ${g.months} meses entre empleos`,
+      en: `${g.months}-month gap between jobs` });
+
+  if (tooManyEmployerChanges(file))
+    out.push({ kind: "employer_churn", n: employerChangesLast12(file),
+      es: `${employerChangesLast12(file)} empleadores en 12 meses`,
+      en: `${employerChangesLast12(file)} employers in 12 months` });
+
+  const falta = historyShortBy(file, "residence");
+  if (falta > 0)
+    out.push({ kind: "address_var", months: falta,
+      es: `Faltan ${falta} meses del historial de residencia`,
+      en: `${falta} months missing from the residence history` });
+
+  const umbral = largeDepositThreshold(file);
+  if (umbral !== null && file?.hasLargeDeposit === true)
+    out.push({ kind: "large_deposit", threshold: umbral,
+      es: `Hay un depósito sobre $${umbral.toLocaleString("en-US")}`,
+      en: `There is a deposit over $${umbral.toLocaleString("en-US")}` });
+
+  if (file?.recentInquiries === true)
+    out.push({ kind: "inquiries", days: INQUIRY_DAYS[P],
+      es: `Consultas dentro de los ${INQUIRY_DAYS[P]} días — regla de la sucursal, no del guideline`,
+      en: `Inquiries within ${INQUIRY_DAYS[P]} days — branch rule, not from the guideline` });
+
+  return out;
+}
+
+// ─── EL ESTADO DEL ARCHIVO ─────────────────────────────────────────
+export const submissionDocsOf = file =>
+  (file?.submissionDocs && typeof file.submissionDocs === "object")
+    ? file.submissionDocs : {};
+
+export const docHeld = (file, id) => !!okDate(submissionDocsOf(file)[id]?.at);
+export const docAt = (file, id) => okDate(submissionDocsOf(file)[id]?.at) || null;
+export const docBy = (file, id) => submissionDocsOf(file)[id]?.by || null;
+
+// Un toque sella hoy; el segundo lo quita. Marcar por error es inevitable
+// y no puede costar una llamada.
+export function stampDoc(file, id, by) {
+  if (!submissionDoc(id) && !LOE_KINDS[id]) return file;
+  const cur = docHeld(file, id);
+  return { ...file, submissionDocs: { ...submissionDocsOf(file),
+    [id]: cur ? null : { at: today(), by: by || null } } };
+}
+
+export function submissionCoverage(file) {
+  const req = requiredDocs(file);
+  const cartas = anticipatedLetters(file);
+  const todos = [...req.map(d => d.id), ...cartas.map(c => c.kind)];
+  const hechos = todos.filter(id => docHeld(file, id)).length;
+  return {
+    total: todos.length, held: hechos, missing: todos.length - hechos,
+    docs: req.length, letters: cartas.length,
+    pct: todos.length ? Math.round(100 * hechos / todos.length) : 100,
+    complete: todos.length > 0 && hechos === todos.length,
+  };
+}
+
+// La puerta. NO bloquea: avisa fuerte y deja pasar con constancia. Un
+// bloqueo duro se salta poniendo marcas falsas, y ahi se pierde el dato.
+export const submissionReady = file => submissionCoverage(file).complete;
+
+export function stampSubmissionComplete(file, by) {
+  if (file?.gate1CompletedAt) return file;
+  return { ...file, gate1CompletedAt: today(), gate1CompletedBy: by || null };
+}
+
 // ─── 7T. ASISTENCIA AL ENGANCHE (DPA) ──────────────────────────────
 // El catalogo viejo tenia 39 tipos de prestamo que eran DPA estatales:
 // NV HIP, Home at Last, FL Hometown Heroes, TX TSAHC, AZ Home in Five,
