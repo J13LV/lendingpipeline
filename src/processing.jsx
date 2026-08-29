@@ -46,7 +46,7 @@ import {
   largeDepositThreshold, monthlyQualifyingIncome, incomeDocTypes, incomeDocMeta,
   HISTORY_KINDS, HISTORY_MONTHS_REQUIRED, historyOf, historyMonths,
   historyCoversTwoYears, historyShortBy, historyGaps, EMPLOYMENT_GAP_MONTHS,
-  setHistoryRow, addHistoryRow, removeHistoryRow,
+  setHistoryRow, addHistoryRow, removeHistoryRow, historyOpenErrors,
 } from "./pipelineCore";
 
 // Autocontenido a proposito: recibe `lang` y traduce solo. Asi no
@@ -539,6 +539,10 @@ export function HistoryPane({ file, kind, lang, onSave, readOnly }) {
   const cubre = historyCoversTwoYears(file, kind);
   const faltan = historyShortBy(file, kind);
   const huecos = historyGaps(file, kind).filter(g => g.months >= EMPLOYMENT_GAP_MONTHS);
+  // Renglones sin fecha de salida que NO son el mas reciente. El campo
+  // vacio decia "actual" en gris de marcador, asi que parecia lleno: se
+  // leia como un dato puesto cuando en realidad faltaba.
+  const abiertos = new Set(historyOpenErrors(file, kind));
 
   const campo = { background: C.bg, border: `1px solid ${C.edge}`, borderRadius: 5,
     color: C.text, padding: "7px 9px", fontSize: "var(--fs-2)",
@@ -564,7 +568,7 @@ export function HistoryPane({ file, kind, lang, onSave, readOnly }) {
         <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr 1fr 30px",
           gap: 8, marginBottom: 5 }}>
           {[P(meta.label_es ? { es: meta.label_es, en: meta.label_en } : meta),
-            T("histFrom"), T("histTo"), ""].map((h, i) => (
+            T("histFrom"), T("histToOrCurrent"), ""].map((h, i) => (
             <span key={i} style={{ fontSize: "var(--fs-1)", color: C.dim,
               letterSpacing: ".5px" }}>{h}</span>
           ))}
@@ -580,9 +584,13 @@ export function HistoryPane({ file, kind, lang, onSave, readOnly }) {
             onChange={e => onSave(setHistoryRow(file, kind, i, { from: e.target.value }))} />
           {/* Vacio significa ACTUAL. Es lo que el equipo escribe en papel y
               evita inventar una fecha de salida que no existe. */}
+          {/* Vacio significa ACTUAL, pero solo el renglon mas reciente
+              puede estarlo. Si hay uno posterior, este ya termino y el
+              campo se pinta en rojo pidiendo la fecha. */}
           <input type="month" value={r.to || ""} disabled={readOnly}
-            placeholder={T("histCurrent")}
-            style={{ ...campo, ...(r.to ? {} : { color: C.green, borderColor: C.green }) }}
+            style={{ ...campo, ...(abiertos.has(i)
+              ? { borderColor: C.red, color: C.red }
+              : (r.to ? {} : { color: C.green, borderColor: C.green })) }}
             onChange={e => onSave(setHistoryRow(file, kind, i, { to: e.target.value }))} />
           {!readOnly && (
             <button className="hov" onClick={() => onSave(removeHistoryRow(file, kind, i))}
@@ -600,6 +608,12 @@ export function HistoryPane({ file, kind, lang, onSave, readOnly }) {
             fontFamily: "DM Mono", cursor: "pointer", marginTop: 3 }}>
           {cubre ? T("histAdd") : T("histAddShort", { n: faltan })}
         </button>
+      )}
+
+      {abiertos.size > 0 && (
+        <div style={{ marginTop: 9, fontSize: "var(--fs-2)", color: C.red, lineHeight: 1.5 }}>
+          {T("histOpenError", { n: abiertos.size })}
+        </div>
       )}
 
       {huecos.length > 0 && (
