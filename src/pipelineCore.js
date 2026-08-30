@@ -884,6 +884,69 @@ export const CD_WAITING_BUSINESS_DAYS = 3;
 // Assumes electronic delivery with confirmed receipt. If the CD is
 // mailed, receipt is presumed three business days after sending —
 // subtract another three.
+// ─── EL CD, COMO DE VERDAD OCURRE ──────────────────────────────────
+//
+// Hasta hoy el motor sabia cuando DEBIA salir el CD —lo calcula hacia
+// atras desde el cierre— y nadie guardaba cuando salio. Un plazo de ley
+// sin registro: si un cliente reclama que lo recibio tarde, no hay con
+// que contestar.
+//
+// En esta sucursal el CD lo emite el LENDER y va electronico casi
+// siempre. Asi que no se captura un envio: se confirma uno. Envio y
+// recibo caen el mismo dia salvo que haya ido por correo postal, y ahi
+// la ley presume el recibo tres dias habiles despues.
+//
+// Y son DOS actos, no uno:
+//   · el CD salio        — dato del lender, lo confirma quien lo vea
+//   · los fees revisados — del LO, y no lo puede hacer nadie mas
+// Un CD que salio y cuyos fees nadie miro es justo el archivo que
+// revienta el dia de la firma. Con un solo campo eso queda invisible.
+export const cdOf = file => (file?.cd && typeof file.cd === "object") ? file.cd : {};
+export const cdSentAt = file => okDate(cdOf(file).sentAt) || null;
+export const cdDelivery = file => cdOf(file).delivery === "mail" ? "mail" : "electronic";
+
+// Electronico con confirmacion: recibe el mismo dia. Postal: la ley
+// presume tres dias habiles. El presunto es el que se puede defender.
+export function cdReceivedAt(file) {
+  const s = cdSentAt(file);
+  if (!s) return null;
+  return cdDelivery(file) === "mail"
+    ? addBusinessDays(s, CD_WAITING_BUSINESS_DAYS, "trid")
+    : s;
+}
+
+export const cdFeesReviewedAt = file => okDate(cdOf(file).feesReviewedAt) || null;
+export const cdFeesReviewedBy = file => cdOf(file).feesReviewedBy || null;
+
+// El primer dia en que se puede firmar sin romper la regla.
+export function cdEarliestSigning(file) {
+  const r = cdReceivedAt(file);
+  return r ? addBusinessDays(r, CD_WAITING_BUSINESS_DAYS, "trid") : null;
+}
+
+// La comprobacion que hoy no existe: la firma cae antes de que se
+// cumplan los tres dias desde el recibo. Es un cierre que no se puede
+// hacer, y nadie lo ve hasta que titulo lo rechaza.
+export function cdTooEarly(file) {
+  const primero = cdEarliestSigning(file);
+  const firma = okDate(file?.closing) || okDate(file?.contingencies?.coe);
+  if (!primero || !firma) return null;
+  return firma < primero ? { earliest: primero, signing: firma } : null;
+}
+
+export function stampCdSent(file, iso, by, delivery) {
+  const d = okDate(iso);
+  if (!d) return file;
+  return { ...file, cd: { ...cdOf(file), sentAt: d, sentBy: by || null,
+    delivery: delivery === "mail" ? "mail" : "electronic" } };
+}
+
+// Solo el LO revisa fees. Es control de calidad sobre su propio cierre y
+// sobre su propia comision.
+export function stampCdFees(file, by) {
+  return { ...file, cd: { ...cdOf(file), feesReviewedAt: today(), feesReviewedBy: by || null } };
+}
+
 export function cdIssueDeadline(coeISO) {
   return isValidISO(coeISO) ? subBusinessDays(coeISO, CD_WAITING_BUSINESS_DAYS, "trid") : null;
 }
@@ -5168,6 +5231,18 @@ export const STAGE_GATES = {
       es_why: "Esto solo avisa: la firma depende del cliente, no de ti. Bloquearte aquí produciría una fecha inventada.",
       en_why: "This only warns: the signature depends on the client, not on you. Blocking here would produce an invented date." },
   ],
+  "CD Issued": [
+    { id: "cd_sent", hard: true, test: f => !!cdSentAt(f),
+      es: "No hay fecha de salida del CD",
+      en: "There is no CD sent date",
+      es_why: "Es un plazo de ley y desde esa fecha corren los tres días hábiles. Sin ella, si el cliente reclama que lo recibió tarde no hay con qué contestar.",
+      en_why: "It is a statutory deadline and the three business days run from it. Without it, if the client claims late receipt there is nothing to answer with." },
+    { id: "cd_fees", hard: true, test: f => !!cdFeesReviewedAt(f),
+      es: "El LO no ha revisado los fees del CD",
+      en: "The LO has not reviewed the CD fees",
+      es_why: "Un CD que salió y cuyos fees nadie miró es el archivo que revienta el día de la firma — con el cliente, con la comisión, o con un dato del lender. Solo el LO puede revisarlo.",
+      en_why: "A CD that went out with nobody checking the fees is the file that blows up at signing — with the client, with the commission, or with a lender figure. Only the LO can review it." },
+  ],
   "Appraisal Ordered": [
     { id: "appr_req", hard: true, test: f => !!orderState(f, "appraisal").req,
       es: "La tasación no está marcada como pedida",
@@ -5627,6 +5702,16 @@ export function backfillGaps(file, cutover = BARRETT_CUTOVER) {
     else if (!st.rec && paso("Submitted to UW"))
       add("order_rec_" + o.id, "processor", etapa, STAGE_OWNERS[etapa],
         "Recibido: " + (o.es || o.id), "Received: " + (o.en || o.id));
+  }
+
+  // ─── EL CD ───
+  if (paso("CD Issued")) {
+    if (!cdSentAt(file))
+      add("cd_sent", "assistant", "CD Issued", STAGE_OWNERS["CD Issued"],
+        "Fecha de salida del CD", "CD sent date", "action", "dates");
+    if (!cdFeesReviewedAt(file))
+      add("cd_fees", "lo", "CD Issued", "LO",
+        "Fees del CD sin revisar", "CD fees not reviewed", "action", "dates");
   }
 
   // ─── FECHAS DE ETAPA ───

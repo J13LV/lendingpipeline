@@ -64,6 +64,8 @@ import {
   uwOutcomeMeta, discEsignedAt,
   stageGate,
   openFindings, resolvedFindings, hasOpenFindings, addFinding, resolveFinding,
+  cdSentAt, cdDelivery, cdReceivedAt, cdFeesReviewedAt, cdFeesReviewedBy,
+  cdEarliestSigning, cdTooEarly, stampCdSent, stampCdFees,
   findingAge, worstFinding, canRegister, isRegistered, stampRegistration,
   registeredAt, registeredBy, registrationCount, needsReRegistration,
   registerReady, registerBlocked, CONTRACT_SIGNAL_FIELD, signalToAcceptDays,
@@ -395,7 +397,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.09.07b";
+const APP_VERSION = "2026.09.08a";
 
 function huellaTexto(s) {
   let h = 0;
@@ -6717,6 +6719,90 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,onClose,onS
               onDraft={p=>{panelDrafts.current.dates=p;}}/>
           </div>
         )}
+
+        {/* EL CD. Lo emite el lender; aqui se confirma cuando salio. Dos
+            actos de dos dueños: la fecha la ve quien abra el correo, los
+            fees solo los revisa el LO. */}
+        {tab==="dates" && !inPrep && !isReferredOut && atOrPastFullApp(stage) && (()=>{
+          const salio=cdSentAt(file), recibe=cdReceivedAt(file);
+          const primero=cdEarliestSigning(file), pronto=cdTooEarly(file);
+          const feesAt=cdFeesReviewedAt(file);
+          const esMiLo = profile?.role==="admin" || (profile?.role==="lo" && file.lo===profile?.name);
+          const bx={background:"#0D1117",border:"1px solid #30363D",borderRadius:5,
+            color:"var(--t1)",padding:"6px 9px",fontSize:"var(--fs-3)",
+            fontFamily:"DM Mono",width:"100%"};
+          return (
+          <div style={{gridColumn:"1/-1",background:"rgba(189,101,232,.05)",
+            border:"1px solid #BD65E844",borderRadius:8,padding:14,marginTop:12}}>
+            <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-4)",
+              color:"#BD65E8",letterSpacing:"1px"}}>{TX("cdTitle")}</div>
+            <div className="sys" style={{marginTop:4,marginBottom:11}}>{TX("cdLead")}</div>
+
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:11}}>
+              <div>
+                <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>
+                  {TX("cdSent")}
+                </div>
+                <input type="date" value={salio||""} style={bx}
+                  onChange={e=>onSave(stampCdSent(file,e.target.value,profile?.name||null,cdDelivery(file)))}/>
+              </div>
+              <div>
+                <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>
+                  {TX("cdHow")}
+                </div>
+                <div style={{display:"flex",gap:5}}>
+                  {[["electronic",TX("cdElec")],["mail",TX("cdMail")]].map(([k,l])=>(
+                    <button key={k} className="hov"
+                      onClick={()=>salio&&onSave(stampCdSent(file,salio,profile?.name||null,k))}
+                      style={{flex:1,background:cdDelivery(file)===k?"#BD65E8":"#21262D",
+                        color:cdDelivery(file)===k?"#0D1117":"var(--t2)",border:"none",
+                        borderRadius:5,padding:"6px 4px",fontSize:"var(--fs-2)",
+                        fontFamily:"DM Mono",cursor:salio?"pointer":"default"}}>{l}</button>
+                  ))}
+                </div>
+                <div className="sys" style={{marginTop:4}}>
+                  {cdDelivery(file)==="mail"?TX("cdMailNote"):TX("cdElecNote")}
+                </div>
+              </div>
+              <div>
+                <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>
+                  {TX("cdReceived")}
+                </div>
+                <div style={{fontSize:"var(--fs-4)",color:recibe?"#BD65E8":"var(--t4)",
+                  fontFamily:"DM Mono",padding:"6px 0"}}>{recibe||"—"}</div>
+                {primero&&<div className="sys">{TX("cdEarliest",{d:primero})}</div>}
+              </div>
+            </div>
+
+            {pronto&&(
+              <div style={{marginTop:11,background:"rgba(189,101,232,.10)",
+                border:"1px solid #BD65E8",borderRadius:6,padding:"9px 12px",
+                fontSize:"var(--fs-3)",color:"#BD65E8",lineHeight:1.55}}>
+                ⚖ {TX("cdTooEarly",{f:pronto.signing,d:pronto.earliest})}
+              </div>
+            )}
+
+            <div style={{marginTop:12,paddingTop:11,borderTop:"1px solid #21262D",
+              display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+              <span style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px"}}>
+                {TX("cdFees")}
+              </span>
+              {feesAt?(
+                <span style={{fontSize:"var(--fs-3)",color:"#06D6A0",fontFamily:"DM Mono"}}>
+                  ✓ {TX("cdFeesBy",{d:feesAt,who:String(cdFeesReviewedBy(file)||"").split(" ")[0]})}
+                </span>
+              ):esMiLo?(
+                <button className="hov" onClick={()=>onSave(stampCdFees(file,profile?.name||null))}
+                  style={{background:"transparent",border:"1px solid #06D6A0",borderRadius:5,
+                    color:"#06D6A0",padding:"5px 12px",fontSize:"var(--fs-2)",
+                    fontFamily:"DM Mono",cursor:"pointer"}}>{TX("cdFeesMark")}</button>
+              ):(
+                <span style={{fontSize:"var(--fs-2)",color:"var(--t4)"}}>{TX("cdFeesWait")}</span>
+              )}
+              <span className="sys" style={{flexBasis:"100%"}}>{TX("cdFeesNote")}</span>
+            </div>
+          </div>);
+        })()}
 
         {/* INBOUND REFERRAL SECTION — when file came from another banker */}
         {tab==="loan" && isInbound && (

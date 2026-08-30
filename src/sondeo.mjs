@@ -87,6 +87,25 @@ t("uno archivado tampoco", C.fileClock({ stage: "UW Review", archived: true }).a
 t("el COE manda cuando el cierre está cerca",
   C.fileClock({ stage: "UW Review", closing: d(3), contingencies: { coe: d(3) } }).kind === "coe");
 
+// ─── el CD ───
+t("sin CD no hay recibo", C.cdReceivedAt({}) === null);
+const cdE = C.stampCdSent({ id:"cd", stage:"CD Issued", closing:"2026-09-25" },
+  "2026-09-21", "Tina", "electronic");
+t("electrónico recibe el mismo día", C.cdReceivedAt(cdE) === "2026-09-21");
+t("la primera firma es 3 hábiles después", C.cdEarliestSigning(cdE) === "2026-09-24");
+t("firmar el 25 está bien", C.cdTooEarly(cdE) === null);
+const cdM = C.stampCdSent({ ...cdE }, "2026-09-21", "Tina", "mail");
+t("postal presume 3 hábiles de recibo", C.cdReceivedAt(cdM) === "2026-09-24");
+t("y empuja la primera firma", C.cdEarliestSigning(cdM) === "2026-09-28");
+t("firmar el 25 rompe el plazo", !!C.cdTooEarly(cdM));
+t("una fecha inventada se rechaza", !C.cdSentAt(C.stampCdSent({}, "no", "Tina")));
+t("los fees guardan quién y cuándo",
+  C.cdFeesReviewedBy(C.stampCdFees(cdE, "Ana")) === "Ana" && !!C.cdFeesReviewedAt(C.stampCdFees(cdE, "Ana")));
+t("la puerta de CD Issued exige las dos cosas",
+  C.stageGate({ id:"g", stage:"CD Issued" }).hard.length === 2);
+t("con fecha queda una", C.stageGate(cdE).hard.length === 1);
+t("con fees abre", C.stageGate(C.stampCdFees(cdE, "Ana")).blocked === false);
+
 // ─── catálogos bilingües ───────────────────────────────────────────
 const sinPar = [];
 for (const x of [...C.SUBMISSION_DOCS, ...C.DOC_FLAGS, ...C.CONTINGENCIES, ...C.MILESTONES])
