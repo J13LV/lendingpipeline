@@ -1,0 +1,100 @@
+// ═══════════════════════════════════════════════════════════════════
+//  sondeo.mjs · LOS BORDES
+//
+//  `e2e.mjs` recorre el camino feliz. Esto empuja los bordes: fechas en
+//  feriados, contingencias imposibles juntas, un lender que cambia, un
+//  contrato que se cae, un archivo sin datos. Cada prueba nace de algo
+//  que de verdad se rompió o se puede romper.
+// ═══════════════════════════════════════════════════════════════════
+import "./_corebundle.mjs";
+const C = await import("./_core.mjs");
+
+let ok = 0, mal = 0;
+const t = (n, cond) => { if (cond) ok++; else { mal++; console.log("  ✕ " + n); } };
+const d = k => C.addDays(C.today(), k);
+
+// ─── fechas ────────────────────────────────────────────────────────
+t("una fecha vacía no pasa por buena", C.okDate("") === null || C.okDate("") === undefined);
+t("una fecha inventada tampoco", !C.okDate("2026-13-45"));
+t("una fecha buena sí", C.okDate("2026-09-10") === "2026-09-10");
+t("sumar días cruza el mes", C.addDays("2026-08-30", 3) === "2026-09-02");
+t("restar días cruza el año", C.addDays("2026-01-02", -3) === "2025-12-30");
+t("los días entre dos fechas cuadran", C.daysBetween("2026-09-01", "2026-09-11") === 10);
+
+// Tres varas distintas de día hábil. Confundirlas mueve fechas reales.
+t("Nevada cuenta calendario", C.contractDeadline("NV", "2026-09-01", 10) === "2026-09-11");
+t("Texas también", C.contractDeadline("TX", "2026-09-01", 10) === "2026-09-11");
+t("Florida cuenta hábiles y da más tarde",
+  C.contractDeadline("FL", "2026-09-01", 10) > C.contractDeadline("NV", "2026-09-01", 10));
+
+// ─── el 1003 ───────────────────────────────────────────────────────
+let g = { id: "g", stage: "Under Contract" };
+t("vacío: doce pendientes", C.gate1Coverage(g).pending === 12);
+t("y no está completo", C.gate1Complete(g) === false);
+for (const id of C.GATE1_VERIFY_IDS) g = C.cycleGate1(g, id, "Tina");
+t("los doce verificados", C.gate1Coverage(g).verified === 12);
+t("ahora sí está completo", C.gate1Complete(g) === true);
+
+const h = C.addFinding(g, { item: C.GATE1_VERIFY_IDS[0],
+  text: "Hueco de 4 meses sin carta", waitingOn: "borrower", by: "Tina" });
+t("un hallazgo retira la marca verde", C.gate1State(h, C.GATE1_VERIFY_IDS[0]) === "finding");
+t("y rompe la completitud", C.gate1Complete(h) === false);
+t("no se puede re-marcar con el hallazgo abierto",
+  C.gate1State(C.cycleGate1(h, C.GATE1_VERIFY_IDS[0], "Tina"), C.GATE1_VERIFY_IDS[0]) === "finding");
+t("un hallazgo sin texto se rechaza",
+  C.findingsOf(C.addFinding(g, { item: "x", text: "   ", waitingOn: "lo" })).length === 0);
+const res = C.resolveFinding(h, C.openFindings(h)[0].id, { by: "Tina", note: "recibida" });
+t("resolver no borra: marca", C.resolvedFindings(res).length === 1);
+t("y deja el punto en pendiente, no en verde",
+  C.gate1State(res, C.GATE1_VERIFY_IDS[0]) === "pending");
+t("resolver dos veces no pisa al primero",
+  C.resolvedFindings(C.resolveFinding(res, C.openFindings(res)[0]?.id || "x", { by: "Otro" }))[0].resolvedBy === "Tina");
+
+// ─── puertas ───────────────────────────────────────────────────────
+t("una etapa sin puerta no bloquea", C.stageGate({ stage: "Signing" }).blocked === false);
+t("un archivo sin etapa tampoco revienta", C.stageGate({}).blocked === false);
+t("las fechas se leen de `contingencies`, no de la raíz",
+  C.stageGate({ ...g, appraisalContingency: d(10), loanContingency: d(20) }).blocked === true);
+t("y desde `contingencies` sí abren",
+  C.stageGate({ ...g, contingencies: { appraisalContingency: d(10), loanContingency: d(20) } }).blocked === false);
+
+// ─── registro y cambio de lender ───────────────────────────────────
+let r = C.stampRegistration({ id: "r", stage: "Full Application", lenderId: "elend", stageLog: {} }, "Tina");
+t("queda registrado", C.isRegistered(r) === true);
+t("un ciclo, no dos", C.registrationCount(r) === 1);
+const cambio = C.applyLenderChange(r, { lenderId: "cnc", reasonId: "overlay", by: "Jose" });
+t("el cambio devuelve el archivo a Full Application", cambio.stage === "Full Application");
+t("y deja de estar registrado", C.isRegistered(cambio) === false);
+t("el sistema lo grita", C.needsReRegistration(cambio) === true);
+t("el ciclo viejo NO se borra", C.registrationCount(cambio) >= 1);
+t("el lock no viaja", !cambio.lockState || cambio.lockState === "float");
+
+// ─── contrato cancelado ────────────────────────────────────────────
+const vivo = { id: "v", borrower: "V", type: "FHA", stage: "Under Contract",
+  fileOpenedAt: d(-40), lenderId: "elend", closing: d(20),
+  contingencies: { contractAccepted: d(-25), coe: d(20) }, stageLog: { "Lead Inquiry": d(-40) } };
+const cae = C.cancelContract(vivo, { reasonId: "inspection", by: "Jose" });
+t("el cliente sobrevive al contrato caído", cae.borrower === "V");
+t("la edad del archivo NO se reinicia", C.fileAge(cae) >= 40);
+t("el lender se suelta", !cae.lenderId);
+t("las contingencias se limpian", !C.okDate(cae.contingencies?.coe));
+t("queda registrado cuántos contratos se cayeron", C.cancelCount(cae) === 1);
+
+// ─── relojes ───────────────────────────────────────────────────────
+t("un archivo cerrado no tiene reloj",
+  C.fileClock({ stage: "CLOSED — FUNDED", closedAt: d(-1) }).applies === false);
+t("uno archivado tampoco", C.fileClock({ stage: "UW Review", archived: true }).applies === false);
+t("el COE manda cuando el cierre está cerca",
+  C.fileClock({ stage: "UW Review", closing: d(3), contingencies: { coe: d(3) } }).kind === "coe");
+
+// ─── catálogos bilingües ───────────────────────────────────────────
+const sinPar = [];
+for (const x of [...C.SUBMISSION_DOCS, ...C.DOC_FLAGS, ...C.CONTINGENCIES, ...C.MILESTONES])
+  if (!x.es || !x.en) sinPar.push(x.id);
+t("todo el catálogo tiene par ES/EN: " + (sinPar.join(", ") || "sí"), sinPar.length === 0);
+t("las seis señales existen", Object.keys(C.SIGNALS).length === 6);
+
+console.log(mal
+  ? `✕ sondeo: ${ok} pasaron, ${mal} fallaron`
+  : `sondeo: ${ok}/${ok} los bordes aguantan`);
+process.exit(mal ? 1 : 0);
