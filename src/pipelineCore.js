@@ -4950,6 +4950,19 @@ export function orderState(file, id) {
 }
 export const allOrderStates = file => ORDERS.map(o => orderState(file, o.id));
 
+// La tasacion la paga el cliente, y la Regulacion Z prohibe cobrarle
+// cualquier cargo —salvo el reporte de credito— antes de que haya
+// recibido el LE y manifestado su intencion de proceder.
+// Fuente: 12 CFR 1026.19(a)(1)(iv).
+//
+// En este flujo la intencion de proceder va DENTRO del paquete inicial,
+// asi que la firma de las disclosures es la puerta. Por eso el aviso de
+// la etapa se queda blando —la firma depende del cliente y bloquear ahi
+// produciria una fecha inventada— pero la ORDEN si se frena: es lo unico
+// que de verdad no se puede hacer, y frenarla no impide trabajar en
+// titulo, seguro ni recoleccion de documentos.
+export const canOrderAppraisal = file => !!discEsignedAt(file);
+
 // Los pedidos que ya se hicieron y siguen sin llegar. Es la cola de
 // "esperando vendor" de la procesadora.
 export const pendingOrders = file =>
@@ -4960,6 +4973,7 @@ export const pendingOrders = file =>
 // la misma fecha, porque un recibido sin pedido deja el dato cojo.
 export function stampOrder(file, id, which, by) {
   if (!orderById(id)) return file;
+  if (id === "appraisal" && which === "req" && !canOrderAppraisal(file)) return file;
   const prev = ordersOf(file)[id] || {};
   const hoy = today();
   const next = which === "rec"

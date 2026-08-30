@@ -48,8 +48,8 @@ export const UI = {
   // que se leia como un campo YA LLENO. Se toca OVERRIDE, el codigo exige
   // razon escrita, no la encuentra, y parece que el boton no hace nada.
   gateReasonPh:{ es:"Escribe aquí por qué…", en:"Type why here…" },
-  stageDirty:  { es:"Cambiaste la etapa y no la has guardado. Dale a SAVE antes de avanzar — si no, la pantalla dice una cosa y el archivo tiene otra.",
-                 en:"You changed the stage and have not saved it. Hit SAVE before advancing — otherwise the screen says one thing and the file holds another." },
+  apprBlocked: { es:"No se puede pedir la tasación hasta que el cliente firme las disclosures. La paga él, y la Regulación Z prohíbe cobrarle antes de que reciba el LE y manifieste su intención de proceder — 12 CFR 1026.19(a)(1)(iv).",
+                 en:"The appraisal cannot be ordered until the client signs the disclosures. They pay for it, and Regulation Z bars charging them before they receive the LE and indicate intent to proceed — 12 CFR 1026.19(a)(1)(iv)." },
   gateNeedReason:{ es:"Escribe la razón. Un desbloqueo sin razón no sirve de nada dentro de tres meses.",
                    en:"Write the reason. An override with no reason is worthless three months from now." },
   closeDateAsk:{ es:"¿En qué fecha fondeó de verdad? (AAAA-MM-DD)\n\nEsta fecha decide en qué corte de payroll entra — no es la fecha de cierre esperada.",

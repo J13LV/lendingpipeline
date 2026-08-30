@@ -22,7 +22,7 @@ import { useState } from "react";
 import { tr } from "./ui";
 import { downloadChecklist } from "./barrettChecklist";
 import {
-  ORDERS, ONE_SHOT_ORDERS, orderState, stampOrder, clearOrder, stampOneShot,
+  ORDERS, ONE_SHOT_ORDERS, orderState, stampOrder, clearOrder, stampOneShot, canOrderAppraisal,
   oneShotDone, processingQueue, queueCounts, PROCESSORS, PROCESSOR_IDS,
   processorOf, DEFAULT_PROCESSOR, GATE1_ITEMS, gate1Item, FINDING_WAITING,
   WAITING_IDS, waitingMeta, openFindings, addFinding, resolveFinding, findingAge,
@@ -67,14 +67,28 @@ const md = iso => iso ? `${iso.slice(5, 7)}/${iso.slice(8, 10)}` : "—";
 // del 19/22 grande se lee como otro contador; "ayer" no se confunde con
 // nada. La fecha exacta vuelve pasada la semana, que es cuando deja de
 // importar si fue lunes o martes.
+// Pasada la semana vuelve a la fecha, pero con el MES EN LETRA. "08/22"
+// junto al 19/22 grande son dos numeros con barra y se leen igual; "Ago 22"
+// no se confunde con un contador.
+const MESES = {
+  es: ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"],
+  en: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+};
+const fechaCorta = (iso, lang) => {
+  if (!iso) return "—";
+  const m = Number(iso.slice(5, 7)) - 1;
+  const dia = String(Number(iso.slice(8, 10)));
+  return `${(MESES[lang] || MESES.es)[m]} ${dia}`;
+};
+
 const cuando = (iso, lang) => {
   if (!iso) return "";
   const d = daysBetween(iso, today());
-  if (d === null || d < 0) return md(iso);
+  if (d === null || d < 0) return fechaCorta(iso, lang);
   if (d === 0) return lang === "en" ? "today" : "hoy";
   if (d === 1) return lang === "en" ? "yesterday" : "ayer";
   if (d <= 6) return lang === "en" ? `${d}d ago` : `hace ${d}d`;
-  return md(iso);
+  return fechaCorta(iso, lang);
 };
 // Las notas del motor viven como note_es / note_en.
 const PN = (o, lang) => o ? (o["note_" + lang] ?? "") : "";
@@ -116,9 +130,13 @@ function OrderRow({ file, def, lang, onSave, readOnly }) {
         </span>
       );
     }
+    // La tasacion no se puede pedir sin la firma del cliente. El boton se
+    // apaga y dice por que, en vez de dejar tocarlo y fallar en silencio.
+    const frenado = def.id === "appraisal" && which === "req" && !hecho && !canOrderAppraisal(file);
     return (
-      <button className="hov"
+      <button className="hov" disabled={frenado}
         onClick={() => {
+          if (frenado) return;
           if (hecho) {
             if (!armado) { setConfirm(which); setTimeout(() => setConfirm(null), 3000); return; }
             setConfirm(null);
@@ -127,12 +145,13 @@ function OrderRow({ file, def, lang, onSave, readOnly }) {
             onSave(stampOrder(file, def.id, which, null));
           }
         }}
-        title={hecho ? T("orderUndo") : ""}
+        title={frenado ? T("apprBlocked") : hecho ? T("orderUndo") : ""}
         style={{
           fontSize: "var(--fs-2)", padding: "4px 9px", borderRadius: 4, cursor: "pointer",
           fontFamily: "DM Mono", whiteSpace: "nowrap",
           background: armado ? "rgba(232,93,117,.15)" : hecho ? "rgba(6,214,160,.12)" : "#21262D",
-          color: armado ? C.red : hecho ? C.ok : C.soft,
+          color: frenado ? C.dim : armado ? C.red : hecho ? C.ok : C.soft,
+          opacity: frenado ? .5 : 1,
           border: `1px solid ${armado ? C.red : hecho ? C.ok : C.edge}`,
         }}>
         {armado ? T("orderUndoAsk") : hecho ? `${label} ${md(fecha)}` : label}
@@ -583,9 +602,36 @@ export function SubmissionPane({ file, lang, onSave, who, readOnly }) {
           borderRadius: 8, padding: "11px 13px" }}>
           <div style={{ fontSize: "var(--fs-1)", color: C.soft, letterSpacing: "1px",
             marginBottom: 3 }}>{T("laterTitle")}</div>
-          <div className="sys" style={{ marginBottom: 6 }}>{T("laterHint")}</div>
+          <div className="sys" style={{ marginBottom: 8 }}>{T("laterHint")}</div>
+          {/* LA LEYENDA. PTA, PTC y PTF son del oficio: Tina y Martha las
+              conocen, Marelis y Laura no. Una etiqueta que hay que
+              explicar no la usa nadie, asi que la explicacion va al lado.
+              Y la segunda linea de cada una dice por que IMPORTA, no solo
+              que significa. */}
+          <div style={{ background: C.bg, borderRadius: 6, padding: "8px 10px",
+            marginBottom: 9 }}>
+            {[["pta", T("timing_pta")], ["ptc", T("timing_ptc")],
+              ["ptf", T("timing_ptf")]].map(([k, porQue]) => (
+              <div key={k} style={{ display: "flex", gap: 9, alignItems: "baseline",
+                padding: "2px 0" }}>
+                <span style={{ fontFamily: "DM Mono", fontSize: "var(--fs-1)",
+                  color: k === "pta" ? C.gold : C.mid, minWidth: 30 }}>
+                  {PS(DOC_TIMING[k], lang)}
+                </span>
+                <span style={{ fontSize: "var(--fs-1)", color: C.soft, lineHeight: 1.45 }}>
+                  {P(DOC_TIMING[k])}
+                  <span style={{ color: C.dim }}>{` — ${porQue}`}</span>
+                </span>
+              </div>
+            ))}
+          </div>
           {reqLater.map(d => sello(d.id,
-            `${PS(DOC_TIMING[d.timing || "pta"], lang)} · ${P(d)}`,
+            <span title={P(DOC_TIMING[d.timing || "pta"])}>
+              <span style={{ color: C.mid, fontFamily: "DM Mono" }}>
+                {PS(DOC_TIMING[d.timing || "pta"], lang)}
+              </span>
+              {` · ${P(d)}`}
+            </span>,
             [d.flag ? P(d.flagLabel) : null, d.who ? P(docOwner(d.who)) : null]
               .filter(Boolean).join(" · ")))}
         </div>

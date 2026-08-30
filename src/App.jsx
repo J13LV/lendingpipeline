@@ -394,7 +394,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.09.01e";
+const APP_VERSION = "2026.09.02b";
 
 function huellaTexto(s) {
   let h = 0;
@@ -2207,6 +2207,18 @@ export default function App() {
 
       {detail&&<DetailModal file={detail} profile={profile} allFiles={files} L={L} lang={lang} onSetLang={setLang} onClose={()=>setDetail(null)}
         onSave={p=>{updateFile(detail.id,p);setDetail(f=>({...f,...p}));}}
+        onStagePick={next=>{
+          const f0=files.find(x=>x.id===detail.id); if(!f0) return true;
+          const iCur=ALL_STAGES.findIndex(x=>x.stage===f0.stage);
+          const iNew=ALL_STAGES.findIndex(x=>x.stage===next);
+          if(iCur<0||iNew<0||iNew<=iCur) return true; // atras o lateral: pasa
+          const g=stageGate(f0);
+          if(g.blocked||g.soft.length){
+            setGateBlock({id:detail.id, gate:g, borrower:f0.borrower, jumpTo:next});
+            return false;
+          }
+          return true;
+        }}
         onDelete={()=>deleteFile(detail.id)}
         onAdvance={()=>{
           // La pantalla solo se mueve si el archivo se movio. Antes eran dos
@@ -2231,7 +2243,15 @@ export default function App() {
           if(av) av.style.display="block";
         };
         const seguir=razon=>{
-          const id=gateBlock.id; setGateBlock(null);
+          const id=gateBlock.id; const salto=gateBlock.jumpTo; setGateBlock(null);
+          // Dos caminos: ADVANCE mueve una etapa; el menu salta a la escogida.
+          if(salto){
+            const f0=files.find(x=>x.id===id); if(!f0) return;
+            const parche=stagePatch(f0, salto);
+            updateFile(id, parche);
+            setDetail(f=>(f&&f.id===id)?{...f,...parche}:f);
+            return;
+          }
           if(!advance(id,{reason:razon})) return;
           setDetail(f=>{ if(!f||f.id!==id) return f;
             const i=ALL_STAGES.findIndex(x=>x.stage===f.stage); const n=ALL_STAGES[i+1];
@@ -5807,7 +5827,7 @@ function FindingsPanel({file,profile,onSave}){
   );
 }
 
-function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDelete,onAdvance,onCloseFile,onReopen,onPrep,onArchive,onRestore,onContinuePrep,isClosed}){
+function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onStagePick,onDelete,onAdvance,onCloseFile,onReopen,onPrep,onArchive,onRestore,onContinuePrep,isClosed}){
   const isAdmin = profile?.role === "admin";
   const isAssistant = profile?.role === "assistant";
   const [showHistory, setShowHistory] = useState(false);
@@ -5846,10 +5866,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
   // Si el archivo cambia de etapa por debajo (ADVANCE, override), el menu
   // sigue el cambio. Sin esto la pantalla se queda en la etapa vieja.
   useEffect(()=>{ setStage(file.stage); },[file.stage]);
-  // La contradiccion que hay que impedir: menu en una etapa, archivo en
-  // otra. ADVANCE trabaja sobre el guardado, asi que avanzar con esto
-  // abierto produce un salto que nadie pidio.
-  const etapaSinGuardar = stage !== file.stage;
+
   const [loanType,setLoanType]=useState(file.type);
   const [loanAmt,setLoanAmt]=useState(String(file.loan||""));
   const [bps,setBps]=useState(String(file.bps||""));
@@ -5981,7 +5998,11 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
               {(()=>{const e=stageCeilingLabel(file.stage,file,lang);return e?` · ${e}`:"";})()}
             </span>
             <span style={{fontSize:"var(--fs-1)",letterSpacing:"1.3px",color:"var(--t3)"}}>{TX("hdStage")}</span>
-            <select value={stage} onChange={e=>{setStage(e.target.value);
+            <select value={stage} onChange={e=>{
+                // Si la puerta frena, el menu no se mueve: dejarlo cambiado
+                // mostraria una etapa que el archivo no tiene.
+                if(onStagePick && !onStagePick(e.target.value)) return;
+                setStage(e.target.value);
                 onSave(stagePatch(file, e.target.value));}}
               style={{background:"#0D1117",border:`1px solid ${ph.color}`,borderRadius:6,
                 color:ph.color,padding:"7px 11px",fontSize:"var(--fs-4)",fontFamily:"DM Mono",
@@ -6795,15 +6816,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onDe
                   why_en:`Past the ${PREP_MAX_DAYS}-day cap — return it or archive it`})}
                 {btn("arch",TX("archBtn"),"var(--t2)",onArchive,{on:true})}
               </>):(<>
-                {etapaSinGuardar&&(
-                  <div style={{width:"100%",order:-1,fontSize:"var(--fs-2)",color:"#E85D75",
-                    background:"rgba(232,93,117,.08)",border:"1px solid #E85D7544",
-                    borderRadius:6,padding:"6px 10px",marginBottom:6}}>
-                    ⚑ {TX("stageDirty")}
-                  </div>
-                )}
-                {btn("advance",L("advance")+" →",etapaSinGuardar?"#E85D75":"var(--t2)",
-                  ()=>{ if(etapaSinGuardar) return; onAdvance(); },A.advance)}
+                {btn("advance",L("advance")+" →","var(--t2)",onAdvance,A.advance)}
                 {btn("close",L("closeFile")+" ✓","#06D6A0",
                   ()=>{
                     if(!confirm(TX("closeAsk",{n:file.borrower}))) return;
