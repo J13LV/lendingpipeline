@@ -394,7 +394,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.09.02d";
+const APP_VERSION = "2026.09.03a";
 
 function huellaTexto(s) {
   let h = 0;
@@ -827,6 +827,7 @@ export default function App() {
   CURRENT_LANG = lang;
   const [view,setView]=useState("active");
   const [activePhase,setActivePhase]=useState(null);
+  const [critOnly,setCritOnly]=useState(false);
   const [search,setSearch]=useState("");
   const [showAdd,setShowAdd]=useState(false);
   const [trainingMode,setTrainingMode]=useState(false);
@@ -1282,7 +1283,8 @@ export default function App() {
     active
   )
     .filter(f=>!search||f.borrower.toLowerCase().includes(search.toLowerCase()))
-    .filter(f=>!activePhase||getPhase(f.stage).id===activePhase);
+    .filter(f=>!activePhase||getPhase(f.stage).id===activePhase)
+    .filter(f=>!critOnly||fileSeverity(f)==="critical");
 
   // La puerta se evalua ANTES de tocar el estado: si bloquea, no se
   // avanza y se abre el aviso. `override` solo llega desde el boton de
@@ -1291,7 +1293,7 @@ export default function App() {
     const f0=files.find(x=>x.id===id);
     if(f0 && !override){
       const g=stageGate(f0);
-      if(g.blocked || g.soft.length){ setGateBlock({id, gate:g, borrower:f0.borrower}); if(g.blocked) return false; }
+      if(g.blocked || g.soft.length){ setGateBlock({id, gate:g, borrower:f0.borrower}); return false; }
     }
     setFiles(p=>p.map(f=>{
     if(f.id!==id)return f;
@@ -1514,7 +1516,15 @@ export default function App() {
         </div>
         <div style={{display:"flex",gap:20,marginLeft:8}}>
           {[["ACTIVE",active.length,"#4A90D9"],["CLOSED",closed.length,"#06D6A0"],["CRITICAL",crit,"#E85D75"],["VOLUME",`$${(vol/1e6).toFixed(1)}M`,"#F5A623"]].map(([l,v,c])=>(
-            <div key={l} style={{textAlign:"center"}}>
+            <div key={l} className={l==="CRITICAL"&&crit>0?"hov":undefined}
+              onClick={l==="CRITICAL"&&crit>0?()=>{
+                setView("active"); setActivePhase(null); setCritOnly(x=>!x);
+              }:undefined}
+              title={l==="CRITICAL"&&crit>0?TX("critFilterHint"):undefined}
+              style={{textAlign:"center",
+                cursor:l==="CRITICAL"&&crit>0?"pointer":"default",
+                borderBottom:l==="CRITICAL"&&critOnly?"2px solid #E85D75":"2px solid transparent",
+                paddingBottom:2}}>
               <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:c}}>{v}</div>
               <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px"}}>{l}</div>
             </div>
@@ -1928,6 +1938,21 @@ export default function App() {
                 : TX("prepHint")}
             </span>
           </div>
+          {critOnly&&(
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
+              background:"rgba(232,93,117,.08)",border:"1px solid #E85D7544",borderRadius:8,
+              padding:"8px 14px",marginBottom:12}}>
+              <span style={{fontSize:"var(--fs-3)",color:"#E85D75",fontFamily:"DM Mono"}}>
+                ⚑ {TX("critFilterOn",{n:display.length,t:active.length})}
+              </span>
+              <button className="hov" onClick={()=>setCritOnly(false)}
+                style={{background:"transparent",border:"1px solid #E85D7566",borderRadius:6,
+                  color:"#E85D75",padding:"4px 12px",fontFamily:"DM Mono",
+                  fontSize:"var(--fs-2)",cursor:"pointer"}}>
+                {TX("critFilterOff")}
+              </button>
+            </div>
+          )}
           {display.length===0?(
             <div style={{padding:40,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-5)"}}>
               {view==="review"
@@ -2094,6 +2119,9 @@ export default function App() {
                                 </span>:null;
                               }
                               const c=signalColor(ck.signal);
+                              // El reloj tapa la palabra CRITICAL. El punto
+                              // avisa que la etapa igual se paso del techo.
+                              const etapaRoja = u==="critical" && ck.signal!=="broken";
                               const texto = ck.kind==="coe"
                                 ? (ck.days<0?`COE ${Math.abs(ck.days)}d ${TX("pastDue")}`:`COE ${ck.days}d`)
                                 : `${ck.days}d / ${ck.ceiling}d${ck.legal?" ⚖":""}`;
@@ -2101,6 +2129,8 @@ export default function App() {
                                 <span style={{background:c,color:"#0D1117",borderRadius:4,
                                   padding:"2px 7px",fontSize:"var(--fs-2)",fontWeight:500,
                                   whiteSpace:"nowrap",fontFamily:"DM Mono"}}>{texto}</span>
+                                {etapaRoja&&<span title={TX("stageOverCeiling")}
+                                  style={{marginLeft:5,color:"#E85D75",fontSize:"var(--fs-3)"}}>●</span>}
                                 {ck.waitOn&&<div style={{fontSize:"var(--fs-1)",color:"var(--t4)",
                                   marginTop:3,whiteSpace:"nowrap"}}>{P(ck.waitOn)}</div>}
                               </div>;})()}

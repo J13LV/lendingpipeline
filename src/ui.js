@@ -48,6 +48,12 @@ export const UI = {
   // que se leia como un campo YA LLENO. Se toca OVERRIDE, el codigo exige
   // razon escrita, no la encuentra, y parece que el boton no hace nada.
   gateReasonPh:{ es:"Escribe aquí por qué…", en:"Type why here…" },
+  critFilterHint:{ es:"Tocar para ver solo estos. Tocar de nuevo para quitar el filtro.",
+                   en:"Tap to see only these. Tap again to clear the filter." },
+  critFilterOn:{ es:"Mostrando solo los críticos · {n} de {t}", en:"Showing critical only · {n} of {t}" },
+  critFilterOff:{ es:"QUITAR FILTRO", en:"CLEAR FILTER" },
+  stageOverCeiling:{ es:"La etapa pasó su techo, pero manda otro reloj",
+                     en:"The stage is past its ceiling, but another clock rules" },
   apprBlocked: { es:"No se puede pedir la tasación hasta que el cliente firme las disclosures. La paga él, y la Regulación Z prohíbe cobrarle antes de que reciba el LE y manifieste su intención de proceder — 12 CFR 1026.19(a)(1)(iv).",
                  en:"The appraisal cannot be ordered until the client signs the disclosures. They pay for it, and Regulation Z bars charging them before they receive the LE and indicate intent to proceed — 12 CFR 1026.19(a)(1)(iv)." },
   gateNeedReason:{ es:"Escribe la razón. Un desbloqueo sin razón no sirve de nada dentro de tres meses.",
