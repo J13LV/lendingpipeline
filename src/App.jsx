@@ -394,7 +394,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.09.05b";
+const APP_VERSION = "2026.09.05c";
 
 function huellaTexto(s) {
   let h = 0;
@@ -1491,6 +1491,10 @@ export default function App() {
           .dm-foot > .dm-save,
           .dm-foot > .dm-acc{display:inline-block !important;}
           .dm-foot.dm-foot-open > *{display:inline-block !important;}
+          /* Borrar es la unica accion del pie que no se deshace. En un
+             telefono que se usa para mirar, y con el pulgar, no tiene por
+             que estar al alcance. Se queda en la computadora. */
+          .dm-foot.dm-foot-open > .dm-del{display:none !important;}
           .dm-acc{order:2;}
         }
         ::-webkit-scrollbar{width:10px;height:10px;}
@@ -7080,7 +7084,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onSt
 
               {isAdmin&&(<>
                 <div style={{width:1,height:22,background:"#21262D",margin:"0 4px"}}/>
-                <button className="hov"
+                <button className="hov dm-del"
                   onClick={()=>{if(confirm(TX("deleteAsk")))onDelete();}}
                   title={TX("deleteHint")}
                   style={{background:"transparent",color:"#E85D75",border:"none",borderRadius:6,
