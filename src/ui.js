@@ -48,6 +48,7 @@ export const UI = {
   // que se leia como un campo YA LLENO. Se toca OVERRIDE, el codigo exige
   // razon escrita, no la encuentra, y parece que el boton no hace nada.
   gateReasonPh:{ es:"Escribe aquí por qué…", en:"Type why here…" },
+  mobActions:  { es:"ACCIONES", en:"ACTIONS" },
   critFilterHint:{ es:"Tocar para ver solo estos. Tocar de nuevo para quitar el filtro.",
                    en:"Tap to see only these. Tap again to clear the filter." },
 

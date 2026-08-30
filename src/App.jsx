@@ -394,7 +394,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.09.04a";
+const APP_VERSION = "2026.09.05a";
 
 function huellaTexto(s) {
   let h = 0;
@@ -1467,6 +1467,29 @@ export default function App() {
            clic cae en otra cosa. Y el pulgar va SIEMPRE visible, no solo al
            pasar el raton: con cinco personas entrando esta semana, una
            barra que hay que encontrar es una barra que no se usa. */
+        /* El modal del archivo en el telefono. Sin esto el encabezado y el
+           pie se comian el 85% de la pantalla y al contenido —lo unico que
+           uno fue a ver— le quedaba una franja.
+           No es una pantalla aparte: es la misma, mostrada distinto. Dos
+           pantallas se desfasan, y esta semana ya paso tres veces. */
+        .dm-strip{display:none;}
+        .dm-acc{display:none;}
+        @media (max-width:900px){
+          .dm-head{padding:10px 14px 8px !important;gap:8px !important;}
+          .dm-head .dm-name{font-size:var(--fs-5) !important;line-height:1.15;}
+          .dm-facts{display:none !important;}
+          .dm-strip{display:block;margin-top:5px;font-size:var(--fs-2);
+            color:var(--t2);font-family:"DM Mono";}
+          .dm-tabs{display:flex !important;overflow-x:auto;
+            scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+          .dm-tabs::-webkit-scrollbar{display:none;}
+          .dm-tab{flex:0 0 auto !important;padding:11px 15px !important;
+            border-right:1px solid #21262D;}
+          .dm-acc{display:inline-block;}
+          .dm-foot{padding:9px 14px !important;}
+          .dm-foot > *:not(:first-child):not(.dm-acc){display:none !important;}
+          .dm-foot-open > *{display:inline-block !important;}
+        }
         ::-webkit-scrollbar{width:10px;height:10px;}
         ::-webkit-scrollbar-track{background:#161B22;border-radius:5px;}
         ::-webkit-scrollbar-thumb{background:#484F58;border-radius:5px;
@@ -6029,6 +6052,9 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onSt
   // dos bloques en la misma pantalla con dos cifras de dinero distintas.
   const [pendingBps,setPendingBps] = useState(null);
   const [showChange,setShowChange]=useState(false);
+  // Pie colapsado en el telefono. Arriba de los return tempranos por las
+  // reglas de hooks — la pantalla blanca del 1 de septiembre salio de eso.
+  const [accOpen,setAccOpen]=useState(false);
   const [chkBusy,setChkBusy]=useState(false);
   const [showCancel,setShowCancel]=useState(false);
   const [newNote,setNewNote]=useState("");
@@ -6092,14 +6118,22 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onSt
         {/* ENCABEZADO — cada dato con su etiqueta. Antes decia
             "FHA $450,655 eLend Jose Martha" de corrido y habia que
             adivinar quien era quien. */}
-        <div style={{padding:"14px 22px 12px",display:"flex",justifyContent:"space-between",
+        <div className="dm-head" style={{padding:"14px 22px 12px",display:"flex",justifyContent:"space-between",
           alignItems:"flex-start",gap:20,flexWrap:"wrap",flexShrink:0}}>
           <div style={{minWidth:0}}>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:"var(--t1)",letterSpacing:"-0.4px"}}>
+            <div className="dm-name" style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:"var(--t1)",letterSpacing:"-0.4px"}}>
               {file.borrower}
               {isInbound&&<span title="Inbound referral" style={{marginLeft:9,fontSize:"var(--fs-4)",color:"#FFD166"}}>🤝</span>}
             </div>
-            <div style={{display:"flex",gap:26,marginTop:11,flexWrap:"wrap"}}>
+            {/* En el telefono los cinco campos con etiqueta se comen media
+                pantalla. Se reemplazan por una tira de una linea; el dato
+                completo vive adentro de las solapas. */}
+            <div className="dm-strip">
+              {loanType} · ${parseInt(loanAmt||0).toLocaleString()}
+              {lenderNameOf(file)?` · ${lenderNameOf(file)}`:""}
+              {loAssigned?` · ${String(loAssigned).split(" ")[0]}`:""}
+            </div>
+            <div className="dm-facts" style={{display:"flex",gap:26,marginTop:11,flexWrap:"wrap"}}>
               {[
                 [TX("hdProduct"), loanType, "var(--t1)"],
                 [TX("hdAmount"),  "$"+parseInt(loanAmt||0).toLocaleString(), "var(--t1)"],
@@ -6191,7 +6225,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onSt
         {/* SOLAPAS — estiradas a todo el ancho, en cinco partes iguales.
             La activa lleva fondo Y barra dorada: solo con el subrayado se
             perdian entre el resto del texto. */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",
+        <div className="dm-tabs" style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",
           borderTop:"1px solid #21262D",borderBottom:"1px solid #21262D",
           background:"#0A0E13",flexShrink:0}}>
           {/* Sin contadores. Un numero rojo sin explicacion asusta pero no
@@ -6206,7 +6240,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onSt
           ].map(([id,label],i)=>{
             const on=tab===id;
             return (
-              <button key={id} className="hov" data-tour={id} onClick={()=>setTab(id)}
+              <button key={id} className="hov dm-tab" data-tour={id} onClick={()=>setTab(id)}
                 style={{background:on?"#171D26":"transparent",border:"none",cursor:"pointer",
                   color:on?"#F5A623":"var(--t2)",fontSize:"var(--fs-3)",fontFamily:"Syne",
                   fontWeight:on?800:500,letterSpacing:"1.6px",padding:"12px 0",
@@ -6897,8 +6931,18 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onSt
             Los botones NUNCA cambian de sitio: solo cambia cual esta
             encendido. Si cambiaran de posicion habria que leer la barra
             cada vez en vez de ir con el dedo. */}
-        <div style={{padding:"11px 22px",borderTop:"1px solid #21262D",background:"#10141A",
+        <div className={"dm-foot"+(accOpen?" dm-foot-open":"")}
+          style={{padding:"11px 22px",borderTop:"1px solid #21262D",background:"#10141A",
           flexShrink:0,display:"flex",gap:7,alignItems:"center",flexWrap:"wrap"}}>
+          {/* Solo en el telefono. Abre el resto de las acciones, que ahi
+              estan escondidas: nadie archiva ni borra desde el movil, y
+              tocarlo por error es peor que no tenerlo. */}
+          <button className="hov dm-acc" onClick={()=>setAccOpen(x=>!x)}
+            style={{background:"transparent",color:"var(--t2)",border:"1px solid #30363D",
+              borderRadius:6,padding:"8px 14px",fontFamily:"DM Mono",
+              fontSize:"var(--fs-3)",cursor:"pointer",whiteSpace:"nowrap"}}>
+            {TX("mobActions")} {accOpen?"\u25b4":"\u25be"}
+          </button>
           {(()=>{
             const A=fileActions(file,{isAdmin});
             const salvar=()=>{
