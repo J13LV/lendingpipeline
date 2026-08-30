@@ -5518,51 +5518,166 @@ export const BACKFILL_STAGES = [
 //     existe es pedir que se invente. Cristobal Godinez salio asi.
 //   · ANTERIOR AL CORTE — se liquido bajo PRMG. Mismo criterio que ya
 //     usa payroll: nada de antes del 13 de julio vuelve a entrar.
+// Los huecos de UN archivo, con dueño y con época.
+//
+// Un hueco es un dato que DEBIA existir y esta en blanco. La regla que
+// mantiene la lista corta y verdadera: solo cuenta si el archivo YA PASO
+// el punto donde ese dato tenia que capturarse. No dice "todavia no lo
+// has hecho" — dice "pasaste por ahi y quedo vacio".
+//
+// `owner` sale de STAGE_OWNERS resuelto contra el archivo, no de un rol
+// generico: el hueco de la tasacion es de QUIEN procesa ESE archivo.
+//
+// `era` separa lo que de verdad se le olvido a alguien de lo que el
+// sistema nunca pidio. Sin esa separacion, el dia que esto se enciende
+// los 28 archivos vivos se iluminan de golpe y la gente llena fechas de
+// memoria para bajar el contador — inventando datos, que es justo lo que
+// las puertas existen para evitar.
+export const BF_ERA_PENDING = "pending";
+export const BF_ERA_HISTORIC = "historic";
+
 export function backfillGaps(file, cutover = BARRETT_CUTOVER) {
   if (!file || file.archived) return [];
   if (okDate(file.closedAt)) return [];
-  if (file.stage === "REFERRED OUT — EXTERNAL BANK" || file.referredOut) return [];
+  if (String(file.stage || "").startsWith("REFERRED OUT") || file.referredOut) return [];
   if (file.prep) return [];
-  if (!hasLender(file)) return [];
-  // Un archivo abierto antes del corte pero que sigue vivo SI cuenta: se va
-  // a cerrar con Barrett y su checklist va a Barrett. Lo que se excluye es
-  // el que ya nacio y murio del otro lado.
-  const abierto = okDate(file.fileOpenedAt) || okDate(String(file.createdAt || "").split("T")[0]);
-  if (abierto && cutover && abierto < cutover && !file.stage) return [];
 
   const idx = ALL_STAGE_ORDER.indexOf(file.stage);
   const paso = etapa => idx > -1 && ALL_STAGE_ORDER.indexOf(etapa) > -1
     && ALL_STAGE_ORDER.indexOf(etapa) < idx;
+  const en = etapa => idx > -1 && ALL_STAGE_ORDER.indexOf(etapa) === idx;
+
+  // La epoca sale de cuando el archivo entro a la etapa del hueco. Si esa
+  // fecha no existe, se cae al arranque del archivo.
+  const epoca = etapa => {
+    const d = okDate(stageLogOf(file)[etapa]) || okDate(file.fileOpenedAt)
+      || okDate(String(file.createdAt || "").split("T")[0]);
+    return (d && cutover && d < cutover) ? BF_ERA_HISTORIC : BF_ERA_PENDING;
+  };
 
   const out = [];
-  if (paso(AFTER_REGISTRATION_STAGE) && !isRegistered(file))
-    out.push({ id: "registration", kind: "registration",
-      es: "Registro con el lender", en: "Registered with lender" });
-  if (isRegistered(file) || paso(AFTER_REGISTRATION_STAGE)) {
-    if (!discEsignedAt(file))
-      out.push({ id: "discEsignedAt", kind: "registration",
-        es: "Divulgaciones firmadas", en: "Disclosures signed" });
+  // "LO" es un rol, no una persona. El hueco tiene que decir Ana o
+  // Marelis, si no el filtro por persona no puede funcionar.
+  const quien = tk => tk === "LO" ? (file.lo || null) : (resolveOwner(tk, file) || null);
+  const add = (id, kind, etapa, ownerToken, es, enTxt) => out.push({
+    id, kind, stage: etapa || null,
+    owner: quien(ownerToken),
+    era: epoca(etapa || file.stage), es, en: enTxt,
+  });
+
+  // ─── LOAN OFFICER ───
+  // Lo suyo nace en el contrato. Antes de ahi no hay nada que reclamarle.
+  if (paso("Under Contract") || en("Under Contract")) {
+    const c = file.contingencies || {};
+    if (!okDate(c.appraisalContingency) || !okDate(c.loanContingency))
+      add("contract_dates", "lo", "Under Contract", "LO",
+        "Fechas de contingencia del contrato", "Contract contingency dates");
+    if (!okDate(file.closing))
+      add("closing", "lo", "Under Contract", "LO",
+        "Fecha de cierre esperada", "Expected closing date");
   }
+  if (paso(REGISTRATION_STAGE) || en(REGISTRATION_STAGE)) {
+    if (!hasLender(file))
+      add("lender", "lo", REGISTRATION_STAGE, "LO", "Lender escogido", "Lender chosen");
+    // El scorecard entero cuelga de este campo. En blanco, el socio no
+    // recibe credito a fin de año y nadie se entera hasta diciembre.
+    if (!String(file.referralPartner || "").trim())
+      add("referralPartner", "lo", REGISTRATION_STAGE, "LO",
+        "Socio referidor", "Referral partner");
+  }
+  if (paso("Submitted to UW") && !lockStatus(file)?.state)
+    add("lock", "lo", "Submitted to UW", "LO",
+      "Decisión de tasa y lock", "Rate and lock decision");
+  if (paso("Full Application") && !latestNote(file))
+    add("note", "lo", "Full Application", "LO",
+      "Ninguna nota en el archivo", "No note on the file");
+
+  // ─── ASISTENTE ───
+  if ((paso("Under Contract") || en(REGISTRATION_STAGE)) && !gate1Complete(file))
+    add("gate1", "assistant", "Under Contract", STAGE_OWNERS[REGISTRATION_STAGE],
+      "Verificación del 1003 sin terminar", "1003 verification incomplete");
+  if (paso(AFTER_REGISTRATION_STAGE) && !isRegistered(file))
+    add("registration", "assistant", REGISTRATION_STAGE, STAGE_OWNERS[REGISTRATION_STAGE],
+      "Registro con el lender", "Registered with lender");
+  if ((isRegistered(file) || paso(AFTER_REGISTRATION_STAGE)) && !discEsignedAt(file))
+    add("discEsignedAt", "assistant", AFTER_REGISTRATION_STAGE,
+      STAGE_OWNERS[AFTER_REGISTRATION_STAGE],
+      "Divulgaciones firmadas", "Disclosures signed");
+
+  // ─── PROCESADOR ───
+  // Una orden que el archivo ya dejo atras y nunca se marco como pedida.
+  for (const o of ORDERS) {
+    const etapa = ORDER_STAGE[o.id];
+    if (!etapa || !paso(etapa)) continue;
+    const st = orderState(file, o.id);
+    if (!st.req) add("order_req_" + o.id, "processor", etapa, STAGE_OWNERS[etapa],
+      "Pedido: " + (o.es || o.id), "Ordered: " + (o.en || o.id));
+    else if (!st.rec && paso("Submitted to UW"))
+      add("order_rec_" + o.id, "processor", etapa, STAGE_OWNERS[etapa],
+        "Recibido: " + (o.es || o.id), "Received: " + (o.en || o.id));
+  }
+
+  // ─── FECHAS DE ETAPA ───
+  // Las que dejan huella imposible de reconstruir despues.
   for (const st of BACKFILL_STAGES) {
     if (!paso(st)) continue;
     if (okDate(stageLogOf(file)[st])) continue;
-    out.push({ id: st, kind: "stage", es: st, en: st });
+    add(st, "stage", st, STAGE_OWNERS[st], "Fecha de " + st, st + " date");
   }
   return out;
 }
 
+// Que orden corresponde a que etapa. Sin esto no se puede saber si el
+// archivo ya paso el punto donde esa orden debia estar pedida.
+export const ORDER_STAGE = {
+  title: "Title Ordered",
+  appraisal: "Appraisal Ordered",
+  hoi_quote: "Insurance Ordered",
+  hoi_binder: "Insurance Ordered",
+};
+
+// Los huecos de una persona, separados por epoca.
+export function backfillFor(files, who, cutover = BARRETT_CUTOVER) {
+  const filas = [];
+  for (const f of files || []) {
+    for (const g of backfillGaps(f, cutover)) {
+      if (who && g.owner !== who) continue;
+      filas.push({ ...g, file: f });
+    }
+  }
+  return {
+    pending: filas.filter(x => x.era === BF_ERA_PENDING),
+    historic: filas.filter(x => x.era === BF_ERA_HISTORIC),
+  };
+}
+
+// Cuantos pendientes tiene cada persona. Sin filtro, para pintar el
+// reparto en la reunion.
+export function backfillByOwner(files, cutover = BARRETT_CUTOVER) {
+  const m = new Map();
+  for (const f of files || [])
+    for (const g of backfillGaps(f, cutover))
+      if (g.era === BF_ERA_PENDING && g.owner)
+        m.set(g.owner, (m.get(g.owner) || 0) + 1);
+  return m;
+}
+
 // Los que de verdad hay que cerrar, y en el orden que importa: el que
 // firma antes necesita su papel antes.
-export const filesNeedingBackfill = files =>
-  (files || []).filter(f => backfillGaps(f).length > 0)
+// `who` limita a los huecos de una persona; `era` a pendientes o
+// historico. Sin argumentos se comporta como antes.
+export const filesNeedingBackfill = (files, who = null, era = null) =>
+  (files || []).filter(f => backfillGaps(f).some(g =>
+    (!who || g.owner === who) && (!era || g.era === era)))
     .sort((a, b) => {
       const ca = okDate(a?.contingencies?.coe) || okDate(a?.closing) || "9999-12-31";
       const cb = okDate(b?.contingencies?.coe) || okDate(b?.closing) || "9999-12-31";
       return ca.localeCompare(cb);
     });
 
-export const backfillCount = files =>
-  filesNeedingBackfill(files).reduce((a, f) => a + backfillGaps(f).length, 0);
+export const backfillCount = (files, who = null, era = null) =>
+  (files || []).reduce((a, f) => a + backfillGaps(f).filter(g =>
+    (!who || g.owner === who) && (!era || g.era === era)).length, 0);
 
 // Escribe el relleno en las MISMAS estructuras que el trabajo del día a
 // día: stageLog y el ciclo de registro. Nada río abajo cambia — la hoja de

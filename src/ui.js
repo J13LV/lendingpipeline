@@ -49,6 +49,14 @@ export const UI = {
   // razon escrita, no la encuentra, y parece que el boton no hace nada.
   gateReasonPh:{ es:"Escribe aquí por qué…", en:"Type why here…" },
   mobActions:  { es:"ACCIONES", en:"ACTIONS" },
+
+  // ─── relleno por persona ───
+  bfAll:      { es:"TODOS", en:"EVERYONE" },
+  bfPending:  { es:"PENDIENTES", en:"PENDING" },
+  bfHistoric: { es:"ANTES DEL 13 JUL", en:"BEFORE JUL 13" },
+  bfHistNote: { es:"Lo de antes del corte con Barrett. El sistema nunca lo pidió, así que no es de nadie — se llena si alguien tiene el dato de verdad, nunca de memoria.",
+                en:"From before the Barrett cutover. The system never asked for it, so it is nobody's fault — fill it only if someone has the real data, never from memory." },
+  bfMine:     { es:"Lo tuyo", en:"Yours" },
   critFilterHint:{ es:"Tocar para ver solo estos. Tocar de nuevo para quitar el filtro.",
                    en:"Tap to see only these. Tap again to clear the filter." },
 

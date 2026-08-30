@@ -57,6 +57,7 @@ import {
   DPA_PCTS, DPA_FORMS, dpaForm, dpaOf, hasDpa, miLooksWrong,
   setDpa, dpaLabel, dpaComplete, productionByDpa, productionByState,
   GATE1_ITEMS, gate1Item, FINDING_WAITING, WAITING_IDS, waitingMeta,
+  backfillByOwner, BF_ERA_PENDING,
   backfillGaps, filesNeedingBackfill, backfillCount, applyBackfill, wasBackfilled,
   submissionCoverage, submissionReady, stampSubmissionComplete,
   gate1Coverage, visibleMilestones, milestoneAt, uwOutcome, uwOutcomeAt,
@@ -394,7 +395,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.09.05c";
+const APP_VERSION = "2026.09.06a";
 
 function huellaTexto(s) {
   let h = 0;
@@ -1598,15 +1599,21 @@ export default function App() {
           {/* Las nueve fechas son de TINA: registro, divulgaciones,
               sometimiento. Ella las tiene en Arive. Un LO no sabe cuándo
               Tina registró, y Martha recibe el archivo ya registrado. */}
-          {(isAdmin || isAssistant) && backfillCount(files) > 0 && (
+          {(()=>{
+            const vivos=excludeTraining(files);
+            const mios=isAdmin
+              ? backfillCount(vivos, null, BF_ERA_PENDING)
+              : backfillCount(vivos, profile?.name, BF_ERA_PENDING);
+            if(mios<1) return null;
+            return (
             <button className="hov" onClick={()=>setShowBackfill(true)}
               title={TX("bfLead")}
               style={{background:"rgba(245,166,35,.1)",color:"#F5A623",borderRadius:6,
                 padding:"8px 12px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",
                 border:"1px solid #F5A62366",cursor:"pointer"}}>
-              {TX("bfBtn")} {filesNeedingBackfill(files).length}
-            </button>
-          )}
+              {TX("bfBtn")} {mios}
+            </button>);
+          })()}
           {isAdmin && (
             <label className="hov"
               title={TX("backupHint")}
@@ -2422,6 +2429,7 @@ export default function App() {
         onConfirm={(reason)=>{archiveFile(archiveFor.id,reason);setArchiveFor(null);}}/>}
       {showHelp&&<HelpModal profile={profile} lang={lang} onSetLang={setLang} onClose={()=>setShowHelp(false)}/>}
       {showBackfill&&<BackfillModal files={excludeTraining(files)} profile={profile} lang={lang}
+        soyAdmin={isAdmin}
         onClose={()=>setShowBackfill(false)}
         onApply={(updates)=>{
           // Una sola escritura para todos los archivos: en tandas separadas,
@@ -2597,8 +2605,13 @@ function CancelContractModal({file, lang, onClose, onConfirm}){
 // Lo que NO hace: pedir fechas que todavía no han ocurrido. Si el archivo
 // está en UW Review no se le pregunta cuándo fondeó. Pedir un dato que aún
 // no existe es invitar a inventarlo.
-function BackfillModal({files, profile, lang, onClose, onApply}){
-  const pendientes = filesNeedingBackfill(files);
+function BackfillModal({files, profile, lang, soyAdmin, onClose, onApply}){
+  // Quien mira: por defecto uno mismo. El admin arranca viendo todo y
+  // puede filtrar por persona, igual que en el reporte de vencidas.
+  const [quien, setQuien] = useState(soyAdmin ? null : (profile?.name || null));
+  const [epoca, setEpoca] = useState(BF_ERA_PENDING);
+  const reparto = [...backfillByOwner(files).entries()].sort((a,b)=>b[1]-a[1]);
+  const pendientes = filesNeedingBackfill(files, quien, epoca);
   const [datos, setDatos] = useState({});
   const [hecho, setHecho] = useState(null);
   const P2 = o => (o && typeof o === "object") ? (o[lang] ?? o.es ?? o.en ?? "") : o;
@@ -2627,9 +2640,42 @@ function BackfillModal({files, profile, lang, onClose, onApply}){
                 {TX("bfLead")}
               </div>
             </div>
+
             <button onClick={onClose} style={{background:"transparent",border:"none",
               color:"var(--t4)",fontSize:20,cursor:"pointer",padding:"0 0 0 12px"}}>✕</button>
           </div>
+          {/* De quien son los huecos, y de que epoca. El contador propio
+              es lo que empuja: uno global no le habla a nadie. */}
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center",marginTop:12}}>
+            {[[BF_ERA_PENDING,TX("bfPending")],["historic",TX("bfHistoric")]].map(([e,l])=>(
+              <button key={e} className="hov" onClick={()=>setEpoca(e)}
+                style={{background:epoca===e?"#F5A623":"#21262D",
+                  color:epoca===e?"#0D1117":"var(--t2)",border:"none",borderRadius:6,
+                  padding:"5px 12px",fontSize:"var(--fs-2)",fontFamily:"DM Mono",cursor:"pointer"}}>
+                {l}
+              </button>
+            ))}
+            {soyAdmin&&<div style={{width:1,height:20,background:"#21262D",margin:"0 4px"}}/>}
+            {soyAdmin&&(
+              <button className="hov" onClick={()=>setQuien(null)}
+                style={{background:quien===null?"#4A90D9":"#21262D",
+                  color:quien===null?"#0D1117":"var(--t2)",border:"none",borderRadius:6,
+                  padding:"5px 12px",fontSize:"var(--fs-2)",fontFamily:"DM Mono",cursor:"pointer"}}>
+                {TX("bfAll")}
+              </button>
+            )}
+            {soyAdmin&&reparto.map(([nombre,n])=>(
+              <button key={nombre} className="hov" onClick={()=>setQuien(x=>x===nombre?null:nombre)}
+                style={{background:quien===nombre?"#4A90D9":"#21262D",
+                  color:quien===nombre?"#0D1117":"var(--t2)",border:"none",borderRadius:6,
+                  padding:"5px 12px",fontSize:"var(--fs-2)",fontFamily:"DM Mono",cursor:"pointer"}}>
+                {String(nombre).split(" ")[0]} · {n}
+              </button>
+            ))}
+          </div>
+          {epoca!==BF_ERA_PENDING&&(
+            <div className="sys" style={{marginTop:8}}>{TX("bfHistNote")}</div>
+          )}
           <div className="sys" style={{marginTop:8}}>{TX("bfOnlyPast")}</div>
           <div style={{fontSize:"var(--fs-2)",color:"var(--t2)",marginTop:7}}>
             {TX("bfCount",{f:pendientes.length,n:backfillCount(files)})}
