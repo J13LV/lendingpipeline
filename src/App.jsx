@@ -394,7 +394,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.09.05a";
+const APP_VERSION = "2026.09.05b";
 
 function huellaTexto(s) {
   let h = 0;
@@ -1487,8 +1487,11 @@ export default function App() {
             border-right:1px solid #21262D;}
           .dm-acc{display:inline-block;}
           .dm-foot{padding:9px 14px !important;}
-          .dm-foot > *:not(:first-child):not(.dm-acc){display:none !important;}
-          .dm-foot-open > *{display:inline-block !important;}
+          .dm-foot > *{display:none !important;}
+          .dm-foot > .dm-save,
+          .dm-foot > .dm-acc{display:inline-block !important;}
+          .dm-foot.dm-foot-open > *{display:inline-block !important;}
+          .dm-acc{order:2;}
         }
         ::-webkit-scrollbar{width:10px;height:10px;}
         ::-webkit-scrollbar-track{background:#161B22;border-radius:5px;}
@@ -7009,7 +7012,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onSt
             };
 
             return (<>
-              <button className="hov" onClick={salvar}
+              <button className="hov dm-save" onClick={salvar}
                 style={{background:"#F5A623",color:"#0D1117",borderRadius:6,padding:"8px 22px",
                   fontFamily:"DM Mono",fontSize:"var(--fs-3)",fontWeight:500,border:"none",cursor:"pointer"}}>
                 {L("save")}
