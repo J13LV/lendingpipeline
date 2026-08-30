@@ -5598,7 +5598,11 @@ export function backfillGaps(file, cutover = BARRETT_CUTOVER) {
 
   // ─── ASISTENTE ───
   if ((paso("Under Contract") || en(REGISTRATION_STAGE)) && !gate1Complete(file))
-    add("gate1", "assistant", "Under Contract", STAGE_OWNERS[REGISTRATION_STAGE],
+    // El 1003 es del LO, no del asistente. `STAGE_DAYS["Under Contract"]`
+    // lo dice con la nota "verify Gate 1", y las dos tarjetas lo repiten:
+    // el LO lo completa y no entrega hasta que el contador diga 12 de 12.
+    // Estaba tomando el dueño de Full Application, que es Tina.
+    add("gate1", "lo", "Under Contract", STAGE_OWNERS["Under Contract"],
       "Verificación del 1003 · faltan " + gate1Coverage(file).pending + " de 12",
       "1003 verification · " + gate1Coverage(file).pending + " of 12 left",
       "action", "loan");
