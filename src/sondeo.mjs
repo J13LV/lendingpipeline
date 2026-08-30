@@ -106,6 +106,32 @@ t("la puerta de CD Issued exige las dos cosas",
 t("con fecha queda una", C.stageGate(cdE).hard.length === 1);
 t("con fees abre", C.stageGate(C.stampCdFees(cdE, "Ana")).blocked === false);
 
+// ─── cartas ───
+t("el catálogo tiene las quince", Object.keys(C.LOE_KINDS).length === 15);
+let lt = C.addLetter({ id:"lt", stage:"UW Review" },
+  { kind:"gift", text:"Regalo de $8,000 de la mamá", from:"borrower", by:"Ana" });
+t("nace levantada", C.letterState(C.openLetters(lt)[0]) === "raised");
+const lid = C.openLetters(lt)[0].id;
+lt = C.stampLetterRequested(lt, lid, "Ana");
+t("pedida guarda fecha y autor",
+  C.letterState(C.lettersOf(lt)[0]) === "requested" && C.lettersOf(lt)[0].requestedBy === "Ana");
+lt = C.stampLetterReceived(lt, lid, "Tina");
+t("recibida cierra la carta", C.openLetters(lt).length === 0 && C.receivedLetters(lt).length === 1);
+t("pedir dos veces no pisa al primero",
+  C.stampLetterRequested(lt, lid, "Otro").letters[0].requestedBy === "Ana");
+const directa = C.addLetter({ id:"d" }, { kind:"nsf", text:"Tres NSF en junio", by:"Tina" });
+const did = C.openLetters(directa)[0].id;
+t("recibir sin pedir estampa la petición también",
+  !!C.stampLetterReceived(directa, did, "Tina").letters[0].requestedAt);
+t("una carta sin texto se rechaza",
+  C.lettersOf(C.addLetter({ id:"z" }, { kind:"nsf", text:"   " })).length === 0);
+t("un tipo inventado cae en «otra»",
+  C.lettersOf(C.addLetter({ id:"w" }, { kind:"xx", text:"algo" }))[0].kind === "other");
+t("la petición al cliente no redacta la explicación",
+  /puño/.test(C.letterRequestText({ text:"por qué", from:"borrower" }, "es")));
+t("la del LO va directa a underwriting",
+  /underwriting/i.test(C.letterRequestText({ text:"el cálculo", from:"lo" }, "es")));
+
 // ─── catálogos bilingües ───────────────────────────────────────────
 const sinPar = [];
 for (const x of [...C.SUBMISSION_DOCS, ...C.DOC_FLAGS, ...C.CONTINGENCIES, ...C.MILESTONES])

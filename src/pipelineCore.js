@@ -4520,13 +4520,111 @@ export const setCustomDoc = (file, id, patch) =>
 // Esto es lo que Jose pidio: "cualquier LOE que necesitemos, nos
 // anticipamos a underwriting". No son documentos del cliente — son
 // cartas que la oficina PRODUCE porque ya sabe que se van a pedir.
+// De quien se pide la carta. Casi siempre del cliente, pero no siempre:
+// una explicacion del calculo de ingreso la escribe el LO.
+export const LETTER_FROM = {
+  borrower: { es: "el cliente", en: "the borrower" },
+  lo:       { es: "el LO",      en: "the LO" },
+  employer: { es: "el empleador", en: "the employer" },
+  bank:     { es: "el banco",   en: "the bank" },
+};
+
 export const LOE_KINDS = {
   employment_gap: { es: "LOE — hueco de empleo", en: "LOE — employment gap" },
   large_deposit:  { es: "LOE — depósito grande", en: "LOE — large deposit" },
   address_var:    { es: "LOE — direcciones del crédito", en: "LOE — credit address variations" },
   inquiries:      { es: "LOE — consultas de crédito", en: "LOE — credit inquiries" },
   employer_churn: { es: "LOE — cambios de empleador", en: "LOE — employer changes" },
+
+  // Cuelgan de banderas de riesgo que ya existian y no producian carta.
+  nsf:            { es: "LOE — NSF y sobregiros", en: "LOE — NSF and overdrafts" },
+  collections:    { es: "LOE — cuentas en colección", en: "LOE — collection accounts" },
+  transfers:      { es: "LOE — transferencias entre cuentas", en: "LOE — transfers between accounts" },
+  caivrs:         { es: "LOE — deuda federal (CAIVRS)", en: "LOE — federal debt (CAIVRS)" },
+  occupancy:      { es: "LOE — intención de habitar", en: "LOE — intent to occupy" },
+
+  // Estas no se detectan: nacen de algo que el sistema no puede ver.
+  // Van al menu manual porque las pide el underwriter, no el archivo.
+  gift:           { es: "Carta de regalo del donante", en: "Donor gift letter" },
+  late_payments:  { es: "LOE — pagos tardes o crédito derogatorio",
+                    en: "LOE — late payments or derogatory credit" },
+  business_funds: { es: "LOE — uso comercial de fondos personales",
+                    en: "LOE — business use of personal funds" },
+  // Con dos apellidos, el credito, el ID y el contrato muchas veces no
+  // coinciden y titulo lo devuelve. En esta sucursal es semanal.
+  name_var:       { es: "LOE — variación de nombre", en: "LOE — name variation" },
+  other:          { es: "Otra carta", en: "Other letter" },
 };
+
+// ─── LAS CARTAS COMO REGISTRO ──────────────────────────────────────
+//
+// `anticipatedLetters` avisa que va a hacer falta una carta. Esto guarda
+// la carta de verdad, con su vida: se levanta, se pide, llega.
+//
+// El sistema NO redacta la explicacion. Una LOE la escribe y la firma el
+// cliente con sus palabras: si la redactamos nosotros, el underwriter la
+// rechaza por plantilla y ademas le estariamos poniendo palabras en la
+// boca sobre un hecho de su vida. Lo que si escribe el sistema es la
+// PETICION — que tiene que explicar, en una frase que se copia al correo.
+export const lettersOf = file => Array.isArray(file?.letters) ? file.letters : [];
+export const openLetters = file => lettersOf(file).filter(l => !l.receivedAt);
+export const receivedLetters = file => lettersOf(file).filter(l => !!l.receivedAt);
+export const letterKind = id => LOE_KINDS[id] || LOE_KINDS.other;
+export const letterFrom = id => LETTER_FROM[id] || LETTER_FROM.borrower;
+
+export function addLetter(file, { kind, text, from, by }) {
+  const txt = String(text || "").trim();
+  if (!txt) return file;
+  return {
+    ...file,
+    letters: [...lettersOf(file), {
+      id: "lt_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+      kind: LOE_KINDS[kind] ? kind : "other",
+      text: txt,
+      from: LETTER_FROM[from] ? from : "borrower",
+      stage: file?.stage || null,
+      at: today(), by: by || null,
+      requestedAt: null, requestedBy: null,
+      receivedAt: null, receivedBy: null,
+    }],
+  };
+}
+
+// Se pidio por correo, fuera del sistema. Aqui solo queda la constancia.
+export function stampLetterRequested(file, id, by) {
+  return { ...file, letters: lettersOf(file).map(l =>
+    (l.id !== id || l.requestedAt) ? l : { ...l, requestedAt: today(), requestedBy: by || null }) };
+}
+
+export function stampLetterReceived(file, id, by) {
+  return { ...file, letters: lettersOf(file).map(l =>
+    (l.id !== id || l.receivedAt) ? l : {
+      ...l, receivedAt: today(), receivedBy: by || null,
+      // Recibir algo que nunca se pidio deja el dato cojo: se estampa la
+      // peticion con la misma fecha, igual que hacen las ordenes.
+      requestedAt: l.requestedAt || today(), requestedBy: l.requestedBy || by || null }) };
+}
+
+// La frase que se le manda al cliente. El 90% del ida y vuelta no es
+// redactar: es que el cliente no entiende que le estan pidiendo.
+export function letterRequestText(l, lang = "es") {
+  const q = String(l?.text || "").trim();
+  if (l?.from === "lo")
+    return lang === "en"
+      ? `For underwriting: ${q}`
+      : `Para underwriting: ${q}`;
+  return lang === "en"
+    ? `We need a short letter in your own handwriting explaining: ${q}. Sign it and date it — it does not need to be long, but it has to be yours.`
+    : `Necesitamos una carta corta escrita de tu puño explicando: ${q}. Fírmala y ponle la fecha — no tiene que ser larga, pero tiene que ser tuya.`;
+}
+
+// El estado de una carta, en una palabra.
+export const letterState = l =>
+  l?.receivedAt ? "received" : l?.requestedAt ? "requested" : "raised";
+
+// Cuantos dias lleva abierta, o cuantos tardo en llegar.
+export const letterAge = l =>
+  l?.receivedAt ? daysBetween(l.at, l.receivedAt) : (l?.at ? daysBetween(l.at) : null);
 
 export function anticipatedLetters(file) {
   const out = [];
@@ -4547,6 +4645,15 @@ export function anticipatedLetters(file) {
     out.push({ kind: "address_var", months: falta,
       es: `Faltan ${falta} meses del historial de residencia`,
       en: `${falta} months missing from the residence history` });
+
+  // Banderas que ya se capturaban y nunca produjeron carta, aunque el
+  // underwriter la pide casi siempre.
+  for (const [flag, kind, es, en] of [
+    ["hasNsf",         "nsf",         "NSF o sobregiros en los estados de cuenta", "NSF or overdrafts on the statements"],
+    ["hasCollections", "collections", "Cuentas en colección en el crédito",        "Collection accounts on the credit"],
+    ["hasTransfers",   "transfers",   "Transferencias entre cuentas sin explicar", "Unexplained transfers between accounts"],
+    ["hasCaivrs",      "caivrs",      "Deuda federal en CAIVRS",                   "Federal debt on CAIVRS"],
+  ]) if (docFlag(file, flag)) out.push({ kind, es, en });
 
   const umbral = largeDepositThreshold(file);
   if (umbral !== null && docFlag(file, "hasLargeDeposit"))

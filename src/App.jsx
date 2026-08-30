@@ -64,6 +64,9 @@ import {
   uwOutcomeMeta, discEsignedAt,
   stageGate,
   openFindings, resolvedFindings, hasOpenFindings, addFinding, resolveFinding,
+  LOE_KINDS, LETTER_FROM, lettersOf, openLetters, receivedLetters, letterKind,
+  letterFrom, letterState, letterAge, letterRequestText, addLetter,
+  stampLetterRequested, stampLetterReceived,
   cdSentAt, cdDelivery, cdReceivedAt, cdFeesReviewedAt, cdFeesReviewedBy,
   cdEarliestSigning, cdTooEarly, stampCdSent, stampCdFees,
   findingAge, worstFinding, canRegister, isRegistered, stampRegistration,
@@ -397,7 +400,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.09.09a";
+const APP_VERSION = "2026.09.10a";
 
 function huellaTexto(s) {
   let h = 0;
@@ -2612,6 +2615,154 @@ function CancelContractModal({file, lang, onClose, onConfirm}){
 // Lo que NO hace: pedir fechas que todavía no han ocurrido. Si el archivo
 // está en UW Review no se le pregunta cuándo fondeó. Pedir un dato que aún
 // no existe es invitar a inventarlo.
+// ─── CARTAS ────────────────────────────────────────────────────────
+// Registro, petición y entrega. El sistema no redacta la explicación —
+// esa la escribe el cliente— pero sí escribe la petición, que es donde
+// de verdad se pierde el tiempo: el cliente no entiende qué le piden.
+function LettersPanel({file, lang, who, onSave}){
+  const [abierto,setAbierto]=useState(false);
+  const [kind,setKind]=useState("gift");
+  const [texto,setTexto]=useState("");
+  const [desde,setDesde]=useState("borrower");
+  const [falta,setFalta]=useState(false);
+  const [copiado,setCopiado]=useState(null);
+  const T=k=>tr(k,lang);
+  const P3=o=>(o&&typeof o==="object")?(o[lang]??o.es??o.en??""):o;
+  const abiertas=openLetters(file), recibidas=receivedLetters(file);
+
+  const guardar=()=>{
+    if(!texto.trim()){ setFalta(true); return; }
+    onSave(addLetter(file,{kind,text:texto,from:desde,by:who}));
+    setTexto(""); setFalta(false); setAbierto(false);
+  };
+  const copiar=l=>{
+    const t=letterRequestText(l,lang);
+    try{ navigator.clipboard.writeText(t); }catch{ /* sin permiso */ }
+    setCopiado(l.id); setTimeout(()=>setCopiado(null),2000);
+  };
+  const bx={background:"#0D1117",border:`1px solid ${falta?"#E85D75":"#30363D"}`,
+    borderRadius:5,color:"var(--t1)",padding:"6px 9px",fontSize:"var(--fs-3)",
+    fontFamily:"IBM Plex Sans",width:"100%"};
+
+  return (
+    <div style={{marginTop:14,background:"rgba(167,139,250,.05)",
+      border:"1px solid #A78BFA44",borderRadius:8,padding:14}}>
+      <div style={{display:"flex",alignItems:"baseline",gap:9,flexWrap:"wrap"}}>
+        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-4)",
+          color:"#A78BFA",letterSpacing:"1px"}}>{T("ltTitle")}</span>
+        <span style={{marginLeft:"auto",fontSize:"var(--fs-2)",color:"var(--t3)"}}>
+          {abiertas.length>0?T("findingOpen",{n:abiertas.length}):T("ltNone")}
+        </span>
+      </div>
+      <div className="sys" style={{marginTop:4,marginBottom:10}}>{T("ltLead")}</div>
+
+      {abiertas.map(l=>{
+        const est=letterState(l), edad=letterAge(l);
+        return (
+        <div key={l.id} style={{borderLeft:"2px solid #A78BFA",paddingLeft:10,
+          marginBottom:10}}>
+          <div style={{fontSize:"var(--fs-2)",color:"#A78BFA",marginBottom:2}}>
+            {P3(letterKind(l.kind))} · {P3(letterFrom(l.from))}
+            {edad!==null?` · ${T("ltDaysOpen",{n:edad})}`:""}
+          </div>
+          <div style={{fontSize:"var(--fs-4)",color:"var(--t1)",lineHeight:1.5,marginBottom:6}}>
+            {l.text}
+          </div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+            <button className="hov" onClick={()=>copiar(l)}
+              style={{background:"transparent",border:"1px solid #A78BFA66",borderRadius:4,
+                color:"#A78BFA",padding:"3px 10px",fontSize:"var(--fs-1)",
+                fontFamily:"DM Mono",cursor:"pointer"}}>
+              {copiado===l.id?T("ltCopied"):T("ltCopy")}
+            </button>
+            {est==="raised"&&(
+              <button className="hov" onClick={()=>onSave(stampLetterRequested(file,l.id,who))}
+                style={{background:"transparent",border:"1px solid #F5A62366",borderRadius:4,
+                  color:"#F5A623",padding:"3px 10px",fontSize:"var(--fs-1)",
+                  fontFamily:"DM Mono",cursor:"pointer"}}>{T("ltMarkReq")}</button>
+            )}
+            {est==="requested"&&(
+              <span style={{fontSize:"var(--fs-1)",color:"#F5A623",fontFamily:"DM Mono"}}>
+                {T("ltRequested")} {l.requestedAt}
+              </span>
+            )}
+            <button className="hov" onClick={()=>onSave(stampLetterReceived(file,l.id,who))}
+              style={{background:"transparent",border:"1px solid #06D6A0",borderRadius:4,
+                color:"#06D6A0",padding:"3px 10px",fontSize:"var(--fs-1)",
+                fontFamily:"DM Mono",cursor:"pointer"}}>{T("ltMarkRec")}</button>
+          </div>
+        </div>);
+      })}
+
+      {abierto?(
+        <div style={{marginTop:8,display:"grid",gap:8}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))",gap:8}}>
+            <div>
+              <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>
+                {T("ltKind")}
+              </div>
+              <select value={kind} onChange={e=>setKind(e.target.value)} style={bx}>
+                {Object.keys(LOE_KINDS).map(k=>(
+                  <option key={k} value={k}>{P3(LOE_KINDS[k])}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>
+                {T("ltFrom")}
+              </div>
+              <select value={desde} onChange={e=>setDesde(e.target.value)} style={bx}>
+                {Object.keys(LETTER_FROM).map(k=>(
+                  <option key={k} value={k}>{P3(LETTER_FROM[k])}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div>
+            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>
+              {T("ltWhat")}
+            </div>
+            <input value={texto} placeholder={T("ltWhatPh")} style={bx}
+              onChange={e=>{setTexto(e.target.value);setFalta(false);}}/>
+            {falta&&<div style={{fontSize:"var(--fs-2)",color:"#E85D75",marginTop:4}}>
+              {T("ltNeedText")}
+            </div>}
+          </div>
+          <div style={{display:"flex",gap:6}}>
+            <button className="hov" onClick={guardar}
+              style={{background:"#A78BFA",color:"#0D1117",border:"none",borderRadius:5,
+                padding:"6px 16px",fontSize:"var(--fs-2)",fontFamily:"DM Mono",
+                cursor:"pointer"}}>{T("ltSave")}</button>
+            <button className="hov" onClick={()=>{setAbierto(false);setFalta(false);}}
+              style={{background:"transparent",border:"1px solid #30363D",borderRadius:5,
+                color:"var(--t2)",padding:"6px 14px",fontSize:"var(--fs-2)",
+                fontFamily:"DM Mono",cursor:"pointer"}}>{T("gateGotIt")}</button>
+          </div>
+        </div>
+      ):(
+        <button className="hov" onClick={()=>setAbierto(true)}
+          style={{background:"transparent",border:"1px dashed #A78BFA66",borderRadius:5,
+            color:"#A78BFA",padding:"6px 14px",fontSize:"var(--fs-2)",
+            fontFamily:"DM Mono",cursor:"pointer",marginTop:4}}>{T("ltAdd")}</button>
+      )}
+
+      {recibidas.length>0&&(
+        <div style={{marginTop:12,paddingTop:10,borderTop:"1px solid #21262D"}}>
+          <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>
+            {T("ltHistory")}
+          </div>
+          {recibidas.map(l=>(
+            <div key={l.id} style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginBottom:3}}>
+              ✓ {P3(letterKind(l.kind))} · {l.receivedAt}
+              {letterAge(l)!==null?` · ${T("ltTook",{n:letterAge(l)})}`:""}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function BackfillModal({files, profile, lang, soyAdmin, onOpenFile, onClose, onApply}){
   // Quien mira: por defecto uno mismo. El admin arranca viendo todo y
   // puede filtrar por persona, igual que en el reporte de vencidas.
@@ -6563,6 +6714,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,onClose,onS
               onSave={next=>onSave({submissionDocs:next.submissionDocs||null,
                 docFlags:next.docFlags||null})}
               who={profile?.name||null} readOnly={false}/>
+            <LettersPanel file={file} lang={lang} who={profile?.name||null} onSave={onSave}/>
           </div>
         )}
 
