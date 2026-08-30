@@ -395,7 +395,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.09.06a";
+const APP_VERSION = "2026.09.06b";
 
 function huellaTexto(s) {
   let h = 0;
@@ -829,6 +829,9 @@ export default function App() {
   const [view,setView]=useState("active");
   const [activePhase,setActivePhase]=useState(null);
   const [critOnly,setCritOnly]=useState(false);
+  // Solapa a la que abrir el modal del archivo. La usa el relleno para
+  // dejar a la persona parada donde vive el hueco.
+  const [detailTab,setDetailTab]=useState(null);
   const [search,setSearch]=useState("");
   const [showAdd,setShowAdd]=useState(false);
   const [trainingMode,setTrainingMode]=useState(false);
@@ -2292,7 +2295,8 @@ export default function App() {
         </div>}
       </div>
 
-      {detail&&<DetailModal file={detail} profile={profile} allFiles={files} L={L} lang={lang} onSetLang={setLang} onClose={()=>setDetail(null)}
+      {detail&&<DetailModal file={detail} profile={profile} allFiles={files} L={L} lang={lang} onSetLang={setLang}
+        abrirEn={detailTab} onClose={()=>{setDetail(null);setDetailTab(null);}}
         onSave={p=>{updateFile(detail.id,p);setDetail(f=>({...f,...p}));}}
         onStagePick={next=>{
           const f0=files.find(x=>x.id===detail.id); if(!f0) return true;
@@ -2430,6 +2434,7 @@ export default function App() {
       {showHelp&&<HelpModal profile={profile} lang={lang} onSetLang={setLang} onClose={()=>setShowHelp(false)}/>}
       {showBackfill&&<BackfillModal files={excludeTraining(files)} profile={profile} lang={lang}
         soyAdmin={isAdmin}
+        onOpenFile={(f,tab)=>{setDetail(f);setDetailTab(tab||null);}}
         onClose={()=>setShowBackfill(false)}
         onApply={(updates)=>{
           // Una sola escritura para todos los archivos: en tandas separadas,
@@ -2605,13 +2610,17 @@ function CancelContractModal({file, lang, onClose, onConfirm}){
 // Lo que NO hace: pedir fechas que todavía no han ocurrido. Si el archivo
 // está en UW Review no se le pregunta cuándo fondeó. Pedir un dato que aún
 // no existe es invitar a inventarlo.
-function BackfillModal({files, profile, lang, soyAdmin, onClose, onApply}){
+function BackfillModal({files, profile, lang, soyAdmin, onOpenFile, onClose, onApply}){
   // Quien mira: por defecto uno mismo. El admin arranca viendo todo y
   // puede filtrar por persona, igual que en el reporte de vencidas.
   const [quien, setQuien] = useState(soyAdmin ? null : (profile?.name || null));
   const [epoca, setEpoca] = useState(BF_ERA_PENDING);
   const reparto = [...backfillByOwner(files).entries()].sort((a,b)=>b[1]-a[1]);
   const pendientes = filesNeedingBackfill(files, quien, epoca);
+  // Cuantos de los que se ven no se arreglan escribiendo una fecha.
+  const huecosAccion = pendientes.reduce((a,f)=>
+    a + backfillGaps(f).filter(g=>g.fill==="action"
+      && (!quien||g.owner===quien) && (!epoca||g.era===epoca)).length, 0);
   const [datos, setDatos] = useState({});
   const [hecho, setHecho] = useState(null);
   const P2 = o => (o && typeof o === "object") ? (o[lang] ?? o.es ?? o.en ?? "") : o;
@@ -2673,6 +2682,9 @@ function BackfillModal({files, profile, lang, soyAdmin, onClose, onApply}){
               </button>
             ))}
           </div>
+          {huecosAccion>0&&(
+            <div className="sys" style={{marginTop:8}}>{TX("bfActionNote")}</div>
+          )}
           {epoca!==BF_ERA_PENDING&&(
             <div className="sys" style={{marginTop:8}}>{TX("bfHistNote")}</div>
           )}
@@ -2705,11 +2717,22 @@ function BackfillModal({files, profile, lang, soyAdmin, onClose, onApply}){
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(178px,1fr))",gap:9}}>
                   {huecos.map(h=>(
                     <div key={h.id}>
-                      <div style={{fontSize:"var(--fs-1)",color:"var(--t4)",marginBottom:3}}>
+                      <div style={{fontSize:"var(--fs-1)",
+                        color:h.fill==="action"?"#F5A623":"var(--t4)",marginBottom:3}}>
                         {P2(h)}
                       </div>
-                      <input type="date" value={datos[f.id]?.[h.id]||""}
-                        onChange={e=>set(f.id,h.id,e.target.value)} style={fs2}/>
+                      {h.fill==="action" ? (
+                        <button className="hov" onClick={()=>{onClose();onOpenFile&&onOpenFile(f,h.tab);}}
+                          style={{background:"transparent",border:"1px dashed #F5A62366",
+                            borderRadius:5,color:"#F5A623",padding:"5px 8px",width:"100%",
+                            fontSize:"var(--fs-2)",fontFamily:"DM Mono",cursor:"pointer",
+                            textAlign:"left",whiteSpace:"nowrap",overflow:"hidden"}}>
+                          {TX("bfOpenFile")} →
+                        </button>
+                      ) : (
+                        <input type="date" value={datos[f.id]?.[h.id]||""}
+                          onChange={e=>set(f.id,h.id,e.target.value)} style={fs2}/>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -6076,7 +6099,7 @@ function FindingsPanel({file,profile,onSave}){
   );
 }
 
-function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onStagePick,onDelete,onAdvance,onCloseFile,onReopen,onPrep,onArchive,onRestore,onContinuePrep,isClosed}){
+function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,onClose,onSave,onStagePick,onDelete,onAdvance,onCloseFile,onReopen,onPrep,onArchive,onRestore,onContinuePrep,isClosed}){
   const isAdmin = profile?.role === "admin";
   const isAssistant = profile?.role === "assistant";
   const [showHistory, setShowHistory] = useState(false);
@@ -6092,7 +6115,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,onClose,onSave,onSt
   // solapas sigue contando la historia del prestamo (que es, con quien,
   // contra que reloj, cuanto deja, y el expediente que lo acompaña),
   // pero se aterriza en la ultima.
-  const [tab, setTab] = useState("file");
+  const [tab, setTab] = useState(abrirEn || "file");
   // Segundo recorrido: solo sobre el archivo de entrenamiento. En un
   // archivo real no aparece, asi que no estorba a quien ya sabe.
   const enTour = isTraining(file);

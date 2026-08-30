@@ -57,6 +57,9 @@ export const UI = {
   bfHistNote: { es:"Lo de antes del corte con Barrett. El sistema nunca lo pidió, así que no es de nadie — se llena si alguien tiene el dato de verdad, nunca de memoria.",
                 en:"From before the Barrett cutover. The system never asked for it, so it is nobody's fault — fill it only if someone has the real data, never from memory." },
   bfMine:     { es:"Lo tuyo", en:"Yours" },
+  bfOpenFile: { es:"ABRIR EL ARCHIVO", en:"OPEN THE FILE" },
+  bfActionNote:{ es:"Esto no se arregla escribiendo una fecha: se abre el archivo y se resuelve donde vive.",
+                 en:"This is not fixed by typing a date: open the file and resolve it where it lives." },
   critFilterHint:{ es:"Tocar para ver solo estos. Tocar de nuevo para quitar el filtro.",
                    en:"Tap to see only these. Tap again to clear the filter." },
 

@@ -5559,11 +5559,13 @@ export function backfillGaps(file, cutover = BARRETT_CUTOVER) {
   // "LO" es un rol, no una persona. El hueco tiene que decir Ana o
   // Marelis, si no el filtro por persona no puede funcionar.
   const quien = tk => tk === "LO" ? (file.lo || null) : (resolveOwner(tk, file) || null);
-  const add = (id, kind, etapa, ownerToken, es, enTxt) => out.push({
-    id, kind, stage: etapa || null,
-    owner: quien(ownerToken),
-    era: epoca(etapa || file.stage), es, en: enTxt,
-  });
+  const add = (id, kind, etapa, ownerToken, es, enTxt, fill = "date", tab = null) =>
+    out.push({
+      id, kind, stage: etapa || null,
+      owner: quien(ownerToken),
+      era: epoca(etapa || file.stage), es, en: enTxt,
+      fill, tab,
+    });
 
   // ─── LOAN OFFICER ───
   // Lo suyo nace en el contrato. Antes de ahi no hay nada que reclamarle.
@@ -5571,34 +5573,38 @@ export function backfillGaps(file, cutover = BARRETT_CUTOVER) {
     const c = file.contingencies || {};
     if (!okDate(c.appraisalContingency) || !okDate(c.loanContingency))
       add("contract_dates", "lo", "Under Contract", "LO",
-        "Fechas de contingencia del contrato", "Contract contingency dates");
+        "Fechas de contingencia del contrato", "Contract contingency dates",
+        "action", "dates");
     if (!okDate(file.closing))
       add("closing", "lo", "Under Contract", "LO",
-        "Fecha de cierre esperada", "Expected closing date");
+        "Fecha de cierre esperada", "Expected closing date", "field", "loan");
   }
   if (paso(REGISTRATION_STAGE) || en(REGISTRATION_STAGE)) {
     if (!hasLender(file))
-      add("lender", "lo", REGISTRATION_STAGE, "LO", "Lender escogido", "Lender chosen");
+      add("lender", "lo", REGISTRATION_STAGE, "LO", "Lender escogido", "Lender chosen",
+        "action", "lender");
     // El scorecard entero cuelga de este campo. En blanco, el socio no
     // recibe credito a fin de año y nadie se entera hasta diciembre.
     if (!String(file.referralPartner || "").trim())
       add("referralPartner", "lo", REGISTRATION_STAGE, "LO",
-        "Socio referidor", "Referral partner");
+        "Socio referidor", "Referral partner", "action", "loan");
   }
   if (paso("Submitted to UW") && !lockStatus(file)?.state)
     add("lock", "lo", "Submitted to UW", "LO",
-      "Decisión de tasa y lock", "Rate and lock decision");
+      "Decisión de tasa y lock", "Rate and lock decision", "action", "lender");
   if (paso("Full Application") && !latestNote(file))
     add("note", "lo", "Full Application", "LO",
-      "Ninguna nota en el archivo", "No note on the file");
+      "Ninguna nota en el archivo", "No note on the file", "action", "file");
 
   // ─── ASISTENTE ───
   if ((paso("Under Contract") || en(REGISTRATION_STAGE)) && !gate1Complete(file))
     add("gate1", "assistant", "Under Contract", STAGE_OWNERS[REGISTRATION_STAGE],
-      "Verificación del 1003 sin terminar", "1003 verification incomplete");
+      "Verificación del 1003 · faltan " + gate1Coverage(file).pending + " de 12",
+      "1003 verification · " + gate1Coverage(file).pending + " of 12 left",
+      "action", "loan");
   if (paso(AFTER_REGISTRATION_STAGE) && !isRegistered(file))
     add("registration", "assistant", REGISTRATION_STAGE, STAGE_OWNERS[REGISTRATION_STAGE],
-      "Registro con el lender", "Registered with lender");
+      "Registro con el lender", "Registered with lender", "action", "loan");
   if ((isRegistered(file) || paso(AFTER_REGISTRATION_STAGE)) && !discEsignedAt(file))
     add("discEsignedAt", "assistant", AFTER_REGISTRATION_STAGE,
       STAGE_OWNERS[AFTER_REGISTRATION_STAGE],
