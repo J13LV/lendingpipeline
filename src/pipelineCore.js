@@ -5139,7 +5139,11 @@ export const STAGE_GATES = {
       es_why: "Sin ella, el reloj de 48 horas del Asistente arranca sobre un archivo incompleto y sale en rojo por documentos que debía traer el cliente.",
       en_why: "Without it, the Assistant's 48-hour clock starts on an incomplete file and goes red over documents the client owed." },
     { id: "contract_dates", hard: true,
-      test: f => !!okDate(f?.appraisalContingency) && !!okDate(f?.loanContingency),
+      // Las fechas viven en `file.contingencies`, no en la raiz. Leerlas
+      // un nivel arriba las veia siempre vacias y la puerta bloqueaba un
+      // archivo que estaba completo.
+      test: f => { const b = f?.contingencies || {};
+        return !!okDate(b.appraisalContingency) && !!okDate(b.loanContingency); },
       es: "Faltan las fechas de contingencia de tasación o préstamo",
       en: "The appraisal or loan contingency date is missing",
       es_why: "Son las dos del contrato. El motor calcula hacia atrás desde ellas, y sin ellas el depósito del cliente queda sin vigilancia.",
