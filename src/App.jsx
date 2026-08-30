@@ -394,7 +394,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.09.02c";
+const APP_VERSION = "2026.09.02d";
 
 function huellaTexto(s) {
   let h = 0;
@@ -776,6 +776,24 @@ function urgency(f) {
   if(u.level==="late"||u.level==="critical")return"critical";
   if(u.level==="watch"||u.level==="warn")return"stale";
   return"normal";
+}
+
+// Lo peor de un archivo, mire por donde se mire.
+//
+// El encabezado contaba solo `urgency` —la etapa pasada de techo— pero la
+// tarjeta esconde la palabra CRITICAL cuando hay un reloj vigente que
+// manda: el COE, la ventana de House Hunt, el estandar de tres dias.
+// Resultado: el numero decia ocho y en el tablero se veian cuatro.
+//
+// Ahora el numero significa "archivos que necesitan atencion hoy", que es
+// lo que uno pregunta al mirarlo, y no "etapas pasadas de techo".
+function fileSeverity(f) {
+  const u = urgency(f);
+  if (u === "critical") return "critical";
+  const ck = fileClock(f);
+  if (ck?.applies && ck.signal === "broken") return "critical";
+  if (u === "warning" || (ck?.applies && ck.signal === "soon")) return "warning";
+  return u;
 }
 
 const IS = { background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"var(--t1)",padding:"9px 12px",fontSize:"var(--fs-5)",fontFamily:"'IBM Plex Sans',system-ui,-apple-system,sans-serif",width:"100%" };
@@ -1383,7 +1401,9 @@ export default function App() {
   };
 
   const vol=active.reduce((s,f)=>s+(f.loan||0),0);
-  const crit=active.filter(f=>urgency(f)==="critical").length;
+  // Cuenta lo peor de cada archivo, sea la etapa o el reloj que manda.
+  // Antes solo miraba la etapa y el numero no cuadraba con el tablero.
+  const crit=active.filter(f=>fileSeverity(f)==="critical").length;
   const phaseCounts=PHASES.map(p=>({...p,count:active.filter(f=>getPhase(f.stage).id===p.id).length}));
 
   return(
