@@ -4,7 +4,7 @@ import { getFirestore, doc, setDoc, onSnapshot, collection, writeBatch, getDocs 
 import { helpSections, searchHelp } from "./helpContent";
 import { tr, defaultLang } from "./ui";
 import { downloadMarthaSheet } from "./marthaExport";
-import ProcessingView, { IntakePane, HistoryPane, SubmissionPane } from "./processing";
+import ProcessingView, { IntakePane, HistoryPane, SubmissionPane, Gate1Grid } from "./processing";
 import { downloadChecklist } from "./barrettChecklist";
 import { TourPanel, useTour, useTourTab, trainingFileId, trainingSampleName, isTraining,
          excludeTraining, clearProgress } from "./tour";
@@ -395,7 +395,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.09.06c";
+const APP_VERSION = "2026.09.07a";
 
 function huellaTexto(s) {
   let h = 0;
@@ -6131,6 +6131,9 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,onClose,onS
   // Pie colapsado en el telefono. Arriba de los return tempranos por las
   // reglas de hooks — la pantalla blanca del 1 de septiembre salio de eso.
   const [accOpen,setAccOpen]=useState(false);
+  // El 1003 es del LO. El admin tambien, porque origina. Procesamiento lo
+  // ve y levanta hallazgos, pero no marca los puntos.
+  const puede1003 = profile?.role === "lo" || profile?.role === "admin";
   const [chkBusy,setChkBusy]=useState(false);
   const [showCancel,setShowCancel]=useState(false);
   const [newNote,setNewNote]=useState("");
@@ -6595,8 +6598,16 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,onClose,onS
               <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-4)",
                 color:"#7EC8A4",letterSpacing:"1px"}}>{TX("procStatus")}</span>
               <span style={{marginLeft:"auto",fontSize:"var(--fs-1)",
-                color:"var(--t4)"}}>{TX("procReadOnly")}</span>
+                color:"var(--t4)"}}>{puede1003?TX("gate1Yours"):TX("procReadOnly")}</span>
             </div>
+
+            {/* La reja del 1003, tocable por su dueño. Tina y la procesadora
+                la siguen viendo en PROCESSING y levantan hallazgos si algo
+                sale mal — un hallazgo retira la marca verde. */}
+            {puede1003&&(
+              <Gate1Grid file={file} lang={lang} who={profile?.name||null}
+                onSave={p2=>onSave(p2)} readOnly={false}/>
+            )}
 
             {(()=>{
               const cov=gate1Coverage(file);

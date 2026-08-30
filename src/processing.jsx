@@ -1032,7 +1032,11 @@ export function MilestonesPane({ file, lang, onSave, readOnly }) {
 // mismo tema —la pagina 2 del checklist de Barrett— y por eso vive en una
 // sola solapa: marcar limpio y levantar un problema son la misma revision
 // con dos resultados.
-function Gate1Grid({ file, lang, onSave, who, readOnly }) {
+// Se exporta para que el modal del archivo pueda pintar la misma reja.
+// El 1003 es del LO —"verify Gate 1" en STAGE_DAYS— y hasta hoy solo se
+// podia tocar en PROCESSING, donde los LOs no entran. La puerta de Under
+// Contract los frenaba por un trabajo que no podian hacer.
+export function Gate1Grid({ file, lang, onSave, who, readOnly }) {
   const { T, P } = mk(lang);
   const cov = gate1Coverage(file);
   const TONO = { pending: C.mid, verified: C.ok, na: C.dim, finding: C.red };
