@@ -5605,7 +5605,9 @@ export function backfillGaps(file, cutover = BARRETT_CUTOVER) {
     add("gate1", "lo", "Under Contract", STAGE_OWNERS["Under Contract"],
       "Verificación del 1003 · faltan " + gate1Coverage(file).pending + " de 12",
       "1003 verification · " + gate1Coverage(file).pending + " of 12 left",
-      "action", "loan");
+      // La reja vive en EXPEDIENTE desde la v2026.09.07a. Apuntaba a LOAN,
+      // que es donde estaba antes, y dejaba a la persona buscando.
+      "action", "file");
   if (paso(AFTER_REGISTRATION_STAGE) && !isRegistered(file))
     add("registration", "assistant", REGISTRATION_STAGE, STAGE_OWNERS[REGISTRATION_STAGE],
       "Registro con el lender", "Registered with lender", "action", "loan");
