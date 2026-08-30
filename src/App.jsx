@@ -394,7 +394,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.09.03a";
+const APP_VERSION = "2026.09.04a";
 
 function huellaTexto(s) {
   let h = 0;
@@ -2734,6 +2734,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
   const [filesMo,setFilesMo]=useState(8);
   const payroll=payrollSummary(files,{year:compYear,filesPerMonth:filesMo,roster:COMP_ROSTER});
   const [duenoFiltro,setDuenoFiltro]=useState(null);
+  const [mtgPhase,setMtgPhase]=useState(null);
   const [prodTab,setProdTab]=useState(isAssistant?"scorecard":"team");
   const [showAutoFixPreview, setShowAutoFixPreview] = useState(false);
 
@@ -3127,6 +3128,128 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           pace:"#F5A623",missing:"#6E7681"};
         return (
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
+
+            {/* DÓNDE DUELE HOY. Nace de una incongruencia real: el encabezado
+                decia nueve criticos y este reporte listaba uno, porque solo
+                miraba tareas derivadas vencidas. Un archivo puede estar
+                pasado de techo sin tener ninguna fecha derivada vencida.
+                Agrupar por fase convierte una lista en un diagnostico. */}
+            {(()=>{
+              const enProblemas = active
+                .map(f=>({f, sev:fileSeverity(f), ph:getPhase(f.stage)}))
+                .filter(x=>x.sev==="critical"||x.sev==="warning");
+              if(!enProblemas.length){
+                return (
+                  <div style={{background:"#161B22",border:"1px solid #30363D",
+                    borderRadius:8,padding:"12px 16px"}}>
+                    <div className="sys">{TX("mtgNone")}</div>
+                  </div>
+                );
+              }
+              const porFase=new Map();
+              for(const x of enProblemas){
+                const k=x.ph.id;
+                if(!porFase.has(k)) porFase.set(k,{ph:x.ph,crit:0,warn:0,items:[]});
+                const g=porFase.get(k);
+                if(x.sev==="critical") g.crit++; else g.warn++;
+                g.items.push(x);
+              }
+              const fases=[...porFase.values()].sort((a,b)=>b.crit-a.crit||b.warn-a.warn);
+              const peor=fases[0];
+              const total=enProblemas.length;
+              const visibles = mtgPhase==null ? fases : fases.filter(g=>g.ph.id===mtgPhase);
+
+              return (
+                <div style={{background:"#161B22",border:"1px solid #E85D7544",
+                  borderRadius:8,padding:"14px 16px"}}>
+                  <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-5)",
+                    color:"#E85D75",letterSpacing:"1px",marginBottom:4}}>{TX("mtgTitle")}</div>
+                  <div className="sys" style={{marginBottom:10}}>{TX("mtgLead")}</div>
+
+                  {/* Una fila por fase, ordenadas por donde duele mas. */}
+                  <div style={{display:"flex",gap:7,flexWrap:"wrap",marginBottom:12}}>
+                    <button className="hov" onClick={()=>setMtgPhase(null)}
+                      style={{background:mtgPhase===null?"#E85D75":"#21262D",
+                        color:mtgPhase===null?"#0D1117":"var(--t2)",border:"none",borderRadius:6,
+                        padding:"5px 12px",fontSize:"var(--fs-2)",fontFamily:"DM Mono",cursor:"pointer"}}>
+                      {TX("mtgAll")} · {total}
+                    </button>
+                    {fases.map(g=>(
+                      <button key={g.ph.id} className="hov" onClick={()=>setMtgPhase(x=>x===g.ph.id?null:g.ph.id)}
+                        style={{background:mtgPhase===g.ph.id?g.ph.color:"#21262D",
+                          color:mtgPhase===g.ph.id?"#0D1117":"var(--t2)",border:`1px solid ${g.ph.color}44`,
+                          borderRadius:6,padding:"5px 12px",fontSize:"var(--fs-2)",
+                          fontFamily:"DM Mono",cursor:"pointer"}}>
+                        {g.ph.label} · {g.crit>0?`${g.crit}🔴`:""}{g.warn>0?` ${g.warn}🟡`:""}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* El diagnostico, no el conteo: si una fase se lleva la
+                      mitad o mas, eso es un problema y no varios. */}
+                  {peor && peor.crit+peor.warn >= Math.ceil(total/2) && total>2 && (
+                    <div style={{fontSize:"var(--fs-3)",color:"#F5A623",lineHeight:1.5,
+                      marginBottom:12,paddingLeft:10,borderLeft:"2px solid #F5A623"}}>
+                      {TX("mtgWorst",{p:peor.ph.label,n:peor.crit+peor.warn})}
+                    </div>
+                  )}
+
+                  {visibles.map(g=>{
+                    // Dentro de la fase, agrupado por ETAPA: cinco parados en
+                    // la misma etapa dicen algo que cinco repartidos no dicen.
+                    const porEtapa=new Map();
+                    for(const x of g.items){
+                      if(!porEtapa.has(x.f.stage)) porEtapa.set(x.f.stage,[]);
+                      porEtapa.get(x.f.stage).push(x);
+                    }
+                    const etapas=[...porEtapa.entries()].sort((a,b)=>b[1].length-a[1].length);
+                    return (
+                      <div key={g.ph.id} style={{marginBottom:14}}>
+                        <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-4)",
+                          color:g.ph.color,letterSpacing:"1px",marginBottom:6}}>
+                          {g.ph.label.toUpperCase()} · {TX("mtgCrit",{n:g.crit})} · {TX("mtgWarn",{n:g.warn})}
+                        </div>
+                        {etapas.map(([etapa,lista])=>(
+                          <div key={etapa} style={{marginBottom:8}}>
+                            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",
+                              letterSpacing:".5px",marginBottom:3}}>
+                              {etapa}{lista.length>1?` · ${lista.length}`:""}
+                            </div>
+                            {lista.map(({f,sev})=>{
+                              const ck=fileClock(f);
+                              const col=sev==="critical"?"#E85D75":"#F5A623";
+                              return (
+                                <div key={f.id} className="hov" onClick={()=>onOpenFile&&onOpenFile(f)}
+                                  style={{display:"flex",justifyContent:"space-between",
+                                    alignItems:"baseline",gap:10,padding:"5px 9px",cursor:"pointer",
+                                    borderLeft:`2px solid ${col}`,background:"#0D1117",
+                                    borderRadius:"0 6px 6px 0",marginBottom:3}}>
+                                  <span style={{fontSize:"var(--fs-3)",color:"var(--t1)"}}>
+                                    {f.borrower}
+                                    <span style={{color:"var(--t3)",marginLeft:8,fontSize:"var(--fs-2)"}}>
+                                      {String(f.lo||"").split(" ")[0]}
+                                    </span>
+                                  </span>
+                                  <span style={{fontSize:"var(--fs-2)",color:col,
+                                    fontFamily:"DM Mono",whiteSpace:"nowrap"}}>
+                                    {ck.applies&&ck.ceiling
+                                      ? TX("mtgOverCeil",{d:ck.days,c:ck.ceiling})
+                                      : ck.applies&&ck.kind==="coe" ? `COE ${ck.days}d` : ""}
+                                    {ck.applies&&ck.waitOn
+                                      ? ` · ${TX("mtgWaiting",{w:P(ck.waitOn)})}` : ""}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+
             <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:8,
               padding:"12px 16px"}}>
               <div className="sys">{TX("overdueLead")}</div>
