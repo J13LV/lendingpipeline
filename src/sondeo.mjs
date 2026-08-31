@@ -106,6 +106,28 @@ t("la puerta de CD Issued exige las dos cosas",
 t("con fecha queda una", C.stageGate(cdE).hard.length === 1);
 t("con fees abre", C.stageGate(C.stampCdFees(cdE, "Ana")).blocked === false);
 
+// ─── callejones sin salida ───
+// Un archivo que se paso de Full Application sin registrarse no tenia
+// donde registrarse ni donde escribir la fecha de envio. La puerta le
+// pedia un dato que no existia en ninguna pantalla.
+t("se puede registrar aunque ya se haya pasado de la etapa",
+  C.canRegister({ id:"a", stage:"Initial Disclosures Sent", lenderId:"elend" }) === true);
+t("y también estando en la etapa",
+  C.canRegister({ id:"a", stage:"Full Application", lenderId:"elend" }) === true);
+t("pero no antes de tiempo",
+  C.canRegister({ id:"a", stage:"Credit Pull", lenderId:"elend" }) === false);
+t("ni dos veces",
+  C.canRegister(C.stampRegistration({ id:"a", stage:"Full Application", lenderId:"elend", stageLog:{} }, "Tina")) === false);
+t("registrar desde Full Application avanza",
+  C.stampRegistration({ id:"b", stage:"Full Application", lenderId:"elend", stageLog:{} }, "Tina").stage === "Initial Disclosures Sent");
+t("registrar un archivo adelantado NO lo tira hacia atrás",
+  C.stampRegistration({ id:"c", stage:"UW Review", lenderId:"elend", stageLog:{} }, "Tina").stage === "UW Review");
+const reg = C.stampRegistration({ id:"d", stage:"Full Application", lenderId:"elend", stageLog:{} }, "Tina");
+t("la fecha de envío se puede corregir a la real",
+  C.discSentAt(C.setRegistrationDate(reg, "discSentAt", "2026-08-25")) === "2026-08-25");
+t("una fecha inválida la deja vacía, no la inventa",
+  C.discSentAt(C.setRegistrationDate(reg, "discSentAt", "no")) === null);
+
 // ─── cartas ───
 t("el catálogo tiene las quince", Object.keys(C.LOE_KINDS).length === 15);
 let lt = C.addLetter({ id:"lt", stage:"UW Review" },

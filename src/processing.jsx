@@ -32,7 +32,7 @@ import {
   setOrderNote, miLooksWrong, INTAKE_GROUPS, INTAKE_FIELDS, intakeValue, intakeApplies,
   setIntake, intakeCompleteness, dpaReady, allOrderStates, pendingOrders,
   downPaymentLooksWrong, downPaymentFromAmounts,
-  currentRegistration, stampRegistrationDate, setRegistrationField,
+  currentRegistration, stampRegistrationDate, setRegistrationDate, setRegistrationField,
   loanNumberInvestor, loanNumberLender, MILESTONES, visibleMilestones,
   milestoneAt, stampMilestone, UW_OUTCOME_IDS, uwOutcomeMeta, uwOutcome,
   uwOutcomeAt, setUwOutcome, clearUwOutcome, signalColor,
@@ -897,11 +897,17 @@ export function MilestonesPane({ file, lang, onSave, readOnly }) {
             {T("discSent").toUpperCase()}
           </div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            <span style={{ fontSize: "var(--fs-2)", padding: "4px 9px", borderRadius: 4, fontFamily: "DM Mono",
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6,
+              fontSize: "var(--fs-2)", padding: "3px 9px", borderRadius: 4, fontFamily: "DM Mono",
               background: reg.discSentAt ? "rgba(6,214,160,.12)" : "transparent",
               color: reg.discSentAt ? C.ok : C.dim,
               border: `1px solid ${reg.discSentAt ? C.ok : C.edge}` }}>
-              {T("discSent")} {md(reg.discSentAt)}
+              {T("discSent")}
+              <input type="date" value={reg.discSentAt || ""} disabled={readOnly}
+                onChange={e => onSave(setRegistrationDate(file, "discSentAt", e.target.value))}
+                style={{ background: "transparent", border: "none", color: "inherit",
+                  fontFamily: "DM Mono", fontSize: "var(--fs-2)", padding: 0,
+                  cursor: readOnly ? "default" : "pointer" }}/>
             </span>
             {sello(!!reg.discEsignedAt,
               `${T("discEsigned")} ${reg.discEsignedAt ? md(reg.discEsignedAt) : ""}`.trim(),

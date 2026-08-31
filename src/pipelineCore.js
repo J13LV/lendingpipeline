@@ -5370,8 +5370,12 @@ export function stageGate(file) {
   };
 }
 
-export const canRegister = file =>
-  file?.stage === REGISTRATION_STAGE && !isRegistered(file) && !file?.archived;
+export const canRegister = file => {
+  if (!file || file.archived || isRegistered(file)) return false;
+  const i = ALL_STAGE_ORDER.indexOf(file.stage);
+  const r = ALL_STAGE_ORDER.indexOf(REGISTRATION_STAGE);
+  return i > -1 && r > -1 && i >= r;
+};
 
 // Registrar es registrar CON ALGUIEN. Sin lender el ciclo nace con
 // lenderId null, y el dia que se asigne el lender de verdad el sistema
@@ -5406,6 +5410,16 @@ export const loanNumberLender   = file => currentRegistration(file)?.loanNumberL
 export const barrettDiscSentAt  = file => okDate(currentRegistration(file)?.barrettDiscSentAt) || null;
 
 // Un toque sella hoy en el ciclo vigente. Segundo toque lo quita.
+// Fija una fecha concreta en el ciclo vigente. Se usa donde la fecha
+// REAL importa y puede no ser hoy — el envio de las divulgaciones.
+export function setRegistrationDate(file, campo, iso) {
+  const a = registrationsOf(file);
+  if (!a.length) return file;
+  const d = okDate(iso);
+  const i = a.length - 1;
+  return { ...file, registrations: a.map((r, j) => j === i ? { ...r, [campo]: d || null } : r) };
+}
+
 export function stampRegistrationDate(file, campo) {
   const cur = currentRegistration(file);
   if (!cur) return file;
@@ -5494,7 +5508,12 @@ export const clearUwOutcome = file => ({ ...file, uwResult: null });
 // evento. Pedirle un toque aparte seria pedirle que registre un dato que
 // el sistema ya sabe.
 export function stampRegistration(file, by) {
-  const next = stampStage(file, AFTER_REGISTRATION_STAGE);
+  // Solo avanza si el archivo esta ANTES de la etapa siguiente. Un archivo
+  // que se paso sin registrarse ya esta mas adelante: registrarlo no puede
+  // tirarlo hacia atras, porque el trabajo posterior ya ocurrio.
+  const i = ALL_STAGE_ORDER.indexOf(file?.stage);
+  const j = ALL_STAGE_ORDER.indexOf(AFTER_REGISTRATION_STAGE);
+  const next = (i > -1 && j > -1 && i >= j) ? file : stampStage(file, AFTER_REGISTRATION_STAGE);
   const hoy = today();
   return {
     ...next,
