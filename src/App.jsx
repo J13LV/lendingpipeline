@@ -400,7 +400,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.09.11a";
+const APP_VERSION = "2026.09.12a";
 
 function huellaTexto(s) {
   let h = 0;
@@ -1506,6 +1506,11 @@ export default function App() {
           .dm-foot.dm-foot-open > .dm-del{display:none !important;}
           .dm-acc{order:2;}
         }
+        /* Sin esto los hijos de la reticula no pueden encogerse por debajo
+           de su contenido y empujan el ancho: aparecia scroll horizontal y
+           la columna editable de contingencias quedaba fuera de pantalla. */
+        .dm-body > *{min-width:0;}
+        .dm-body input,.dm-body select{max-width:100%;}
         ::-webkit-scrollbar{width:10px;height:10px;}
         ::-webkit-scrollbar-track{background:#161B22;border-radius:5px;}
         ::-webkit-scrollbar-thumb{background:#484F58;border-radius:5px;
@@ -6284,6 +6289,8 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,onClose,onS
   // Pie colapsado en el telefono. Arriba de los return tempranos por las
   // reglas de hooks — la pantalla blanca del 1 de septiembre salio de eso.
   const [accOpen,setAccOpen]=useState(false);
+  // Borrador del campo de fecha del CD: sin el, teclear el año borra el día.
+  const [cdDraft,setCdDraft]=useState(null);
   // El 1003 es del LO. El admin tambien, porque origina. Procesamiento lo
   // ve y levanta hallazgos, pero no marca los puntos.
   const puede1003 = profile?.role === "lo" || profile?.role === "admin";
@@ -6494,7 +6501,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,onClose,onS
         {/* CUERPO — retícula fija 53/47. Los bloques se reparten por
             solapa; dentro de cada una, las columnas se llenan solas y en
             móvil se apilan. */}
-        <div style={{flex:1,overflowY:"auto",padding:"16px 22px",display:"grid",
+        <div className="dm-body" style={{flex:1,overflowY:"auto",padding:"16px 22px",display:"grid",
           gridTemplateColumns:"53% 47%",gap:14,alignItems:"start",alignContent:"start"}}>
         {/* ESTRUCTURA — lo que define el prestamo. Columna izquierda. */}
         <div style={{display:tab==="loan"?"grid":"none",gridTemplateColumns:"1fr 1fr",gap:10,alignSelf:"start"}}>
@@ -6877,6 +6884,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,onClose,onS
             fees solo los revisa el LO. */}
         {tab==="dates" && !inPrep && !isReferredOut && atOrPastFullApp(stage) && (()=>{
           const salio=cdSentAt(file), recibe=cdReceivedAt(file);
+          const escribiendo = cdDraft && !isValidISO(cdDraft);
           const primero=cdEarliestSigning(file), pronto=cdTooEarly(file);
           const feesAt=cdFeesReviewedAt(file);
           const esMiLo = profile?.role==="admin" || (profile?.role==="lo" && file.lo===profile?.name);
@@ -6895,8 +6903,18 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,onClose,onS
                 <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>
                   {TX("cdSent")}
                 </div>
-                <input type="date" value={salio||""} style={bx}
-                  onChange={e=>onSave(stampCdSent(file,e.target.value,profile?.name||null,cdDelivery(file)))}/>
+                <input type="date" value={cdDraft ?? (salio||"")}
+                  style={{...bx,borderColor:escribiendo?"#F5A623":"#30363D"}}
+                  onChange={e=>{
+                    const v=e.target.value;
+                    setCdDraft(v);
+                    // Solo se guarda cuando la fecha esta completa. A medias
+                    // se queda en pantalla y no se pierde lo tecleado.
+                    if(!v||isValidISO(v)) onSave(stampCdSent(file,v,profile?.name||null,cdDelivery(file)));
+                  }}/>
+                {escribiendo&&<div style={{fontSize:"var(--fs-1)",color:"#F5A623",marginTop:3}}>
+                  {TX("typingYear")}
+                </div>}
               </div>
               <div>
                 <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>
