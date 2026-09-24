@@ -5412,7 +5412,9 @@ export function gateFix(ruleId, file, who) {
     case "gate1": {
       const es = "Expediente → Verificación del 1003", en = "File → 1003 verification";
       if (admin || esLo) return ir("detail", "file", null, "fix-gate1", es, en);
-      if (proc && suCola) return ir("processing", null, "findings", "fix-gate1",
+      // Ancla distinta: el detalle puede estar abierto ENCIMA de
+      // procesamiento, y dos `id` iguales en el DOM rompen el salto.
+      if (proc && suCola) return ir("processing", null, "findings", "fix-gate1-proc",
         "Procesamiento → Hallazgos → Verificación del 1003",
         "Processing → Findings → 1003 verification");
       return pedir(loDel, es, en);

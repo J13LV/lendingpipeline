@@ -1107,6 +1107,32 @@ export function tr(key, lang = "es", vars) {
   return out;
 }
 
+// ─── LLEVAR A LA PERSONA AL CAMPO ──────────────────────────────────
+// Una sola helper para las seis puertas. El modal ya sabe QUE falta, POR
+// QUE y DONDE; esto hace el ultimo tramo: baja hasta el campo, lo enciende
+// dos segundos y le pone el cursor encima.
+//
+// El ancla puede no existir todavia cuando se llama: la solapa se acaba de
+// montar y React aun no pinto. Por eso reintenta unas pocas veces y se
+// rinde — mejor no hacer nada que dejar un temporizador vivo para siempre.
+export function irAlAncla(ancla, intento = 0) {
+  if (!ancla || typeof document === "undefined") return;
+  const el = document.getElementById(ancla);
+  if (!el) {
+    if (intento < 10) setTimeout(() => irAlAncla(ancla, intento + 1), 80);
+    return;
+  }
+  try { el.scrollIntoView({ behavior: "smooth", block: "center" }); } catch { el.scrollIntoView(); }
+  el.classList.add("fix-flash");
+  setTimeout(() => el.classList.remove("fix-flash"), 2000);
+  // El cursor va al primer campo DE VERDAD que haya dentro, no al marco.
+  // Un contenedor enfocado no deja teclear y parece que no paso nada.
+  const sel = "input:not([disabled]),select:not([disabled]),textarea:not([disabled]),button:not([disabled])";
+  const campo = el.matches(sel) ? el : el.querySelector(sel);
+  // Despues del desplazamiento, y sin volver a mover la pantalla.
+  if (campo) setTimeout(() => { try { campo.focus({ preventScroll: true }); } catch { /* da igual */ } }, 240);
+}
+
 // Idioma por defecto según el rol. El equipo trabaja en español; quien
 // administra puede cambiarlo y queda guardado en su perfil.
 // El idioma sale del roster, no de un default unico. Martha no lee

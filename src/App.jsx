@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, onSnapshot, collection, writeBatch, getDocs } from "firebase/firestore";
 import { helpSections, searchHelp } from "./helpContent";
-import { tr, defaultLang } from "./ui";
+import { tr, defaultLang, irAlAncla } from "./ui";
 import { downloadMarthaSheet } from "./marthaExport";
 import ProcessingView, { IntakePane, HistoryPane, SubmissionPane, Gate1Grid } from "./processing";
 import { downloadChecklist } from "./barrettChecklist";
@@ -62,7 +62,7 @@ import {
   submissionCoverage, submissionReady, stampSubmissionComplete,
   gate1Coverage, visibleMilestones, milestoneAt, uwOutcome, uwOutcomeAt,
   uwOutcomeMeta, discEsignedAt,
-  stageGate,
+  stageGate, gateFix,
   openFindings, resolvedFindings, hasOpenFindings, addFinding, resolveFinding,
   LOE_KINDS, LETTER_FROM, lettersOf, openLetters, receivedLetters, letterKind,
   letterFrom, letterState, letterAge, letterRequestText, addLetter,
@@ -400,7 +400,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.09.13a";
+const APP_VERSION = "2026.09.13c";
 
 function huellaTexto(s) {
   let h = 0;
@@ -536,6 +536,14 @@ function LoginScreen() {
         @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
         .shake{animation:shake .5s ease;}
         @keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+        /* El campo al que ARREGLAR AHORA acaba de llevar. Dos segundos y se
+           apaga: un resaltado permanente deja de verse a los diez minutos. */
+        @keyframes fixFlash{
+          0%{box-shadow:0 0 0 0 rgba(245,166,35,0)}
+          15%{box-shadow:0 0 0 3px rgba(245,166,35,.55)}
+          100%{box-shadow:0 0 0 3px rgba(245,166,35,0)}}
+        .fix-flash{animation:fixFlash 2s ease-out;border-radius:8px;
+          scroll-margin:80px;}
         .fade{animation:fadeIn .4s ease;}
         input:focus{outline:none;}
       `}</style>
@@ -844,6 +852,9 @@ export default function App() {
   // tempranos de authReady, currentUser y loaded, y un hook que solo corre
   // en algunos renders tumba React entero.
   const [gateBlock,setGateBlock]=useState(null);
+  // A donde acaba de mandar una puerta. `n` cambia siempre para que pedir dos
+  // veces el mismo destino vuelva a moverse.
+  const [irA,setIrA]=useState(null);
   const [showHelp,setShowHelp]=useState(false);
   const [showBackfill,setShowBackfill]=useState(false);
   // Hay un despliegue más nuevo que el que este navegador tiene cargado.
@@ -1779,6 +1790,7 @@ export default function App() {
           files={excludeTraining(files)} profile={profile} lang={lang} onSetLang={setLang}
           onSaveFile={(id,next)=>updateFile(id,next)}
           onOpenFull={f=>setDetail(f)}
+          irA={irA&&irA.vista==="processing"?irA:null}
         />}
 
         {/* Produccion, scorecard, mezcla y payroll no cuentan entrenamiento:
@@ -2306,7 +2318,8 @@ export default function App() {
       </div>
 
       {detail&&<DetailModal file={detail} profile={profile} allFiles={files} L={L} lang={lang} onSetLang={setLang}
-        abrirEn={detailTab} onClose={()=>{setDetail(null);setDetailTab(null);}}
+        abrirEn={detailTab} irA={irA&&irA.vista==="detail"&&irA.id===detail.id?irA:null}
+        onClose={()=>{setDetail(null);setDetailTab(null);setIrA(null);}}
         onSave={p=>{updateFile(detail.id,p);setDetail(f=>({...f,...p}));}}
         onStagePick={next=>{
           const f0=files.find(x=>x.id===detail.id); if(!f0) return true;
@@ -2337,6 +2350,24 @@ export default function App() {
         isClosed={detail.stage===CLOSED_STAGE}
       />}
       {gateBlock&&(()=>{ const g=gateBlock.gate; const dur=g.hard, sof=g.soft;
+        // ARREGLAR AHORA. Un solo camino para las seis puertas: el destino
+        // ya viene resuelto de `gateFix` contra el archivo y el rol.
+        const irAlFix=(id,fix)=>{
+          const f0=files.find(x=>x.id===id); if(!f0) return;
+          setGateBlock(null);
+          const destino={n:Date.now(), id, vista:fix.vista, tab:fix.tab, sub:fix.sub, ancla:fix.ancla};
+          if(fix.vista==="processing"){
+            // El detalle se cierra: en movil taparia la pantalla de destino.
+            setDetail(null); setDetailTab(null);
+            setView("processing");
+          }else{
+            // Puede venir del tablero, con el modal cerrado. Abrirlo en la
+            // solapa correcta desde el principio evita ver la equivocada.
+            setView("active");
+            setDetail(f0); setDetailTab(fix.tab);
+          }
+          setIrA(destino);
+        };
         const marcarFalta=()=>{
           const el=document.getElementById("gateReason");
           const av=document.getElementById("gateReasonErr");
@@ -2392,6 +2423,14 @@ export default function App() {
                   <div style={{fontSize:"var(--fs-2)",color:"#F5A623",marginTop:6,lineHeight:1.5}}>
                     ⚖ {P(fix)}
                   </div>
+                )}
+                {fix&&fix.puede&&(
+                  <button className="hov" onClick={()=>irAlFix(gateBlock.id,fix)}
+                    style={{marginTop:8,background:"transparent",border:"1px solid #F5A623",
+                      borderRadius:6,color:"#F5A623",padding:"6px 14px",fontFamily:"DM Mono",
+                      fontSize:"var(--fs-2)",cursor:"pointer"}}>
+                    {TX("gateFixNow")}
+                  </button>
                 )}
                 {fix&&!fix.espera&&(
                   <div style={{marginTop:6,fontSize:"var(--fs-2)",lineHeight:1.5}}>
@@ -5877,7 +5916,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
         <div style={{fontSize:"var(--fs-2)",color:"#E85D75",letterSpacing:"1px",marginBottom:6,fontWeight:500}}>
           {TX("fromContract")}
         </div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+        <div id="fix-contract-dates" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
           {field("appraisalContingency",TX("appraisal"))}
           {field("loanContingency",TX("loanCont"))}
         </div>
@@ -6294,7 +6333,7 @@ function FindingsPanel({file,profile,onSave}){
   );
 }
 
-function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,onClose,onSave,onStagePick,onDelete,onAdvance,onCloseFile,onReopen,onPrep,onArchive,onRestore,onContinuePrep,isClosed}){
+function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose,onSave,onStagePick,onDelete,onAdvance,onCloseFile,onReopen,onPrep,onArchive,onRestore,onContinuePrep,isClosed}){
   const isAdmin = profile?.role === "admin";
   const isAssistant = profile?.role === "assistant";
   const [showHistory, setShowHistory] = useState(false);
@@ -6311,6 +6350,18 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,onClose,onS
   // contra que reloj, cuanto deja, y el expediente que lo acompaña),
   // pero se aterriza en la ultima.
   const [tab, setTab] = useState(abrirEn || "file");
+  // Llegada desde una puerta con el modal YA abierto. `abrirEn` solo se lee
+  // al montar, asi que sin esto cambiar de solapa desde fuera no hacia nada.
+  // `irA.n` cambia en cada salto: pedir dos veces el mismo destino tiene que
+  // volver a moverse.
+  useEffect(()=>{
+    if(!irA) return;
+    if(irA.tab) setTab(irA.tab);
+    // La solapa se esta montando y el ancla aun no existe en el DOM.
+    // `irAlAncla` reintenta sola; esto solo da el primer empujon.
+    const t=setTimeout(()=>irAlAncla(irA.ancla),90);
+    return ()=>clearTimeout(t);
+  },[irA]);
   // Segundo recorrido: solo sobre el archivo de entrenamiento. En un
   // archivo real no aparece, asi que no estorba a quien ya sabe.
   const enTour = isTraining(file);
@@ -6697,7 +6748,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,onClose,onS
                 </div>
               )}
               {registerReady(file)&&(isAdmin||isAssistant)&&(
-                <button className="hov"
+                <button className="hov" id="fix-register"
                   onClick={()=>{
                     if(!confirm(TX("registerConfirm",{p:processorOf(file).full}))) return;
                     let n=stampRegistration(file,profile?.name||null);
@@ -6766,7 +6817,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,onClose,onS
 
         {/* LENDER — chosen at Full Application; the channel gates the list */}
         {tab==="lender" && !inPrep && !isReferredOut && (atOrPastFullApp(stage) || hasLenderData(file)) && (
-          <div style={{gridColumn:"1/-1"}}>
+          <div id="fix-lender" style={{gridColumn:"1/-1"}}>
           <LenderPanel file={file} profile={profile}
             onDraft={p=>{panelDrafts.current.lender=p; setPendingBps(p.bps ?? null);}}
             onChangeLender={()=>setShowChange(true)}/>
@@ -6830,8 +6881,10 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,onClose,onS
                 la siguen viendo en PROCESSING y levantan hallazgos si algo
                 sale mal — un hallazgo retira la marca verde. */}
             {puede1003&&(
-              <Gate1Grid file={file} lang={lang} who={profile?.name||null}
-                onSave={p2=>onSave(p2)} readOnly={false}/>
+              <div id="fix-gate1">
+                <Gate1Grid file={file} lang={lang} who={profile?.name||null}
+                  onSave={p2=>onSave(p2)} readOnly={false}/>
+              </div>
             )}
 
             {(()=>{
@@ -6963,7 +7016,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,onClose,onS
             <div className="sys" style={{marginTop:4,marginBottom:11}}>{TX("cdLead")}</div>
 
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:11}}>
-              <div>
+              <div id="fix-cd-sent">
                 <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>
                   {TX("cdSent")}
                 </div>
@@ -7016,7 +7069,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,onClose,onS
               </div>
             )}
 
-            <div style={{marginTop:12,paddingTop:11,borderTop:"1px solid #21262D",
+            <div id="fix-cd-fees" style={{marginTop:12,paddingTop:11,borderTop:"1px solid #21262D",
               display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
               <span style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px"}}>
                 {TX("cdFees")}

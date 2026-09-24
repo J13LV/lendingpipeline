@@ -18,13 +18,13 @@
 // cualquier formulario.
 // ═══════════════════════════════════════════════════════════════════
 
-import { useState } from "react";
-import { tr } from "./ui";
+import { useState, useEffect } from "react";
+import { tr, irAlAncla } from "./ui";
 import { downloadChecklist } from "./barrettChecklist";
 import {
   ORDERS, ONE_SHOT_ORDERS, orderState, stampOrder, clearOrder, stampOneShot, canOrderAppraisal,
   oneShotDone, processingQueue, queueCounts, PROCESSORS, PROCESSOR_IDS,
-  processorOf, DEFAULT_PROCESSOR, GATE1_ITEMS, gate1Item, FINDING_WAITING,
+  processorOf, processorId, DEFAULT_PROCESSOR, GATE1_ITEMS, gate1Item, FINDING_WAITING,
   WAITING_IDS, waitingMeta, openFindings, addFinding, resolveFinding, findingAge,
   lenderNameOf, daysBetween, daysInStage, stageClock, today, okDate,
   noteEntries, addNoteEntry, contingencyHeadline, upcomingDeadlines,
@@ -167,7 +167,8 @@ function OrderRow({ file, def, lang, onSave, readOnly }) {
   const [abierta, setAbierta] = useState(false);
 
   return (
-    <div style={{ background: C.card, padding: "8px 11px", borderRadius: 5 }}>
+    <div id={def.id === "appraisal" ? "fix-appr" : undefined}
+      style={{ background: C.card, padding: "8px 11px", borderRadius: 5 }}>
       <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto auto", gap: 7, alignItems: "center" }}>
         <span style={{ color: C.text, fontSize: "var(--fs-3)" }}>
           {P(def)}
@@ -872,8 +873,8 @@ export function MilestonesPane({ file, lang, onSave, readOnly }) {
   const reg = currentRegistration(file);
   const res = uwOutcome(file);
 
-  const sello = (hecho, label, onClick, roto) => (
-    <button className="hov" disabled={readOnly}
+  const sello = (hecho, label, onClick, roto, k) => (
+    <button key={k} className="hov" disabled={readOnly}
       onClick={readOnly ? undefined : onClick}
       style={{ background: hecho ? "rgba(6,214,160,.12)" : "transparent",
         color: hecho ? C.ok : roto ? C.red : C.soft,
@@ -896,7 +897,7 @@ export function MilestonesPane({ file, lang, onSave, readOnly }) {
           <div style={{ fontSize: "var(--fs-1)", color: C.soft, letterSpacing: "1px", marginBottom: 7 }}>
             {T("discSent").toUpperCase()}
           </div>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <div id="fix-disc-sent" style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 6,
               fontSize: "var(--fs-2)", padding: "3px 9px", borderRadius: 4, fontFamily: "DM Mono",
               background: reg.discSentAt ? "rgba(6,214,160,.12)" : "transparent",
@@ -1002,7 +1003,7 @@ export function MilestonesPane({ file, lang, onSave, readOnly }) {
           {visibleMilestones(file).map(m => {
             const at = milestoneAt(file, m.id);
             return sello(!!at, `${P(m)} ${at ? md(at) : ""}`.trim(),
-              () => onSave(stampMilestone(file, m.id)));
+              () => onSave(stampMilestone(file, m.id)), false, m.id);
           })}
         </div>
         <div className="act">{T("milestonesHint")}</div>
@@ -1104,7 +1105,9 @@ function Findings({ file, lang, onSave, who, readOnly }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      <Gate1Grid file={file} lang={lang} onSave={onSave} who={who} readOnly={readOnly} />
+      <div id="fix-gate1-proc">
+        <Gate1Grid file={file} lang={lang} onSave={onSave} who={who} readOnly={readOnly} />
+      </div>
       {abiertos.map(f => {
         const w = waitingMeta(f.waitingOn), edad = findingAge(f);
         return (
@@ -1179,9 +1182,13 @@ function Findings({ file, lang, onSave, who, readOnly }) {
 }
 
 // ─── EL ARCHIVO ABIERTO ────────────────────────────────────────────
-function FilePane({ file, lang, onSave, who, readOnly, onOpenFull }) {
+function FilePane({ file, lang, onSave, who, readOnly, onOpenFull, irA }) {
   const { T, P } = mk(lang);
   const [tab, setTab] = useState("orders");
+  // El boton ARREGLAR AHORA de una puerta manda aqui con la sub-solapa ya
+  // escogida. `irA.n` cambia en cada salto: sin el, pedir dos veces el
+  // mismo destino no volveria a moverse.
+  useEffect(() => { if (irA?.sub) setTab(irA.sub); }, [irA]);
   const [note, setNote] = useState("");
   const coe = okDate(file?.contingencies?.coe) || okDate(file?.closing);
   const faltan = coe ? daysBetween(today(), coe) : null;
@@ -1369,7 +1376,7 @@ function FilePane({ file, lang, onSave, who, readOnly, onOpenFull }) {
 }
 
 // ─── LA PANTALLA ───────────────────────────────────────────────────
-export default function ProcessingView({ files, profile, lang, onSetLang, onSaveFile, onOpenFull }) {
+export default function ProcessingView({ files, profile, lang, onSetLang, onSaveFile, onOpenFull, irA }) {
   const { T, P } = mk(lang);
   const esAdmin = profile?.role === "admin";
   // Una procesadora ve SU cola y nada mas. El admin puede pararse en
@@ -1392,6 +1399,21 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
   // admin mira sin tocar cuando no es la suya.
   const readOnly = !esAdmin && quien !== propia;
   const who = profile?.name || null;
+
+  // Llegada desde una puerta. El admin puede pararse en cualquiera de las
+  // dos colas, asi que primero hay que mover la cola: si no, el archivo no
+  // esta en la lista y `sel` se queda en el primero que haya.
+  // A quien no es admin `gateFix` ya le dijo que no podia, asi que no llega.
+  useEffect(() => {
+    if (!irA?.id) return;
+    const f = (files || []).find(x => x.id === irA.id);
+    if (f && esAdmin) setQuien(processorId(f));
+    setSelId(irA.id);
+    // El ancla todavia no existe: la sub-solapa se esta montando. `irAlAncla`
+    // reintenta por su cuenta, esto solo le da el primer empujon.
+    const t = setTimeout(() => irAlAncla(irA.ancla), 120);
+    return () => clearTimeout(t);
+  }, [irA]);
 
   const guardar = next => onSaveFile && onSaveFile(next.id, next);
 
@@ -1561,7 +1583,8 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
         <div style={{ background: C.bg, maxHeight: 620, overflowY: "auto" }}>
           {sel
             ? <FilePane file={sel} lang={lang} onSave={guardar} who={who}
-                readOnly={readOnly} onOpenFull={onOpenFull} />
+                readOnly={readOnly} onOpenFull={onOpenFull}
+                irA={irA && irA.id === sel.id ? irA : null} />
             : <div style={{ color: C.dim, fontSize: "var(--fs-3)", padding: "40px 20px", textAlign: "center" }}>
                 {T("queuePick")}
               </div>}
