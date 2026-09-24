@@ -388,6 +388,26 @@
   ],
   "correspondent": [
    {
+    "id": "conventional",
+    "label": "Conventional"
+   },
+   {
+    "id": "fha",
+    "label": "FHA"
+   },
+   {
+    "id": "va",
+    "label": "VA"
+   },
+   {
+    "id": "usda",
+    "label": "USDA"
+   },
+   {
+    "id": "dpa",
+    "label": "DPA"
+   },
+   {
     "id": "dscr",
     "label": "DSCR"
    },
@@ -471,8 +491,13 @@
      "physician"
     ],
     "correspondent": [
-     "bank_statement",
+     "conventional",
+     "fha",
+     "va",
+     "usda",
+     "dpa",
      "dscr",
+     "bank_statement",
      "jumbo"
     ]
    }
@@ -2191,6 +2216,12 @@
      "fha_203h_disaster",
      "fha_203k",
      "homestyle_reno"
+    ],
+    "correspondent": [
+     "conventional",
+     "fha",
+     "va",
+     "usda"
     ]
    }
   },
@@ -2505,6 +2536,12 @@
      "homestyle_reno",
      "usda",
      "va"
+    ],
+    "correspondent": [
+     "conventional",
+     "fha",
+     "va",
+     "usda"
     ]
    }
   },
@@ -2613,6 +2650,12 @@
      "fha_203k",
      "homestyle_reno",
      "va"
+    ],
+    "correspondent": [
+     "conventional",
+     "fha",
+     "va",
+     "usda"
     ]
    }
   },
@@ -3351,6 +3394,12 @@
     ],
     "renovation": [
      "fha_203k"
+    ],
+    "correspondent": [
+     "conventional",
+     "fha",
+     "va",
+     "usda"
     ]
    }
   },
@@ -4575,8 +4624,12 @@
      "single_wide"
     ],
     "correspondent": [
-     "bank_statement",
+     "conventional",
+     "fha",
+     "va",
+     "usda",
      "dscr",
+     "bank_statement",
      "jumbo"
     ]
    }
@@ -5763,11 +5816,7 @@
    "borrowerPaidOnly": false,
    "minComp": null,
    "maxComp": null,
-   "products": {
-    "correspondent": [
-     "dscr"
-    ]
-   }
+   "products": {}
   },
   {
    "id": "mutual_of_omaha_forward_fha_only_all_other_products_must_go_correspondent",
@@ -6075,8 +6124,12 @@
      "section_184"
     ],
     "correspondent": [
-     "bank_statement",
+     "conventional",
+     "fha",
+     "va",
+     "usda",
      "dscr",
+     "bank_statement",
      "jumbo"
     ]
    }
@@ -6376,6 +6429,11 @@
     ],
     "other": [
      "cannabis"
+    ],
+    "correspondent": [
+     "conventional",
+     "va",
+     "usda"
     ]
    }
   },
@@ -6746,6 +6804,12 @@
      "real_property"
     ],
     "correspondent": [
+     "conventional",
+     "fha",
+     "va",
+     "usda",
+     "dscr",
+     "bank_statement",
      "jumbo"
     ]
    }
@@ -6823,7 +6887,12 @@
      "usda",
      "va"
     ],
-    "reverse": []
+    "reverse": [],
+    "correspondent": [
+     "conventional",
+     "va",
+     "usda"
+    ]
    }
   },
   {
@@ -6882,8 +6951,12 @@
      "real_property"
     ],
     "correspondent": [
-     "bank_statement",
+     "conventional",
+     "fha",
+     "va",
+     "usda",
      "dscr",
+     "bank_statement",
      "jumbo"
     ]
    }
@@ -6983,8 +7056,11 @@
      "cannabis"
     ],
     "correspondent": [
-     "bank_statement",
+     "conventional",
+     "va",
+     "usda",
      "dscr",
+     "bank_statement",
      "jumbo"
     ]
    }
@@ -7968,7 +8044,14 @@
      "physician",
      "section_184"
     ],
-    "reverse": []
+    "reverse": [],
+    "correspondent": [
+     "conventional",
+     "fha",
+     "va",
+     "usda",
+     "jumbo"
+    ]
    }
   },
   {
@@ -7982,11 +8065,7 @@
    "borrowerPaidOnly": false,
    "minComp": null,
    "maxComp": null,
-   "products": {
-    "correspondent": [
-     "jumbo"
-    ]
-   }
+   "products": {}
   },
   {
    "id": "symmetry_lending",
@@ -8087,8 +8166,10 @@
      "fha_203h_disaster"
     ],
     "correspondent": [
-     "bank_statement",
+     "conventional",
+     "va",
      "dscr",
+     "bank_statement",
      "jumbo"
     ],
     "private": []
@@ -8675,8 +8756,13 @@
      "one_time_close"
     ],
     "correspondent": [
-     "bank_statement",
+     "conventional",
+     "fha",
+     "va",
+     "usda",
+     "dpa",
      "dscr",
+     "bank_statement",
      "jumbo"
     ]
    }
@@ -9030,6 +9116,10 @@
      "physician"
     ],
     "correspondent": [
+     "conventional",
+     "fha",
+     "va",
+     "usda",
      "bank_statement"
     ]
    }
