@@ -400,7 +400,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.09.12a";
+const APP_VERSION = "2026.09.13a";
 
 function huellaTexto(s) {
   let h = 0;
@@ -4886,6 +4886,18 @@ function atOrPastFullApp(stage){
   const f=ALL_STAGES.findIndex(s=>s.stage===FULL_APP_STAGE);
   return i>-1 && f>-1 && i>=f;
 }
+// Las fechas del contrato se leen del contrato, y el contrato llega en Under
+// Contract — una etapa ANTES de Full Application en `ALL_STAGE_ORDER`.
+// Pedirlas desde `atOrPastFullApp` dejaba la solapa FECHAS vacia justo en el
+// archivo que todavia no tiene ninguna fecha: no habia donde teclearlas, ni
+// para la puerta de etapa ni para el hueco que el relleno ya reclamaba.
+const CONTRACT_STAGE = "Under Contract";
+function atOrPastUnderContract(stage){
+  if(stage===CLOSED_STAGE) return true;
+  const i=ALL_STAGES.findIndex(s=>s.stage===stage);
+  const c=ALL_STAGES.findIndex(s=>s.stage===CONTRACT_STAGE);
+  return i>-1 && c>-1 && i>=c;
+}
 const md = iso => iso ? `${iso.slice(5,7)}/${iso.slice(8,10)}` : "—";
 // "Aug 15" reads faster than "08/15" and cannot be mistaken for a day/month swap.
 const MONTHS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -6315,6 +6327,12 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,onClose,onS
   const [compDraft,setCompDraft]=useState(()=>({...(file.compliance||{})}));
   const [phone,setPhone]=useState(file.phone||"");
   const [email,setEmail]=useState(file.email||"");
+  // El nombre NO tenia campo en ninguna parte fuera de la pantalla de crear
+  // archivo: para corregir una letra habia que borrar el archivo y volver a
+  // escribirlo entero. El `id` es `f{timestamp}` y no sale del nombre, asi
+  // que cambiarlo no arrastra nada — las cartas, el checklist de Barrett y
+  // el export de Martha leen `file.borrower` en vivo y se corrigen solos.
+  const [borrower,setBorrower]=useState(file.borrower||"");
   const [closedAt,setClosedAt]=useState(file.closedAt||"");
 
   // Outbound referral (when stage = REFERRED_OUT_STAGE)
@@ -6361,7 +6379,11 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,onClose,onS
           alignItems:"flex-start",gap:20,flexWrap:"wrap",flexShrink:0}}>
           <div style={{minWidth:0}}>
             <div className="dm-name" style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:"var(--t1)",letterSpacing:"-0.4px"}}>
-              {file.borrower}
+              {/* Sigue al campo mientras se teclea. El input vive en la solapa
+                  PRESTAMO y no aqui: el encabezado tiene su propio CSS de
+                  movil (`.dm-name`, `.dm-strip`) y meterle un input rompe el
+                  apilado. */}
+              {borrower.trim()||file.borrower}
               {isInbound&&<span title="Inbound referral" style={{marginLeft:9,fontSize:"var(--fs-4)",color:"#FFD166"}}>🤝</span>}
             </div>
             {/* En el telefono los cinco campos con etiqueta se comen media
@@ -6679,6 +6701,23 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,onClose,onS
               </div>
             </div>
           )}
+          {/* NOMBRE DEL CLIENTE. Va con telefono y correo porque es el mismo
+              bloque de identidad, y se guarda con el mismo SAVE. En blanco NO
+              se guarda: se conserva el anterior, que es lo unico sensato
+              cuando alguien borra el campo sin querer. */}
+          <div style={{gridColumn:"1/-1"}}>
+            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{TX("nameLabel")}</div>
+            <input value={borrower} onChange={e=>setBorrower(e.target.value)}
+              placeholder={TX("phLegalName")} style={fs2}/>
+            {!borrower.trim()&&(
+              <div style={{fontSize:"var(--fs-1)",color:"#F5A623",marginTop:4}}>{TX("nameEmpty")}</div>
+            )}
+            {borrower.trim()&&borrower.trim()!==file.borrower&&isRegistered(file)&&(
+              <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:4,lineHeight:1.5}}>
+                {TX("nameRegistered")}
+              </div>
+            )}
+          </div>
           <div style={{gridColumn:"1/-1"}}>
             <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{L("referralPartner")}</div>
             <input value={referralPartner} onChange={e=>setReferralPartner(e.target.value)}
@@ -6872,7 +6911,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,onClose,onS
         )}
 
         {/* CONTINGENCIES — captured at Full Application, anchored to the contract */}
-        {tab==="dates" && !inPrep && !isReferredOut && (atOrPastFullApp(stage) || hasContingencies(file)) && (
+        {tab==="dates" && !inPrep && !isReferredOut && (atOrPastUnderContract(stage) || hasContingencies(file)) && (
           <div style={{gridColumn:"1/-1"}}>
             <ContingencyPanel file={file} profile={profile} onSave={onSave}
               onDraft={p=>{panelDrafts.current.dates=p;}}/>
@@ -7300,6 +7339,9 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,onClose,onS
                 compliance: compDraft,
                 phone: (phone||"").trim() || null,
                 email: (email||"").trim() || null,
+                // En blanco se conserva el anterior. Un archivo sin nombre no
+                // se puede buscar, ni sale en la cola, ni en las cartas.
+                borrower: (borrower||"").trim() || file.borrower,
               };
               if(isAdmin) patch.bps = parseInt(bps)||null;
               if(isAdmin) patch.processor = processor;
