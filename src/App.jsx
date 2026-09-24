@@ -2372,15 +2372,40 @@ export default function App() {
             <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginBottom:14}}>
               {gateBlock.borrower}{dur.length?" · "+TX("gateSub"):""}
             </div>
-            {[...dur,...sof].map(r=>(
+            {[...dur,...sof].map(r=>{
+              // DONDE se arregla. Depende del archivo y del rol: el 1003 vive
+              // en dos pantallas, el registro necesita lender antes, y los
+              // fees del CD solo los marca el LO dueño.
+              const f0=files.find(x=>x.id===gateBlock.id);
+              const fix=f0?gateFix(r.id,f0,profile):null;
+              return (
               <div key={r.id} style={{borderLeft:`2px solid ${r.hard?"#E85D75":"#F5A623"}`,
                 paddingLeft:10,marginBottom:12}}>
                 <div style={{fontSize:"var(--fs-4)",color:"var(--t1)",marginBottom:3}}>{P(r)}</div>
                 <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",lineHeight:1.5}}>
                   {CURRENT_LANG==="en"?r.en_why:r.es_why}
                 </div>
+                {/* `espera` es el caso de la tasación antes de la firma: el
+                    botón existe pero nace apagado, así que la ruta seria un
+                    callejón. Se dice qué falta de verdad, no dónde tocar. */}
+                {fix&&fix.espera&&(
+                  <div style={{fontSize:"var(--fs-2)",color:"#F5A623",marginTop:6,lineHeight:1.5}}>
+                    ⚖ {P(fix)}
+                  </div>
+                )}
+                {fix&&!fix.espera&&(
+                  <div style={{marginTop:6,fontSize:"var(--fs-2)",lineHeight:1.5}}>
+                    <span style={{color:"var(--t4)",letterSpacing:"1px"}}>{TX("gateWhere")}: </span>
+                    <span style={{color:"var(--t2)",fontFamily:"DM Mono"}}>{P(fix)}</span>
+                  </div>
+                )}
+                {fix&&!fix.puede&&fix.quien&&(
+                  <div style={{fontSize:"var(--fs-2)",color:"#F5A623",marginTop:4,lineHeight:1.5}}>
+                    {TX("gateWhoFixes",{q:String(fix.quien).split(" ")[0]})}
+                  </div>
+                )}
               </div>
-            ))}
+            );})}
             {dur.length>0&&!isAdmin&&(
               <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",fontStyle:"italic",marginTop:10}}>
                 {TX("gateAskAdmin")}

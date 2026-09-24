@@ -131,6 +131,11 @@ export const UI = {
                      en:"The stage is past its ceiling, but another clock rules" },
   apprBlocked: { es:"No se puede pedir la tasación hasta que el cliente firme las disclosures. La paga él, y la Regulación Z prohíbe cobrarle antes de que reciba el LE y manifieste su intención de proceder — 12 CFR 1026.19(a)(1)(iv).",
                  en:"The appraisal cannot be ordered until the client signs the disclosures. They pay for it, and Regulation Z bars charging them before they receive the LE and indicate intent to proceed — 12 CFR 1026.19(a)(1)(iv)." },
+  // La puerta decia QUE falta y por que, pero no DONDE se arregla. Estas
+  // tres lo dicen: la ruta, quien puede cuando tu no, y el boton.
+  gateWhere:   { es:"Dónde", en:"Where" },
+  gateWhoFixes:{ es:"Esto lo resuelve {q}.", en:"{q} resolves this." },
+  gateFixNow:  { es:"ARREGLAR AHORA →", en:"FIX IT NOW →" },
   gateNeedReason:{ es:"Escribe la razón. Un desbloqueo sin razón no sirve de nada dentro de tres meses.",
                    en:"Write the reason. An override with no reason is worthless three months from now." },
   closeDateAsk:{ es:"¿En qué fecha fondeó de verdad? (AAAA-MM-DD)\n\nEsta fecha decide en qué corte de payroll entra — no es la fecha de cierre esperada.",
