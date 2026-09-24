@@ -164,6 +164,118 @@ t("todo dueño es un símbolo conocido o una persona real: " + (raros.join(", ")
   raros.length === 0);
 t("la procesadora por defecto existe en el catálogo", !!C.PROCESSORS[C.DEFAULT_PROCESSOR]);
 
+// ═══════════════════════════════════════════════════════════════════
+//  7 · EL WIKI Y LOS RECORRIDOS
+//  Enseñan lo que el motor hace. Cuando el motor cambia y el texto no,
+//  el equipo aprende algo que ya no es verdad — y lo defiende.
+// ═══════════════════════════════════════════════════════════════════
+const wiki = readFileSync("helpContent.js", "utf8");
+const tour = readFileSync("tour.jsx", "utf8");
+
+// Números escritos con letra, que es como se escriben en el texto. El
+// hueco tiene que llevar un número: sin eso "The exact dates" contaba
+// como si dijera una cifra, y la prueba mentía en las dos direcciones.
+const PALABRAS = "una|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|"
+  + "trece|catorce|quince|dieciocho|one|two|three|four|five|six|seven|eight|nine|ten|"
+  + "eleven|twelve|thirteen|fourteen|fifteen|eighteen";
+const NUM = { 2:["dos","two"], 3:["tres","three"], 4:["cuatro","four"], 5:["cinco","five"],
+  6:["seis","six"], 7:["siete","seven"], 8:["ocho","eight"], 12:["doce","twelve"],
+  18:["dieciocho","eighteen"] };
+// Devuelve null si el texto ya no cuenta eso; true/false si lo cuenta.
+const cuenta = (src, sustantivo, n) => {
+  const re = new RegExp(`\\b(?:las|los|the)\\s+(${PALABRAS})\\s+(?:${sustantivo})\\b`, "gi");
+  const ms = [...src.matchAll(re)];
+  if (!ms.length) return null;
+  const buenas = NUM[n] || [];
+  return ms.every(m => buenas.includes(m[1].toLowerCase()));
+};
+
+// ── las puertas ──
+// El wiki las titula y las tabula. Las dos cosas tienen que cuadrar con
+// el motor, y la tabla es la que de verdad se lee.
+t(`el wiki titula bien las puertas (motor: ${reglas.length} reglas en ${etapasPuerta.length} etapas)`,
+  cuenta(wiki, "puertas|gates", reglas.length) !== false);
+const momentos = [...wiki.matchAll(new RegExp(`(${PALABRAS})\\s+momentos\\b|(${PALABRAS})\\s+moments\\b`, "gi"))];
+t("el wiki cuenta bien los «momentos»",
+  momentos.every(m => (NUM[reglas.length]||[]).includes((m[1]||m[2]||"").toLowerCase())));
+const momTour = [...tour.matchAll(new RegExp(`(${PALABRAS})\\s+momentos\\b|(${PALABRAS})\\s+moments\\b`, "gi"))];
+t("el recorrido cuenta bien los momentos",
+  momTour.every(m => (NUM[reglas.length]||[]).includes((m[1]||m[2]||"").toLowerCase())));
+
+// La tabla, fila por fila, contra el motor: misma etapa y mismo frena/avisa.
+const bloqueP = wiki.slice(wiki.indexOf(`id: "puertas"`), wiki.indexOf(`id: "vistas"`));
+const tablaP = bloqueP.slice(bloqueP.indexOf("rows:["), bloqueP.indexOf("] },", bloqueP.indexOf("rows:[")));
+const filas = [...tablaP.matchAll(/\[\s*"([^"]+)"[\s\S]*?\{es:"(sí|solo avisa)"/g)]
+  .map(m => ({ etapa: m[1], frena: m[2] === "sí" }));
+// El wiki las lista en orden de pipeline, que es como se leen. El objeto
+// `STAGE_GATES` va en el orden en que se escribieron sus claves. Los dos
+// ordenes son validos: se comparan ordenados por etapa, no por escritura.
+const porEtapa = a => [...a].sort((x, y) => etapasMotor.indexOf(x.etapa) - etapasMotor.indexOf(y.etapa));
+const delMotor = Object.entries(C.STAGE_GATES).flatMap(([e, rs]) => rs.map(r => ({ etapa: e, frena: !!r.hard })));
+t(`la tabla del wiki tiene una fila por regla (${filas.length} vs ${delMotor.length})`,
+  filas.length === delMotor.length);
+t("y cada fila dice la etapa y el frena/avisa correctos",
+  JSON.stringify(porEtapa(filas)) === JSON.stringify(porEtapa(delMotor)));
+
+// ── el resto de los conteos ──
+t("el wiki cuenta bien las señales",
+  cuenta(wiki, "señales|signals", Object.keys(C.SIGNALS).length) !== false);
+t("el wiki cuenta bien las fases", cuenta(wiki, "fases|phases", fases) !== false);
+t("el wiki cuenta bien las fechas de contingencia",
+  cuenta(wiki, "fechas|dates", C.CONTINGENCIES.length) !== false);
+const preq = [...wiki.matchAll(new RegExp(`(${PALABRAS})\\s+etapas de Pre-Qual|(${PALABRAS})\\s+Pre-Qual stages`, "gi"))];
+t("el wiki cuenta bien las etapas de Pre-Qual",
+  preq.every(m => (NUM[C.PREQUAL_STAGES.length]||[]).includes((m[1]||m[2]||"").toLowerCase())));
+const reloj = [...wiki.matchAll(new RegExp(`(${PALABRAS})\\s+etapas con reloj|(${PALABRAS})\\s+timed stages`, "gi"))];
+t("el wiki cuenta bien las etapas con reloj",
+  reloj.every(m => (NUM[conReloj.length]||[]).includes((m[1]||m[2]||"").toLowerCase())));
+
+// Solo DOS de las cinco contingencias son del contrato; las otras tres son
+// cadena de entrega. Esa distincion separa "el deposito esta en riesgo" de
+// "vamos a quedar mal", y el wiki la borra en un sitio.
+t(`el wiki no llama «del contrato» a las ${C.CONTINGENCIES.length} `
+  + `(solo ${C.CONTINGENCIES.filter(c=>c.kind==="contract").length} lo son)`,
+  !/cinco fechas del contrato|five contract dates/i.test(wiki));
+
+// Todo tono que el wiki usa tiene que existir en el mapa que lo pinta.
+const mapaTonos = app.slice(app.indexOf("const TONE={gold:"));
+const tonosUsados = [...new Set([...wiki.matchAll(/tone:"([a-z]+)"/g)].map(m => m[1]))];
+const tonoHuerfano = tonosUsados.filter(x => !new RegExp("\\b" + x + ":\\[").test(mapaTonos));
+t("todo tono del wiki existe en el mapa que lo pinta: " + (tonoHuerfano.join(", ") || "sí"),
+  tonoHuerfano.length === 0);
+
+// El recorrido cambia de solapa solo: si nombra una que no existe, se queda quieto.
+const tabsTour = [...new Set([...tour.matchAll(/tab:\s*"([a-z]+)"/g)].map(m => m[1]))];
+const tabsMalTour = tabsTour.filter(x => !solapasApp.includes(x));
+t("toda solapa del recorrido existe: " + (tabsMalTour.join(", ") || "sí"), tabsMalTour.length === 0);
+const rolesTour = [...new Set([...tour.matchAll(/roles:\s*\[([^\]]*)\]/g)]
+  .flatMap(m => [...m[1].matchAll(/"([a-z]+)"/g)].map(x => x[1])))];
+const rolesReales = ["admin","lo","assistant","processor"];
+const rolMalTour = rolesTour.filter(x => !rolesReales.includes(x));
+t("todo rol del recorrido existe: " + (rolMalTour.join(", ") || "sí"), rolMalTour.length === 0);
+
+// Los orígenes del lead deciden la comp. Uno sin documentar es dinero que
+// nadie sabe explicar.
+const sinDocumentar = C.LEAD_ORIGINS.filter(o => !wiki.includes(o.es) && !wiki.includes(o.en || o.es))
+  .map(o => o.es);
+t("todo origen de lead está en el wiki: " + (sinDocumentar.join(", ") || "sí"),
+  sinDocumentar.length === 0);
+
+// El texto EN no puede mandar a buscar un botón que en inglés se llama de otra
+// forma. Martha lee inglés: una etiqueta en español ahí es un callejón.
+const soloEN = [...wiki.matchAll(/en:\s*"((?:[^"\\]|\\.)*)"/g)].map(m => m[1]).join("\n");
+const etiquetasES = ["AGREGAR","ENTRENAMIENTO","RELLENAR","TU COMPENSACIÓN EN ESTE ARCHIVO",
+  "FECHAS","PRÉSTAMO","DOCUMENTOS","EXPEDIENTE"];
+const coladas = etiquetasES.filter(e => soloEN.includes(e));
+t("el texto en inglés no manda a botones con nombre en español: " + (coladas.join(" · ") || "sí"),
+  coladas.length === 0);
+
+// Toda etapa que el wiki nombra tiene que existir. Un nombre viejo manda a
+// buscar una etapa que ya no esta en el menu.
+const nombradas = etapasMotor.filter(e => wiki.includes(e));
+t("el wiki nombra etapas reales (" + nombradas.length + " de " + etapasMotor.length + ")",
+  nombradas.length > 10);
+
 console.log();
 console.log(mal ? `✕ coherencia: ${ok} pasaron, ${mal} fallaron${avisos?`, ${avisos} avisos`:""}`
                 : `coherencia: ${ok}/${ok} el motor y la pantalla dicen lo mismo${avisos?` · ${avisos} avisos`:""}`);

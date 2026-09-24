@@ -1,115 +1,107 @@
-// ═══════════════════════════════════════════════════════════════════
-//  render.mjs · LA VERIFICACIÓN QUE FALTABA
-//
-//  Las otras seis leen el código quieto. Ninguna lo ejecuta, y por eso
-//  dos pantallas blancas llegaron a producción en una semana:
-//
-//    · v2026.08.30e — `langUid` usado en una lista de dependencias
-//      antes de su declaración. ReferenceError en zona muerta temporal.
-//      Compiló limpio. ESLint no-undef no lo vio: la variable existía.
-//
-//    · v2026.09.01a — un useState después de tres `return` tempranos.
-//      React tumbó el árbol entero.
-//
-//  Esto monta la aplicación de verdad con React fuera del navegador. Si
-//  el componente lanza al renderizar, aquí revienta — en un segundo, no
-//  en producción.
-//
-//  Lo que SÍ atrapa: errores al ejecutar el cuerpo del componente —
-//  zona muerta temporal, funciones que no existen, destructuring roto,
-//  JSX mal formado, `.map` sobre undefined.
-//  Lo que NO atrapa: lo que solo pasa al hacer clic o al re-renderizar.
-//  Para eso está `rules-of-hooks` en ESLint.
-// ═══════════════════════════════════════════════════════════════════
-import * as esbuild from "esbuild";
-import { readFileSync, writeFileSync } from "fs";
+// ─── EL RENDER DE VERDAD ───────────────────────────────────────────
+// Las dos pantallas en blanco (TDZ en la v08.30e, orden de hooks en la
+// v09.01a) compilaban perfecto. La unica forma de cacharlas es montar
+// el componente. Aqui se monta DetailModal con un archivo real y se
+// comprueba que lo que se acaba de tocar aparece de verdad.
+import { build } from "esbuild";
+import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import { renderToString } from "react-dom/server";
 import React from "react";
 
-const FALSO = {
-  // Firebase entero, en blanco. No queremos red ni credenciales: solo
-  // queremos que el componente se ejecute.
-  "firebase/app": "export const initializeApp=()=>({});",
-  "firebase/firestore": `export const getFirestore=()=>({});export const doc=()=>({});
-    export const setDoc=async()=>{};export const onSnapshot=()=>()=>{};
-    export const collection=()=>({});export const writeBatch=()=>({set(){},commit:async()=>{}});
-    export const getDocs=async()=>({docs:[],forEach(){}});export const deleteDoc=async()=>{};`,
-  "firebase/auth": `export const getAuth=()=>({currentUser:null});
-    export const signInWithEmailAndPassword=async()=>({});export const signOut=async()=>{};
-    export const onAuthStateChanged=(a,cb)=>{cb(null);return()=>{};};
-    export const sendPasswordResetEmail=async()=>{};`,
-  "./lenders2026.json": "export default {year:2026,productCapabilities:{},lenders:[]};",
-};
+mkdirSync(".tmp", { recursive: true });
+// Copia con DetailModal exportado. No se toca App.jsx.
+writeFileSync("_app_export.jsx",
+  readFileSync("App.jsx", "utf8") + "\nexport { DetailModal, AddModal };\nexport { default as ProcessingView } from \"./processing\";\n");
 
-const parches = {
-  name: "parches",
-  setup(b) {
-    b.onResolve({ filter: /^(firebase\/|\.\/lenders2026\.json)/ }, a => {
-      const clave = a.path.startsWith("firebase") ? a.path : "./lenders2026.json";
-      return FALSO[clave] ? { path: clave, namespace: "falso" } : null;
+const alias = {
+  "./marthaExport": "./.stub/marthaExport.js",
+  "./barrettChecklist": "./.stub/barrettChecklist.js",
+  "./lenders2026.json": "./.stub/lenders2026.json",
+  "firebase/app": "./.stub/firebase-app.js",
+  "firebase/firestore": "./.stub/firebase-firestore.js",
+  "firebase/auth": "./.stub/firebase-auth.js",
+};
+const r = await build({
+  stdin: { contents: `export * from "./_app_export.jsx";`, resolveDir: ".", loader: "jsx" },
+  bundle: true, write: false, format: "esm", jsx: "automatic",
+  loader: { ".js": "jsx", ".jsx": "jsx" },
+  external: ["react", "react-dom", "react/jsx-runtime"],
+  plugins: [{ name: "alias", setup(b) {
+    b.onResolve({ filter: /.*/ }, a => {
+      // Los stubs solo sustituyen al importarse DESDE el codigo fuente,
+      // no cuando el propio stub se resuelve a si mismo.
+      if (alias[a.path] && !a.importer.includes("/.stub/"))
+        return { path: new URL(alias[a.path], "file://" + process.cwd() + "/").pathname };
+      return null;
     });
-    b.onLoad({ filter: /.*/, namespace: "falso" }, a => ({ contents: FALSO[a.path], loader: "js" }));
-  },
+  }}],
+  logLevel: "silent",
+});
+writeFileSync(".tmp/bundle.mjs", r.outputFiles[0].text);
+const M = await import("./.tmp/bundle.mjs");
+
+let ok = 0, mal = 0;
+const t = (n, cond) => { if (cond) ok++; else { mal++; console.log("  ✕ " + n); } };
+
+const perfil = { uid:"u1", name:"Jose Del Valle", role:"admin" };
+const base = {
+  id:"f1", borrower:"IDALAIS MARTINEZ BARBAN", loan:350000, type:"FHA",
+  stage:"Under Contract", lo:"Jose Del Valle", closing:"2026-11-20",
+  fileOpenedAt:"2026-09-01", stageLog:{ "Under Contract":"2026-09-01" },
+  phone:"", email:"", contingencies:{},
 };
+const pintar = (file, props={}) => renderToString(React.createElement(M.DetailModal, {
+  file, profile:perfil, allFiles:[file], lang:"es",
+  L:k=>k, TXX:k=>k, onSetLang(){}, onClose(){}, onSave(){}, onStagePick:()=>true,
+  onDelete(){}, onAdvance(){}, onCloseFile(){}, onReopen(){}, onPrep(){},
+  onArchive(){}, onRestore(){}, onContinuePrep(){}, isClosed:false, ...props,
+}));
 
-let salida;
-try {
-  const r = await esbuild.build({
-    entryPoints: ["App.jsx"], bundle: true, write: false, format: "esm",
-    jsx: "automatic", loader: { ".js": "jsx" }, plugins: [parches],
-    external: ["react", "react/jsx-runtime", "react-dom"], logLevel: "silent",
-  });
-  salida = r.outputFiles[0].text;
-} catch (e) {
-  console.log("✕ no compila:", String(e.message).split("\n")[0]);
-  process.exit(1);
-}
+// ─── el nombre editable ───
+let h = pintar(base);
+t("el modal monta sin reventar", h.length > 1000);
+t("el nombre sale en el encabezado", h.includes("IDALAIS MARTINEZ BARBAN"));
+t("hay un campo con el nombre dentro", h.includes('value="IDALAIS MARTINEZ BARBAN"'));
+t("con su etiqueta NOMBRE DEL CLIENTE", h.includes("NOMBRE DEL CLIENTE"));
+t("telefono y correo siguen ahi", h.includes("PHONE") && h.includes("EMAIL"));
+t("un archivo sin registrar NO trae el aviso de Arive", !h.includes("Arive"));
 
-// El bundle se escribe JUNTO a node_modules para que `react` resuelva.
-writeFileSync("./_render_bundle.mjs", salida);
-const mod = await import("./_render_bundle.mjs");
-const App = mod.default;
+// ─── las fechas del contrato en Under Contract ───
+// La solapa FECHAS se monta solo si es la activa (`tab==="dates"`), no con
+// display:none — por eso hay que abrirla con `abrirEn`.
+const enFechas = f => pintar(f, { abrirEn:"dates" });
+// El caso exacto del callejon: Under Contract con `contingencies` vacio, que
+// es justo el archivo que la puerta `contract_dates` frena.
+const hUC = enFechas({ ...base, contingencies:{} });
+t("en Under Contract con contingencias vacias, FECHAS trae el panel",
+  hUC.includes("DEL CONTRATO"));
+t("y trae las dos fechas que la puerta exige",
+  hUC.includes("TASACIÓN") && hUC.includes("PRÉSTAMO"));
+t("con el ancla del contrato, que es de donde el motor calcula",
+  hUC.includes("ESTADO") && hUC.includes("COE"));
 
-if (typeof App !== "function") {
-  console.log("✕ App.jsx no exporta un componente por defecto");
-  process.exit(1);
-}
+// ─── lo de antes sigue en pie ───
+t("un archivo en Full Application tambien pinta las fechas",
+  enFechas({ ...base, stage:"Full Application", contingencies:{} }).includes("DEL CONTRATO"));
+t("uno en Credit Pull, sin contrato todavia, NO las pinta",
+  !enFechas({ ...base, stage:"Credit Pull", contingencies:{} }).includes("DEL CONTRATO"));
+t("pero si ya tiene fechas capturadas, se pintan aunque este atras",
+  enFechas({ ...base, stage:"Credit Pull", contingencies:{ contractAccepted:"2026-09-01" } }).includes("DEL CONTRATO"));
 
-// El navegador que React espera. Mínimo, pero suficiente para que el
-// componente corra: localStorage, matchMedia y un document de mentira.
-const almacen = new Map();
-globalThis.window = globalThis;
-globalThis.localStorage = {
-  getItem: k => (almacen.has(k) ? almacen.get(k) : null),
-  setItem: (k, v) => almacen.set(k, String(v)), removeItem: k => almacen.delete(k),
-};
-globalThis.sessionStorage = globalThis.localStorage;
-globalThis.matchMedia = q => ({ matches: /max-width/.test(q) === false, media: q,
-  addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
-globalThis.document = { querySelectorAll: () => [], getElementById: () => null,
-  addEventListener() {}, removeEventListener() {}, documentElement: { style: { setProperty() {} } } };
-// `navigator` en Node 22 es de solo lectura: se define, no se asigna.
-Object.defineProperty(globalThis, "navigator", { value: { userAgent: "node", language: "es" }, configurable: true });
-globalThis.location = { href: "https://lendingpipeline.vercel.app/", reload() {} };
-globalThis.fetch = async () => ({ ok: true, text: async () => "", json: async () => ({}) });
+// ─── el aviso de Arive solo cuando toca ───
+t("el bloque del CD no aparece en Under Contract",
+  !hUC.includes("CLOSING DISCLOSURE"));
+t("pero si aparece en CD Issued",
+  enFechas({ ...base, stage:"CD Issued", contingencies:{} }).includes("CLOSING DISCLOSURE"));
 
-let html = "";
-try {
-  html = renderToString(React.createElement(App));
-} catch (e) {
-  console.log("✕ LA APLICACIÓN NO PINTA — pantalla blanca");
-  console.log("  " + String(e.message).split("\n")[0]);
-  if (/before initialization/i.test(e.message))
-    console.log("  → una variable se usa antes de declararse (zona muerta temporal)");
-  if (/hook/i.test(e.message))
-    console.log("  → un hook corre en un orden distinto entre renders");
-  process.exit(1);
-}
+// Un archivo ya registrado monta igual. El aviso de Arive no se puede ver
+// aqui: solo sale cuando el nombre tecleado difiere del guardado, y en el
+// primer render son el mismo. Lo que se comprueba es que no revienta.
+const reg = { ...base, stage:"Initial Disclosures Sent", lenderId:"elend",
+  registrations:[{ lenderId:"elend", at:"2026-09-10", by:"Tina", discSentAt:"2026-09-10" }] };
+const hReg = pintar(reg);
+t("un archivo registrado monta", hReg.length > 1000);
+t("y tambien trae el campo del nombre", hReg.includes("NOMBRE DEL CLIENTE"));
 
-const largo = html.replace(/<[^>]+>/g, "").trim().length;
-if (largo < 20) {
-  console.log("✕ pinta vacío — el árbol se montó pero no hay contenido");
-  process.exit(1);
-}
-
-console.log("7/7 render: OK — la aplicación monta y pinta (" + largo + " caracteres de texto)");
+console.log(mal ? `✕ render: ${ok} pasaron, ${mal} fallaron` : `render: ${ok}/${ok} monta y pinta`);
+process.exit(mal ? 1 : 0);

@@ -400,7 +400,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.09.13c";
+const APP_VERSION = "2026.09.14a";
 
 function huellaTexto(s) {
   let h = 0;
@@ -7820,8 +7820,13 @@ function HelpModal({profile, lang, onSetLang, onClose}){
   const sec=sections.find(x=>x.id===secId)||sections[0];
   const shown=hits?hits.map(h=>h.article):sec.articles;
 
+  // Los tonos del wiki son las seis señales. Faltaba `legal`, el morado
+  // (SIGNALS.legal = #BD65E8), y la unica nota que lo usa —los tres dias
+  // habiles del CD, Regulacion Z— caia en el `||TONE.gold` de abajo y salia
+  // dorada. La nota dice "el sistema lo dice en morado" y no era morada.
   const TONE={gold:["#F5A623","rgba(245,166,35,.08)"],green:["#7EC8A4","rgba(126,200,164,.07)"],
-              red:["#E85D75","rgba(232,93,117,.08)"],blue:["#4A90D9","rgba(74,144,217,.08)"]};
+              red:["#E85D75","rgba(232,93,117,.08)"],blue:["#4A90D9","rgba(74,144,217,.08)"],
+              legal:["#BD65E8","rgba(189,101,232,.08)"]};
 
   const block=(b,bi)=>{
     const k=b.k;

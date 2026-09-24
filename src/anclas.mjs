@@ -35,9 +35,8 @@ const M = await (async () => {
   writeFileSync("_export_prueba.jsx", readFileSync("App.jsx", "utf8")
     + '\nexport { DetailModal, AddModal };'
     + '\nexport { default as ProcessingView } from "./processing";\n');
-  const alias = {
-    "./helpContent":"./.stub/helpContent.js", "./marthaExport":"./.stub/marthaExport.js",
-    "./barrettChecklist":"./.stub/barrettChecklist.js", "./tour":"./.stub/tour.js",
+  const alias = { "./marthaExport":"./.stub/marthaExport.js",
+    "./barrettChecklist":"./.stub/barrettChecklist.js",
     "./lenders2026.json":"./.stub/lenders2026.json",
     "firebase/app":"./.stub/firebase-app.js", "firebase/firestore":"./.stub/firebase-firestore.js",
     "firebase/auth":"./.stub/firebase-auth.js",

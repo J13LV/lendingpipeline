@@ -1169,6 +1169,13 @@ const ALL_STAGE_ORDER = [
   "Submitted to UW", "UW Review", "Conditional Approval", "Condition Clearing", "Clear to Close",
   "CD Issued", "Closing Scheduled", "Final Verifications", "Closing Docs Drawn",
   "Signing", "Funded", "Recorded", "Keys Delivered",
+  // POST-CIERRE. Faltaban aqui, aunque si estaban en `PHASES` (la pantalla)
+  // y en `FIXED_CLOCKS` con dueño LO. Un olvido, no una decision: para el
+  // motor estas cuatro no existian, `indexOf` daba -1, y todo lo que cuelga
+  // del indice se apagaba en silencio — el boton ADVANCE, el relleno, y
+  // `stampRegistration` habria arrastrado el archivo hacia atras.
+  // reopenFile deja los archivos reabiertos justo en la primera de ellas.
+  "Welcome Sent", "30-Day Follow-Up", "Review Requested", "Nurture Active",
 ];
 
 // ─── WRITING ───────────────────────────────────────────────────────
