@@ -5372,6 +5372,105 @@ export function stageGate(file) {
   };
 }
 
+// ─── DONDE SE ARREGLA CADA PUERTA ──────────────────────────────────
+// Una puerta que dice QUE falta y no DONDE se arregla manda a la persona a
+// buscar. Y una que manda a un sitio donde ese rol no puede tocar nada es
+// peor: es un callejon con letrero.
+//
+// Por eso esto NO es un objeto fijo colgado de cada regla. El destino
+// depende del archivo y de quien choca:
+//   · el 1003 se marca en el detalle si eres el LO, y en PROCESAMIENTO si
+//     eres Tina o la procesadora — dos pantallas distintas, misma reja;
+//   · el registro necesita lender ANTES: sin lender el boton ni sale, y ese
+//     paso es del LO mientras el registro es de Tina;
+//   · los fees del CD solo los marca el LO dueño del archivo;
+//   · la tasacion no se puede pedir antes de la firma del cliente (Reg Z,
+//     12 CFR 1026.19(a)(1)(iv)), asi que mandar ahi antes de la firma es
+//     mandar a un boton apagado.
+//
+// `who` es { role, name, processorId }. Devuelve null cuando no hay nada
+// que ofrecer —la regla blanda de la firma, que es del cliente.
+export function gateFix(ruleId, file, who) {
+  const rol = who?.role || null;
+  const admin = rol === "admin";
+  const esLo = rol === "lo";
+  const proc = rol === "assistant" || rol === "processor";
+  const miLo = admin || (esLo && (file?.lo || null) === (who?.name || null));
+  const loDel = file?.lo || null;
+  const laProc = processorOf(file).full;
+  const tina = STAGE_OWNERS[REGISTRATION_STAGE];
+  // PROCESAMIENTO solo deja tocar la cola propia. Laura sobre un archivo de
+  // Martha entra en solo lectura, asi que para ella tampoco es alcanzable.
+  const suCola = admin || processorId(file) === (who?.processorId || DEFAULT_PROCESSOR);
+
+  const ir = (vista, tab, sub, ancla, es, en) =>
+    ({ puede: true, quien: null, espera: false, vista, tab, sub, ancla, es, en });
+  const pedir = (quien, es, en) =>
+    ({ puede: false, quien, espera: false, vista: null, tab: null, sub: null, ancla: null, es, en });
+
+  switch (ruleId) {
+    case "gate1": {
+      const es = "Expediente → Verificación del 1003", en = "File → 1003 verification";
+      if (admin || esLo) return ir("detail", "file", null, "fix-gate1", es, en);
+      if (proc && suCola) return ir("processing", null, "findings", "fix-gate1",
+        "Procesamiento → Hallazgos → Verificación del 1003",
+        "Processing → Findings → 1003 verification");
+      return pedir(loDel, es, en);
+    }
+    case "contract_dates":
+      // Sin guardia de rol: lo teclea quien tenga el contrato delante.
+      return ir("detail", "dates", null, "fix-contract-dates",
+        "Fechas → Del contrato", "Dates → From the contract");
+
+    case "registered": {
+      // Primero el lender. El boton de registrar no aparece sin uno, asi que
+      // mandar a PRESTAMO antes de tiempo deja a la persona mirando un hueco.
+      if (!hasLender(file))
+        return ir("detail", "lender", null, "fix-lender",
+          "Lender → Escoger lender", "Lender → Choose lender");
+      const es = "Préstamo → Registrar con el lender", en = "Loan → Register with lender";
+      if (admin || proc) return ir("detail", "loan", null, "fix-register", es, en);
+      return pedir(tina, es, en);
+    }
+
+    case "disc_sent": {
+      const es = "Procesamiento → Lista → Divulgaciones enviadas";
+      const en = "Processing → Checklist → Disclosures sent";
+      if (admin || (proc && suCola)) return ir("processing", null, "checklist", "fix-disc-sent", es, en);
+      return pedir(proc ? laProc : tina, es, en);
+    }
+
+    // La firma es del cliente. No hay campo que ofrecer y bloquear aqui
+    // produciria una fecha inventada — por eso esta regla solo avisa.
+    case "disc_signed": return null;
+
+    case "cd_sent":
+      return ir("detail", "dates", null, "fix-cd-sent",
+        "Fechas → Closing Disclosure → Salió", "Dates → Closing Disclosure → Sent");
+
+    case "cd_fees": {
+      const es = "Fechas → Closing Disclosure → Fees", en = "Dates → Closing Disclosure → Fees";
+      if (miLo) return ir("detail", "dates", null, "fix-cd-fees", es, en);
+      return pedir(loDel, es, en);
+    }
+
+    case "appr_req": {
+      // El boton existe pero nace apagado hasta que el cliente firme. Lo que
+      // falta de verdad no es el pedido: es la firma.
+      if (!canOrderAppraisal(file))
+        return { puede: false, quien: laProc, espera: true,
+          vista: null, tab: null, sub: null, ancla: null,
+          es: "La tasación no se puede pedir hasta que el cliente firme las disclosures.",
+          en: "The appraisal cannot be ordered until the client signs the disclosures." };
+      const es = "Procesamiento → Pedidos → Tasación", en = "Processing → Orders → Appraisal";
+      if (admin || (proc && suCola)) return ir("processing", null, "orders", "fix-appr", es, en);
+      return pedir(laProc, es, en);
+    }
+
+    default: return null;
+  }
+}
+
 export const canRegister = file => {
   if (!file || file.archived || isRegistered(file)) return false;
   const i = ALL_STAGE_ORDER.indexOf(file.stage);
