@@ -811,8 +811,8 @@ export function helpSections(v = {}) {
         es: "El canal va primero", en: "The channel comes first",
         blocks: [
           { k:"p",
-            es:"El canal decide qué lenders puedes ver. En broker hay unos 180; en correspondent solo 11. Si escoges correspondent y tu lender no opera ahí, desaparece de la lista — y el sistema te dice cuáles quedaron fuera.",
-            en:"The channel decides which lenders you can see. Broker has about 180; correspondent only 11. If you pick correspondent and your lender does not operate there, it disappears from the list — and the system tells you which ones were left out." },
+            es:"El canal decide qué lenders puedes ver. En broker hay unos 180; en correspondent solo 16. Si escoges correspondent y tu lender no opera ahí, desaparece de la lista — y el sistema te dice cuáles quedaron fuera.",
+            en:"The channel decides which lenders you can see. Broker has about 180; correspondent only 16. If you pick correspondent and your lender does not operate there, it disappears from the list — and the system tells you which ones were left out." },
           { k:"p",
             es:"Si el lender no está en el catálogo, la última opción del menú te deja escribirlo a mano.",
             en:"If the lender is not in the catalog, the last option in the menu lets you type it in." },

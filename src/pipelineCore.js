@@ -1231,7 +1231,7 @@ export function contingencyExtensionCount(file, id) {
 //
 //   broker         — lender-paid. 183 lenders available. The plan caps
 //                    at 275 bps regardless of what the lender publishes.
-//   correspondent  — 11 lenders. Rate price and origination fees COMBINED
+//   correspondent  — 16 lenders. Rate price and origination fees COMBINED
 //                    are capped at 400 bps. Combined, not stacked.
 export const BROKER_COMP_CAP_BPS = 275;
 export const CORRESPONDENT_COMP_CAP_BPS = 400;
