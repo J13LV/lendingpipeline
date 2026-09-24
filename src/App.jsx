@@ -400,7 +400,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.09.14b";
+const APP_VERSION = "2026.09.14c";
 
 function huellaTexto(s) {
   let h = 0;
@@ -420,6 +420,13 @@ async function huellaDelServidor() {
 // mismo del caché; cambiar la URL obliga a pedir el index de nuevo, y con
 // él el bundle nuevo, que tiene otro nombre.
 function recargarDeVerdad() {
+  // La huella del arranque se guarda una sola vez por sesion de pestaña y
+  // no se volvia a escribir nunca. Al recargar desde este boton la pestaña
+  // es la MISMA, asi que `sessionStorage` sobrevive: el build nuevo se
+  // comparaba contra la huella vieja y el aviso volvia a salir enseguida,
+  // en una pestaña que ya estaba al dia. Se borra antes de navegar para que
+  // la carga nueva tome su huella limpia.
+  try { sessionStorage.removeItem("pipe_build"); } catch { /* modo privado */ }
   const base = window.location.pathname;
   window.location.replace(`${base}?v=${Date.now()}`);
 }
