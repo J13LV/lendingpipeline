@@ -270,6 +270,40 @@ const coladas = etiquetasES.filter(e => soloEN.includes(e));
 t("el texto en inglés no manda a botones con nombre en español: " + (coladas.join(" · ") || "sí"),
   coladas.length === 0);
 
+// ── los lenders ──
+// El número de correspondent vive escrito a mano en TRES sitios además del
+// dato: un comentario del motor, el wiki y el recorrido. El dato manda.
+const conCorr = C.LENDERS.filter(l => l.products?.correspondent).length;
+const sinCorr = C.LENDERS.length - conCorr;
+const numeros = (src, patron) => [...src.matchAll(patron)].map(m => Number(m[1]));
+const corrDicho = [
+  ...numeros(wiki, /correspondent solo (\d+)|correspondent only (\d+)/g),
+  ...numeros(wiki, /correspondent only (\d+)/g),
+  ...numeros(tour, /correspondent solo (\d+)|correspondent only (\d+)/g),
+  ...numeros(core, /correspondent\s+—\s+(\d+) lenders/g),
+].filter(Number.isFinite);
+t(`el número de lenders de correspondent cuadra con el dato (${conCorr}): `
+  + (corrDicho.filter(n => n !== conCorr).join(", ") || "sí"),
+  corrDicho.every(n => n === conCorr));
+// "unos 180" es el catálogo menos los de correspondent, no un número suelto.
+const brokerDicho = numeros(wiki, /broker hay unos (\d+)|Broker has about (\d+)/g)
+  .concat(numeros(tour, /broker hay unos (\d+)|Broker has about (\d+)/g)).filter(Number.isFinite);
+t(`el número de broker es del orden del catálogo (${sinCorr} sin correspondent de ${C.LENDERS.length})`,
+  brokerDicho.every(n => Math.abs(n - sinCorr) <= 15));
+// El Excel parte un lender en varios registros: uno con los productos y otro
+// con la marca de correspondent. `lendersFor` exige LAS DOS COSAS en el mismo
+// registro, asi que el partido no sale nunca — ni en broker ni en correspondent.
+// Es un lender que Barrett lista y que aqui no se puede escoger.
+const PROD = ["conventional","fha","va","usda","jumbo","nonqm","second","dpa"];
+const muertos = C.LENDERS.filter(l => l.products?.correspondent
+  && !PROD.some(k => l.products[k]?.length)).map(l => l.name.replace(/\n/g, " "));
+t("ningún lender de correspondent queda inseleccionable: " + (muertos.join(" · ") || "sí"),
+  muertos.length === 0);
+// Y cuantos se pueden escoger de verdad, que es el numero que importa.
+const usables = conCorr - muertos.length;
+t(`los ${conCorr} marcados como correspondent son todos usables (usables: ${usables})`,
+  usables === conCorr);
+
 // Toda etapa que el wiki nombra tiene que existir. Un nombre viejo manda a
 // buscar una etapa que ya no esta en el menu.
 const nombradas = etapasMotor.filter(e => wiki.includes(e));
