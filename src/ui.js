@@ -177,6 +177,16 @@ export const UI = {
 
   phSearch:     { es:"Buscar cliente...", en:"Search borrower..." },
   phLegalName:  { es:"Nombre legal completo", en:"Full legal name" },
+
+  // El nombre del cliente, editable desde el archivo. Antes solo se podia
+  // escribir al crearlo: una letra mal puesta obligaba a borrar el archivo.
+  nameLabel:    { es:"NOMBRE DEL CLIENTE", en:"CLIENT NAME" },
+  nameEmpty:    { es:"El nombre no se puede dejar en blanco. Se conserva el anterior.",
+                  en:"The name cannot be left blank. The previous one is kept." },
+  // El archivo ya esta registrado, asi que ese nombre tambien vive en Arive.
+  // No frena: avisa, porque dos nombres distintos no se ven en ninguna pantalla.
+  nameRegistered:{ es:"Este archivo ya está registrado con el lender. Si corriges el nombre aquí, corrígelo también en Arive.",
+                  en:"This file is already registered with the lender. If you fix the name here, fix it in Arive too." },
   phPartner:    { es:"Agente, contador, Smart Bee, cliente que llegó solo...",
                   en:"Agent name, CPA, Smart Bee, walk-in..." },
   phNoteSample: { es:"Esperando talones de pago actualizados", en:"Waiting on updated pay stubs" },
