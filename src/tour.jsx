@@ -287,6 +287,126 @@ export const DETAIL_STEPS = [
     es: "Y arriba puede que veas RELLENAR con un número. Ese es tuyo: datos en blanco de archivos que ya pasaron el punto donde debían capturarse. Deja en blanco lo que no sepas — una fecha inventada es peor que una celda vacía." },
 ];
 
+// ─── EL RECORRIDO DE PROCESAMIENTO ─────────────────────────────────
+// El tercero. NEW FILE son cinco minutos; el modal son seis semanas;
+// esto es el dia de trabajo de Tina, Laura y Martha, que hasta ahora no
+// se enseñaba en ninguna parte.
+//
+// Uno solo para los tres puestos. `roles` limita los pasos que no son de
+// todos, y `stepsFor` ajusta el contador: Tina ve 33, una procesadora 31.
+// Dos recorridos separados se leen mejor y se desincronizan igual de
+// rapido — el del modal ya demostro que uno con pasos por rol aguanta.
+//
+// `tab` mueve la sub-solapa del archivo; `field` señala un bloque de la
+// cola por su atributo data-tour.
+export const PROCESSING_STEPS = [
+  { id: 1, concept: true,
+    es: "Esta pantalla no es el tablero. El tablero contesta cómo va cada archivo. Esta contesta qué hago hoy.",
+    en: "This screen is not the board. The board answers how each file is doing. This one answers what do I do today." },
+  { id: 2, concept: true, field: "cola",
+    es: "Dos mitades: a la izquierda la cola, a la derecha el archivo. La cola manda el orden; el archivo es donde se trabaja.",
+    en: "Two halves: the queue on the left, the file on the right. The queue sets the order; the file is where the work happens." },
+  { id: 3, concept: true, field: "cola",
+    es: "La cola NO está ordenada por etapa. Está agrupada por tipo de trabajo — pedir una tasación y perseguir una condición son dos trabajos distintos aunque los dos archivos estén a la misma distancia del cierre.",
+    en: "The queue is NOT ordered by stage. It is grouped by kind of work — ordering an appraisal and chasing a condition are two different jobs even when both files sit the same distance from closing." },
+
+  { id: 4, field: "grupo-blocked",
+    es: "Bloqueado, en rojo, siempre primero. Hay un hallazgo abierto y el archivo no se mueve hasta resolverlo.",
+    en: "Blocked, in red, always first. There is an open finding and the file does not move until it is resolved." },
+  { id: 5, concept: true, field: "grupo-blocked",
+    es: "Un archivo bloqueado no es solo tuyo: es de quien estás esperando. Por eso va arriba — es el único grupo donde el trabajo es de otra persona.",
+    en: "A blocked file is not only yours: it belongs to whoever you are waiting on. That is why it sits on top — it is the only group where the work is someone else's." },
+  { id: 6, field: "grupo-new",
+    es: "Nuevos · sin ordenar. Recién registrados. Título, HOI y tasación de un tiro.",
+    en: "New · nothing ordered. Just registered. Title, HOI and appraisal in one shot." },
+  { id: 7, field: "grupo-vendor",
+    es: "Esperando vendor. Pedido hecho, todavía no llega. Aquí no se trabaja: se vigila.",
+    en: "Waiting on vendor. Ordered, not received yet. Nothing gets worked here: it gets watched." },
+  { id: 8, field: "grupo-ready_uw",
+    es: "Listos para someter. Llegaron los pedidos y el archivo sigue sin someterse. Este grupo no debería tener a nadie dos días seguidos.",
+    en: "Ready to submit. The orders are in and the file has not been submitted. Nobody should sit in this group two days running." },
+  { id: 9, field: "grupo-in_uw",
+    es: "En underwriting. En manos del underwriter.",
+    en: "In underwriting. With the underwriter." },
+  { id: 10, field: "grupo-conditions", roles: ["assistant", "admin"],
+    es: "Condiciones abiertas. Aprobado, esperando al cliente. Este grupo es tuyo: tú repartes las condiciones y persigues hasta el Clear to Close.",
+    en: "Open conditions. Approved, waiting on the borrower. This group is yours: you split the conditions and chase them to Clear to Close." },
+  { id: 11, field: "grupo-closing",
+    es: "Camino al cierre. CD, CTC, firma y fondeo.",
+    en: "Heading to closing. CD, CTC, signing and funding." },
+  { id: 12, concept: true, field: "cola",
+    es: "Si tu día no tiene un orden, este es: de arriba hacia abajo. Nunca empieces por lo que te parezca más fácil.",
+    en: "If your day has no order, this is it: top to bottom. Never start with whatever looks easiest." },
+  { id: 13, field: "vencidas",
+    es: "La línea roja de arriba son las tareas vencidas. Se toca y filtra la cola a solo lo vencido.",
+    en: "The red line up top is the overdue tasks. Tap it and the queue filters down to only what is overdue." },
+  { id: 14, field: "colas", roles: ["admin"],
+    es: "El selector de cola: puedes pararte en la de Laura o en la de Martha.",
+    en: "The queue picker: you can stand in Laura's queue or in Martha's." },
+  { id: 15, concept: true, field: "colas",
+    es: "Solo editas tu propia cola. Un archivo de otra procesadora lo ves entero y no lo tocas — la cola es de quien tiene el archivo asignado, no del que llega primero.",
+    en: "You only edit your own queue. A file in another processor's queue is fully visible and not editable — the queue belongs to whoever the file is assigned to, not to whoever gets there first." },
+
+  { id: 16, tab: "orders",
+    es: "Siete sub-solapas, cada una con su contador. El número en rojo —HALLAZGOS y FECHAS— es lo que está roto; el dorado es lo que falta.",
+    en: "Seven sub-tabs, each with its own counter. The number in red —FINDINGS and DATES— is what is broken; the gold one is what is missing." },
+  { id: 17, tab: "orders",
+    es: "PEDIDOS. Cinco: título y fees, HOI quote, HOI binder, tasación, docs de condominio.",
+    en: "ORDERS. Five of them: title and fees, HOI quote, HOI binder, appraisal, condo docs." },
+  { id: 18, tab: "orders",
+    es: "El botón de un tiro estampa los tres que casi siempre van juntos: título, HOI quote y tasación.",
+    en: "The one-shot button stamps the three that almost always go together: title, HOI quote and appraisal." },
+  { id: 19, tab: "orders", concept: true,
+    es: "La tasación NO se puede pedir hasta que el cliente firme las divulgaciones. El botón nace apagado y dice por qué. Es ley, no una regla de la sucursal — 12 CFR 1026.19(a)(1)(iv).",
+    en: "The appraisal CANNOT be ordered until the client signs the disclosures. The button starts disabled and says why. That is the law, not a branch rule — 12 CFR 1026.19(a)(1)(iv)." },
+  { id: 20, tab: "orders", concept: true,
+    es: "Rojo si el vendor pasó SU PROPIA fecha prometida; dorado si solo lleva una semana esperando. Una promesa rota pesa más que una espera larga.",
+    en: "Red if the vendor blew ITS OWN promised date; gold if it has only been waiting a week. A broken promise weighs more than a long wait." },
+  { id: 21, tab: "intake",
+    es: "ADMISIÓN. La captura el LO al precalificar. Tú la completas si falta algo — pero es dato del cliente, no lo inventes.",
+    en: "INTAKE. The LO captures it at pre-qual. You complete it if something is missing — but it is the client's data, do not invent it." },
+
+  { id: 22, tab: "findings",
+    es: "HALLAZGOS. Arriba, la reja del 1003: doce puntos.",
+    en: "FINDINGS. Up top, the 1003 grid: twelve items." },
+  { id: 23, tab: "findings", concept: true,
+    es: "Puedes marcar los puntos, pero el dueño de esa reja es el LO. Lo normal es que llegue en 12 de 12 y que tú levantes un hallazgo si algo no cuadra.",
+    en: "You can mark the items, but that grid belongs to the LO. Normally it arrives at 12 of 12 and your job is to raise a finding when something does not add up." },
+  { id: 24, tab: "findings",
+    es: "Un hallazgo retira la marca verde de ese punto y manda el archivo a BLOQUEADO. Lleva escrito a quién esperas: el LO, el cliente, procesamiento, el lender o título.",
+    en: "A finding pulls the green mark off that item and sends the file to BLOCKED. It carries who you are waiting on: the LO, the client, processing, the lender or title." },
+  { id: 25, tab: "findings",
+    es: "Resolver no borra: marca. El punto vuelve a pendiente, no a verde — quien lo verificó tiene que volver a mirarlo.",
+    en: "Resolving does not erase: it records. The item goes back to pending, not to green — whoever verified it has to look again." },
+
+  { id: 26, tab: "docs",
+    es: "DOCUMENTOS. La lista se deriva sola del producto, de cómo se documenta el ingreso y de los términos del contrato. No la armas tú.",
+    en: "DOCUMENTS. The list derives itself from the product, from how income is documented and from the contract terms. You do not build it." },
+  { id: 27, tab: "docs", concept: true,
+    es: "Cada documento lleva su momento: PTA antes de la aprobación, PTC antes del cierre, PTF antes del fondeo. Eso es lo que te dice con cuánta fuerza perseguirlo hoy.",
+    en: "Each document carries its moment: PTA prior to approval, PTC prior to closing, PTF prior to funding. That is what tells you how hard to chase it today." },
+
+  { id: 28, tab: "checklist",
+    es: "LISTA. Divulgaciones enviadas y firmadas, los números de préstamo que devuelve Arive, el resultado de underwriting y los hitos.",
+    en: "CHECKLIST. Disclosures sent and signed, the loan numbers Arive returns, the underwriting outcome and the milestones." },
+  { id: 29, tab: "checklist", roles: ["assistant", "admin"],
+    es: "La fecha de envío de las divulgaciones vive aquí. Es plazo de ley y el envío es nuestro.",
+    en: "The disclosures sent date lives here. It is a statutory deadline and sending is on us." },
+  { id: 30, tab: "checklist",
+    es: "El resultado de underwriting son tres, no una fecha: aprobado, suspendido, denegado.",
+    en: "The underwriting outcome is one of three, not a date: approved, suspended, denied." },
+
+  { id: 31, tab: "dates",
+    es: "FECHAS. Las fechas tope, calculadas hacia atrás desde el contrato usando el techo, no el promedio.",
+    en: "DATES. The deadlines, worked backward from the contract using the ceiling, not the average." },
+  { id: 32, concept: true, tab: "checklist",
+    es: "El papel de Barrett sale de aquí, de salida y no de entrada: se trabaja en pantalla y se imprime al final.",
+    en: "The Barrett sheet comes out of here, on the way out and not on the way in: the work happens on screen and prints at the end." },
+  { id: 33, concept: true, tab: "notes",
+    es: "Nunca devuelvas un archivo sin una nota que diga qué pasó. Y nunca borres lo anterior — si algo salió mal escrito, escribe una entrada nueva corrigiéndolo.",
+    en: "Never hand a file back without a note saying what happened. And never delete what came before — if something was written wrong, write a new entry correcting it." },
+];
+
 // Los pasos con `owner` solo le salen a ese rol. Tina ve 24; un LO ve
 // 23. El mismo recorrido sirve a los cuatro sin escribir cuatro.
 export function stepsFor(profile, catalog = TOUR_STEPS) {
@@ -323,7 +443,8 @@ export function clearProgress(uid, which) {
 
 export function useTour(profile, active, which = "newfile") {
   const uid = profile?.uid;
-  const steps = stepsFor(profile, which === "detail" ? DETAIL_STEPS : TOUR_STEPS);
+  const CATALOGO = { detail: DETAIL_STEPS, processing: PROCESSING_STEPS, newfile: TOUR_STEPS };
+  const steps = stepsFor(profile, CATALOGO[which] || TOUR_STEPS);
   const [idx, setIdx] = useState(() => Math.min(readProgress(uid, which), steps.length - 1));
 
   useEffect(() => { if (active) writeProgress(uid, idx, which); }, [uid, idx, active, which]);

@@ -174,6 +174,62 @@ for (const [regla, file, quien] of casos) {
   act(() => raiz.unmount());
 }
 
+// ─── el recorrido de procesamiento ─────────────────────────────────
+// Se monta la pantalla con el archivo de entrenamiento de la persona y se
+// comprueba que el panel sale, que ese archivo queda escogido, y que cada
+// ancla que el recorrido promete existe de verdad.
+{
+  const T = await import("./tour.js").catch(() => null) || await import("./_tour_prueba.mjs");
+  const entrena = { ...base({ stage:"Appraisal Ordered", lenderId:"elend", processor:"martha" }),
+    id: "train-u1", isTraining: true, borrower: "Maria Jose" };
+  // Uno de verdad en cada grupo que el recorrido enseña, para que los
+  // encabezados existan en el DOM.
+  const reales = [
+    { ...base({ stage:"Full Application", lenderId:"elend" }), id:"r1", borrower:"Uno" },
+    { ...base({ stage:"Title Ordered",    lenderId:"elend" }), id:"r2", borrower:"Dos" },
+    { ...base({ stage:"UW Review",        lenderId:"elend" }), id:"r3", borrower:"Tres" },
+    { ...base({ stage:"Condition Clearing", lenderId:"elend" }), id:"r4", borrower:"Cuatro" },
+    { ...base({ stage:"CD Issued",        lenderId:"elend" }), id:"r5", borrower:"Cinco" },
+  ];
+  const cont = dom.window.document.createElement("div");
+  dom.window.document.body.appendChild(cont);
+  const raiz = createRoot(cont);
+  const pintar = (archivos, perfil) => act(() => {
+    raiz.render(React.createElement(M.ProcessingView, {
+      files: archivos, profile: perfil, lang: "es",
+      onSetLang(){}, onSaveFile(){}, onOpenFull(){}, irA: null,
+    }));
+  });
+
+  pintar(reales, JOSE);
+  t("sin archivo de entrenamiento NO sale el panel del recorrido",
+    !cont.textContent.includes("PASO 1 DE"));
+
+  pintar([...reales, entrena], JOSE);
+  t("con el archivo de entrenamiento sale el panel", cont.textContent.includes("PASO 1 DE"));
+  t("y el contador dice los pasos que le tocan a ese rol",
+    cont.textContent.includes("DE " + T.stepsFor(JOSE, T.PROCESSING_STEPS).length));
+  t("el archivo de entrenamiento queda escogido", cont.textContent.includes("Maria Jose"));
+
+  // Las anclas fijas de la pantalla.
+  for (const a of ["cola", "colas"])
+    t(`el ancla «${a}» existe en la pantalla`, !!cont.querySelector(`[data-tour="${a}"]`));
+  // Las siete sub-solapas del archivo.
+  for (const sub of ["orders","intake","findings","docs","checklist","dates","notes"])
+    t(`la sub-solapa «${sub}» existe`, !!cont.querySelector(`[data-tour="${sub}"]`));
+  // Y los grupos que los archivos de prueba producen.
+  const gruposEnPantalla = [...cont.querySelectorAll('[data-tour^="grupo-"]')]
+    .map(n => n.getAttribute("data-tour"));
+  t("la cola pinta sus grupos con ancla (" + gruposEnPantalla.length + "): "
+    + (gruposEnPantalla.join(", ") || "ninguno"), gruposEnPantalla.length >= 3);
+  // Cada ancla de grupo que sale tiene que ser un grupo real del motor.
+  const reales7 = C.QUEUE_GROUPS.map(g => "grupo-" + g.id);
+  t("y todas son grupos reales del motor",
+    gruposEnPantalla.every(g => reales7.includes(g)));
+
+  act(() => raiz.unmount());
+}
+
 // ─── la helper: destello y foco ────────────────────────────────────
 {
   const { irAlAncla } = await import("./ui.js");

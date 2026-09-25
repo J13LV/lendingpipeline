@@ -244,8 +244,40 @@ const tonoHuerfano = tonosUsados.filter(x => !new RegExp("\\b" + x + ":\\[").tes
 t("todo tono del wiki existe en el mapa que lo pinta: " + (tonoHuerfano.join(", ") || "sí"),
   tonoHuerfano.length === 0);
 
+// ── el recorrido de procesamiento ──
+// Señala grupos de la cola y sub-solapas del archivo por su data-tour. Un
+// nombre que no existe deja el paso apuntando al vacio: el texto sale y no
+// se enciende nada, que es peor que no tener recorrido.
+const bloqueProc = tour.slice(tour.indexOf("PROCESSING_STEPS"), tour.indexOf("export function stepsFor"));
+const campos = [...new Set([...bloqueProc.matchAll(/field:\s*"([a-z_-]+)"/g)].map(m => m[1]))];
+const gruposReales = C.QUEUE_GROUPS.map(g => "grupo-" + g.id);
+const fijos = ["cola", "colas", "vencidas"];              // anclas de la pantalla
+const campoMal = campos.filter(f => !gruposReales.includes(f) && !fijos.includes(f));
+t("todo grupo que el recorrido señala existe en la cola: " + (campoMal.join(", ") || "sí"),
+  campoMal.length === 0);
+// Y al reves: un grupo que nadie enseña es un grupo que nadie sabe trabajar.
+const sinEnseñar = gruposReales.filter(g => !campos.includes(g));
+t("ningún grupo de la cola se queda sin enseñar: " + (sinEnseñar.join(", ") || "sí"),
+  sinEnseñar.length === 0);
+
+const subsProc = [...new Set([...bloqueProc.matchAll(/tab:\s*"([a-z]+)"/g)].map(m => m[1]))];
+const subMalProc = subsProc.filter(x => !subApp.includes(x));
+t("toda sub-solapa del recorrido de procesamiento existe: " + (subMalProc.join(", ") || "sí"),
+  subMalProc.length === 0);
+const subSinEnseñar = subApp.filter(x => !subsProc.includes(x));
+t("ninguna sub-solapa se queda sin enseñar: " + (subSinEnseñar.join(", ") || "sí"),
+  subSinEnseñar.length === 0);
+// Cada ancla que el recorrido pide tiene que estar escrita en processing.jsx.
+const anclaMal = campos.filter(f => !proc.includes(`data-tour="${f}"`)
+  && !proc.includes('data-tour={"grupo-" + g.id}'));
+t("toda ancla del recorrido está en el código: " + (anclaMal.join(", ") || "sí"),
+  anclaMal.length === 0);
+
 // El recorrido cambia de solapa solo: si nombra una que no existe, se queda quieto.
-const tabsTour = [...new Set([...tour.matchAll(/tab:\s*"([a-z]+)"/g)].map(m => m[1]))];
+// Solo las del recorrido del MODAL: las de PROCESSING_STEPS son sub-solapas
+// del archivo en procesamiento y se comprueban contra su propia lista.
+const bloqueDet = tour.slice(tour.indexOf("DETAIL_STEPS"), tour.indexOf("PROCESSING_STEPS"));
+const tabsTour = [...new Set([...bloqueDet.matchAll(/tab:\s*"([a-z]+)"/g)].map(m => m[1]))];
 const tabsMalTour = tabsTour.filter(x => !solapasApp.includes(x));
 t("toda solapa del recorrido existe: " + (tabsMalTour.join(", ") || "sí"), tabsMalTour.length === 0);
 const rolesTour = [...new Set([...tour.matchAll(/roles:\s*\[([^\]]*)\]/g)]
@@ -269,6 +301,20 @@ const etiquetasES = ["AGREGAR","ENTRENAMIENTO","RELLENAR","TU COMPENSACIÓN EN E
 const coladas = etiquetasES.filter(e => soloEN.includes(e));
 t("el texto en inglés no manda a botones con nombre en español: " + (coladas.join(" · ") || "sí"),
   coladas.length === 0);
+
+// ── los tres momentos del documento ──
+// PTA/PTC/PTF deciden con cuanta fuerza se persigue un documento hoy. El
+// motor los define; el wiki y el recorrido los repiten a mano. Si el texto
+// dice otro hito, Laura y Martha persiguen en el momento equivocado.
+const momento = (id, mal) => {
+  const donde = [["wiki", wiki], ["recorrido", tour]].filter(([, src]) =>
+    mal.some(m => new RegExp(m, "i").test(src))).map(([n]) => n);
+  t(`${id.toUpperCase()} = «${C.DOC_TIMING[id].es}» / «${C.DOC_TIMING[id].en}»`
+    + (donde.length ? " — mal en: " + donde.join(", ") : ""), donde.length === 0);
+};
+momento("pta", ["PTA antes de registrar", "PTA before registering", "prior to registration"]);
+momento("ptc", ["PTC antes del Clear to Close", "PTC before the Clear to Close",
+                "prior to Clear to Close"]);
 
 // ── los lenders ──
 // El número de correspondent vive escrito a mano en TRES sitios además del

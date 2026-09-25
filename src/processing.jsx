@@ -20,6 +20,7 @@
 
 import { useState, useEffect } from "react";
 import { tr, irAlAncla } from "./ui";
+import { TourPanel, useTour, isTraining } from "./tour";
 import { downloadChecklist } from "./barrettChecklist";
 import {
   ORDERS, ONE_SHOT_ORDERS, orderState, stampOrder, clearOrder, stampOneShot, canOrderAppraisal,
@@ -1182,13 +1183,16 @@ function Findings({ file, lang, onSave, who, readOnly }) {
 }
 
 // ─── EL ARCHIVO ABIERTO ────────────────────────────────────────────
-function FilePane({ file, lang, onSave, who, readOnly, onOpenFull, irA }) {
+function FilePane({ file, lang, onSave, who, readOnly, onOpenFull, irA, paseo }) {
   const { T, P } = mk(lang);
   const [tab, setTab] = useState("orders");
   // El boton ARREGLAR AHORA de una puerta manda aqui con la sub-solapa ya
   // escogida. `irA.n` cambia en cada salto: sin el, pedir dos veces el
   // mismo destino no volveria a moverse.
   useEffect(() => { if (irA?.sub) setTab(irA.sub); }, [irA]);
+  // El recorrido mueve la sub-solapa solo. Canal aparte del de las puertas
+  // para que un salto y un paso del recorrido no se pisen.
+  useEffect(() => { if (paseo) setTab(paseo); }, [paseo]);
   const [note, setNote] = useState("");
   const coe = okDate(file?.contingencies?.coe) || okDate(file?.closing);
   const faltan = coe ? daysBetween(today(), coe) : null;
@@ -1243,7 +1247,7 @@ function FilePane({ file, lang, onSave, who, readOnly, onOpenFull, irA }) {
         ].map(([id, label, n]) => {
           const on = tab === id;
           return (
-            <button key={id} className="hov" onClick={() => setTab(id)}
+            <button key={id} className="hov" data-tour={id} onClick={() => setTab(id)}
               style={{ background: "transparent", border: "none", cursor: "pointer",
                 color: on ? C.gold : C.soft, fontSize: "var(--fs-2)", fontFamily: "Syne",
                 fontWeight: on ? 800 : 500, letterSpacing: "1.2px", padding: "0 0 6px",
@@ -1392,13 +1396,33 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
     ? colaCompleta.map(g => ({ ...g, files: g.files.filter(f => overdueTasks(f).length) }))
         .filter(g => g.files.length)
     : colaCompleta;
-  const conteos = queueCounts(files);
+  // Los contadores de cada cola NO cuentan el archivo de entrenamiento: un
+  // archivo falso inflando el numero de Martha es peor que no entrenar.
+  const conteos = queueCounts((files || []).filter(f => !isTraining(f)));
   const planos = colaCompleta.flatMap(g => g.files);
   const sel = planos.find(f => f.id === selId) || planos[0] || null;
   // Una procesadora externa no debe editar la cola de la otra, y el
   // admin mira sin tocar cuando no es la suya.
   const readOnly = !esAdmin && quien !== propia;
   const who = profile?.name || null;
+
+  // ─── RECORRIDO ───
+  // Se enciende cuando el archivo de entrenamiento de ESTA persona esta en
+  // la cola. App.jsx ya filtra para que solo llegue el suyo, asi que con
+  // encontrar uno basta. El archivo nace con su procesadora puesta, si no
+  // caeria en la cola de Martha y Laura nunca veria el suyo.
+  const entrena = (files || []).find(f => isTraining(f)) || null;
+  // "Saltar recorrido" esconde el panel y deja la pantalla trabajable. En el
+  // modal ese boton cierra la ventana; aqui no hay nada que cerrar, y saltar
+  // al ultimo paso no es saltar. El progreso queda guardado: al recargar
+  // vuelve donde iba.
+  const [saltado, setSaltado] = useState(false);
+  const enTour = !!entrena && !saltado;
+  const tourProc = useTour(profile, enTour, "processing");
+  // Con el recorrido puesto, el archivo abierto es el de entrenamiento: los
+  // pasos hablan de sub-solapas y no tendria sentido enseñarlas sobre el
+  // archivo real de otra persona.
+  useEffect(() => { if (enTour && entrena) setSelId(entrena.id); }, [enTour, entrena?.id]);
 
   // Llegada desde una puerta. El admin puede pararse en cualquiera de las
   // dos colas, asi que primero hay que mover la cola: si no, el archivo no
@@ -1419,12 +1443,18 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
 
   return (
     <div className="fi" style={{ border: `1px solid ${C.line}`, borderRadius: 10, overflow: "hidden" }}>
+      {enTour && (
+        <div style={{ padding: "12px 12px 0" }}>
+          <TourPanel profile={profile} lang={lang} tour={tourProc}
+            onExit={() => setSaltado(true)} />
+        </div>
+      )}
       <div style={{ display: "grid", gridTemplateColumns: "minmax(240px,32%) 1fr", minHeight: 420 }}>
 
         {/* COLA */}
-        <div style={{ borderRight: `1px solid ${C.line}`, background: C.card,
+        <div data-tour="cola" style={{ borderRight: `1px solid ${C.line}`, background: C.card,
           padding: "12px 10px", maxHeight: 620, overflowY: "auto" }}>
-          <div style={{ display: "flex", gap: 5, marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
+          <div data-tour="colas" style={{ display: "flex", gap: 5, marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
             {PROCESSOR_IDS.map(id => {
               const on = quien === id, puede = esAdmin || id === propia;
               if (!puede) return null;
@@ -1459,7 +1489,7 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
             const r = overdueReport(mios);
             if (!r.total) return null;
             return (
-              <button className="hov" onClick={() => setSoloVencidas(v => !v)}
+              <button className="hov" data-tour="vencidas" onClick={() => setSoloVencidas(v => !v)}
                 style={{ width: "100%", background: soloVencidas ? "#E85D75" : "rgba(232,93,117,.10)",
                   border: `1px solid ${C.red}`, borderRadius: 6, padding: "8px 11px",
                   marginBottom: 11, cursor: "pointer", display: "flex", alignItems: "center",
@@ -1490,7 +1520,7 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
               Tres cosas por renglon: la etapa con su color de fase, el reloj
               que manda —el mismo del tablero del LO— y de quien se espera. */}
           {cola.map(g => (
-            <div key={g.id} style={{ marginBottom: 15 }}>
+            <div key={g.id} data-tour={"grupo-" + g.id} style={{ marginBottom: 15 }}>
               {/* El encabezado del grupo estaba en --fs-1 y el nombre del
                   cliente en --fs-3: el titulo era MAS CHICO que lo que
                   agrupa. Para quien construyo el sistema el color basta;
@@ -1584,7 +1614,8 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
           {sel
             ? <FilePane file={sel} lang={lang} onSave={guardar} who={who}
                 readOnly={readOnly} onOpenFull={onOpenFull}
-                irA={irA && irA.id === sel.id ? irA : null} />
+                irA={irA && irA.id === sel.id ? irA : null}
+                paseo={enTour && sel.id === entrena?.id ? (tourProc.step?.tab || null) : null} />
             : <div style={{ color: C.dim, fontSize: "var(--fs-3)", padding: "40px 20px", textAlign: "center" }}>
                 {T("queuePick")}
               </div>}

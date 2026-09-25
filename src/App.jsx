@@ -400,7 +400,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.09.14c";
+const APP_VERSION = "2026.09.15a";
 
 function huellaTexto(s) {
   let h = 0;
@@ -1794,7 +1794,7 @@ export default function App() {
       <div style={{padding:"20px 24px"}}>
 
         {view==="processing"&&(isAdmin||isAssistant)&&<ProcessingView
-          files={excludeTraining(files)} profile={profile} lang={lang} onSetLang={setLang}
+          files={files.filter(f=>!isTraining(f)||f.id===myTraining)} profile={profile} lang={lang} onSetLang={setLang}
           onSaveFile={(id,next)=>updateFile(id,next)}
           onOpenFull={f=>setDetail(f)}
           irA={irA&&irA.vista==="processing"?irA:null}
@@ -7790,7 +7790,13 @@ function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
             };
             // Id fijo por persona: reentrar al entrenamiento reemplaza el
             // archivo anterior en vez de acumular muestras sueltas.
-            if(training){ newFile.id=trainingFileId(profile); newFile.isTraining=true; }
+            if(training){
+              newFile.id=trainingFileId(profile);
+              newFile.isTraining=true;
+              // En la cola de quien entrena. Sin esto cae en la de Martha por
+              // defecto y Laura, que solo ve la suya, nunca lo encontraria.
+              newFile.processor = profile?.processorId || DEFAULT_PROCESSOR;
+            }
             if(isInbound){
               newFile.isInbound = true;
               newFile.referringBanker = {
