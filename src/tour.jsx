@@ -263,8 +263,8 @@ export const DETAIL_STEPS = [
     en: "DOCUMENTS — the submission checklist. You do not build it: it derives from the product, how income is documented, and the contract terms.",
     es: "DOCUMENTOS — la lista de sometimiento. No la armas tú: se deriva del producto, de cómo se documenta el ingreso y de los términos del contrato." },
   { id: 33, tab: "docs", concept: true,
-    en: "Each document carries a moment: PTA before registering, PTC before the Clear to Close, PTF before funding. The moment is what tells you how hard to chase it today.",
-    es: "Cada documento lleva su momento: PTA antes de registrar, PTC antes del Clear to Close, PTF antes de fondear. El momento es lo que te dice con cuánta fuerza perseguirlo hoy." },
+    en: "Each document carries a moment: PTA prior to approval, PTC prior to closing, PTF prior to funding. The moment is what tells you how hard to chase it today.",
+    es: "Cada documento lleva su momento: PTA antes de la aprobación, PTC antes del cierre, PTF antes de fondear. El momento es lo que te dice con cuánta fuerza perseguirlo hoy." },
   { id: 34, tab: "docs",
     en: "It also flags risk: a deposit over half the monthly income, a six-month employment gap, a P&L past the quarter. Each one cites its source.",
     es: "También marca riesgos: un depósito sobre la mitad del ingreso mensual, un hueco de empleo de seis meses, un P&L pasado el trimestre. Cada uno cita su fuente." },
@@ -274,8 +274,8 @@ export const DETAIL_STEPS = [
     es: "Un solo SAVE dorado abajo guarda toda la ventana de una vez. Las dos únicas excepciones son la nota y el resultado de contingencia — los dos son eventos, y guardan solos." },
 
   { id: 36, concept: true,
-    en: "ADVANCE will sometimes stop you. Six moments ask for the data that had to be captured at that stage — the 1003, the registration, the CD. It is not a bug: without that data the file looks correct and is not.",
-    es: "A veces ADVANCE te va a frenar. Seis momentos piden el dato que debía capturarse en esa etapa — el 1003, el registro, el CD. No es un error: sin ese dato el archivo se ve correcto y no lo está." },
+    en: "ADVANCE will sometimes stop you. Eight rules ask for the data that had to be captured at that stage — the 1003, the registration, the CD. It is not a bug: without that data the file looks correct and is not.",
+    es: "A veces ADVANCE te va a frenar. Ocho reglas piden el dato que debía capturarse en esa etapa — el 1003, el registro, el CD. No es un error: sin ese dato el archivo se ve correcto y no lo está." },
   { id: 37, concept: true,
     en: "Only one warns instead of blocking: the client's signature on the disclosures. It depends on them, not on you, and blocking there would force you to invent a date.",
     es: "Solo una avisa en vez de frenar: la firma del cliente en las divulgaciones. Depende de él, no de ti, y bloquearte ahí te obligaría a inventar una fecha." },
@@ -468,22 +468,59 @@ export function useTourTab(step, setTab, active) {
 // El borde dorado se pone por atributo, no envolviendo cada bloque en
 // un componente. Envolver los doce campos habría sido doce cambios
 // dentro de AddModal; así son doce atributos y un solo efecto.
+// El borde era dorado de 2px. El dorado es el color de marca y esta en toda
+// la pantalla —los grupos de la cola, los botones, los avisos—, asi que el
+// resaltado se perdia entre lo demas. Y no habia scroll: si el bloque
+// siguiente estaba fuera de vista, dar a Siguiente no movia nada visible y
+// parecia que el recorrido no respondia.
+//
+// Cuatro cosas que se suman, porque ninguna sola alcanza:
+//   1. Blanco, no dorado. Es el unico color que el sistema NO usa para
+//      significar nada, asi que se lee como atencion y no como estado.
+//   2. Todo lo demas se apaga. El contraste lo hace el resto, no el borde.
+//   3. Un pulso en CADA paso. El ojo caza el movimiento, no el color — que
+//      es justo lo que faltaba cuando dos bloques estan pegados.
+//   4. Se desplaza hasta el bloque. Era la causa real de "no pasa nada".
+const limpiar = n => { n.classList.remove("tour-on", "tour-off"); };
+
+// Lo que dice el bloque resaltado, para que el panel lo nombre. Sale del
+// propio DOM y por eso ya viene en el idioma de quien mira: no hace falta
+// escribir treinta etiquetas nuevas ni mantenerlas en dos idiomas.
+function etiquetaDe(n) {
+  const crudo = (n.textContent || "").replace(/\s+/g, " ").trim();
+  if (!crudo) return null;
+  return crudo.length > 42 ? crudo.slice(0, 42).trimEnd() + "…" : crudo;
+}
+
 export function useTourHighlight(fieldId, active) {
+  const [donde, setDonde] = useState(null);
   useEffect(() => {
-    if (!active) return undefined;
-    const nodes = document.querySelectorAll("[data-tour]");
+    if (typeof document === "undefined") return undefined;
+    const nodes = [...document.querySelectorAll("[data-tour]")];
+    if (!active) { nodes.forEach(limpiar); setDonde(null); return undefined; }
+    let objetivo = null;
     nodes.forEach(n => {
-      const on = fieldId && n.getAttribute("data-tour") === fieldId;
-      n.style.outline = on ? "2px solid #F5A623" : "";
-      n.style.outlineOffset = on ? "4px" : "";
-      n.style.borderRadius = on ? "6px" : "";
+      limpiar(n);
+      if (fieldId && n.getAttribute("data-tour") === fieldId) objetivo = n;
+      else n.classList.add("tour-off");
     });
-    return () => nodes.forEach(n => {
-      n.style.outline = "";
-      n.style.outlineOffset = "";
-      n.style.borderRadius = "";
-    });
+    if (objetivo) {
+      // Reflujo forzado: sin esto quitar y volver a poner la clase en el
+      // mismo cuadro no reinicia la animacion, y el paso siguiente no pulsa.
+      void objetivo.offsetWidth;
+      objetivo.classList.add("tour-on");
+      try { objetivo.scrollIntoView({ behavior: "smooth", block: "center" }); }
+      catch { objetivo.scrollIntoView(); }
+      setDonde(etiquetaDe(objetivo));
+    } else {
+      // Un paso sin ancla no apaga la pantalla: son los de concepto, y ahi
+      // se lee el panel, no se busca nada.
+      nodes.forEach(limpiar);
+      setDonde(null);
+    }
+    return () => nodes.forEach(limpiar);
   }, [fieldId, active]);
+  return donde;
 }
 
 // ─── 5. EL PANEL ───────────────────────────────────────────────────
@@ -492,7 +529,7 @@ export function useTourHighlight(fieldId, active) {
 export function TourPanel({ profile, lang, tour, onExit }) {
   const { idx, next, back, steps, step } = tour;
   // En NEW FILE el ancla es un campo; en el modal es la solapa.
-  useTourHighlight(step?.field || step?.tab, true);
+  const donde = useTourHighlight(step?.field || step?.tab, true);
   if (!step) return null;
 
   const T = k => (lang === "en" ? k.en : k.es);
@@ -521,9 +558,16 @@ export function TourPanel({ profile, lang, tour, onExit }) {
         </button>
       </div>
 
-      <div style={{ fontSize: "var(--fs-4)", color: "var(--t1)", lineHeight: 1.6, marginBottom: 10 }}>
+      <div style={{ fontSize: "var(--fs-4)", color: "var(--t1)", lineHeight: 1.6, marginBottom: donde ? 6 : 10 }}>
         {T(step)}
       </div>
+      {donde && (
+        <div style={{ fontSize: "var(--fs-2)", color: "var(--t3)", marginBottom: 10,
+          fontFamily: "DM Mono", display: "flex", gap: 6, alignItems: "baseline" }}>
+          <span style={{ color: "#FFFFFF" }}>▸</span>
+          <span>{T({ en: "Pointing at", es: "Señalando" })}: {donde}</span>
+        </div>
+      )}
 
       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
         {!last && (

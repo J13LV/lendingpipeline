@@ -400,7 +400,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.09.15a";
+const APP_VERSION = "2026.09.15c";
 
 function huellaTexto(s) {
   let h = 0;
@@ -543,6 +543,20 @@ function LoginScreen() {
         @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
         .shake{animation:shake .5s ease;}
         @keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+        /* EL RECORRIDO. El resaltado era dorado de 2px y se perdia: el dorado
+           significa "se avecina" en toda la app. Blanco no significa nada en
+           el sistema, asi que se lee como atencion. El pulso es lo que de
+           verdad se ve cuando dos bloques estan pegados —el ojo caza el
+           movimiento antes que el color— y apagar el resto hace el contraste
+           que un borde solo no puede hacer. */
+        @keyframes tourPulse{
+          0%{box-shadow:0 0 0 0 rgba(255,255,255,.95), 0 0 0 0 rgba(255,255,255,.45)}
+          60%{box-shadow:0 0 0 3px rgba(255,255,255,.95), 0 0 0 16px rgba(255,255,255,0)}
+          100%{box-shadow:0 0 0 3px rgba(255,255,255,.9), 0 0 0 16px rgba(255,255,255,0)}}
+        .tour-on{animation:tourPulse 1.1s ease-out both;border-radius:8px;
+          position:relative;z-index:5;scroll-margin:90px;}
+        .tour-off{opacity:.3;transition:opacity .22s ease;}
+
         /* El campo al que ARREGLAR AHORA acaba de llevar. Dos segundos y se
            apaga: un resaltado permanente deja de verse a los diez minutos. */
         @keyframes fixFlash{

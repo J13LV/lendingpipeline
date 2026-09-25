@@ -34,7 +34,8 @@ const M = await (async () => {
   const { readFileSync, writeFileSync, unlinkSync } = await import("fs");
   writeFileSync("_export_prueba.jsx", readFileSync("App.jsx", "utf8")
     + '\nexport { DetailModal, AddModal };'
-    + '\nexport { default as ProcessingView } from "./processing";\n');
+    + '\nexport { default as ProcessingView } from "./processing";'
+    + '\nexport { PROCESSING_STEPS, DETAIL_STEPS, TOUR_STEPS, stepsFor, TourPanel } from "./tour";\n');
   const alias = { "./marthaExport":"./.stub/marthaExport.js",
     "./barrettChecklist":"./.stub/barrettChecklist.js",
     "./lenders2026.json":"./.stub/lenders2026.json",
@@ -179,7 +180,7 @@ for (const [regla, file, quien] of casos) {
 // comprueba que el panel sale, que ese archivo queda escogido, y que cada
 // ancla que el recorrido promete existe de verdad.
 {
-  const T = await import("./tour.js").catch(() => null) || await import("./_tour_prueba.mjs");
+  const T = M;   // el recorrido sale del mismo bundle de prueba
   const entrena = { ...base({ stage:"Appraisal Ordered", lenderId:"elend", processor:"martha" }),
     id: "train-u1", isTraining: true, borrower: "Maria Jose" };
   // Uno de verdad en cada grupo que el recorrido enseña, para que los
@@ -228,6 +229,57 @@ for (const [regla, file, quien] of casos) {
     gruposEnPantalla.every(g => reales7.includes(g)));
 
   act(() => raiz.unmount());
+}
+
+// ─── el resaltado del recorrido ────────────────────────────────────
+// Era dorado de 2px sobre una pantalla llena de dorado, y sin scroll. Lo
+// que se comprueba aqui es que ahora si se distingue: la clase que pulsa
+// sobre UNO solo, el resto apagado, y el panel diciendo a donde apunta.
+{
+  const d = dom.window.document;
+  const caja = d.createElement("div");
+  caja.innerHTML = '<div data-tour="uno">PEDIDOS</div>'
+                 + '<div data-tour="dos">HALLAZGOS</div>'
+                 + '<div data-tour="tres">' + "x".repeat(120) + "</div>";
+  d.body.appendChild(caja);
+  const cont = d.createElement("div"); d.body.appendChild(cont);
+  const raiz = createRoot(cont);
+  const pintar = campo => act(() => { raiz.render(React.createElement(M.TourPanel, {
+    profile: JOSE, lang: "es",
+    tour: { idx:0, next(){}, back(){}, steps:[{id:1}], step:{ id:1, field:campo, es:"paso", en:"step" } },
+    onExit(){},
+  })); });
+
+  pintar("uno");
+  const uno = d.querySelector('[data-tour="uno"]');
+  const dos = d.querySelector('[data-tour="dos"]');
+  t("el bloque señalado lleva la clase que pulsa", uno.classList.contains("tour-on"));
+  t("y NO la de apagado", !uno.classList.contains("tour-off"));
+  t("los demás se apagan", dos.classList.contains("tour-off"));
+  t("el panel dice a dónde apunta", cont.textContent.includes("Señalando"));
+  t("y lo nombra con el texto del bloque", cont.textContent.includes("PEDIDOS"));
+
+  pintar("dos");
+  t("al avanzar, el pulso se muda al siguiente",
+    dos.classList.contains("tour-on") && !uno.classList.contains("tour-on"));
+  t("y el que quedó atrás se apaga", uno.classList.contains("tour-off"));
+  t("el panel sigue al paso", cont.textContent.includes("HALLAZGOS"));
+
+  pintar("tres");
+  const larga = cont.textContent.match(/Señalando: (x+…)/);
+  t("una etiqueta larga se corta y no revienta el panel", !!larga && larga[1].length <= 43);
+
+  // Un paso de concepto no señala nada: la pantalla no se apaga entera.
+  pintar(null);
+  t("un paso sin ancla no apaga la pantalla",
+    !uno.classList.contains("tour-off") && !dos.classList.contains("tour-off"));
+  t("y el panel no dice «señalando» a nada", !cont.textContent.includes("Señalando"));
+
+  act(() => raiz.unmount());
+  t("al salir del recorrido no queda ninguna clase pegada",
+    ![...d.querySelectorAll("[data-tour]")].some(n =>
+      n.classList.contains("tour-on") || n.classList.contains("tour-off")));
+  caja.remove();
 }
 
 // ─── la helper: destello y foco ────────────────────────────────────

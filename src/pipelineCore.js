@@ -1858,7 +1858,7 @@ export const LEAD_ORIGINS = [
   { id: "partner",  es: "Referral Partner", en: "Referral Partner", klass: "self",     note_es: "Socio referidor del originador", note_en: "A referral partner of the originator" },
   { id: "inhouse",  es: "In-House Lead",    en: "In-House Lead",    klass: "in_house", note_es: "Asignado por la sucursal — sin importar de dónde venga", note_en: "Assigned by the branch — no matter where it came from" },
   { id: "smartb",   es: "Smart Bee Client", en: "Smart Bee Client", klass: "in_house", note_es: "Base de la práctica de taxes · misma regla para todos los LO", note_en: "The tax practice database · same rule for every LO" },
-  { id: "apg",      es: "APG Realty",       en: "APG Realty",       klass: "pending",  note_es: "Clasificación pendiente de definir", note_en: "Classification still to be defined" },
+  { id: "apg",      es: "APG Realty",       en: "APG Realty",       klass: "self",     note_es: "Socia referidora, no es de la sucursal · split completo", note_en: "A referral partner, not branch staff · full split" },
 ];
 export const leadOrigin = id => LEAD_ORIGINS.find(o => o.id === id) || null;
 
