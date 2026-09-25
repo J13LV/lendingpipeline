@@ -400,7 +400,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.09.16a";
+const APP_VERSION = "2026.09.16b";
 
 function huellaTexto(s) {
   let h = 0;
@@ -1430,6 +1430,7 @@ export default function App() {
   return(
     <div style={{fontFamily:"'IBM Plex Sans',system-ui,-apple-system,sans-serif",background:"#0D1117",minHeight:"100vh",color:"var(--t1)"}}>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
         /* ESTAS DOS VIVEN AQUI, NO EN EL BLOQUE DE LOGIN.
            Estuvieron en el <style> de LoginScreen, que solo se monta en la
            pantalla de entrada: las clases se ponian bien en el DOM y no habia
@@ -1459,7 +1460,6 @@ export default function App() {
           100%{box-shadow:0 0 0 3px rgba(245,166,35,0)}}
         .fix-flash{animation:fixFlash 2s ease-out;border-radius:8px;
           scroll-margin:80px;}
-        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
         /* ─── TOKENS · una sola fuente de verdad ───────────────────
            Todo tamano y todo color de texto sale de aqui. Para cambiar
            la escala completa solo se toca --fs-scale: el resto se

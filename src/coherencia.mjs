@@ -291,6 +291,23 @@ const sinKeyframes = animes.filter(a => {
 t("toda animación que invocan existe en el mismo bloque: " + (sinKeyframes.join(", ") || "sí"),
   sinKeyframes.length === 0);
 
+// ── el @import de las fuentes ──
+// En CSS un @import que no es la PRIMERA regla de la hoja se descarta entero.
+// Meter una clase nueva justo debajo de <style>{` deja el import invalido,
+// Google Fonts no carga, y toda la app cae a la fuente del sistema. Se ve como
+// "me cambiaste la letra de todo el pipeline" y no se parece en nada a su causa.
+const sinComentarios = css => css.replace(/\/\*[\s\S]*?\*\//g, "").trim();
+const hojas = [...app.matchAll(/<style>\{`/g)].map(m => m.index);
+const importTarde = [];
+hojas.forEach((b, n) => {
+  const css = app.slice(b + 9, app.indexOf("`}", b));
+  const i = css.indexOf("@import");
+  if (i < 0) return;
+  if (sinComentarios(css.slice(0, i))) importTarde.push("#" + (n + 1));
+});
+t(`el @import de las fuentes es la primera regla de cada hoja (${hojas.length}): `
+  + (importTarde.join(", ") || "sí"), importTarde.length === 0);
+
 // ── el recorrido de procesamiento ──
 // Señala grupos de la cola y sub-solapas del archivo por su data-tour. Un
 // nombre que no existe deja el paso apuntando al vacio: el texto sale y no
