@@ -400,7 +400,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.09.16c";
+const APP_VERSION = "2026.09.16d";
 
 function huellaTexto(s) {
   let h = 0;
@@ -493,17 +493,28 @@ function LoginScreen() {
         /* ─── TOKENS · una sola fuente de verdad ───────────────────
            Todo tamano y todo color de texto sale de aqui. Para cambiar
            la escala completa solo se toca --fs-scale: el resto se
-           recalcula solo. Los colores pasan WCAG AA sobre #0D1117. */
+           recalcula solo. Los colores pasan WCAG AA sobre #0D1117.
+
+           El SUELO subio mas que el techo, a proposito. El contenido de los
+           paneles vive casi todo en --fs-1 y --fs-2 —en la pantalla de
+           procesamiento son 101 de 120 tamanos— mientras el marco usa --fs-3
+           y arriba: lo de dentro se leia mas chico que lo de fuera. Subir
+           todo por igual no era la respuesta, porque eso es justo lo que
+           hace el control A+/A-; lo que hacia falta era comprimir el rango.
+           De ahi +1px hasta --fs-6, +0.5px en el 7 y el 8, y nada en los dos
+           de display, que ya estaban bien. La escala tiene que quedar
+           SIEMPRE estrictamente creciente: con 11.5/12.5/13.5 el fondo era
+           tan estrecho que mover un nivel colapsaba el de al lado. */
         :root{
           --fs-scale:1;
-          --fs-1:calc(11.5px * var(--fs-scale));
-          --fs-2:calc(12.5px * var(--fs-scale));
-          --fs-3:calc(13.5px * var(--fs-scale));
-          --fs-4:calc(14.5px * var(--fs-scale));
-          --fs-5:calc(15.5px * var(--fs-scale));
-          --fs-6:calc(17px   * var(--fs-scale));
-          --fs-7:calc(19px   * var(--fs-scale));
-          --fs-8:calc(21px   * var(--fs-scale));
+          --fs-1:calc(12.5px * var(--fs-scale));
+          --fs-2:calc(13.5px * var(--fs-scale));
+          --fs-3:calc(14.5px * var(--fs-scale));
+          --fs-4:calc(15.5px * var(--fs-scale));
+          --fs-5:calc(16.5px * var(--fs-scale));
+          --fs-6:calc(18px   * var(--fs-scale));
+          --fs-7:calc(19.5px   * var(--fs-scale));
+          --fs-8:calc(21.5px   * var(--fs-scale));
           --fs-9:calc(25px   * var(--fs-scale));
           --fs-10:calc(30px  * var(--fs-scale));
           --t1:#F0F6FC;
@@ -1154,17 +1165,28 @@ export default function App() {
         /* ─── TOKENS · una sola fuente de verdad ───────────────────
            Todo tamano y todo color de texto sale de aqui. Para cambiar
            la escala completa solo se toca --fs-scale: el resto se
-           recalcula solo. Los colores pasan WCAG AA sobre #0D1117. */
+           recalcula solo. Los colores pasan WCAG AA sobre #0D1117.
+
+           El SUELO subio mas que el techo, a proposito. El contenido de los
+           paneles vive casi todo en --fs-1 y --fs-2 —en la pantalla de
+           procesamiento son 101 de 120 tamanos— mientras el marco usa --fs-3
+           y arriba: lo de dentro se leia mas chico que lo de fuera. Subir
+           todo por igual no era la respuesta, porque eso es justo lo que
+           hace el control A+/A-; lo que hacia falta era comprimir el rango.
+           De ahi +1px hasta --fs-6, +0.5px en el 7 y el 8, y nada en los dos
+           de display, que ya estaban bien. La escala tiene que quedar
+           SIEMPRE estrictamente creciente: con 11.5/12.5/13.5 el fondo era
+           tan estrecho que mover un nivel colapsaba el de al lado. */
         :root{
           --fs-scale:1;
-          --fs-1:calc(11.5px * var(--fs-scale));
-          --fs-2:calc(12.5px * var(--fs-scale));
-          --fs-3:calc(13.5px * var(--fs-scale));
-          --fs-4:calc(14.5px * var(--fs-scale));
-          --fs-5:calc(15.5px * var(--fs-scale));
-          --fs-6:calc(17px   * var(--fs-scale));
-          --fs-7:calc(19px   * var(--fs-scale));
-          --fs-8:calc(21px   * var(--fs-scale));
+          --fs-1:calc(12.5px * var(--fs-scale));
+          --fs-2:calc(13.5px * var(--fs-scale));
+          --fs-3:calc(14.5px * var(--fs-scale));
+          --fs-4:calc(15.5px * var(--fs-scale));
+          --fs-5:calc(16.5px * var(--fs-scale));
+          --fs-6:calc(18px   * var(--fs-scale));
+          --fs-7:calc(19.5px   * var(--fs-scale));
+          --fs-8:calc(21.5px   * var(--fs-scale));
           --fs-9:calc(25px   * var(--fs-scale));
           --fs-10:calc(30px  * var(--fs-scale));
           --t1:#F0F6FC;
@@ -1223,17 +1245,28 @@ export default function App() {
         /* ─── TOKENS · una sola fuente de verdad ───────────────────
            Todo tamano y todo color de texto sale de aqui. Para cambiar
            la escala completa solo se toca --fs-scale: el resto se
-           recalcula solo. Los colores pasan WCAG AA sobre #0D1117. */
+           recalcula solo. Los colores pasan WCAG AA sobre #0D1117.
+
+           El SUELO subio mas que el techo, a proposito. El contenido de los
+           paneles vive casi todo en --fs-1 y --fs-2 —en la pantalla de
+           procesamiento son 101 de 120 tamanos— mientras el marco usa --fs-3
+           y arriba: lo de dentro se leia mas chico que lo de fuera. Subir
+           todo por igual no era la respuesta, porque eso es justo lo que
+           hace el control A+/A-; lo que hacia falta era comprimir el rango.
+           De ahi +1px hasta --fs-6, +0.5px en el 7 y el 8, y nada en los dos
+           de display, que ya estaban bien. La escala tiene que quedar
+           SIEMPRE estrictamente creciente: con 11.5/12.5/13.5 el fondo era
+           tan estrecho que mover un nivel colapsaba el de al lado. */
         :root{
           --fs-scale:1;
-          --fs-1:calc(11.5px * var(--fs-scale));
-          --fs-2:calc(12.5px * var(--fs-scale));
-          --fs-3:calc(13.5px * var(--fs-scale));
-          --fs-4:calc(14.5px * var(--fs-scale));
-          --fs-5:calc(15.5px * var(--fs-scale));
-          --fs-6:calc(17px   * var(--fs-scale));
-          --fs-7:calc(19px   * var(--fs-scale));
-          --fs-8:calc(21px   * var(--fs-scale));
+          --fs-1:calc(12.5px * var(--fs-scale));
+          --fs-2:calc(13.5px * var(--fs-scale));
+          --fs-3:calc(14.5px * var(--fs-scale));
+          --fs-4:calc(15.5px * var(--fs-scale));
+          --fs-5:calc(16.5px * var(--fs-scale));
+          --fs-6:calc(18px   * var(--fs-scale));
+          --fs-7:calc(19.5px   * var(--fs-scale));
+          --fs-8:calc(21.5px   * var(--fs-scale));
           --fs-9:calc(25px   * var(--fs-scale));
           --fs-10:calc(30px  * var(--fs-scale));
           --t1:#F0F6FC;
@@ -1478,17 +1511,28 @@ export default function App() {
         /* ─── TOKENS · una sola fuente de verdad ───────────────────
            Todo tamano y todo color de texto sale de aqui. Para cambiar
            la escala completa solo se toca --fs-scale: el resto se
-           recalcula solo. Los colores pasan WCAG AA sobre #0D1117. */
+           recalcula solo. Los colores pasan WCAG AA sobre #0D1117.
+
+           El SUELO subio mas que el techo, a proposito. El contenido de los
+           paneles vive casi todo en --fs-1 y --fs-2 —en la pantalla de
+           procesamiento son 101 de 120 tamanos— mientras el marco usa --fs-3
+           y arriba: lo de dentro se leia mas chico que lo de fuera. Subir
+           todo por igual no era la respuesta, porque eso es justo lo que
+           hace el control A+/A-; lo que hacia falta era comprimir el rango.
+           De ahi +1px hasta --fs-6, +0.5px en el 7 y el 8, y nada en los dos
+           de display, que ya estaban bien. La escala tiene que quedar
+           SIEMPRE estrictamente creciente: con 11.5/12.5/13.5 el fondo era
+           tan estrecho que mover un nivel colapsaba el de al lado. */
         :root{
           --fs-scale:1;
-          --fs-1:calc(11.5px * var(--fs-scale));
-          --fs-2:calc(12.5px * var(--fs-scale));
-          --fs-3:calc(13.5px * var(--fs-scale));
-          --fs-4:calc(14.5px * var(--fs-scale));
-          --fs-5:calc(15.5px * var(--fs-scale));
-          --fs-6:calc(17px   * var(--fs-scale));
-          --fs-7:calc(19px   * var(--fs-scale));
-          --fs-8:calc(21px   * var(--fs-scale));
+          --fs-1:calc(12.5px * var(--fs-scale));
+          --fs-2:calc(13.5px * var(--fs-scale));
+          --fs-3:calc(14.5px * var(--fs-scale));
+          --fs-4:calc(15.5px * var(--fs-scale));
+          --fs-5:calc(16.5px * var(--fs-scale));
+          --fs-6:calc(18px   * var(--fs-scale));
+          --fs-7:calc(19.5px   * var(--fs-scale));
+          --fs-8:calc(21.5px   * var(--fs-scale));
           --fs-9:calc(25px   * var(--fs-scale));
           --fs-10:calc(30px  * var(--fs-scale));
           --t1:#F0F6FC;
