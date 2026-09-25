@@ -20,7 +20,7 @@
 
 import { useState, useEffect } from "react";
 import { tr, irAlAncla } from "./ui";
-import { TourPanel, useTour, isTraining } from "./tour";
+import { TourPanel, useTour, isTraining, readSkip, writeSkip } from "./tour";
 import { downloadChecklist } from "./barrettChecklist";
 import {
   ORDERS, ONE_SHOT_ORDERS, orderState, stampOrder, clearOrder, stampOneShot, canOrderAppraisal,
@@ -1400,9 +1400,15 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
   const entrena = (files || []).find(f => isTraining(f)) || null;
   // "Saltar recorrido" esconde el panel y deja la pantalla trabajable. En el
   // modal ese boton cierra la ventana; aqui no hay nada que cerrar, y saltar
-  // al ultimo paso no es saltar. El progreso queda guardado: al recargar
-  // vuelve donde iba.
-  const [saltado, setSaltado] = useState(false);
+  // al ultimo paso no es saltar.
+  //
+  // Se guarda en el navegador, no en el estado de la pantalla. Estaba en un
+  // useState y esta vista se desmonta al cambiar a PIPELINE: cerrarlo duraba
+  // hasta salir, y al volver aparecia otra vez. Ahora se cierra una vez y se
+  // queda cerrado; el boton del encabezado lo vuelve a abrir cuando se quiera.
+  const [saltado, setSaltado] = useState(() => readSkip(profile?.uid, "processing"));
+  const cerrarTour = () => { setSaltado(true); writeSkip(profile?.uid, "processing", true); };
+  const abrirTour  = () => { setSaltado(false); writeSkip(profile?.uid, "processing", false); };
   const enTour = !!entrena && !saltado;
   const tourProc = useTour(profile, enTour, "processing");
   // Con el recorrido puesto, el archivo abierto es el de entrenamiento: los
@@ -1457,7 +1463,7 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
       {enTour && (
         <div style={{ padding: "12px 12px 0" }}>
           <TourPanel profile={profile} lang={lang} tour={tourProc}
-            onExit={() => setSaltado(true)} />
+            onExit={cerrarTour} />
         </div>
       )}
       <div style={{ display: "grid", gridTemplateColumns: "minmax(240px,32%) 1fr", minHeight: 420 }}>
@@ -1478,10 +1484,20 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
                 </button>
               );
             })}
+            {/* Cerrado el recorrido, este boton es la unica forma de volver
+                a abrirlo. Solo sale si hay archivo de entrenamiento. */}
+            {entrena && saltado && (
+              <button className="hov" onClick={abrirTour}
+                style={{ marginLeft: "auto", background: "transparent", color: C.gold,
+                  border: `1px solid ${C.gold}`, borderRadius: 5, padding: "4px 10px",
+                  fontSize: "var(--fs-2)", fontFamily: "DM Mono", cursor: "pointer" }}>
+                {T("tourOpen")}
+              </button>
+            )}
             {/* Martha y Tina entran directo a su cola: sin esto tendrian
                 que salir de la pantalla para cambiar de idioma. */}
             {onSetLang && (
-              <div style={{ marginLeft: "auto", display: "flex",
+              <div style={{ marginLeft: entrena && saltado ? 0 : "auto", display: "flex",
                 border: `1px solid ${C.edge}`, borderRadius: 5, overflow: "hidden" }}>
                 {["es", "en"].map(l => (
                   <button key={l} className="hov" onClick={() => onSetLang(l)}

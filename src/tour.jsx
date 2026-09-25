@@ -444,6 +444,23 @@ export function clearProgress(uid, which) {
   try { window.localStorage.removeItem(KEY(uid, which)); } catch { /* modo privado */ }
 }
 
+// Que el recorrido este cerrado tambien se recuerda, y por el mismo motivo
+// que el paso: el de PROCESAMIENTO vivia en estado local de la pantalla, asi
+// que cerrarlo duraba hasta salir. Cambiar a la vista de pipeline y volver lo
+// abria de nuevo, y habia que cerrarlo otra vez cada vez.
+const KEY_OFF = (uid, which) => "tour:off:" + (which || "newfile") + ":" + (uid || "anon");
+
+export function readSkip(uid, which) {
+  try { return window.localStorage.getItem(KEY_OFF(uid, which)) === "1"; } catch { return false; }
+}
+
+export function writeSkip(uid, which, off) {
+  try {
+    if (off) window.localStorage.setItem(KEY_OFF(uid, which), "1");
+    else window.localStorage.removeItem(KEY_OFF(uid, which));
+  } catch { /* modo privado */ }
+}
+
 export function useTour(profile, active, which = "newfile") {
   const uid = profile?.uid;
   const CATALOGO = { detail: DETAIL_STEPS, processing: PROCESSING_STEPS, newfile: TOUR_STEPS };

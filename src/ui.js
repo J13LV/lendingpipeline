@@ -134,6 +134,7 @@ export const UI = {
   // La puerta decia QUE falta y por que, pero no DONDE se arregla. Estas
   // tres lo dicen: la ruta, quien puede cuando tu no, y el boton.
   // La escala del texto. Vive en el navegador de cada quien.
+  tourOpen:     { es:"▸ RECORRIDO", en:"▸ TOUR" },
   textSize:     { es:"Tamaño del texto", en:"Text size" },
   textSizeReset:{ es:"Volver al tamaño normal", en:"Back to normal size" },
   gateWhere:   { es:"Dónde", en:"Where" },

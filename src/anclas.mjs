@@ -11,7 +11,10 @@
 // ═══════════════════════════════════════════════════════════════════
 import { JSDOM } from "jsdom";
 const dom = new JSDOM("<!doctype html><html><body><div id='raiz'></div></body></html>",
-  { pretendToBeVisual: true });
+  // La url hace falta: sin ella jsdom no da localStorage, y todo lo que
+  // dependa de el —el recorrido cerrado, el paso guardado— se probaria en
+  // falso porque los try/catch lo tapan.
+  { pretendToBeVisual: true, url: "https://localhost/" });
 // Node 22 ya trae `navigator` como getter, asi que se define, no se asigna.
 for (const k of ["window","document","HTMLElement","Element","Node","navigator",
                  "getComputedStyle","requestAnimationFrame","cancelAnimationFrame"]) {
@@ -280,6 +283,52 @@ for (const [regla, file, quien] of casos) {
     ![...d.querySelectorAll("[data-tour]")].some(n =>
       n.classList.contains("tour-on") || n.classList.contains("tour-off")));
   caja.remove();
+}
+
+// ─── el recorrido cerrado se queda cerrado ─────────────────────────
+// Estaba en un useState de la pantalla, que se desmonta al cambiar a
+// PIPELINE: cerrarlo duraba hasta salir y al volver aparecia otra vez.
+{
+  const entrena = { ...base({ stage:"Appraisal Ordered", lenderId:"elend", processor:"martha" }),
+    id: "train-u1", isTraining: true, borrower: "Maria Jose" };
+  const cont = dom.window.document.createElement("div");
+  dom.window.document.body.appendChild(cont);
+  const montar = () => {
+    const raiz = createRoot(cont);
+    act(() => { raiz.render(React.createElement(M.ProcessingView, {
+      files: [entrena], profile: JOSE, lang: "es",
+      onSetLang(){}, onSaveFile(){}, onOpenFull(){}, irA: null,
+    })); });
+    return raiz;
+  };
+  try { dom.window.localStorage.clear(); } catch { /* da igual */ }
+
+  let raiz = montar();
+  t("la primera vez el recorrido sale solo", cont.textContent.includes("PASO 1 DE"));
+  // Saltar recorrido.
+  const saltar = [...cont.querySelectorAll("button")]
+    .find(b => /Saltar|Skip/i.test(b.textContent || ""));
+  t("hay un botón para saltarlo", !!saltar);
+  act(() => saltar.click());
+  t("al saltarlo, el panel se va", !cont.textContent.includes("PASO 1 DE"));
+  t("y aparece el botón para volver a abrirlo", cont.textContent.includes("RECORRIDO"));
+
+  // Salir a PIPELINE y volver: la pantalla se desmonta y vuelve a nacer.
+  act(() => raiz.unmount());
+  raiz = montar();
+  t("al volver de PIPELINE sigue cerrado", !cont.textContent.includes("PASO 1 DE"));
+  t("y el botón de abrirlo sigue ahí", cont.textContent.includes("RECORRIDO"));
+
+  // Y se puede volver a abrir a mano.
+  const abrir = [...cont.querySelectorAll("button")]
+    .find(b => /RECORRIDO|TOUR/.test(b.textContent || ""));
+  act(() => abrir.click());
+  t("el botón lo vuelve a abrir", cont.textContent.includes("PASO 1 DE"));
+  act(() => raiz.unmount());
+  raiz = montar();
+  t("y reabierto, sigue abierto al volver", cont.textContent.includes("PASO 1 DE"));
+  act(() => raiz.unmount());
+  try { dom.window.localStorage.clear(); } catch { /* da igual */ }
 }
 
 // ─── la helper: destello y foco ────────────────────────────────────
