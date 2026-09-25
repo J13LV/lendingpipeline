@@ -24,7 +24,7 @@ import { TourPanel, useTour, isTraining } from "./tour";
 import { downloadChecklist } from "./barrettChecklist";
 import {
   ORDERS, ONE_SHOT_ORDERS, orderState, stampOrder, clearOrder, stampOneShot, canOrderAppraisal,
-  oneShotDone, processingQueue, queueCounts, PROCESSORS, PROCESSOR_IDS,
+  oneShotDone, processingQueue, queueCounts, QUEUE_GROUPS, PROCESSORS, PROCESSOR_IDS,
   processorOf, processorId, DEFAULT_PROCESSOR, GATE1_ITEMS, gate1Item, FINDING_WAITING,
   WAITING_IDS, waitingMeta, openFindings, addFinding, resolveFinding, findingAge,
   lenderNameOf, daysBetween, daysInStage, stageClock, today, okDate,
@@ -1392,20 +1392,6 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
   const [soloVencidas, setSoloVencidas] = useState(false);
   const colaCompleta = processingQueue(files, quien);
   // Filtrar deja los grupos que tengan algo vencido, sin cambiar el orden.
-  const cola = soloVencidas
-    ? colaCompleta.map(g => ({ ...g, files: g.files.filter(f => overdueTasks(f).length) }))
-        .filter(g => g.files.length)
-    : colaCompleta;
-  // Los contadores de cada cola NO cuentan el archivo de entrenamiento: un
-  // archivo falso inflando el numero de Martha es peor que no entrenar.
-  const conteos = queueCounts((files || []).filter(f => !isTraining(f)));
-  const planos = colaCompleta.flatMap(g => g.files);
-  const sel = planos.find(f => f.id === selId) || planos[0] || null;
-  // Una procesadora externa no debe editar la cola de la otra, y el
-  // admin mira sin tocar cuando no es la suya.
-  const readOnly = !esAdmin && quien !== propia;
-  const who = profile?.name || null;
-
   // ─── RECORRIDO ───
   // Se enciende cuando el archivo de entrenamiento de ESTA persona esta en
   // la cola. App.jsx ya filtra para que solo llegue el suyo, asi que con
@@ -1423,6 +1409,31 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
   // pasos hablan de sub-solapas y no tendria sentido enseñarlas sobre el
   // archivo real de otra persona.
   useEffect(() => { if (enTour && entrena) setSelId(entrena.id); }, [enTour, entrena?.id]);
+
+  // Durante el recorrido la cola muestra LOS SIETE grupos, incluidos los
+  // vacios. Con un solo archivo de entrenamiento solo existe uno, y los pasos
+  // que enseñan los otros seis no tenian a donde apuntar: se leia el texto y
+  // en la pantalla no pasaba nada. Un grupo vacio tambien es una leccion —
+  // "hoy no tienes nada bloqueado" es justo lo que se quiere ver.
+  const conGrupos = base => {
+    const hay = new Map(base.map(g => [g.id, g]));
+    return QUEUE_GROUPS.map(g => hay.get(g.id) || { ...g, files: [] });
+  };
+  const cola0 = soloVencidas
+    ? colaCompleta.map(g => ({ ...g, files: g.files.filter(f => overdueTasks(f).length) }))
+        .filter(g => g.files.length)
+    : colaCompleta;
+  const cola = enTour ? conGrupos(cola0) : cola0;
+  // Los contadores de cada cola NO cuentan el archivo de entrenamiento: un
+  // archivo falso inflando el numero de Martha es peor que no entrenar.
+  const conteos = queueCounts((files || []).filter(f => !isTraining(f)));
+  const planos = colaCompleta.flatMap(g => g.files);
+  const sel = planos.find(f => f.id === selId) || planos[0] || null;
+  // Una procesadora externa no debe editar la cola de la otra, y el
+  // admin mira sin tocar cuando no es la suya.
+  const readOnly = !esAdmin && quien !== propia;
+  const who = profile?.name || null;
+
 
   // Llegada desde una puerta. El admin puede pararse en cualquiera de las
   // dos colas, asi que primero hay que mover la cola: si no, el archivo no
@@ -1543,6 +1554,15 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
                 margin: "0 0 8px 3px" }}>
                 {stageBreakdownLabel(g.files)}
               </div>
+              {/* Un grupo vacio solo sale durante el recorrido, y entonces
+                  dice QUE significa en vez de quedarse mudo con un cero: "hoy
+                  no tienes nada bloqueado" es justo lo que se quiere leer. */}
+              {g.files.length === 0 && (
+                <div style={{ fontSize: "var(--fs-2)", color: C.dim, lineHeight: 1.5,
+                  padding: "2px 3px 10px", fontStyle: "italic" }}>
+                  {lang === "en" ? g.note_en : g.note_es}
+                </div>
+              )}
               {g.files.map(f => {
                 const on = sel && f.id === sel.id;
                 const coe = okDate(f?.contingencies?.coe) || okDate(f?.closing);

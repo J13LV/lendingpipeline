@@ -400,7 +400,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.09.15c";
+const APP_VERSION = "2026.09.16a";
 
 function huellaTexto(s) {
   let h = 0;
@@ -543,28 +543,6 @@ function LoginScreen() {
         @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
         .shake{animation:shake .5s ease;}
         @keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-        /* EL RECORRIDO. El resaltado era dorado de 2px y se perdia: el dorado
-           significa "se avecina" en toda la app. Blanco no significa nada en
-           el sistema, asi que se lee como atencion. El pulso es lo que de
-           verdad se ve cuando dos bloques estan pegados —el ojo caza el
-           movimiento antes que el color— y apagar el resto hace el contraste
-           que un borde solo no puede hacer. */
-        @keyframes tourPulse{
-          0%{box-shadow:0 0 0 0 rgba(255,255,255,.95), 0 0 0 0 rgba(255,255,255,.45)}
-          60%{box-shadow:0 0 0 3px rgba(255,255,255,.95), 0 0 0 16px rgba(255,255,255,0)}
-          100%{box-shadow:0 0 0 3px rgba(255,255,255,.9), 0 0 0 16px rgba(255,255,255,0)}}
-        .tour-on{animation:tourPulse 1.1s ease-out both;border-radius:8px;
-          position:relative;z-index:5;scroll-margin:90px;}
-        .tour-off{opacity:.3;transition:opacity .22s ease;}
-
-        /* El campo al que ARREGLAR AHORA acaba de llevar. Dos segundos y se
-           apaga: un resaltado permanente deja de verse a los diez minutos. */
-        @keyframes fixFlash{
-          0%{box-shadow:0 0 0 0 rgba(245,166,35,0)}
-          15%{box-shadow:0 0 0 3px rgba(245,166,35,.55)}
-          100%{box-shadow:0 0 0 3px rgba(245,166,35,0)}}
-        .fix-flash{animation:fixFlash 2s ease-out;border-radius:8px;
-          scroll-margin:80px;}
         .fade{animation:fadeIn .4s ease;}
         input:focus{outline:none;}
       `}</style>
@@ -1452,6 +1430,35 @@ export default function App() {
   return(
     <div style={{fontFamily:"'IBM Plex Sans',system-ui,-apple-system,sans-serif",background:"#0D1117",minHeight:"100vh",color:"var(--t1)"}}>
       <style>{`
+        /* ESTAS DOS VIVEN AQUI, NO EN EL BLOQUE DE LOGIN.
+           Estuvieron en el <style> de LoginScreen, que solo se monta en la
+           pantalla de entrada: las clases se ponian bien en el DOM y no habia
+           ninguna regla que las pintara. El destello de ARREGLAR AHORA nunca
+           se vio —lo que funcionaba era el scroll y el foco, que son JS— y el
+           resaltado del recorrido tampoco se veia. coherencia.mjs ahora
+           comprueba que toda clase que el codigo añade exista en ESTE bloque. */
+        /* EL RECORRIDO. El resaltado era dorado de 2px y se perdia: el dorado
+           significa "se avecina" en toda la app. Blanco no significa nada en
+           el sistema, asi que se lee como atencion. El pulso es lo que de
+           verdad se ve cuando dos bloques estan pegados —el ojo caza el
+           movimiento antes que el color— y apagar el resto hace el contraste
+           que un borde solo no puede hacer. */
+        @keyframes tourPulse{
+          0%{box-shadow:0 0 0 0 rgba(255,255,255,.95), 0 0 0 0 rgba(255,255,255,.45)}
+          60%{box-shadow:0 0 0 3px rgba(255,255,255,.95), 0 0 0 16px rgba(255,255,255,0)}
+          100%{box-shadow:0 0 0 3px rgba(255,255,255,.9), 0 0 0 16px rgba(255,255,255,0)}}
+        .tour-on{animation:tourPulse 1.1s ease-out both;border-radius:8px;
+          position:relative;z-index:5;scroll-margin:90px;}
+        .tour-off{opacity:.3;transition:opacity .22s ease;}
+
+        /* El campo al que ARREGLAR AHORA acaba de llevar. Dos segundos y se
+           apaga: un resaltado permanente deja de verse a los diez minutos. */
+        @keyframes fixFlash{
+          0%{box-shadow:0 0 0 0 rgba(245,166,35,0)}
+          15%{box-shadow:0 0 0 3px rgba(245,166,35,.55)}
+          100%{box-shadow:0 0 0 3px rgba(245,166,35,0)}}
+        .fix-flash{animation:fixFlash 2s ease-out;border-radius:8px;
+          scroll-margin:80px;}
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
         /* ─── TOKENS · una sola fuente de verdad ───────────────────
            Todo tamano y todo color de texto sale de aqui. Para cambiar

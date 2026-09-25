@@ -195,12 +195,23 @@ const cuenta = (src, sustantivo, n) => {
 // el motor, y la tabla es la que de verdad se lee.
 t(`el wiki titula bien las puertas (motor: ${reglas.length} reglas en ${etapasPuerta.length} etapas)`,
   cuenta(wiki, "puertas|gates", reglas.length) !== false);
-const momentos = [...wiki.matchAll(new RegExp(`(${PALABRAS})\\s+momentos\\b|(${PALABRAS})\\s+moments\\b`, "gi"))];
-t("el wiki cuenta bien los «momentos»",
-  momentos.every(m => (NUM[reglas.length]||[]).includes((m[1]||m[2]||"").toLowerCase())));
-const momTour = [...tour.matchAll(new RegExp(`(${PALABRAS})\\s+momentos\\b|(${PALABRAS})\\s+moments\\b`, "gi"))];
-t("el recorrido cuenta bien los momentos",
-  momTour.every(m => (NUM[reglas.length]||[]).includes((m[1]||m[2]||"").toLowerCase())));
+// Solo dentro del articulo de las puertas: "momentos" tambien es la palabra
+// del glosario para PTA/PTC/PTF, y alli tres es el numero correcto.
+const artPuertas = wiki.slice(wiki.indexOf(`id: "puertas"`), wiki.indexOf(`id: "vistas"`));
+const cuentaReglas = src => [...src.matchAll(
+  new RegExp(`(${PALABRAS})\\s+(?:reglas|rules|momentos|moments)\\b`, "gi"))];
+t("el artículo de las puertas cuenta bien las reglas",
+  cuentaReglas(artPuertas).every(m => (NUM[reglas.length]||[]).includes(m[1].toLowerCase())));
+// Y en el recorrido, solo el paso que habla de que ADVANCE te frena.
+const pasoFreno = [...tour.matchAll(/ADVANCE[^"]*/g)].join(" ");
+t("el recorrido cuenta bien las reglas que frenan",
+  cuentaReglas(pasoFreno).every(m => (NUM[reglas.length]||[]).includes(m[1].toLowerCase())));
+// Los momentos del documento son los de DOC_TIMING, ni uno mas.
+const nT = Object.keys(C.DOC_TIMING).length;
+const momDoc = [...wiki.matchAll(
+  new RegExp(`(${PALABRAS})\\s+momentos de un documento|(${PALABRAS})\\s+moments of a document`, "gi"))];
+t(`el glosario cuenta bien los momentos del documento (${nT})`,
+  momDoc.every(m => (NUM[nT]||[]).includes((m[1]||m[2]||"").toLowerCase())));
 
 // La tabla, fila por fila, contra el motor: misma etapa y mismo frena/avisa.
 const bloqueP = wiki.slice(wiki.indexOf(`id: "puertas"`), wiki.indexOf(`id: "vistas"`));
@@ -243,6 +254,42 @@ const tonosUsados = [...new Set([...wiki.matchAll(/tone:"([a-z]+)"/g)].map(m => 
 const tonoHuerfano = tonosUsados.filter(x => !new RegExp("\\b" + x + ":\\[").test(mapaTonos));
 t("todo tono del wiki existe en el mapa que lo pinta: " + (tonoHuerfano.join(", ") || "sí"),
   tonoHuerfano.length === 0);
+
+// ── el CSS que el codigo da por hecho ──
+// `App.jsx` tiene CUATRO bloques <style>: tres son de pantallas que solo se
+// montan al entrar (login, cargando) y el ultimo es el de la app. Las clases
+// del recorrido y del destello de las puertas vivieron en el de LOGIN: se
+// ponian bien en el DOM y no habia ninguna regla que las pintara, asi que
+// durante dos entregas no se vio nada y las pruebas pasaban — comprobaban la
+// clase, no el efecto. Aqui se comprueba que toda clase que el codigo añade
+// este declarada en el bloque de la app, que es el ULTIMO.
+const bloques = [...app.matchAll(/<style>\{`/g)].map(m => m.index);
+const bloqueApp = bloques.length ? bloques[bloques.length - 1] : 0;
+// Las que el codigo pone a mano, no por className fijo en el JSX.
+const puestas = [...new Set([
+  ...[...tour.matchAll(/classList\.(?:add|remove)\(([^)]*)\)/g)],
+  ...[...readFileSync("ui.js", "utf8").matchAll(/classList\.(?:add|remove)\(([^)]*)\)/g)],
+].flatMap(m => [...m[1].matchAll(/"([a-zA-Z0-9_-]+)"/g)].map(x => x[1])))];
+const huerfanas = puestas.filter(c => {
+  const i = app.indexOf("." + c + "{");
+  return i < 0 || i < bloqueApp;          // no existe, o vive en otro bloque
+});
+t(`toda clase que el código añade está en el <style> de la app (${puestas.length} clases): `
+  + (huerfanas.join(", ") || "sí"), huerfanas.length === 0);
+// Y las animaciones que esas clases invocan tienen que existir tambien.
+const animes = [...new Set(puestas.flatMap(c => {
+  const i = app.indexOf("." + c + "{");
+  if (i < 0) return [];
+  const regla = app.slice(i, app.indexOf("}", i));
+  const m = regla.match(/animation:\s*([A-Za-z0-9_-]+)/);
+  return m ? [m[1]] : [];
+}))];
+const sinKeyframes = animes.filter(a => {
+  const i = app.indexOf("@keyframes " + a);
+  return i < 0 || i < bloqueApp;
+});
+t("toda animación que invocan existe en el mismo bloque: " + (sinKeyframes.join(", ") || "sí"),
+  sinKeyframes.length === 0);
 
 // ── el recorrido de procesamiento ──
 // Señala grupos de la cola y sub-solapas del archivo por su data-tour. Un
