@@ -400,7 +400,7 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.09.16b";
+const APP_VERSION = "2026.09.16c";
 
 function huellaTexto(s) {
   let h = 0;
@@ -858,6 +858,21 @@ export default function App() {
   const [showBackfill,setShowBackfill]=useState(false);
   // Hay un despliegue más nuevo que el que este navegador tiene cargado.
   const [versionVieja,setVersionVieja]=useState(false);
+  // ESCALA DEL TEXTO. `--fs-scale` existia en los tokens desde el principio,
+  // con el comentario de que era la unica perilla de la escala completa — y
+  // nunca se conecto a nada. Cada quien pasa horas en esta pantalla y no todos
+  // ven igual. Vive en el navegador, no en el perfil: es de este ojo en esta
+  // pantalla, y Tina en su laptop no tiene por que heredar lo de nadie.
+  const [escala,setEscala]=useState(()=>{
+    try{ const v=parseFloat(window.localStorage.getItem("pipe_fs")); 
+      return Number.isFinite(v)&&v>=.9&&v<=1.4 ? v : 1; }catch{ return 1; }
+  });
+  // Se pone en el elemento raiz: gana sobre la regla de :root de los cuatro
+  // bloques <style> sin tener que tocar ninguno.
+  useEffect(()=>{
+    try{ document.documentElement.style.setProperty("--fs-scale",String(escala));
+      window.localStorage.setItem("pipe_fs",String(escala)); }catch{ /* modo privado */ }
+  },[escala]);
   const [detail,setDetail]=useState(null);
   const [prepFor,setPrepFor]=useState(null);
   const [archiveFor,setArchiveFor]=useState(null);
@@ -1683,6 +1698,26 @@ export default function App() {
             style={{background:"transparent",color:"#F5A623",border:"1px solid #F5A623",borderRadius:6,padding:"8px 14px",fontFamily:"DM Mono",fontSize:"var(--fs-4)",fontWeight:500}}>
             {TX("training")}
           </button>
+
+          {/* TAMAÑO DEL TEXTO. Junto al idioma porque es la misma clase de
+              ajuste: como quiero ver yo esta pantalla. */}
+          <div title={TX("textSize")} style={{display:"flex",alignItems:"center",
+            border:"1px solid #30363D",borderRadius:6,overflow:"hidden",marginRight:2}}>
+            {[["-",-.05],["+",.05]].map(([sig,paso])=>(
+              <button key={sig} className="hov"
+                onClick={()=>setEscala(v=>Math.min(1.4,Math.max(.9,Math.round((v+paso)*100)/100)))}
+                style={{background:"transparent",color:"var(--t2)",border:"none",
+                  padding:"6px 9px",fontSize:sig==="+"?"var(--fs-5)":"var(--fs-2)",
+                  fontFamily:"DM Mono",cursor:"pointer",lineHeight:1}}>A{sig}</button>
+            ))}
+            {escala!==1&&(
+              <button className="hov" onClick={()=>setEscala(1)} title={TX("textSizeReset")}
+                style={{background:"transparent",color:"#F5A623",border:"none",borderLeft:"1px solid #30363D",
+                  padding:"6px 8px",fontSize:"var(--fs-1)",fontFamily:"DM Mono",cursor:"pointer"}}>
+                {Math.round(escala*100)}%
+              </button>
+            )}
+          </div>
 
           <div style={{display:"flex",border:"1px solid #30363D",borderRadius:6,overflow:"hidden",marginRight:2}}>
             {["es","en"].map(l=>(

@@ -133,6 +133,9 @@ export const UI = {
                  en:"The appraisal cannot be ordered until the client signs the disclosures. They pay for it, and Regulation Z bars charging them before they receive the LE and indicate intent to proceed — 12 CFR 1026.19(a)(1)(iv)." },
   // La puerta decia QUE falta y por que, pero no DONDE se arregla. Estas
   // tres lo dicen: la ruta, quien puede cuando tu no, y el boton.
+  // La escala del texto. Vive en el navegador de cada quien.
+  textSize:     { es:"Tamaño del texto", en:"Text size" },
+  textSizeReset:{ es:"Volver al tamaño normal", en:"Back to normal size" },
   gateWhere:   { es:"Dónde", en:"Where" },
   gateWhoFixes:{ es:"Esto lo resuelve {q}.", en:"{q} resolves this." },
   gateFixNow:  { es:"ARREGLAR AHORA →", en:"FIX IT NOW →" },

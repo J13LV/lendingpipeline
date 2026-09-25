@@ -291,6 +291,22 @@ const sinKeyframes = animes.filter(a => {
 t("toda animación que invocan existe en el mismo bloque: " + (sinKeyframes.join(", ") || "sí"),
   sinKeyframes.length === 0);
 
+// ── los tokens de tamaño ──
+// Toda medida de texto sale de --fs-N, y toda --fs-N se multiplica por
+// --fs-scale. Un tamaño escrito a pelo en px se queda fuera de la escala y no
+// crece cuando alguien sube la letra — que es justo lo que el control no puede
+// arreglar despues.
+const hoja = app.slice([...app.matchAll(/<style>\{`/g)].map(m => m.index).pop());
+const medidas = [...hoja.matchAll(/--fs-(\d+):\s*calc\(([\d.]+)px\s*\*\s*var\(--fs-scale\)\)/g)];
+t(`los ${medidas.length} tokens de tamaño se multiplican por --fs-scale`, medidas.length >= 10);
+t("y van de menor a mayor sin saltos raros",
+  medidas.every((m, i) => i === 0 || Number(m[2]) > Number(medidas[i - 1][2])));
+// El control tiene que poder moverla, no solo existir.
+t("hay un control que escribe --fs-scale",
+  /setProperty\("--fs-scale"/.test(app) && /localStorage\.setItem\("pipe_fs"/.test(app));
+t("y se guarda dentro de un rango sensato",
+  /Math\.min\(1\.4,\s*Math\.max\(\.9/.test(app));
+
 // ── el @import de las fuentes ──
 // En CSS un @import que no es la PRIMERA regla de la hoja se descarta entero.
 // Meter una clase nueva justo debajo de <style>{` deja el import invalido,
