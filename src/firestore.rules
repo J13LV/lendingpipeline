@@ -32,7 +32,9 @@ service cloud.firestore {
         // Tina — registro y condiciones
         'qMVqzjs59yMIcZfvsWACpjm1o4F2',
         // Laura de Armas
-        'Hj0KI0wmGfTHinHxxx8mrdLx5jw2'
+        'Hj0KI0wmGfTHinHxxx8mrdLx5jw2',
+        // Manny Estrada — LO
+        'W2rvVzo6f0Z3zBVLzR66dn82COr2'
       ];
     }
 

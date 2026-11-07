@@ -157,6 +157,12 @@ const TEAM = {
   "rGY5FGA7P3N5lXE74TjZ07tHQWg1": { name: "Ana M Plasencia",    short: "Ana",      role: "lo",        nmls: "2683283", color: "#BD65E8" },
   "iXcEzyc2nTTy2CJirLUz1FJ1oye2": { name: "Ana M Plasencia",    short: "Ana",      role: "lo",        nmls: "2683283", color: "#BD65E8" },
   "0dpbvxe4RZUmCDhm03Zne6JSKE32": { name: "Marelis Pinales",    short: "Marelis",  role: "lo",        nmls: "",        color: "#06D6A0" },
+  // Manny entra sin fila en COMP_ROSTER a proposito. Arranca en cero volumen,
+  // asi que stageForVolume lo pone en Newbie al 50% solo — escribirlo seria
+  // repetir lo que la escalera ya dice. Y derivado SUBE solo al llegar a los
+  // $5M, igual que Marelis; fijarle la etapa lo dejaria clavado en 50%.
+  // `lang: "en"` para que aterrice en ingles desde su primer login.
+  "W2rvVzo6f0Z3zBVLzR66dn82COr2": { name: "Manny Estrada",      short: "Manny",    role: "lo",        nmls: "2876792", color: "#5AC8D8", lang: "en" },
   "qMVqzjs59yMIcZfvsWACpjm1o4F2": { name: "Tina",              short: "Tina",     role: "assistant", nmls: null, color: "#7EC8A4" },
   // Laura pasa a procesar. `processorId` la amarra a su propia cola: ve
   // la suya y no la de Martha. El rol sigue dandole lo de assistant.
