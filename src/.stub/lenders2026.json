@@ -1,0 +1,571 @@
+{
+  "sourceFile": "STUB — recortado de lenders2026.json para render.mjs",
+  "year": 2026,
+  "productCapabilities": {
+    "conventional": [
+      {
+        "id": "conventional",
+        "label": "Conventional"
+      },
+      {
+        "id": "arm",
+        "label": "ARM"
+      },
+      {
+        "id": "home_ready_possible",
+        "label": "Home Ready/Possible"
+      },
+      {
+        "id": "manual_underwrite",
+        "label": "Manual Underwrite"
+      },
+      {
+        "id": "tbd_underwrite",
+        "label": "TBD Underwrite"
+      }
+    ],
+    "fha": [
+      {
+        "id": "fha",
+        "label": "FHA"
+      },
+      {
+        "id": "streamline",
+        "label": "Streamline"
+      },
+      {
+        "id": "arm",
+        "label": "ARM"
+      },
+      {
+        "id": "down_to_500_fico",
+        "label": "Down to 500 FICO"
+      },
+      {
+        "id": "no_fico",
+        "label": "No FICO"
+      },
+      {
+        "id": "manual_underwrite",
+        "label": "Manual Underwrite"
+      },
+      {
+        "id": "tbd_underwrite",
+        "label": "TBD Underwrite"
+      },
+      {
+        "id": "no_loan_amount_limit",
+        "label": "No Loan Amount Limit"
+      }
+    ],
+    "va": [
+      {
+        "id": "va",
+        "label": "VA"
+      },
+      {
+        "id": "irrrl",
+        "label": "IRRRL"
+      },
+      {
+        "id": "arm",
+        "label": "ARM"
+      },
+      {
+        "id": "down_to_500_fico",
+        "label": "Down to 500 FICO"
+      },
+      {
+        "id": "no_fico",
+        "label": "No FICO"
+      },
+      {
+        "id": "manual_underwrite",
+        "label": "Manual Underwrite"
+      },
+      {
+        "id": "tbd_underwrite",
+        "label": "TBD Underwrite"
+      }
+    ],
+    "usda": [
+      {
+        "id": "usda",
+        "label": "USDA"
+      },
+      {
+        "id": "manual_underwrite",
+        "label": "Manual Underwrite"
+      },
+      {
+        "id": "tbd_underwrite",
+        "label": "TBD Underwrite"
+      }
+    ],
+    "dpa": [
+      {
+        "id": "fha_dpa",
+        "label": "FHA DPA"
+      },
+      {
+        "id": "conventional_dpa",
+        "label": "Conventional DPA"
+      },
+      {
+        "id": "chenoa",
+        "label": "Chenoa"
+      },
+      {
+        "id": "calhfa",
+        "label": "CalHFA"
+      },
+      {
+        "id": "state_bond_grants",
+        "label": "State Bond/Grants"
+      }
+    ],
+    "jumbo": [
+      {
+        "id": "max_comp",
+        "label": "Max Comp"
+      },
+      {
+        "id": "jumbo",
+        "label": "Jumbo"
+      },
+      {
+        "id": "arm",
+        "label": "ARM"
+      },
+      {
+        "id": "no_ratio",
+        "label": "No Ratio"
+      }
+    ],
+    "second": [
+      {
+        "id": "heloc",
+        "label": "HELOC"
+      },
+      {
+        "id": "heloan",
+        "label": "HELOAN"
+      },
+      {
+        "id": "fixed_2nd",
+        "label": "Fixed 2nd"
+      },
+      {
+        "id": "piggyback",
+        "label": "Piggyback"
+      },
+      {
+        "id": "1st_lien_heloc",
+        "label": "1st Lien HELOC"
+      },
+      {
+        "id": "bank_statement_heloc",
+        "label": "Bank Statement HELOC"
+      },
+      {
+        "id": "dscr_heloc",
+        "label": "DSCR HELOC"
+      }
+    ],
+    "nonqm": [
+      {
+        "id": "bank_statement",
+        "label": "Bank Statement"
+      },
+      {
+        "id": "1_1099",
+        "label": "1   1099"
+      },
+      {
+        "id": "profit_and_loss",
+        "label": "Profit and Loss"
+      },
+      {
+        "id": "asset_depletion_utilization",
+        "label": "Asset Depletion/Utilization"
+      },
+      {
+        "id": "wvoe",
+        "label": "WVOE"
+      },
+      {
+        "id": "dscr",
+        "label": "DSCR"
+      },
+      {
+        "id": "no_ratio",
+        "label": "No Ratio"
+      },
+      {
+        "id": "fix_n_flip",
+        "label": "Fix N Flip"
+      },
+      {
+        "id": "cross_collateral_blanket",
+        "label": "Cross Collateral/Blanket"
+      },
+      {
+        "id": "bridge",
+        "label": "Bridge"
+      },
+      {
+        "id": "itin",
+        "label": "ITIN"
+      },
+      {
+        "id": "foreign_national",
+        "label": "Foreign National"
+      },
+      {
+        "id": "non_warrantable_condo",
+        "label": "Non Warrantable Condo"
+      },
+      {
+        "id": "stated_income",
+        "label": "Stated Income"
+      },
+      {
+        "id": "recent_credit_events",
+        "label": "Recent Credit Events"
+      },
+      {
+        "id": "close_in_llc",
+        "label": "Close in LLC"
+      },
+      {
+        "id": "tbd_underwrite",
+        "label": "TBD Underwrite"
+      }
+    ],
+    "bridge": [
+      {
+        "id": "bridge",
+        "label": "Bridge"
+      },
+      {
+        "id": "commercial_bridge",
+        "label": "Commercial Bridge"
+      }
+    ],
+    "mfh": [
+      {
+        "id": "real_property",
+        "label": "Real property"
+      },
+      {
+        "id": "chattel_leased_land",
+        "label": "Chattel/leased land"
+      },
+      {
+        "id": "pre_hud",
+        "label": "Pre- HUD"
+      },
+      {
+        "id": "single_wide",
+        "label": "Single Wide"
+      }
+    ],
+    "construction": [
+      {
+        "id": "one_time_close",
+        "label": "One-Time Close"
+      },
+      {
+        "id": "two_time_close",
+        "label": "Two-Time Close"
+      },
+      {
+        "id": "construction_to_perm",
+        "label": "Construction to Perm"
+      },
+      {
+        "id": "ground_up",
+        "label": "Ground - Up"
+      },
+      {
+        "id": "fix_n_flip",
+        "label": "Fix N Flip"
+      },
+      {
+        "id": "jumbo",
+        "label": "Jumbo"
+      },
+      {
+        "id": "spec_homes",
+        "label": "Spec Homes"
+      },
+      {
+        "id": "owner_builder",
+        "label": "Owner-Builder"
+      },
+      {
+        "id": "owner_occupied",
+        "label": "Owner Occupied"
+      }
+    ],
+    "renovation": [
+      {
+        "id": "conventional",
+        "label": "Conventional"
+      },
+      {
+        "id": "fha_203k",
+        "label": "FHA 203K"
+      },
+      {
+        "id": "fha_203h_disaster",
+        "label": "FHA 203H (disaster)"
+      },
+      {
+        "id": "usda",
+        "label": "USDA"
+      },
+      {
+        "id": "va",
+        "label": "VA"
+      },
+      {
+        "id": "homestyle_reno",
+        "label": "HomeStyle Reno"
+      },
+      {
+        "id": "choicerenovation",
+        "label": "CHOICERenovation"
+      },
+      {
+        "id": "fix_n_flip",
+        "label": "Fix N Flip"
+      },
+      {
+        "id": "ground_up",
+        "label": "Ground - Up"
+      }
+    ],
+    "commercial": [
+      {
+        "id": "residential_5_unit",
+        "label": "Residential 5+ Unit"
+      },
+      {
+        "id": "non_residential_commercial",
+        "label": "Non Residential Commercial"
+      },
+      {
+        "id": "commercial_bridge",
+        "label": "Commercial Bridge"
+      },
+      {
+        "id": "mix_use_properties",
+        "label": "Mix Use Properties"
+      }
+    ],
+    "other": [
+      {
+        "id": "section_184",
+        "label": "Section 184"
+      },
+      {
+        "id": "agricultural",
+        "label": "Agricultural"
+      },
+      {
+        "id": "cannabis",
+        "label": "Cannabis"
+      },
+      {
+        "id": "land_loans",
+        "label": "Land Loans"
+      },
+      {
+        "id": "physician",
+        "label": "Physician"
+      }
+    ],
+    "correspondent": [
+      {
+        "id": "conventional",
+        "label": "Conventional"
+      },
+      {
+        "id": "fha",
+        "label": "FHA"
+      },
+      {
+        "id": "va",
+        "label": "VA"
+      },
+      {
+        "id": "usda",
+        "label": "USDA"
+      },
+      {
+        "id": "dpa",
+        "label": "DPA"
+      },
+      {
+        "id": "dscr",
+        "label": "DSCR"
+      },
+      {
+        "id": "bank_statement",
+        "label": "Bank Statement"
+      },
+      {
+        "id": "jumbo",
+        "label": "Jumbo"
+      }
+    ]
+  },
+  "lenders": [
+    {
+      "id": "11_mortgage",
+      "name": "11 Mortgage",
+      "note": null,
+      "contacts": [
+        {
+          "ae": "Kim Kriel",
+          "phone": "203-300-4847",
+          "email": "Kim.Kriel@elevenmortgage.com"
+        }
+      ],
+      "website": "www.elevenmortgage.com",
+      "guidelines": "https://elevenmortgage.encompasstpoconnect.com/#/home/tpo-documents",
+      "lenderPaidBps": 275,
+      "borrowerPaidOnly": false,
+      "minComp": null,
+      "maxComp": null,
+      "products": {
+        "conventional": [
+          "arm",
+          "conventional",
+          "home_ready_possible",
+          "manual_underwrite",
+          "tbd_underwrite"
+        ],
+        "fha": [
+          "arm",
+          "fha",
+          "manual_underwrite",
+          "streamline",
+          "tbd_underwrite"
+        ],
+        "va": [
+          "arm",
+          "irrrl",
+          "manual_underwrite",
+          "tbd_underwrite",
+          "va"
+        ],
+        "usda": [
+          "manual_underwrite",
+          "tbd_underwrite",
+          "usda"
+        ],
+        "dpa": [
+          "calhfa",
+          "chenoa",
+          "fha_dpa",
+          "state_bond_grants"
+        ],
+        "jumbo": [
+          "arm",
+          "jumbo"
+        ],
+        "nonqm": [
+          "1_1099",
+          "bank_statement",
+          "dscr",
+          "non_warrantable_condo",
+          "profit_and_loss"
+        ],
+        "mfh": [
+          "real_property",
+          "single_wide"
+        ],
+        "other": [
+          "physician"
+        ],
+        "correspondent": [
+          "conventional",
+          "fha",
+          "va",
+          "usda",
+          "dpa",
+          "dscr",
+          "bank_statement",
+          "jumbo"
+        ]
+      }
+    },
+    {
+      "id": "elend",
+      "name": "eLend",
+      "note": null,
+      "contacts": [
+        {
+          "ae": "Andrew L'Abbate",
+          "phone": "973-588-8564",
+          "email": "andrew.labbate@elend.com"
+        },
+        {
+          "ae": "Michael Boller",
+          "phone": "973-387-7012",
+          "email": "michael.boller@elend.com"
+        }
+      ],
+      "website": "afrloancenter.com",
+      "guidelines": "https://resources.afrloancenter.com/home",
+      "lenderPaidBps": 275,
+      "borrowerPaidOnly": false,
+      "minComp": 1000,
+      "maxComp": 35000,
+      "products": {
+        "conventional": [
+          "arm",
+          "conventional"
+        ],
+        "fha": [
+          "fha",
+          "manual_underwrite",
+          "streamline"
+        ],
+        "va": [
+          "irrrl",
+          "manual_underwrite",
+          "va"
+        ],
+        "usda": [
+          "manual_underwrite",
+          "usda"
+        ],
+        "dpa": [
+          "fha_dpa"
+        ],
+        "mfh": [
+          "real_property",
+          "single_wide"
+        ],
+        "renovation": [
+          "choicerenovation",
+          "conventional",
+          "fha_203h_disaster",
+          "fha_203k",
+          "homestyle_reno",
+          "usda",
+          "va"
+        ],
+        "correspondent": [
+          "conventional",
+          "fha",
+          "va",
+          "usda"
+        ]
+      }
+    }
+  ]
+}
