@@ -326,12 +326,24 @@ export function fileClock(file) {
 // campo no asigna nada en Arive — registra la decision que ya se tomo.
 export const PROCESSOR_TOKEN = "PROCESSOR";
 
+// El color de Martha era #BD65E8, el mismo de Ana. Las dos salen en las
+// mismas pantallas y el color es lo primero que el ojo lee.
 export const PROCESSORS = {
-  martha: { id: "martha", name: "Martha", full: "Martha Samaniego", color: "#BD65E8", external: true },
+  martha: { id: "martha", name: "Martha", full: "Martha Samaniego", color: "#D98BA8", external: true },
   laura:  { id: "laura",  name: "Laura",  full: "Laura de Armas",   color: "#F5A623", external: false },
 };
 export const PROCESSOR_IDS = Object.keys(PROCESSORS);
+
+// Dos cosas distintas que antes eran una sola, y confundirlas reescribe
+// el pasado:
+//
+//   DEFAULT_PROCESSOR  que significa el campo VACIO en un archivo viejo.
+//                      Sigue siendo Martha: ella los proceso de verdad, y
+//                      moverlo reasignaria en silencio archivos ya cerrados.
+//
+//   NEW_FILE_PROCESSOR a quien va el trabajo NUEVO. Laura toma el relevo.
 export const DEFAULT_PROCESSOR = "martha";
+export const NEW_FILE_PROCESSOR = "laura";
 
 export const processorId = file =>
   (PROCESSORS[file?.processor] ? file.processor : DEFAULT_PROCESSOR);

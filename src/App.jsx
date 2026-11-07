@@ -54,6 +54,7 @@ import {
   duplicateMatches, DUP_REASONS, fileActions,
   SIGNALS, signalColor, deadlineSignal, contingencySignal, SOON_DAYS, filePace,
   PROCESSORS, PROCESSOR_IDS, processorId, processorOf, DEFAULT_PROCESSOR,
+  NEW_FILE_PROCESSOR,
   DPA_PCTS, DPA_FORMS, dpaForm, dpaOf, hasDpa, miLooksWrong,
   setDpa, dpaLabel, dpaComplete, productionByDpa, productionByState,
   GATE1_ITEMS, gate1Item, FINDING_WAITING, WAITING_IDS, waitingMeta,
@@ -152,11 +153,17 @@ const TEAM = {
   // Firebase once the new login is confirmed working.
   "a7gM7SK7GhUuomyL8apuw68PptA2": { name: "Jose Del Valle",     short: "Jose",     role: "admin",     nmls: "2686066", color: "#4A90D9" },
   "vllTjiE2Aba8CKIC3UWGxMdzBcM2": { name: "Jose Del Valle",     short: "Jose",     role: "admin",     nmls: "2686066", color: "#4A90D9" },
-  // Ana también tiene dos durante la transición: el correo de PRMG ya no le
-  // funciona. El viejo se desactiva en Firebase cuando el nuevo esté confirmado.
-  "rGY5FGA7P3N5lXE74TjZ07tHQWg1": { name: "Ana M Plasencia",    short: "Ana",      role: "lo",        nmls: "2683283", color: "#BD65E8" },
-  "iXcEzyc2nTTy2CJirLUz1FJ1oye2": { name: "Ana M Plasencia",    short: "Ana",      role: "lo",        nmls: "2683283", color: "#BD65E8" },
-  "0dpbvxe4RZUmCDhm03Zne6JSKE32": { name: "Marelis Pinales",    short: "Marelis",  role: "lo",        nmls: "",        color: "#06D6A0" },
+  // Ana salio del equipo. NO se borra de aqui, y la diferencia importa:
+  // borrarla dejaria todos sus archivos huerfanos y la sacaria del tablero
+  // de produccion, o sea que su volumen dejaria de contar en el año. Lo que
+  // se le quita es el acceso, y eso vive en firestore.rules y en Firebase,
+  // no en esta tabla.
+  //
+  // `active:false` la saca del menu de asignacion — nadie le puede dar un
+  // archivo nuevo — y deja intacto todo lo que ya cerro.
+  "rGY5FGA7P3N5lXE74TjZ07tHQWg1": { name: "Ana M Plasencia",    short: "Ana",      role: "lo",        nmls: "2683283", color: "#BD65E8", active: false },
+  "iXcEzyc2nTTy2CJirLUz1FJ1oye2": { name: "Ana M Plasencia",    short: "Ana",      role: "lo",        nmls: "2683283", color: "#BD65E8", active: false },
+  "0dpbvxe4RZUmCDhm03Zne6JSKE32": { name: "Marelis Pinales",    short: "Marelis",  role: "lo",        nmls: "2723306", color: "#06D6A0" },
   // Manny entra sin fila en COMP_ROSTER a proposito. Arranca en cero volumen,
   // asi que stageForVolume lo pone en Newbie al 50% solo — escribirlo seria
   // repetir lo que la escalera ya dice. Y derivado SUBE solo al llegar a los
@@ -753,7 +760,13 @@ const LO_LIST = Object.entries(TEAM)
     nmls: p.nmls,
     role: p.role === "admin" ? "BM/MLO" : "LO",
     color: p.color,
+    active: p.active !== false,
   }));
+
+// A quien se le PUEDE asignar un archivo nuevo. LO_LIST completo sigue
+// mandando en produccion: quien salio del equipo se lleva su historia
+// consigo y sus cierres siguen contando en el año.
+const LO_ASSIGNABLE = LO_LIST.filter(l => l.active);
 
 
 // Quién es quién para el reparto. El piso de Ana es contractual y firmado con
@@ -763,10 +776,11 @@ const LO_LIST = Object.entries(TEAM)
 // Marelis se deriva a propósito: su $5M empieza a contar en Barrett y quiere
 // avanzar sola cuando lo alcance.
 //
-//   isBM   · el BM y la sucursal son el mismo bolsillo
-//   floor  · piso contractual, nunca baja, nunca se suma a la escalera
-//   stage  · fija la etapa e ignora el volumen derivado
-//   trainer· hay un trainer asignado a los archivos de este LO
+//   isBM     · el BM y la sucursal son el mismo bolsillo
+//   floor    · piso contractual, nunca baja, nunca se suma a la escalera
+//   stage    · fija la etapa e ignora el volumen derivado
+//   trainer  · hay un trainer asignado a los archivos de este LO
+//   isTrainer· ES el trainer de la sucursal, y cobra ese 15%
 // Contexto de reparto para las pantallas de archivo. Vive aquí para que la
 // tarjeta, el modal y el payroll usen exactamente los mismos supuestos.
 const COMP_YEAR = 1;
@@ -774,9 +788,23 @@ const BRANCH_FILES_MO = 8;
 
 const COMP_ROSTER = {
   "Jose Del Valle":  { isBM:true },
+  // Ana se queda aqui aunque ya no este en el equipo. Sus archivos cerrados
+  // se siguen calculando con el piso que se le pago de verdad; quitarla
+  // reescribiria dinero del pasado, que es lo peor que puede hacer un
+  // sistema de compensacion.
   "Ana M Plasencia": { stage:"senior", floor:0.70 },
-  "Marelis Pinales": { trainer:true },
+  // Marelis pasa de entrenada a entrenadora. Pierde `trainer` —el 15% que
+  // cobraba Ana por sus archivos ya no lo cobra nadie— y gana `isTrainer`,
+  // que es de donde sale su nombre en el reparto y en el request de payroll.
+  "Marelis Pinales": { isTrainer:true },
 };
+
+// Quien cobra el 15% de trainer. Sale del roster, NO escrito a mano: antes
+// el request de payroll decia "Ana M Plasencia" fijo mientras la pantalla
+// del archivo decia "Trainer" a secas. Dos sitios, dos respuestas, y de por
+// medio dinero de alguien.
+const TRAINER_NAME =
+  Object.entries(COMP_ROSTER).find(([, r]) => r.isTrainer)?.[0] || "Trainer";
 
 const SAMPLE = [
   { id:"f1", lo:"Jose Del Valle", borrower:"Ariel Villalobos", loan:385000, type:"Conventional", stage:"Condition Clearing", daysInStage:3, closing:"2026-04-14", note:TX("phNoteSample"), bps:null, closedAt:null },
@@ -4780,7 +4808,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
         {showRequest&&(()=>{
           const rows=payroll.rows.filter(r=>picked.has(r.file.id));
           const req=buildPayrollRequest(rows,{by:profile.name,
-            branch:{name:TX("branchLending"),teamLead:"Paulo Maria",trainer:"Ana M Plasencia"}});
+            branch:{name:TX("branchLending"),teamLead:"Paulo Maria",trainer:TRAINER_NAME}});
           const text=payrollRequestText(req);
           return (
             <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.82)",zIndex:130,display:"flex",
@@ -5409,7 +5437,7 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
   const enriched=withLoContext(draft,allFiles||[],COMP_ROSTER);
   const pay=payoutBreakdown(enriched,{year:COMP_YEAR,filesPerMonth:BRANCH_FILES_MO,
     trainerAssigned:!!(COMP_ROSTER[file.lo]?.trainer),
-    names:{branch:"Del Valle Lending",teamLead:"Paulo Maria",trainer:"Trainer"}});
+    names:{branch:"Del Valle Lending",teamLead:"Paulo Maria",trainer:TRAINER_NAME}});
   if(!pay.gross) return null;
   const rows=isAdmin?pay.rows:pay.rows.filter(r=>r.id==="lo"&&mine);
 
@@ -6511,7 +6539,12 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
   const [bps,setBps]=useState(String(file.bps||""));
   const [loAssigned,setLoAssigned]=useState(file.lo||"Jose Del Valle");
   const [referralPartner,setReferralPartner]=useState(file.referralPartner||"");
-  const [processor,setProcessor]=useState(processorId(file));
+  // Un archivo que ya trae procesadora conserva la suya. Uno que nunca la
+  // tuvo y todavia no cerro arranca en la de trabajo nuevo — Laura tomo el
+  // relevo de Martha. Los cerrados se quedan con quien los proceso.
+  const [processor,setProcessor]=useState(
+    file?.processor ? processorId(file)
+      : (okDate(file?.closedAt) ? DEFAULT_PROCESSOR : NEW_FILE_PROCESSOR));
   const [chkDraft,setChkDraft]=useState(!!file.brokerCheckReceived);
   const [compDraft,setCompDraft]=useState(()=>({...(file.compliance||{})}));
   const [phone,setPhone]=useState(file.phone||"");
@@ -6775,7 +6808,10 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
                 <select value={loAssigned} onChange={e=>setLoAssigned(e.target.value)}
                   style={{...fs2, ...(dentro?{}:{borderColor:"#E85D75",color:"#E85D75"})}}>
                   {orphanOption(loAssigned,dentro,TX("notInList"))}
-                  {LO_LIST.map(lo=><option key={lo.name} value={lo.name}>{lo.name} · {lo.role}</option>)}
+                  {/* Solo los activos. Quien salio del equipo sigue saliendo
+                      en sus archivos viejos y en produccion, pero no se le
+                      puede dar uno nuevo. */}
+                  {LO_ASSIGNABLE.map(lo=><option key={lo.name} value={lo.name}>{lo.name} · {lo.role}</option>)}
                 </select>
                 {!dentro&&<div style={{fontSize:"var(--fs-1)",color:"#E85D75",marginTop:3,
                   lineHeight:1.45}}>{TX("notInListHint")}</div>}

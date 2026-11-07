@@ -1,0 +1,4 @@
+node_modules/
+src/.tmp/
+src/_core.mjs
+src/_app_export.jsx
