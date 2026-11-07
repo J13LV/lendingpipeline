@@ -797,6 +797,11 @@ const COMP_ROSTER = {
   // cobraba Ana por sus archivos ya no lo cobra nadie— y gana `isTrainer`,
   // que es de donde sale su nombre en el reparto y en el request de payroll.
   "Marelis Pinales": { isTrainer:true },
+  // Manny entra con trainer asignado: Marelis. El 15% sale de la parte de
+  // la SUCURSAL, no del 50% de el — su neto no cambia por esto.
+  // El 15% baja a 10% cuando llegue a Intermediate y se apaga en Senior,
+  // segun TRAINER_RATES. Nadie tiene que acordarse de bajarlo.
+  "Manny Estrada":   { trainer:true },
 };
 
 // Quien cobra el 15% de trainer. Sale del roster, NO escrito a mano: antes
