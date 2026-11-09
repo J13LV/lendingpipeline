@@ -13,7 +13,7 @@
 //     traducidos, así que su traducción es una tabla de despliegue aparte.
 import { readFileSync } from "fs";
 
-const ARCHIVOS = ["App.jsx", "processing.jsx", "tour.jsx"];
+const ARCHIVOS = ["App.jsx", "production.jsx", "processing.jsx", "tour.jsx"];
 
 // Valores que viven en Firestore. Cambiarlos rompe archivos ya escritos.
 const GUARDADOS = [
