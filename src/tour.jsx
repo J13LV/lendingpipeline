@@ -14,6 +14,7 @@
 // ═══════════════════════════════════════════════════════════════════
 
 import { useState, useEffect, useCallback } from "react";
+import { today, okDate, orderState, findingsOf, openFindings, cdSentAt } from "./pipelineCore";
 
 // ─── 1. IDENTIDAD DEL ARCHIVO DE ENTRENAMIENTO ─────────────────────
 // El id lleva el uid adentro para que dos personas puedan entrenar el
@@ -47,7 +48,48 @@ export function trainingSampleName(profile) {
   return `Maria ${first}`;
 }
 
+// ─── 1B. DATOS DE PRÁCTICA ─────────────────────────────────────────
+// El archivo de práctica nacía con nombre y nada más: FECHAS, el CD y
+// DINERO no tenían qué mostrar, y la persona leía sobre un bloque vacío.
+// Ahora nace con un contrato de ejemplo, que es lo único que la persona
+// no tiene de dónde sacar. Lo que sí puede hacer —el monto, la etapa, la
+// nota— lo hace ella: son pasos con acción.
+//
+// Todas las fechas salen de HOY y van hacia adelante (salvo la aceptación,
+// tres días atrás, que es lo normal en un archivo recién abierto). Así
+// ninguna contingencia nace vencida y el tablero no se pinta de rojo.
+export function addDays(iso, n) {
+  const [y, m, d] = String(iso).split("-").map(Number);
+  const t = new Date(Date.UTC(y, m - 1, d + n));
+  return t.toISOString().slice(0, 10);
+}
+export const practiceClosing = () => addDays(today(), 35);
+
+export function seedPractice(file) {
+  const coe = okDate(file?.closing) || practiceClosing();
+  return {
+    ...file,
+    closing: coe,
+    contingencies: {
+      contractSignal: addDays(today(), -4),
+      contractAccepted: addDays(today(), -3),
+      appraisalContingency: addDays(today(), 14),
+      loanContingency: addDays(today(), 21),
+      ctcTarget: addDays(coe, -7),
+      coe,
+      fundingDate: addDays(coe, 1),
+      capturedAt: today(),
+    },
+  };
+}
+
 // ─── 2. EL CATÁLOGO DE PASOS ───────────────────────────────────────
+// Pasos CON ACCIÓN: llevan `hacer` (qué tiene que hacer la persona) y
+// `listo(ctx)` (cómo sabe el sistema que ya lo hizo). Mientras no esté
+// hecho, Siguiente se queda apagado. Leer no es lo mismo que hacer: estos
+// son los cinco o seis movimientos que, si no se practican, se olvidan.
+// `ctx` es lo que se está mirando: el formulario en NUEVO ARCHIVO, el
+// archivo de práctica en la ventana y en procesamiento.
 // `field` corresponde al atributo data-tour del bloque en AddModal.
 // `owner` limita el paso a un rol: null = todos lo ven.
 // `concept` marca los pasos que enseñan en vez de llenar un campo —
@@ -86,7 +128,9 @@ export const TOUR_STEPS = [
 
   { id: 6, field: "amount",
     en: "Loan amount — no commas, no dollar sign. Just the number.",
-    es: "Monto del préstamo — sin comas, sin signo de dólar. Solo el número." },
+    es: "Monto del préstamo — sin comas, sin signo de dólar. Solo el número.",
+    hacer: { es: "Escribe un monto, por ejemplo 350000.", en: "Type an amount, for example 350000." },
+    listo: c => parseInt(c?.loan, 10) > 0 },
 
   { id: 7, field: "type",
     en: "Loan type. This drives the document checklist and the clock. DPA gets more days in UW than FHA.",
@@ -94,7 +138,10 @@ export const TOUR_STEPS = [
 
   { id: 8, field: "stage", concept: true,
     en: "Starting stage — where the file really is today, not where you want it. The clock starts here: pick wrong and every deadline after it is wrong.",
-    es: "Etapa inicial — dónde está el archivo hoy de verdad, no dónde lo quieres. El reloj arranca de aquí: si escoges mal, toda fecha límite después sale mal." },
+    es: "Etapa inicial — dónde está el archivo hoy de verdad, no dónde lo quieres. El reloj arranca de aquí: si escoges mal, toda fecha límite después sale mal.",
+    hacer: { es: "Escoge [PR] Full Application. Con esa etapa tu archivo entra a la cola de procesamiento y las partes dos y tres tienen con qué trabajar.",
+             en: "Pick [PR] Full Application. At that stage your file enters the processing queue, so parts two and three have something to work with." },
+    listo: c => c?.stage === "Full Application" },
 
   { id: 9, field: "stage", concept: true,
     en: "The letters in brackets are the phase: PQ pre-qual, HH house hunt, PR processing, UW underwriting, CP close prep, CL closing, PC post-close. They are the same filters at the top of the board.",
@@ -113,12 +160,14 @@ export const TOUR_STEPS = [
     es: "Socio referidor — agente, contador, cliente que llegó solo. Este campo es todo el scorecard: en blanco, el socio no recibe crédito a fin de año." },
 
   { id: 13, field: "closing", concept: true,
-    en: "Expected closing date (COE). Once you are inside 7 days, it outranks every other clock.",
-    es: "Fecha de cierre esperada (COE). Cuando faltan 7 días o menos, manda sobre todos los demás relojes." },
+    en: "Expected closing date (COE). Once you are inside 7 days, it outranks every other clock. It comes with a practice date five weeks out; along with it, the file gets a sample contract so DATES has something to show.",
+    es: "Fecha de cierre esperada (COE). Cuando faltan 7 días o menos, manda sobre todos los demás relojes. Ya viene con una fecha de práctica a cinco semanas; junto con ella, el archivo recibe un contrato de ejemplo para que FECHAS tenga qué mostrar." },
 
   { id: 14, field: "note", concept: true,
     en: "Notes, always in three parts: STATUS · BLOCKER · NEXT. Example: Subm 4/12 · UW queue · review by 4/15. The note answers \"who am I waiting on\" — it is not a diary.",
-    es: "Notas, siempre en tres partes: ESTADO · BLOQUEO · SIGUIENTE. Ejemplo: Sometido 4/12 · cola de UW · revisar 4/15. La nota contesta \"a quién estoy esperando\" — no es un diario." },
+    es: "Notas, siempre en tres partes: ESTADO · BLOQUEO · SIGUIENTE, y en inglés, por regla de la sucursal: Martha no lee español. Ejemplo: Subm 4/12 · UW queue · review by 4/15. La nota contesta \"a quién estoy esperando\" — no es un diario.",
+    hacer: { es: "Escribe una nota de práctica en inglés, con sus tres partes.", en: "Write a practice note with its three parts." },
+    listo: c => String(c?.note || "").trim().length >= 10 },
 
   // El último paso es el botón mismo: no lleva TERMINAR, se termina
   // agregando. Antes había dos pasos después de este que nadie veía,
@@ -149,7 +198,10 @@ export const DETAIL_STEPS = [
 
   { id: 4, tab: "file",
     en: "The notes. Each update is a new entry with its date and its author: what happened, who said it, and what comes next. Three lines is enough.",
-    es: "Las notas. Cada actualización es una entrada nueva con su fecha y su autor: qué pasó, quién lo dijo y qué sigue. Tres líneas bastan." },
+    es: "Las notas. Cada actualización es una entrada nueva con su fecha y su autor: qué pasó, quién lo dijo y qué sigue. Tres líneas bastan.",
+    hacer: { es: "Escribe una actualización en inglés y presiona + AGREGAR ACTUALIZACIÓN.",
+             en: "Write an update and press + ADD UPDATE." },
+    listo: f => (f?.noteLog || []).some(n => n && n.at && !n.legacy) },
   { id: 5, tab: "file", concept: true,
     en: "A note that only says \"pending\" forces someone to call you to find out pending on what.",
     es: "Una nota que solo dice \"pendiente\" obliga a alguien a llamarte para saber pendiente de qué." },
@@ -197,10 +249,16 @@ export const DETAIL_STEPS = [
     es: "El motor calcula hacia atrás desde cada fecha —usando el techo, no el promedio— y te da la fecha tope para empezar cada etapa previa. Esa es la lista que sale en la tarjeta." },
   { id: 19, tab: "dates",
     en: "Close each contingency with an outcome: met, waived, extended, missed or N/A. Like a note, it saves on its own.",
-    es: "Cierra cada contingencia con un resultado: cumplida, renunciada, extendida, incumplida o no aplica. Como la nota, guarda sola." },
+    es: "Cierra cada contingencia con un resultado: cumplida, renunciada, extendida, incumplida o no aplica. Como la nota, guarda sola.",
+    hacer: { es: "Registra un resultado en cualquiera de las contingencias del contrato de ejemplo, por ejemplo Tasación → cumplida.",
+             en: "Record an outcome on any contingency of the sample contract, for example Appraisal → met." },
+    listo: f => Object.values(f?.contingencyResults || {}).some(x => x && x.outcome && x.outcome !== "pending") },
   { id: 20, tab: "dates",
     en: "Further down: the CD block, in purple. The lender issues it — here you confirm when it went out.",
-    es: "Más abajo: el bloque del CD, en morado. Lo emite el lender — aquí se confirma cuándo salió." },
+    es: "Más abajo: el bloque del CD, en morado. Lo emite el lender — aquí se confirma cuándo salió.",
+    hacer: { es: "Escribe la fecha de hoy como envío del CD. Guarda sola, igual que la nota.",
+             en: "Enter today's date as the CD sent date. It saves itself, like the note." },
+    listo: f => !!cdSentAt(f) },
   { id: 21, tab: "dates", concept: true,
     en: "Electronic means the client receives it the same day; by mail, the law presumes receipt three business days later. From receipt, three business days run before signing is allowed — if the signing falls earlier, the block says so in purple.",
     es: "Electrónico: el cliente lo recibe el mismo día; por correo, la ley presume el recibo tres días hábiles después. Desde el recibo corren tres días hábiles antes de poder firmar — si la firma cae antes, el bloque lo marca en morado." },
@@ -300,6 +358,8 @@ export const PROCESSING_STEPS = [
     es: "PEDIDOS. Cinco: título y fees, HOI quote, HOI binder, tasación, docs de condominio.",
     en: "ORDERS. Five of them: title and fees, HOI quote, HOI binder, appraisal, condo docs." },
   { id: 17, tab: "orders",
+    hacer: { es: "Presiona ORDENAR TODO en tu archivo de práctica.", en: "Press ORDER ALL on your practice file." },
+    listo: f => orderState(f, "title").state !== "pending" && orderState(f, "hoi_quote").state !== "pending",
     es: "ORDENAR TODO estampa de un tiro los tres que casi siempre van juntos: título, HOI quote y tasación.",
     en: "ORDER ALL stamps in one shot the three that almost always go together: title, HOI quote and appraisal." },
   { id: 18, tab: "orders", concept: true,
@@ -316,9 +376,14 @@ export const PROCESSING_STEPS = [
     es: "HALLAZGOS. Arriba, la reja del 1003: doce puntos. Puedes marcarlos, pero el dueño de esa reja es el LO: lo normal es que llegue en 12 de 12 y que tú levantes un hallazgo si algo no cuadra.",
     en: "FINDINGS. Up top, the 1003 grid: twelve items. You can mark them, but that grid belongs to the LO: normally it arrives at 12 of 12 and your job is to raise a finding when something does not add up." },
   { id: 22, tab: "findings",
+    hacer: { es: "Levanta un hallazgo de práctica: + LEVANTAR HALLAZGO, escoge el punto, escribe qué no cuadra y a quién esperas.",
+             en: "Raise a practice finding: + RAISE A FINDING, pick the item, write what does not add up and who you are waiting on." },
+    listo: f => findingsOf(f).length > 0,
     es: "Un hallazgo retira la marca verde de ese punto y manda el archivo a BLOQUEADO. Lleva escrito a quién esperas: el LO, el cliente, procesamiento, el lender o título.",
     en: "A finding pulls the green mark off that item and sends the file to BLOCKED. It carries who you are waiting on: the LO, the client, processing, the lender or title." },
   { id: 23, tab: "findings",
+    hacer: { es: "Resuelve el hallazgo que acabas de levantar.", en: "Resolve the finding you just raised." },
+    listo: f => findingsOf(f).length > 0 && openFindings(f).length === 0,
     es: "Resolver no borra: marca. El punto vuelve a pendiente, no a verde — quien lo verificó tiene que volver a mirarlo.",
     en: "Resolving does not erase: it records. The item goes back to pending, not to green — whoever verified it has to look again." },
 
@@ -406,6 +471,20 @@ export function resetAllTours(uid) {
   PARTES.forEach(w => { clearProgress(uid, w); writeSkip(uid, w, false); });
 }
 
+// ─── 3B. AVANCE PARA EL ADMIN ──────────────────────────────────────
+// El paso de cada quien vive en su navegador (arriba). Esto es otra cosa:
+// un resumen en Firestore para que el admin vea en HERRAMIENTAS quién va
+// en qué parte y quién terminó. tour.jsx no conoce Firebase: App.jsx le
+// pasa la función que escribe, y si no la pasó —o la regla no está
+// publicada— el recorrido funciona igual, solo que nadie se entera.
+let reporter = null;
+export function setTrainingReporter(fn) { reporter = typeof fn === "function" ? fn : null; }
+export function reportTraining(profile, parts) {
+  if (!reporter || !profile?.uid) return;
+  try { reporter(profile, parts); } catch { /* el recorrido no depende de esto */ }
+}
+export const TRAINING_PARTS = PARTES;
+
 export function useTour(profile, active, which = "newfile") {
   const uid = profile?.uid;
   const CATALOGO = { detail: DETAIL_STEPS, processing: PROCESSING_STEPS, newfile: TOUR_STEPS };
@@ -413,6 +492,12 @@ export function useTour(profile, active, which = "newfile") {
   const [idx, setIdx] = useState(() => Math.min(readProgress(uid, which), steps.length - 1));
 
   useEffect(() => { if (active) writeProgress(uid, idx, which); }, [uid, idx, active, which]);
+  // Al admin le llega cada cambio de paso. Un paso es una escritura: en un
+  // recorrido de 31 pasos son 31, nada para Firestore.
+  useEffect(() => {
+    if (!active) return;
+    reportTraining(profile, { [which]: { idx: idx + 1, total: steps.length, at: new Date().toISOString() } });
+  }, [uid, idx, active, which, steps.length]);
 
   const next = useCallback(() => setIdx(i => Math.min(i + 1, steps.length - 1)), [steps.length]);
   const back = useCallback(() => setIdx(i => Math.max(i - 1, 0)), []);
@@ -500,7 +585,7 @@ export function useTourHighlight(fieldId, active) {
 // ventana entera. `onFinish` es el boton TERMINAR del ultimo paso; si no se
 // da, hace lo mismo que saltar. Un paso con `fin` (el de AGREGAR AL
 // PIPELINE) no lleva TERMINAR: se termina haciendo la accion.
-export function TourPanel({ profile, lang, tour, onExit, onFinish }) {
+export function TourPanel({ profile, lang, tour, onExit, onFinish, ctx }) {
   const { idx, next, back, steps, step } = tour;
   // En NEW FILE el ancla es un campo; en el modal es la solapa.
   const donde = useTourHighlight(step?.field || step?.tab, true);
@@ -509,6 +594,11 @@ export function TourPanel({ profile, lang, tour, onExit, onFinish }) {
   const T = k => (lang === "en" ? k.en : k.es);
   const pct = Math.round(((idx + 1) / steps.length) * 100);
   const last = idx === steps.length - 1;
+  // Un paso con acción no deja seguir hasta que el sistema vea la acción
+  // hecha. Se mira el dato, no un clic: si la persona ya lo había hecho
+  // antes de llegar al paso, el paso sale ya cumplido.
+  const conAccion = typeof step.listo === "function";
+  const hecho = conAccion ? !!step.listo(ctx) : true;
 
   const btn = {
     fontFamily: "var(--ff-mono)", fontSize: "var(--fs-3)", borderRadius: 5,
@@ -535,6 +625,18 @@ export function TourPanel({ profile, lang, tour, onExit, onFinish }) {
       <div style={{ fontSize: "var(--fs-4)", color: "var(--t1)", lineHeight: 1.6, marginBottom: donde ? 6 : 10 }}>
         {T(step)}
       </div>
+      {conAccion && (
+        <div data-tour-accion={hecho ? "hecho" : "pendiente"} style={{
+          fontSize: "var(--fs-3)", lineHeight: 1.5, marginBottom: 8, borderRadius: 6, padding: "7px 10px",
+          background: hecho ? "rgba(6,214,160,.08)" : "rgba(255,255,255,.06)",
+          border: `1px solid ${hecho ? "var(--ok)" : "#FFFFFF"}`,
+          color: hecho ? "var(--ok)" : "var(--t1)" }}>
+          <span style={{ fontFamily: "var(--ff-mono)", fontSize: "var(--fs-2)", letterSpacing: "1px", marginRight: 6 }}>
+            {hecho ? T({ en: "✓ DONE", es: "✓ HECHO" }) : T({ en: "▸ YOUR TURN", es: "▸ TE TOCA" })}
+          </span>
+          {hecho ? T({ en: "Now press Next.", es: "Ahora presiona Siguiente." }) : T(step.hacer)}
+        </div>
+      )}
       {donde && (
         <div style={{ fontSize: "var(--fs-2)", color: "var(--t3)", marginBottom: 10,
           fontFamily: "var(--ff-mono)", display: "flex", gap: 6, alignItems: "baseline" }}>
@@ -545,12 +647,17 @@ export function TourPanel({ profile, lang, tour, onExit, onFinish }) {
 
       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
         {!last && (
-          <button onClick={next} style={{ ...btn, background: "var(--gold)", color: "var(--bg)" }}>
+          <button onClick={hecho ? next : undefined} disabled={!hecho}
+            title={hecho ? undefined : T({ en: "Do the step first", es: "Primero haz el paso" })}
+            style={{ ...btn, background: hecho ? "var(--gold)" : "var(--s2)", color: hecho ? "var(--bg)" : "var(--t4)",
+              cursor: hecho ? "pointer" : "not-allowed" }}>
             {T({ en: "Next", es: "Siguiente" })}
           </button>
         )}
         {last && !step.fin && (
-          <button onClick={onFinish || onExit} style={{ ...btn, background: "var(--ok)", color: "var(--bg)" }}>
+          <button onClick={hecho ? (onFinish || onExit) : undefined} disabled={!hecho}
+            style={{ ...btn, background: hecho ? "var(--ok)" : "var(--s2)", color: hecho ? "var(--bg)" : "var(--t4)",
+              cursor: hecho ? "pointer" : "not-allowed" }}>
             {T({ en: "Finish", es: "Terminar" })}
           </button>
         )}

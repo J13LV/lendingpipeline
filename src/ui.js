@@ -215,6 +215,19 @@ export const UI = {
   trainResetAsk: { es:"Empezar de nuevo borra tu archivo de entrenamiento. ¿Seguir?",
                    en:"Starting over deletes your training file. Continue?" },
   trainBadge:    { es:"ENTRENAMIENTO", en:"TRAINING" },
+  // Panel del admin: quién va en qué parte del entrenamiento.
+  trainProg:     { es:"AVANCE DEL ENTRENAMIENTO", en:"TRAINING PROGRESS" },
+  trainProgSub:  { es:"Se actualiza solo cuando alguien avanza un paso. Empezar de nuevo pone a la persona en cero.",
+                   en:"Updates by itself whenever someone moves a step. Starting over puts that person back at zero." },
+  trainProgWho:  { es:"PERSONA", en:"PERSON" },
+  trainProgLast: { es:"ÚLTIMA ACTIVIDAD", en:"LAST ACTIVITY" },
+  trainProgStep: { es:"paso {n} de {t}", en:"step {n} of {t}" },
+  trainProgNone: { es:"Nadie ha empezado el entrenamiento todavía.", en:"Nobody has started training yet." },
+  trainProgRule: { es:"No se puede leer el avance: falta publicar la regla de training en Firebase (Firestore → Rules → Publish).",
+                   en:"Progress cannot be read: the training rule has not been published in Firebase yet (Firestore → Rules → Publish)." },
+  trainPart_newfile:    { es:"ARCHIVO NUEVO", en:"NEW FILE" },
+  trainPart_detail:     { es:"VENTANA DEL ARCHIVO", en:"FILE WINDOW" },
+  trainPart_processing: { es:"PROCESAMIENTO", en:"PROCESSING" },
   trainCloseAsk: { es:"{n} es tu archivo de entrenamiento. Si lo cierras, el recorrido de las próximas semanas se acaba aquí. ¿Cerrarlo de todas formas?",
                    en:"{n} is your training file. Closing it ends the walkthrough for the coming weeks. Close it anyway?" },
   trainNote:     { es:"Este archivo no entra a producción, ni al scorecard, ni a la cola de nadie.",
@@ -1215,7 +1228,9 @@ export const UI = {
   nfPartner:    { es:"SOCIO REFERIDOR", en:"REFERRAL PARTNER" },
   nfClosing:    { es:"FECHA DE CIERRE ESPERADA", en:"EXPECTED CLOSING DATE" },
   nfAdd:        { es:"AGREGAR AL PIPELINE", en:"ADD TO PIPELINE" },
-  phNoteNew:    { es:"Sometido 4/12 · cola de UW · revisar 4/15", en:"Subm 4/12 · UW queue · review by 4/15" },
+  // Las notas van en inglés por regla de la sucursal (ver addNoteEntry): el
+  // ejemplo es el mismo en los dos idiomas a propósito.
+  phNoteNew:    { es:"Subm 4/12 · UW queue · review by 4/15", en:"Subm 4/12 · UW queue · review by 4/15" },
 
   // ─── ventanas que estaban solo en inglés ───
   agoNow:       { es:"ahora mismo", en:"just now" },

@@ -20,7 +20,7 @@
 
 import { useState, useEffect } from "react";
 import { tr, irAlAncla } from "./ui";
-import { TourPanel, useTour, isTraining, readSkip, writeSkip } from "./tour";
+import { TourPanel, useTour, isTraining, readSkip, writeSkip, reportTraining } from "./tour";
 import { downloadChecklist } from "./barrettChecklist";
 import {
   ORDERS, ONE_SHOT_ORDERS, orderState, stampOrder, clearOrder, stampOneShot, canOrderAppraisal,
@@ -1442,7 +1442,10 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
     : (planos.find(f => f.id === selId) || planos[0] || null);
   // Una procesadora externa no debe editar la cola de la otra, y el
   // admin mira sin tocar cuando no es la suya.
-  const readOnly = !esAdmin && quien !== propia;
+  // El archivo de práctica es de quien entrena, esté parada en la cola que
+  // esté: los pasos con acción le piden ordenar y levantar un hallazgo, y
+  // en solo-lectura no podría hacer ninguno.
+  const readOnly = !esAdmin && quien !== propia && !(sel && isTraining(sel));
   const who = profile?.name || null;
 
 
@@ -1468,7 +1471,11 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
       {enTour && (
         <div style={{ padding: "12px 12px 0" }}>
           <TourPanel profile={profile} lang={lang} tour={tourProc}
-            onExit={cerrarTour} onFinish={() => { tourProc.restart(); cerrarTour(); }} />
+            onExit={cerrarTour} ctx={entrena}
+            onFinish={() => {
+              reportTraining(profile, { processing: { done: true, doneAt: new Date().toISOString() } });
+              tourProc.restart(); cerrarTour();
+            }} />
         </div>
       )}
       <div className="proc-grid" style={{ display: "grid", gridTemplateColumns: "minmax(240px,32%) 1fr", minHeight: 420 }}>
