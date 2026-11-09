@@ -1434,7 +1434,12 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
   // archivo falso inflando el numero de Martha es peor que no entrenar.
   const conteos = queueCounts((files || []).filter(f => !isTraining(f)));
   const planos = colaCompleta.flatMap(g => g.files);
-  const sel = planos.find(f => f.id === selId) || planos[0] || null;
+  // Con el recorrido puesto se muestra SIEMPRE el archivo de practica,
+  // este o no en la cola. Nace en PQ, asi que todavia no entra a ningun
+  // grupo, y caer en `planos[0]` enseñaba las sub-solapas sobre el archivo
+  // real de otra persona.
+  const sel = (enTour && entrena) ? entrena
+    : (planos.find(f => f.id === selId) || planos[0] || null);
   // Una procesadora externa no debe editar la cola de la otra, y el
   // admin mira sin tocar cuando no es la suya.
   const readOnly = !esAdmin && quien !== propia;
@@ -1463,7 +1468,7 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
       {enTour && (
         <div style={{ padding: "12px 12px 0" }}>
           <TourPanel profile={profile} lang={lang} tour={tourProc}
-            onExit={cerrarTour} />
+            onExit={cerrarTour} onFinish={() => { tourProc.restart(); cerrarTour(); }} />
         </div>
       )}
       <div className="proc-grid" style={{ display: "grid", gridTemplateColumns: "minmax(240px,32%) 1fr", minHeight: 420 }}>
