@@ -285,6 +285,27 @@ for (const [regla, file, quien] of casos) {
   caja.remove();
 }
 
+// ─── aprender procesamiento sin archivo de práctica ────────────────
+// Antes el recorrido solo existía si la persona había creado su archivo de
+// práctica desde HERRAMIENTAS. Ahora el botón está siempre y, si falta el
+// archivo, pide crearlo.
+{
+  const cont = dom.window.document.createElement("div");
+  dom.window.document.body.appendChild(cont);
+  let pidio = 0;
+  const raiz = createRoot(cont);
+  act(() => { raiz.render(React.createElement(M.ProcessingView, {
+    files: [], profile: JOSE, lang: "es",
+    onSaveFile(){}, onOpenFull(){}, irA: null, onStartTraining(){ pidio++; },
+  })); });
+  const btn = [...cont.querySelectorAll("button")].find(b => /APRENDER ESTA PANTALLA/.test(b.textContent || ""));
+  t("sin archivo de práctica, el botón de aprender está", !!btn);
+  if (btn) act(() => btn.click());
+  t("y al tocarlo pide crear el archivo de práctica", pidio === 1);
+  act(() => raiz.unmount());
+  cont.remove();
+}
+
 // ─── el recorrido cerrado se queda cerrado ─────────────────────────
 // Estaba en un useState de la pantalla, que se desmonta al cambiar a
 // PIPELINE: cerrarlo duraba hasta salir y al volver aparecia otra vez.
@@ -311,17 +332,17 @@ for (const [regla, file, quien] of casos) {
   t("hay un botón para saltarlo", !!saltar);
   act(() => saltar.click());
   t("al saltarlo, el panel se va", !cont.textContent.includes("PASO 1 DE"));
-  t("y aparece el botón para volver a abrirlo", cont.textContent.includes("RECORRIDO"));
+  t("y aparece el botón para volver a abrirlo", cont.textContent.includes("APRENDER ESTA PANTALLA"));
 
   // Salir a PIPELINE y volver: la pantalla se desmonta y vuelve a nacer.
   act(() => raiz.unmount());
   raiz = montar();
   t("al volver de PIPELINE sigue cerrado", !cont.textContent.includes("PASO 1 DE"));
-  t("y el botón de abrirlo sigue ahí", cont.textContent.includes("RECORRIDO"));
+  t("y el botón de abrirlo sigue ahí", cont.textContent.includes("APRENDER ESTA PANTALLA"));
 
   // Y se puede volver a abrir a mano.
   const abrir = [...cont.querySelectorAll("button")]
-    .find(b => /RECORRIDO|TOUR/.test(b.textContent || ""));
+    .find(b => /APRENDER ESTA PANTALLA|LEARN THIS SCREEN/.test(b.textContent || ""));
   act(() => abrir.click());
   t("el botón lo vuelve a abrir", cont.textContent.includes("PASO 1 DE"));
   act(() => raiz.unmount());

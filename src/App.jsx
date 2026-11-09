@@ -1291,6 +1291,27 @@ export default function App() {
     setTrainingMode(true); setShowAdd(true);
   };
 
+  // Entrar a aprender procesamiento sin pasar por NUEVO ARCHIVO. El archivo
+  // nace ya en Full Application —la etapa en que entra a la cola— con el
+  // mismo contrato de ejemplo que el entrenamiento completo. Si ya existe
+  // uno, se usa ese: no se borra el trabajo de práctica de nadie.
+  const startProcTraining=()=>{
+    const id=trainingFileId(profile);
+    if(files.some(f=>f.id===id)) return;
+    const hoy=today();
+    const base={
+      id, borrower:trainingSampleName(profile), loan:350000, type:"Conventional",
+      stage:"Full Application", daysInStage:0, stageEnteredAt:hoy,
+      stageLog:{"Full Application":hoy}, fileOpenedAt:hoy, closing:practiceClosing(),
+      note:"", bps:null,
+      lo:(isAssistant ? JOSE_LO : (profile?.name||JOSE_LO)),
+      referralPartner:null, phone:null, email:null, closedAt:null,
+      processor: profile?.processorId || DEFAULT_PROCESSOR, isTraining:true,
+    };
+    const f=stampEdit(seedPractice(base), profile, "created");
+    setFiles(p=>[...p.filter(x=>x.id!==id), {...f, createdBy:{uid:profile.uid,name:profile.name}, createdAt:new Date().toISOString()}]);
+  };
+
   const vol=active.reduce((s,f)=>s+(f.loan||0),0);
   // Cuenta lo peor de cada archivo, sea la etapa o el reloj que manda.
   // Antes solo miraba la etapa y el numero no cuadraba con el tablero.
@@ -1510,7 +1531,9 @@ export default function App() {
           .dm-etapa{padding:8px 12px !important;flex-wrap:wrap;justify-content:flex-start !important;gap:6px 10px !important;}
           .dm-etapa select{min-width:0 !important;flex:1 1 100%;}
           .dm-body{grid-template-columns:minmax(0,1fr) !important;padding:12px !important;}
-          .proc-grid{grid-template-columns:minmax(0,1fr) !important;}
+          .proc-grid{grid-template-columns:minmax(0,1fr) !important;height:auto !important;}
+          .proc-file{overflow-y:visible !important;}
+          .proc-hright{text-align:left !important;}
           .proc-cola{border-right:none !important;max-height:46vh !important;
             border-bottom:1px solid var(--bd);}
         }
@@ -1835,7 +1858,8 @@ export default function App() {
       <div style={{padding:"20px 24px"}}>
 
         {view==="processing"&&(isAdmin||isAssistant)&&<ProcessingView
-          files={files.filter(f=>!isTraining(f)||f.id===myTraining)} profile={profile} lang={lang} onSetLang={setLang}
+          files={files.filter(f=>!isTraining(f)||f.id===myTraining)} profile={profile} lang={lang}
+          onStartTraining={startProcTraining}
           onSaveFile={(id,next)=>updateFile(id,next)}
           onOpenFull={f=>setDetail(f)}
           irA={irA&&irA.vista==="processing"?irA:null}

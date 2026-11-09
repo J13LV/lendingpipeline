@@ -352,8 +352,8 @@ export const PROCESSING_STEPS = [
     en: "You only edit your own queue. A file in another processor's queue is fully visible and not editable — the queue belongs to whoever the file is assigned to, not to whoever gets there first." },
 
   { id: 15, tab: "orders",
-    es: "Siete sub-solapas, cada una con su contador. El número en rojo —HALLAZGOS y FECHAS TOPE DERIVADAS— es lo que está roto; el dorado es lo que falta.",
-    en: "Seven sub-tabs, each with its own counter. The number in red —FINDINGS and DERIVED DEADLINES— is what is broken; the gold one is what is missing." },
+    es: "Siete sub-solapas. Las cinco con número —1 a 5— son el orden en que se trabaja un archivo; FECHAS TOPE y NOTAS son de consulta. El contador en gris es lo que falta por hacer; en rojo, solo lo que está roto: un hallazgo abierto (⚑) o una fecha tope rota. Pasa el mouse sobre el número y te dice qué cuenta.",
+    en: "Seven sub-tabs. The five numbered ones —1 to 5— are the order you work a file in; DERIVED DEADLINES and NOTES are for reference. A gray counter is what is still to do; red is only what is broken: an open finding (⚑) or a broken deadline. Hover over the number and it tells you what it counts." },
   { id: 16, tab: "orders",
     es: "PEDIDOS. Cinco: título y fees, HOI quote, HOI binder, tasación, docs de condominio.",
     en: "ORDERS. Five of them: title and fees, HOI quote, HOI binder, appraisal, condo docs." },
