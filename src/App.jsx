@@ -361,6 +361,65 @@ function ruedaHorizontal(e){
 }
 
 // ═══════════════════════════════════════════════════════════════════
+// MENÚ DESPLEGABLE
+// ═══════════════════════════════════════════════════════════════════
+// La barra de arriba tenía 13 controles y el usuario y SALIR bajaban a una
+// segunda línea. Lo que se usa una vez por semana (respaldo, hoja de Martha,
+// restaurar, entrenamiento, tamaño de letra) vive aquí; lo de todos los días
+// se queda a la vista.
+//
+// El panel es position:fixed y se calcula al abrir: la fila de pestañas
+// tiene overflow-x:auto y recortaría un panel absoluto. Y se queda montado
+// (solo se oculta) porque RESTAURAR es un <input type=file>: si el panel se
+// desmontara al elegir el archivo, el onChange llegaría a un input que ya
+// no existe y el respaldo no se cargaría nunca.
+// Un elemento con data-cierra cierra el menú al hacerle clic.
+function Menu({ label, style, title, align = "left", children }) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({});
+  const boton = useRef(null);
+  const panel = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    const fuera = e => {
+      if (!boton.current?.contains(e.target) && !panel.current?.contains(e.target)) setOpen(false);
+    };
+    const tecla = e => { if (e.key === "Escape") { setOpen(false); boton.current?.focus(); } };
+    const cerrar = () => setOpen(false);
+    document.addEventListener("mousedown", fuera);
+    document.addEventListener("keydown", tecla);
+    window.addEventListener("resize", cerrar);
+    window.addEventListener("scroll", cerrar);
+    return () => {
+      document.removeEventListener("mousedown", fuera);
+      document.removeEventListener("keydown", tecla);
+      window.removeEventListener("resize", cerrar);
+      window.removeEventListener("scroll", cerrar);
+    };
+  }, [open]);
+  const abrir = () => {
+    const r = boton.current.getBoundingClientRect();
+    setPos(align === "right"
+      ? { top: r.bottom + 6, right: Math.max(8, window.innerWidth - r.right) }
+      : { top: r.bottom + 6, left: Math.max(8, r.left) });
+    setOpen(o => !o);
+  };
+  return (
+    <>
+      <button ref={boton} className="hov" onClick={abrir} title={title}
+        aria-haspopup="menu" aria-expanded={open} style={style}>
+        {label} <span style={{ fontSize: "var(--fs-1)", opacity: .8 }}>▾</span>
+      </button>
+      <div ref={panel} role="menu" className="menu-panel"
+        onClick={e => { if (e.target.closest("[data-cierra]")) setOpen(false); }}
+        style={{ display: open ? "flex" : "none", ...pos }}>
+        {children}
+      </div>
+    </>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // UN VALOR QUE NO ESTA EN LA LISTA
 // ═══════════════════════════════════════════════════════════════════
 // Un <select> cuyo `value` no coincide con ninguna <option> muestra la
@@ -416,7 +475,12 @@ function timeAgo(iso){
 // un hash al nombre del bundle y lo referencia desde index.html. Si el
 // index.html del servidor cambia, es que hay un despliegue nuevo. Se lee
 // cada pocos minutos, sin caché, y se compara con el del arranque.
-const APP_VERSION = "2026.09.16e";
+// El número ya no se escribe a mano: se quedó en 2026.09.16e durante dos
+// meses de despliegues. Ahora lo pone vite.config.js al compilar — fecha del
+// build y los 7 primeros caracteres del commit (el mismo que muestra GitHub
+// y Vercel). Así "¿qué versión tienes?" se contesta mirando la esquina.
+/* global __APP_VERSION__ */
+const APP_VERSION = typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "dev";
 
 function huellaTexto(s) {
   let h = 0;
@@ -1668,6 +1732,34 @@ export default function App() {
         @keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
         .fi{animation:fi .2s ease;}
         tr.row:hover td{background:rgba(255,255,255,.03)!important;}
+        /* Con cinco pestañas ya cabe todo: en la computadora la fila se
+           acomoda en dos líneas si hace falta, sin barra de lado. En el
+           teléfono sigue deslizándose de lado como antes. */
+        @media (max-width:900px){
+          .tabbar{flex-wrap:nowrap !important;overflow-x:auto;overscroll-behavior-x:contain;}
+        }
+        /* MENÚ DESPLEGABLE (Herramientas y Más) */
+        .menu-panel{position:fixed;z-index:60;flex-direction:column;gap:2px;
+          min-width:230px;max-width:calc(100vw - 16px);padding:6px;
+          background:var(--s1);border:1px solid var(--bd);border-radius:8px;
+          box-shadow:0 12px 32px rgba(0,0,0,.55);}
+        .mi{display:flex;align-items:center;gap:10px;width:100%;
+          background:transparent;border:none;border-radius:6px;padding:9px 10px;
+          color:var(--t2);text-align:left;font-family:var(--ff-mono);
+          font-size:var(--fs-3);cursor:pointer;white-space:nowrap;}
+        .mi:hover:not(div){background:var(--s2);color:var(--t1);}
+        .mi:disabled{opacity:.5;}
+        .mi-sep{height:1px;background:var(--bd);margin:4px 2px;}
+        .mas-alerta{display:inline-block;margin-left:7px;padding:0 6px;
+          border-radius:9px;background:var(--bad);color:var(--bg);
+          font-size:var(--fs-1);line-height:1.5;}
+        /* EX-MIEMBRO: la tarjeta sigue en producción porque su volumen
+           cuenta en el año, pero apagada para que nadie la lea como activa. */
+        .ex-miembro{opacity:.6;filter:grayscale(.55);}
+        .ex-tag{display:inline-block;margin-left:8px;padding:0 6px;line-height:1.35;
+          border:1px solid var(--t4);border-radius:4px;color:var(--t3);
+          font-family:var(--ff-mono);font-size:var(--fs-1);letter-spacing:1px;
+          vertical-align:middle;}
       `}</style>
 
       {/* HEADER */}
@@ -1737,18 +1829,10 @@ export default function App() {
           )}
           <input placeholder={TX("phSearch")} value={search} onChange={e=>setSearch(e.target.value)}
             style={{background:"var(--bg)",border:"1px solid var(--bd)",borderRadius:6,padding:"7px 12px",color:"var(--t1)",fontSize:"var(--fs-4)",width:170}}/>
-          <button className="hov" onClick={exportBackup}
-            title={TX("mvBackupHint")}
-            style={{background:"var(--s2)",color:"var(--t2)",borderRadius:6,padding:"8px 12px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",border:"1px solid var(--bd)"}}>
-            ↓ {TX("backup")}
+          <button className="hov" onClick={()=>setShowAdd(true)}
+            style={{background:"var(--gold)",color:"var(--bg)",borderRadius:6,padding:"8px 16px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-4)",fontWeight:500}}>
+            + {TX("mvNewFile")}
           </button>
-          {isAdmin && (
-            <button className="hov" onClick={exportMarthaSheet} disabled={marthaBusy}
-              title={TX("marthaHint")}
-              style={{background:"var(--s2)",color:marthaBusy?"var(--t3)":"var(--t2)",borderRadius:6,padding:"8px 12px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",border:"1px solid var(--bd)",cursor:marthaBusy?"wait":"pointer"}}>
-              {marthaBusy ? TX("marthaBusy") : TX("marthaBtn")}
-            </button>
-          )}
           {/* Las nueve fechas son de TINA: registro, divulgaciones,
               sometimiento. Ella las tiene en Arive. Un LO no sabe cuándo
               Tina registró, y Martha recibe el archivo ya registrado. */}
@@ -1767,43 +1851,48 @@ export default function App() {
               {TX("bfBtn")} {mios}
             </button>);
           })()}
-          {isAdmin && (
-            <label className="hov"
-              title={TX("backupHint")}
-              style={{background:"var(--s2)",color:"var(--t2)",borderRadius:6,padding:"8px 12px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",border:"1px solid var(--bd)",cursor:"pointer"}}>
-              ↑ {TX("restore")}
-              <input type="file" accept="application/json,.json" onChange={importBackup} style={{display:"none"}}/>
-            </label>
-          )}
-          <button className="hov" onClick={()=>setShowAdd(true)}
-            style={{background:"var(--gold)",color:"var(--bg)",borderRadius:6,padding:"8px 16px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-4)",fontWeight:500}}>
-            + {TX("mvNewFile")}
-          </button>
-
-          <button className="hov" onClick={startTraining}
-            style={{background:"transparent",color:"var(--gold)",border:"1px solid var(--gold)",borderRadius:6,padding:"8px 14px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-4)",fontWeight:500}}>
-            {TX("training")}
-          </button>
-
-          {/* TAMAÑO DEL TEXTO. Junto al idioma porque es la misma clase de
-              ajuste: como quiero ver yo esta pantalla. */}
-          <div title={TX("textSize")} style={{display:"flex",alignItems:"center",
-            border:"1px solid var(--bd)",borderRadius:6,overflow:"hidden",marginRight:2}}>
-            {[["-",-.05],["+",.05]].map(([sig,paso])=>(
-              <button key={sig} className="hov"
-                onClick={()=>setEscala(v=>Math.min(1.4,Math.max(.9,Math.round((v+paso)*100)/100)))}
-                style={{background:"transparent",color:"var(--t2)",border:"none",
-                  padding:"6px 9px",fontSize:sig==="+"?"var(--fs-5)":"var(--fs-2)",
-                  fontFamily:"var(--ff-mono)",cursor:"pointer",lineHeight:1}}>A{sig}</button>
-            ))}
-            {escala!==1&&(
-              <button className="hov" onClick={()=>setEscala(1)} title={TX("textSizeReset")}
-                style={{background:"transparent",color:"var(--gold)",border:"none",borderLeft:"1px solid var(--bd)",
-                  padding:"6px 8px",fontSize:"var(--fs-1)",fontFamily:"var(--ff-mono)",cursor:"pointer"}}>
-                {Math.round(escala*100)}%
+          {/* HERRAMIENTAS. Lo de una vez por semana, fuera de la barra. */}
+          <Menu label={"⚙ "+TX("mvTools")} align="right" title={TX("mvToolsHint")}
+            style={{background:"var(--s2)",color:"var(--t2)",borderRadius:6,padding:"8px 12px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",border:"1px solid var(--bd)",cursor:"pointer",whiteSpace:"nowrap"}}>
+            <button data-cierra className="mi" onClick={exportBackup} title={TX("mvBackupHint")}>
+              ↓ {TX("backup")}
+            </button>
+            {isAdmin && (
+              <label data-cierra className="mi" title={TX("backupHint")}>
+                ↑ {TX("restore")}
+                <input type="file" accept="application/json,.json" onChange={importBackup} style={{display:"none"}}/>
+              </label>
+            )}
+            {isAdmin && (
+              <button data-cierra className="mi" onClick={exportMarthaSheet} disabled={marthaBusy}
+                title={TX("marthaHint")} style={{cursor:marthaBusy?"wait":"pointer"}}>
+                {marthaBusy ? TX("marthaBusy") : TX("marthaBtn")}
               </button>
             )}
-          </div>
+            <button data-cierra className="mi" onClick={startTraining} style={{color:"var(--gold)"}}>
+              ▶ {TX("training")}
+            </button>
+            <div className="mi-sep"/>
+            {/* TAMAÑO DEL TEXTO. Sin data-cierra: se pulsa varias veces
+                seguidas mirando cómo cambia la pantalla. */}
+            <div className="mi" style={{cursor:"default",justifyContent:"space-between"}}>
+              <span>{TX("textSize")}</span>
+              <span style={{display:"flex",alignItems:"center",border:"1px solid var(--bd)",borderRadius:6,overflow:"hidden"}}>
+                {[["-",-.05],["+",.05]].map(([sig,paso])=>(
+                  <button key={sig} className="hov"
+                    onClick={()=>setEscala(v=>Math.min(1.4,Math.max(.9,Math.round((v+paso)*100)/100)))}
+                    style={{background:"transparent",color:"var(--t2)",border:"none",
+                      padding:"5px 9px",fontSize:sig==="+"?"var(--fs-5)":"var(--fs-2)",
+                      fontFamily:"var(--ff-mono)",cursor:"pointer",lineHeight:1}}>A{sig}</button>
+                ))}
+                <button className="hov" onClick={()=>setEscala(1)} title={TX("textSizeReset")}
+                  style={{background:"transparent",color:escala!==1?"var(--gold)":"var(--t3)",border:"none",borderLeft:"1px solid var(--bd)",
+                    padding:"5px 8px",fontSize:"var(--fs-1)",fontFamily:"var(--ff-mono)",cursor:"pointer",minWidth:44}}>
+                  {Math.round(escala*100)}%
+                </button>
+              </span>
+            </div>
+          </Menu>
 
           <div style={{display:"flex",border:"1px solid var(--bd)",borderRadius:6,overflow:"hidden",marginRight:2}}>
             {["es","en"].map(l=>(
@@ -1815,8 +1904,9 @@ export default function App() {
           </div>
           <button className="hov" onClick={()=>setShowHelp(true)}
             title={TX("mvHelpHint")}
-            style={{background:"transparent",color:"var(--t2)",borderRadius:6,padding:"8px 10px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",border:"1px solid var(--bd)",cursor:"pointer"}}>
-            ❓ {TX("help")}
+            aria-label={TX("help")}
+            style={{background:"transparent",color:"var(--t2)",borderRadius:6,padding:"8px 11px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",border:"1px solid var(--bd)",cursor:"pointer"}}>
+            ?
           </button>
 
           <div style={{display:"flex",alignItems:"center",gap:8,paddingLeft:12,marginLeft:4,borderLeft:"1px solid var(--bd)"}}>
@@ -1846,32 +1936,47 @@ export default function App() {
 
       {/* TAB BAR — added REFERRED OUT and INBOUND filters */}
       <div onWheel={ruedaHorizontal}
+        className="tabbar"
         style={{background:"var(--s1)",borderBottom:"1px solid var(--s2)",padding:"10px 24px 12px",
-          display:"flex",gap:8,alignItems:"center",overflowX:"auto",overscrollBehaviorX:"contain"}}>
-        {[
-          [TX("activePipeline"),active.length,"active","#4A90D9"],
-          [TX("closedFiles"),closed.length,"closed","#06D6A0"],
-          ["🔀 "+TX("referredOut"),referredOut.length,"referred","#A78BFA"],
-          ["🤝 "+TX("inbound"),inbound.length,"inbound","#FFD166"],
-          ["⏸ "+TX("preparation"),prep.length,"prep","#7EC8A4"],
-          ["🔔 "+TX("dueReview"),dueReview.length,"review",dueReview.length>0?"#E85D75":"var(--t3)"],
-          ["🗄 "+TX("archived"),archived.length,"archived","var(--t2)"],
-        ].map(([l,c,v,col])=>(
-          <button key={v} className="hov" onClick={()=>{setView(v);setActivePhase(null);}}
-            style={{background:view===v?col:"var(--s2)",color:view===v?"var(--bg)":col,borderRadius:6,padding:"6px 14px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",fontWeight:500,whiteSpace:"nowrap"}}>
-            {l} · {c}
-          </button>
-        ))}
-        {(isAdmin||isAssistant)&&(
-          <button className="hov" onClick={()=>{setView("processing");setActivePhase(null);}}
-            style={{background:view==="processing"?"var(--gold)":"var(--s2)",color:view==="processing"?"var(--bg)":"var(--gold)",borderRadius:6,padding:"6px 14px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",fontWeight:500,whiteSpace:"nowrap"}}>
-            {TX("processingTab")}
-          </button>
-        )}
-        <button className="hov" onClick={()=>{setView("production");setActivePhase(null);}}
-          style={{background:view==="production"?"var(--purple)":"var(--s2)",color:view==="production"?"var(--bg)":"var(--purple)",borderRadius:6,padding:"6px 14px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",fontWeight:500,whiteSpace:"nowrap"}}>
-          📊 {TX("production")}
-        </button>
+          display:"flex",gap:8,rowGap:8,alignItems:"center",flexWrap:"wrap"}}>
+        {/* PESTAÑAS. Eran nueve en fila y PRODUCCIÓN quedaba cortada a la
+            derecha. Se quedan a la vista las cuatro de todos los días; las
+            listas de consulta van en MÁS. Cuando estás en una de ellas, MÁS
+            toma su nombre y su color: siempre se ve dónde estás. */}
+        {(()=>{
+          const tabStyle=(on,col)=>({background:on?col:"var(--s2)",color:on?"var(--bg)":col,borderRadius:6,padding:"6px 14px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",fontWeight:500,whiteSpace:"nowrap",border:"none",cursor:"pointer"});
+          const ir=v=>{setView(v);setActivePhase(null);};
+          const principales=[
+            [TX("activePipeline")+" · "+active.length,"active","var(--blue)"],
+            [TX("closedFiles")+" · "+closed.length,"closed","var(--ok)"],
+            ...((isAdmin||isAssistant)?[[TX("processingTab"),"processing","var(--gold)"]]:[]),
+            ["📊 "+TX("production"),"production","var(--purple)"],
+          ];
+          const mas=[
+            ["🔀 "+TX("referredOut"),referredOut.length,"referred","var(--violet)"],
+            ["🤝 "+TX("inbound"),inbound.length,"inbound","var(--yellow)"],
+            ["⏸ "+TX("preparation"),prep.length,"prep","var(--mint)"],
+            ["🔔 "+TX("dueReview"),dueReview.length,"review",dueReview.length>0?"var(--bad)":"var(--t3)"],
+            ["🗄 "+TX("archived"),archived.length,"archived","var(--t2)"],
+          ];
+          const enMas=mas.find(m=>m[2]===view);
+          return <>
+            {principales.map(([l,v,col])=>(
+              <button key={v} className="hov" onClick={()=>ir(v)} style={tabStyle(view===v,col)}>{l}</button>
+            ))}
+            <Menu label={enMas?`${enMas[0]} · ${enMas[1]}`:<>{TX("mvMore")}{dueReview.length>0&&<span className="mas-alerta">{dueReview.length}</span>}</>}
+              title={TX("mvMoreHint")}
+              style={tabStyle(!!enMas,enMas?enMas[3]:"var(--t2)")}>
+              {mas.map(([l,c,v,col])=>(
+                <button key={v} data-cierra className="mi" onClick={()=>ir(v)}
+                  style={view===v?{background:"var(--s2)",color:"var(--t1)"}:undefined}>
+                  <span style={{flex:1,color:col}}>{l}</span>
+                  <span style={{color:c>0&&v==="review"?"var(--bad)":"var(--t3)"}}>{c}</span>
+                </button>
+              ))}
+            </Menu>
+          </>;
+        })()}
         {view==="active"&&<>
           <div style={{width:1,height:20,background:"var(--bd)",margin:"0 4px"}}/>
           <button className="hov" onClick={()=>setActivePhase(null)}
@@ -3457,14 +3562,15 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
       {prodTab==="team"&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:12}}>
           {loStats.map((lo,i)=>(
-            <div key={lo.name} style={{background:"var(--s1)",border:`1px solid ${loColors[i]}44`,borderRadius:10,overflow:"hidden"}}>
+            <div key={lo.name} className={lo.active?undefined:"ex-miembro"} title={lo.active?undefined:TX("exMemberHint")}
+              style={{background:"var(--s1)",border:`1px solid ${loColors[i]}44`,borderRadius:10,overflow:"hidden",order:lo.active?0:1}}>
               <div style={{background:`${loColors[i]}18`,borderBottom:`2px solid ${loColors[i]}`,padding:"10px 14px",display:"flex",alignItems:"center",gap:10}}>
                 <div style={{width:36,height:36,borderRadius:"50%",background:loColors[i],display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--ff-num)",fontWeight:800,fontSize:"var(--fs-5)",color:"var(--bg)",flexShrink:0}}>
                   {lo.name.split(" ").map(n=>n[0]).join("").slice(0,2)}
                 </div>
                 <div>
                   <div style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:loColors[i]}}>{lo.name}</div>
-                  <div style={{fontSize:"var(--fs-2)",color:"var(--t3)"}}>{lo.role}</div>
+                  <div style={{fontSize:"var(--fs-2)",color:"var(--t3)"}}>{lo.role}{!lo.active&&<span className="ex-tag">{TX("exMember")}</span>}</div>
                 </div>
               </div>
               <div style={{padding:"12px 14px",display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
