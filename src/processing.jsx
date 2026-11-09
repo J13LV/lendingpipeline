@@ -1466,10 +1466,10 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
             onExit={cerrarTour} />
         </div>
       )}
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(240px,32%) 1fr", minHeight: 420 }}>
+      <div className="proc-grid" style={{ display: "grid", gridTemplateColumns: "minmax(240px,32%) 1fr", minHeight: 420 }}>
 
         {/* COLA */}
-        <div data-tour="cola" style={{ borderRight: `1px solid ${C.line}`, background: C.card,
+        <div data-tour="cola" className="proc-cola" style={{ borderRight: `1px solid ${C.line}`, background: C.card,
           padding: "12px 10px", maxHeight: 620, overflowY: "auto" }}>
           <div data-tour="colas" style={{ display: "flex", gap: 5, marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
             {PROCESSOR_IDS.map(id => {
