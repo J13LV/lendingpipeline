@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, onSnapshot, collection, writeBatch, getDocs } from "firebase/firestore";
 import { helpSections, searchHelp } from "./helpContent";
-import { tr, defaultLang, irAlAncla } from "./ui";
+import { tr, defaultLang, irAlAncla, PL_ES } from "./ui";
 import { downloadMarthaSheet } from "./marthaExport";
 import ProcessingView, { IntakePane, HistoryPane, SubmissionPane, Gate1Grid } from "./processing";
 import { downloadChecklist } from "./barrettChecklist";
@@ -16,6 +16,9 @@ let CURRENT_LANG = "es";
 const P = o => (o && typeof o === "object" && !Array.isArray(o))
   ? (o[CURRENT_LANG] ?? o.es ?? o.en ?? "") : o;
 const TX = (k, v) => tr(k, CURRENT_LANG, v);
+// Rótulos de Producción: el inglés es la llave; en español se traduce si
+// está en PL_ES y si no, sale tal cual.
+const PL = s => (CURRENT_LANG === "es" && PL_ES[s]) || s;
 // Las notas del motor viven como note_es / note_en.
 const PN = o => o ? (o["note_" + CURRENT_LANG] ?? o.note_es ?? o.note_en ?? "") : "";
 import {
@@ -1707,7 +1710,7 @@ export default function App() {
                 borderBottom:l==="CRITICAL"&&critOnly?"2px solid #E85D75":"2px solid transparent",
                 paddingBottom:2}}>
               <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:c}}>{v}</div>
-              <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px"}}>{l}</div>
+              <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px"}}>{TX("mvStat_"+l)}</div>
             </div>
           ))}
           {/* Always visible. A hidden list never gets opened; a number up here does. */}
@@ -1717,7 +1720,7 @@ export default function App() {
             <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:dueReview.length>0?"#E85D75":"var(--t3)"}}>
               {dueReview.length}
             </div>
-            <div style={{fontSize:"var(--fs-1)",color:dueReview.length>0?"#E85D75":"var(--t3)",letterSpacing:"1px"}}>DUE REVIEW</div>
+            <div style={{fontSize:"var(--fs-1)",color:dueReview.length>0?"#E85D75":"var(--t3)",letterSpacing:"1px"}}>{TX("dueReview")}</div>
           </div>
         </div>
         <div style={{marginLeft:"auto",display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
@@ -1729,15 +1732,15 @@ export default function App() {
               border: "1px solid " + (saveStatus==="saving" ? "#30363D" : saveStatus==="saved" ? "#06D6A0" : "#E85D75"),
               fontFamily:"DM Mono"
             }}>
-              {saveStatus==="saving" ? "● SAVING…" : saveStatus==="saved" ? "✓ SAVED" : "⚠ SAVE FAILED"}
+              {saveStatus==="saving" ? TX("mvSaving") : saveStatus==="saved" ? TX("mvSaved") : TX("mvSaveFailed")}
             </div>
           )}
           <input placeholder={TX("phSearch")} value={search} onChange={e=>setSearch(e.target.value)}
             style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:6,padding:"7px 12px",color:"var(--t1)",fontSize:"var(--fs-4)",width:170}}/>
           <button className="hov" onClick={exportBackup}
-            title="Download a JSON backup of your entire pipeline. Save it to Google Drive weekly."
+            title={TX("mvBackupHint")}
             style={{background:"#21262D",color:"var(--t2)",borderRadius:6,padding:"8px 12px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",border:"1px solid #30363D"}}>
-            ↓ BACKUP
+            ↓ {TX("backup")}
           </button>
           {isAdmin && (
             <button className="hov" onClick={exportMarthaSheet} disabled={marthaBusy}
@@ -1768,13 +1771,13 @@ export default function App() {
             <label className="hov"
               title={TX("backupHint")}
               style={{background:"#21262D",color:"var(--t2)",borderRadius:6,padding:"8px 12px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",border:"1px solid #30363D",cursor:"pointer"}}>
-              ↑ RESTORE
+              ↑ {TX("restore")}
               <input type="file" accept="application/json,.json" onChange={importBackup} style={{display:"none"}}/>
             </label>
           )}
           <button className="hov" onClick={()=>setShowAdd(true)}
             style={{background:"#F5A623",color:"#0D1117",borderRadius:6,padding:"8px 16px",fontFamily:"DM Mono",fontSize:"var(--fs-4)",fontWeight:500}}>
-            + NEW FILE
+            + {TX("mvNewFile")}
           </button>
 
           <button className="hov" onClick={startTraining}
@@ -1811,9 +1814,9 @@ export default function App() {
               </button>))}
           </div>
           <button className="hov" onClick={()=>setShowHelp(true)}
-            title="Help & best practices"
+            title={TX("mvHelpHint")}
             style={{background:"transparent",color:"var(--t2)",borderRadius:6,padding:"8px 10px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",border:"1px solid #30363D",cursor:"pointer"}}>
-            ❓ HELP
+            ❓ {TX("help")}
           </button>
 
           <div style={{display:"flex",alignItems:"center",gap:8,paddingLeft:12,marginLeft:4,borderLeft:"1px solid #30363D"}}>
@@ -1831,11 +1834,11 @@ export default function App() {
             </div>
             <button className="hov"
               onClick={()=>{
-                if(confirm("Sign out?")) signOut(auth);
+                if(confirm(TX("mvSignOutAsk"))) signOut(auth);
               }}
-              title="Sign out"
+              title={TX("mvSignOutHint")}
               style={{background:"transparent",color:"var(--t3)",borderRadius:6,padding:"6px 8px",fontFamily:"DM Mono",fontSize:"var(--fs-2)",border:"1px solid #30363D",cursor:"pointer"}}>
-              SIGN OUT
+              {TX("signOut")}
             </button>
           </div>
         </div>
@@ -1846,13 +1849,13 @@ export default function App() {
         style={{background:"#161B22",borderBottom:"1px solid #21262D",padding:"10px 24px 12px",
           display:"flex",gap:8,alignItems:"center",overflowX:"auto",overscrollBehaviorX:"contain"}}>
         {[
-          ["ACTIVE PIPELINE",active.length,"active","#4A90D9"],
-          ["CLOSED FILES",closed.length,"closed","#06D6A0"],
-          ["🔀 REFERRED OUT",referredOut.length,"referred","#A78BFA"],
-          ["🤝 INBOUND",inbound.length,"inbound","#FFD166"],
-          ["⏸ PREPARATION",prep.length,"prep","#7EC8A4"],
-          [`🔔 DUE REVIEW`,dueReview.length,"review",dueReview.length>0?"#E85D75":"var(--t3)"],
-          ["🗄 ARCHIVED",archived.length,"archived","var(--t2)"],
+          [TX("activePipeline"),active.length,"active","#4A90D9"],
+          [TX("closedFiles"),closed.length,"closed","#06D6A0"],
+          ["🔀 "+TX("referredOut"),referredOut.length,"referred","#A78BFA"],
+          ["🤝 "+TX("inbound"),inbound.length,"inbound","#FFD166"],
+          ["⏸ "+TX("preparation"),prep.length,"prep","#7EC8A4"],
+          ["🔔 "+TX("dueReview"),dueReview.length,"review",dueReview.length>0?"#E85D75":"var(--t3)"],
+          ["🗄 "+TX("archived"),archived.length,"archived","var(--t2)"],
         ].map(([l,c,v,col])=>(
           <button key={v} className="hov" onClick={()=>{setView(v);setActivePhase(null);}}
             style={{background:view===v?col:"#21262D",color:view===v?"#0D1117":col,borderRadius:6,padding:"6px 14px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",fontWeight:500,whiteSpace:"nowrap"}}>
@@ -1867,13 +1870,13 @@ export default function App() {
         )}
         <button className="hov" onClick={()=>{setView("production");setActivePhase(null);}}
           style={{background:view==="production"?"#BD65E8":"#21262D",color:view==="production"?"#0D1117":"#BD65E8",borderRadius:6,padding:"6px 14px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",fontWeight:500,whiteSpace:"nowrap"}}>
-          📊 PRODUCTION
+          📊 {TX("production")}
         </button>
         {view==="active"&&<>
           <div style={{width:1,height:20,background:"#30363D",margin:"0 4px"}}/>
           <button className="hov" onClick={()=>setActivePhase(null)}
             style={{background:!activePhase?"var(--t1)":"transparent",color:!activePhase?"#0D1117":"var(--t2)",borderRadius:20,padding:"4px 12px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",border:"1px solid #30363D",whiteSpace:"nowrap"}}>
-            ALL · {active.length}
+            {TX("mvAll")} · {active.length}
           </button>
           {phaseCounts.map(p=>(
             <button key={p.id} className="hov" onClick={()=>setActivePhase(activePhase===p.id?null:p.id)}
@@ -1883,9 +1886,9 @@ export default function App() {
           ))}
         </>}
         <div style={{marginLeft:"auto",display:"flex",gap:12,fontSize:"var(--fs-2)",color:"var(--t3)",whiteSpace:"nowrap"}}>
-          <span style={{color:"#E85D75"}}>● CRITICAL ≤3d</span>
-          <span style={{color:"#F5A623"}}>● WARNING ≤7d</span>
-          <span style={{color:"var(--t3)"}}>● STALE 5d+</span>
+          <span style={{color:"#E85D75"}}>● {TX("mvLegCrit")}</span>
+          <span style={{color:"#F5A623"}}>● {TX("mvLegWarn")}</span>
+          <span style={{color:"var(--t3)"}}>● {TX("mvLegStale")}</span>
         </div>
       </div>
 
@@ -2005,17 +2008,17 @@ export default function App() {
         {/* REFERRED OUT TABLE */}
         {view==="referred"&&<div className="fi">
           <div style={{marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#A78BFA"}}>🔀 REFERRED OUT — {referredOut.length} TOTAL</span>
-            <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>Files sent to external bankers. Click any row to view details + track outcome.</span>
+            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#A78BFA"}}>🔀 {TX("referredOut")} — {referredOut.length} {TX("mvTotal")}</span>
+            <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>{TX("mvReferredSub")}</span>
           </div>
           {display.length===0?<div style={{padding:40,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-5)"}}>
-            No referred-out files yet.<br/><br/>
-            <span style={{fontSize:"var(--fs-3)"}}>To refer a file: open any active loan → change STAGE to "REFERRED OUT — EXTERNAL BANK" → fill in receiving banker details.</span>
+            {TX("mvReferredEmpty")}<br/><br/>
+            <span style={{fontSize:"var(--fs-3)"}}>{TX("mvReferredHow")}</span>
           </div>:(
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
               <thead>
                 <tr style={{background:"#161B22",borderBottom:"2px solid #A78BFA"}}>
-                  {["BORROWER","LOAN TYPE","AMOUNT","REFERRED TO","REASON","STATUS","FEE EARNED"].map((h,i)=>(
+                  {["thBorrower","thLoanType","thAmount","thReferredTo","thReason","thStatus","thFeeEarned"].map(k=>TX(k)).map((h,i)=>(
                     <th key={i} style={{padding:"10px 14px",textAlign:"left",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                   ))}
                 </tr>
@@ -2047,7 +2050,7 @@ export default function App() {
                                  ro.status==="Fell Through" ? "#E85D75" :
                                  ro.status==="Withdrawn by Borrower" ? "var(--t2)" :
                                  "#F5A623",
-                        }}>{ro.status||"Pending"}</span>
+                        }}>{ro.status||TX("mvPending")}</span>
                       </td>
                       <td style={{padding:"11px 14px",color:isFunded?"#06D6A0":"var(--t3)",fontWeight:500,background:i%2===0?"#0D1117":"#161B22"}}>
                         {feeEarned > 0 ? `$${feeEarned.toLocaleString()}` : "—"}
@@ -2063,8 +2066,8 @@ export default function App() {
         {/* INBOUND VIEW */}
         {view==="inbound"&&<div className="fi">
           <div style={{marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#FFD166"}}>🤝 INBOUND REFERRALS — {inbound.length} TOTAL</span>
-            <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>Files sent TO us by external bankers. They follow normal pipeline stages.</span>
+            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#FFD166"}}>🤝 {TX("mvInboundTitle")} — {inbound.length} {TX("mvTotal")}</span>
+            <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>{TX("mvInboundSub")}</span>
           </div>
           {display.length===0?<div style={{padding:40,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-5)"}}>
             {TX("inboundEmpty")}<br/><br/>
@@ -2073,7 +2076,7 @@ export default function App() {
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
               <thead>
                 <tr style={{background:"#161B22",borderBottom:"2px solid #FFD166"}}>
-                  {["BORROWER","LOAN TYPE","AMOUNT","REFERRED BY","STAGE","CLOSING"].map((h,i)=>(
+                  {["thBorrower","thLoanType","thAmount","thReferredBy","thStage","thClosing"].map(k=>TX(k)).map((h,i)=>(
                     <th key={i} style={{padding:"10px 14px",textAlign:"left",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                   ))}
                 </tr>
@@ -2103,14 +2106,14 @@ export default function App() {
         {/* CLOSED TABLE */}
         {view==="closed"&&<div className="fi">
           <div style={{marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#06D6A0"}}>CLOSED FILES — {closed.length} TOTAL</span>
-            <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>All funded loans. Click any row to view or reopen.</span>
+            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#06D6A0"}}>{TX("closedFiles")} — {closed.length} {TX("mvTotal")}</span>
+            <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>{TX("mvClosedSub")}</span>
           </div>
-          {display.length===0?<div style={{padding:40,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-5)"}}>No closed files yet.</div>:(
+          {display.length===0?<div style={{padding:40,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-5)"}}>{TX("mvClosedEmpty")}</div>:(
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
               <thead>
                 <tr style={{background:"#161B22",borderBottom:"2px solid #06D6A0"}}>
-                  {["BORROWER","TYPE","LOAN AMOUNT","CLOSED DATE","NOTES",""].map((h,i)=>(
+                  {["thBorrower","thType","thLoanAmount","thClosedDate","thNotes",""].map(k=>k?TX(k):"").map((h,i)=>(
                     <th key={i} style={{padding:"10px 14px",textAlign:"left",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                   ))}
                 </tr>
@@ -2125,7 +2128,7 @@ export default function App() {
                     <td style={{padding:"11px 14px",color:"var(--t3)",fontStyle:"italic",maxWidth:220,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",background:i%2===0?"#0D1117":"#161B22"}}>{f.note||"—"}</td>
                     <td style={{padding:"11px 14px",background:i%2===0?"#0D1117":"#161B22"}}>
                       <button className="hov" onClick={e=>{e.stopPropagation();reopenFile(f.id);}}
-                        style={{background:"#21262D",color:"var(--t2)",borderRadius:5,padding:"4px 10px",fontSize:"var(--fs-2)",fontFamily:"DM Mono"}}>REOPEN</button>
+                        style={{background:"#21262D",color:"var(--t2)",borderRadius:5,padding:"4px 10px",fontSize:"var(--fs-2)",fontFamily:"DM Mono"}}>{TX("reopen")}</button>
                     </td>
                   </tr>
                 ))}
@@ -2138,7 +2141,7 @@ export default function App() {
         {(view==="prep"||view==="review")&&<div className="fi">
           <div style={{marginBottom:14,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
             <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:view==="review"?"#E85D75":"#7EC8A4"}}>
-              {view==="review" ? `🔔 DUE REVIEW — ${dueReview.length}` : `⏸ PREPARATION — ${prep.length}`}
+              {view==="review" ? `🔔 ${TX("dueReview")} — ${dueReview.length}` : `⏸ ${TX("preparation")} — ${prep.length}`}
             </span>
             <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>
               {view==="review"
@@ -2187,25 +2190,25 @@ export default function App() {
                         {f.lo&&<div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:1}}>{f.lo.split(" ")[0]}</div>}
                       </div>
                       {locked
-                        ? <span style={{background:"#E85D75",color:"#0D1117",borderRadius:4,padding:"2px 6px",fontSize:"var(--fs-1)",fontWeight:500,whiteSpace:"nowrap"}}>DECIDE NOW</span>
-                        : due && <span style={{background:"#F5A623",color:"#0D1117",borderRadius:4,padding:"2px 6px",fontSize:"var(--fs-2)",fontWeight:500}}>DUE</span>}
+                        ? <span style={{background:"#E85D75",color:"#0D1117",borderRadius:4,padding:"2px 6px",fontSize:"var(--fs-1)",fontWeight:500,whiteSpace:"nowrap"}}>{TX("mvDecideNow")}</span>
+                        : due && <span style={{background:"#F5A623",color:"#0D1117",borderRadius:4,padding:"2px 6px",fontSize:"var(--fs-2)",fontWeight:500}}>{TX("mvDue")}</span>}
                     </div>
 
                     <div style={{background:"rgba(126,200,164,.07)",border:"1px solid #7EC8A433",borderRadius:6,padding:"7px 9px"}}>
                       <div style={{fontSize:"var(--fs-3)",color:"#7EC8A4",fontWeight:500}}>{P(r.label)}</div>
                       <div style={{fontSize:"var(--fs-2)",color:"var(--t2)",marginTop:3}}>
-                        Review {p.reviewOn||"—"}
+                        {TX("mvReview")} {p.reviewOn||"—"}
                         {" · "}
                         <span style={{color:due?"#E85D75":"var(--t3)"}}>
-                          {dtr>0?`in ${dtr}d`:dtr===0?"today":`${Math.abs(dtr)}d overdue`}
+                          {dtr>0?TX("mvInDays",{n:dtr}):dtr===0?TX("mvToday"):TX("mvOverdue",{n:Math.abs(dtr)})}
                         </span>
                       </div>
                     </div>
 
                     <div style={{fontSize:"var(--fs-2)",color:locked?"#E85D75":"var(--t3)"}}>
-                      {age}d in preparation
-                      <span style={{color:"var(--t4)"}}> / {PREP_MAX_DAYS} max</span>
-                      {(p.reschedules>0)&&<span style={{color:"var(--t4)"}}> · rescheduled {p.reschedules}×</span>}
+                      {TX("mvInPrep",{n:age})}
+                      <span style={{color:"var(--t4)"}}> / {PREP_MAX_DAYS} {TX("mvMax")}</span>
+                      {(p.reschedules>0)&&<span style={{color:"var(--t4)"}}> · {TX("mvRescheduled",{n:p.reschedules})}</span>}
                     </div>
                     <div style={{height:3,background:"#21262D",borderRadius:2,overflow:"hidden"}}>
                       <div style={{height:"100%",width:`${Math.min(100,(age/PREP_MAX_DAYS)*100)}%`,background:locked?"#E85D75":age/PREP_MAX_DAYS>0.75?"#F5A623":"#7EC8A4"}}/>
@@ -2213,18 +2216,18 @@ export default function App() {
 
                     {(p.note||f.note)&&<div style={{fontSize:"var(--fs-2)",color:"var(--t2)",borderTop:"1px solid #21262D",paddingTop:6,fontStyle:"italic"}}>{p.note||f.note}</div>}
                     {locked&&<div style={{fontSize:"var(--fs-2)",color:"#E85D75",lineHeight:1.4}}>
-                      Past {PREP_MAX_DAYS} days — the credit report has expired. Return it or archive it; it can't be rescheduled again.
+                      {TX("mvPrepLocked",{n:PREP_MAX_DAYS})}
                     </div>}
 
                     <div style={{display:"flex",gap:6,marginTop:2,flexWrap:"wrap"}}>
-                      <button className="hov" onClick={e=>{e.stopPropagation();if(confirm(`Bring ${f.borrower} back to the active pipeline?\n\nStage returns to "${p.prevStage||"Lead Inquiry"}" and the stage clock starts today.`))continueFromPrep(f.id);}}
+                      <button className="hov" onClick={e=>{e.stopPropagation();if(confirm(TX("mvBringBack",{n:f.borrower,s:p.prevStage||"Lead Inquiry"})))continueFromPrep(f.id);}}
                         style={{flex:1,background:"rgba(74,144,217,.1)",border:"1px solid #4A90D9",borderRadius:5,color:"#4A90D9",fontSize:"var(--fs-2)",padding:"5px 8px",whiteSpace:"nowrap"}}>
-                        ✓ CONTINUE
+                        ✓ {TX("mvContinue")}
                       </button>
                       <button className="hov" disabled={locked} onClick={e=>{e.stopPropagation();if(!locked)setPrepFor(f);}}
-                        title={locked?`Locked at ${PREP_MAX_DAYS} days`:"Set a new review date"}
+                        title={locked?TX("mvLockedAt",{n:PREP_MAX_DAYS}):TX("mvNewReviewDate")}
                         style={{flex:1,background:locked?"#161B22":"rgba(245,166,35,.1)",border:`1px solid ${locked?"#21262D":"#F5A623"}`,borderRadius:5,color:locked?"#30363D":"#F5A623",fontSize:"var(--fs-2)",padding:"5px 8px",whiteSpace:"nowrap",cursor:locked?"not-allowed":"pointer"}}>
-                        ↻ RESCHEDULE
+                        ↻ {TX("mvReschedule")}
                       </button>
                       <button className="hov" onClick={e=>{e.stopPropagation();setArchiveFor(f);}}
                         style={{background:"rgba(110,118,129,.12)",border:"1px solid #30363D",borderRadius:5,color:"var(--t2)",fontSize:"var(--fs-2)",padding:"5px 10px",whiteSpace:"nowrap"}}>
@@ -2241,14 +2244,14 @@ export default function App() {
         {/* ARCHIVED */}
         {view==="archived"&&<div className="fi">
           <div style={{marginBottom:14,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--t2)"}}>🗄 ARCHIVED — {archived.length}</span>
-            <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>Out of every count and every average. Nothing was deleted — restore any row.</span>
+            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--t2)"}}>🗄 {TX("archived")} — {archived.length}</span>
+            <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>{TX("mvArchivedSub")}</span>
           </div>
-          {display.length===0?<div style={{padding:40,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-5)"}}>Nothing archived yet.</div>:(
+          {display.length===0?<div style={{padding:40,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-5)"}}>{TX("mvArchivedEmpty")}</div>:(
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
               <thead>
                 <tr style={{background:"#161B22",borderBottom:"2px solid #30363D"}}>
-                  {["BORROWER","TYPE","AMOUNT","LAST STAGE","REASON","ARCHIVED",""].map((h,i)=>(
+                  {["thBorrower","thType","thAmount","thLastStage","thReason","thArchived",""].map(k=>k?TX(k):"").map((h,i)=>(
                     <th key={i} style={{padding:"10px 14px",textAlign:"left",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                   ))}
                 </tr>
@@ -2259,12 +2262,12 @@ export default function App() {
                     <td style={{padding:"11px 14px",fontFamily:"Syne",fontWeight:700,color:"var(--t2)",background:i%2===0?"#0D1117":"#161B22"}}>{f.borrower}</td>
                     <td style={{padding:"11px 14px",color:"var(--t2)",background:i%2===0?"#0D1117":"#161B22"}}>{f.type}</td>
                     <td style={{padding:"11px 14px",color:"var(--t2)",background:i%2===0?"#0D1117":"#161B22"}}>${((f.loan||0)/1000).toFixed(0)}K</td>
-                    <td style={{padding:"11px 14px",color:"var(--t2)",fontSize:"var(--fs-3)",background:i%2===0?"#0D1117":"#161B22"}}>{isPrep(f)?(f.prep?.prevStage||"Preparation"):f.stage}</td>
+                    <td style={{padding:"11px 14px",color:"var(--t2)",fontSize:"var(--fs-3)",background:i%2===0?"#0D1117":"#161B22"}}>{isPrep(f)?(f.prep?.prevStage||TX("mvPreparationWord")):f.stage}</td>
                     <td style={{padding:"11px 14px",color:"var(--t2)",fontSize:"var(--fs-3)",background:i%2===0?"#0D1117":"#161B22"}}>{f.archiveReason||"—"}</td>
                     <td style={{padding:"11px 14px",color:"var(--t3)",fontSize:"var(--fs-3)",background:i%2===0?"#0D1117":"#161B22"}}>{f.archivedAt||"—"}</td>
                     <td style={{padding:"11px 14px",background:i%2===0?"#0D1117":"#161B22"}}>
                       <button className="hov" onClick={e=>{e.stopPropagation();restoreFile(f.id);}}
-                        style={{background:"#21262D",color:"#7EC8A4",borderRadius:5,padding:"4px 10px",fontSize:"var(--fs-2)",fontFamily:"DM Mono"}}>↩ RESTORE</button>
+                        style={{background:"#21262D",color:"#7EC8A4",borderRadius:5,padding:"4px 10px",fontSize:"var(--fs-2)",fontFamily:"DM Mono"}}>↩ {TX("restore")}</button>
                     </td>
                   </tr>
                 ))}
@@ -2281,14 +2284,14 @@ export default function App() {
             return(
               <div key={phase.id} className="fi" style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
                 <div style={{background:phase.bg,borderBottom:`2px solid ${phase.color}`,padding:"10px 16px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-                  <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:phase.color,letterSpacing:"1px"}}>PHASE {phase.id} — {phase.label.toUpperCase()}</span>
+                  <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:phase.color,letterSpacing:"1px"}}>{TX("mvPhase")} {phase.id} — {TX("mvPhaseName_"+phase.id).toUpperCase()}</span>
                   <span style={{background:phase.color,color:"#0D1117",borderRadius:10,padding:"1px 8px",fontSize:"var(--fs-3)",fontWeight:500}}>{pf.length}</span>
                   <div style={{marginLeft:"auto",display:"flex",gap:5,flexWrap:"wrap"}}>
                     {phase.stages.map((s,i)=><span key={i} style={{fontSize:"var(--fs-2)",color:"var(--t3)",background:"#0D1117",borderRadius:4,padding:"2px 6px"}}>{s}</span>)}
                   </div>
                 </div>
                 {pf.length===0?(
-                  <div style={{padding:"18px",color:"var(--t4)",fontSize:"var(--fs-4)",textAlign:"center"}}>No active files in this phase</div>
+                  <div style={{padding:"18px",color:"var(--t4)",fontSize:"var(--fs-4)",textAlign:"center"}}>{TX("mvPhaseEmpty")}</div>
                 ):(
                   <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:12,padding:12}}>
                     {pf.map(f=>{
@@ -2306,7 +2309,7 @@ export default function App() {
                             <div>
                               <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--t1)",lineHeight:1.2}}>
                                 {f.borrower}
-                                {f.isInbound && <span title="Inbound referral" style={{marginLeft:6,fontSize:"var(--fs-2)",color:"#FFD166"}}>🤝</span>}
+                                {f.isInbound && <span title={TX("mvInboundOne")} style={{marginLeft:6,fontSize:"var(--fs-2)",color:"#FFD166"}}>🤝</span>}
                                 {isTraining(f) && <span style={{marginLeft:8,fontSize:"var(--fs-1)",fontFamily:"DM Mono",fontWeight:400,color:"#F5A623",border:"1px solid #F5A623",borderRadius:4,padding:"1px 6px",verticalAlign:"middle"}}>{TX("trainBadge")}</span>}
                               </div>
                               <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{f.type} · {fmtLoan(f.loan)}</div>
@@ -2323,7 +2326,7 @@ export default function App() {
                                 return u!=="normal"?<span style={{background:uc,color:"#0D1117",
                                   borderRadius:4,padding:"2px 6px",fontSize:"var(--fs-2)",
                                   fontWeight:500}}>
-                                  {u==="critical"?"CRITICAL":u==="warning"?"WARN":"STALE"}
+                                  {u==="critical"?TX("critical"):u==="warning"?TX("mvWarn"):TX("mvStale")}
                                 </span>:null;
                               }
                               const c=signalColor(ck.signal);
@@ -2348,12 +2351,12 @@ export default function App() {
                           </div>
                           <div style={{fontSize:"var(--fs-3)",color:ph.color,fontWeight:500}}>{f.stage}</div>
                           <div style={{display:"flex",justifyContent:"space-between",fontSize:"var(--fs-2)",color:"var(--t3)"}}>
-                            <span title={`File age: ${fileAge(f) ?? "—"} days`}>
-                              {daysInStage(f)===null ? "— in stage" : `${daysInStage(f)}d in stage`}
-                              {fileAge(f)!==null && <span style={{color:"var(--t4)"}}> · {fileAge(f)}d total</span>}
+                            <span title={TX("mvFileAge",{n:fileAge(f) ?? "—"})}>
+                              {daysInStage(f)===null ? TX("mvInStageNone") : TX("mvInStage",{n:daysInStage(f)})}
+                              {fileAge(f)!==null && <span style={{color:"var(--t4)"}}> · {TX("mvTotalDays",{n:fileAge(f)})}</span>}
                             </span>
                             {f.closing&&<span style={{color:cd!==null&&cd<=3?"#E85D75":cd!==null&&cd<=7?"#F5A623":"var(--t3)"}}>
-                              {cd===0?"CLOSING TODAY":cd!==null&&cd>0?`Close in ${cd}d`:cd!==null?"PAST DUE":f.closing}
+                              {cd===0?TX("mvClosingToday"):cd!==null&&cd>0?TX("mvCloseIn",{n:cd}):cd!==null?TX("mvPastDue"):f.closing}
                               {/* El ritmo se lee sin abrir el archivo: de un
                                   vistazo se ve cual va adelantado y cual
                                   arrastrado en todo el tablero. */}
@@ -2407,7 +2410,7 @@ export default function App() {
                                 </div>
                                 <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:3}}>
                                   {n.legacy
-                                    ? "nota anterior al historial · sin fecha ni autor"
+                                    ? TX("mvLegacyNote")
                                     : `${timeAgo(n.at)}${n.by?` · ${n.by.split(" ")[0]}`:""}`}
                                   {c>1?" · "+TX("nMore",{n:c-1}):""}
                                 </div>
@@ -2420,14 +2423,14 @@ export default function App() {
                             <div style={{display:"flex",gap:5,marginTop:2,flexWrap:"wrap"}}>
                               {f.phone && (
                                 <a href={`tel:${f.phone.replace(/[^\d+]/g,"")}`} onClick={e=>e.stopPropagation()}
-                                  title={`Call ${f.phone}`}
+                                  title={TX("mvCall",{n:f.phone})}
                                   style={{background:"rgba(74,144,217,.08)",border:"1px solid #4A90D944",borderRadius:4,padding:"3px 7px",color:"#4A90D9",fontSize:"var(--fs-2)",fontFamily:"DM Mono",textDecoration:"none"}}>
                                   📱 {f.phone}
                                 </a>
                               )}
                               {f.email && (
                                 <a href={`mailto:${f.email}`} onClick={e=>e.stopPropagation()}
-                                  title={`Email ${f.email}`}
+                                  title={TX("mvEmail",{n:f.email})}
                                   style={{background:"rgba(189,101,232,.08)",border:"1px solid #BD65E844",borderRadius:4,padding:"3px 7px",color:"#BD65E8",fontSize:"var(--fs-2)",fontFamily:"DM Mono",textDecoration:"none"}}>
                                   ✉
                                 </a>
@@ -2437,7 +2440,7 @@ export default function App() {
                           <div style={{display:"flex",gap:6,marginTop:2}}>
                             <button className="hov" onClick={e=>{e.stopPropagation();advance(f.id);}}
                               style={{flex:1,background:"rgba(255,255,255,.05)",border:"1px solid #21262D",borderRadius:5,color:"var(--t2)",fontSize:"var(--fs-2)",padding:"5px 0"}}>
-                              ADVANCE →
+                              {TX("advance")} →
                             </button>
                             <button className="hov" onClick={e=>{e.stopPropagation();
                               const ask = isTraining(f)
@@ -2449,7 +2452,7 @@ export default function App() {
                               if(!okDate(d)){ window.alert(TX("closeDateBad")); return; }
                               closeFile(f.id,d);}}
                               style={{background:"rgba(6,214,160,.1)",border:"1px solid #06D6A0",borderRadius:5,color:"#06D6A0",fontSize:"var(--fs-2)",padding:"5px 10px"}}>
-                              CLOSE ✓
+                              {TX("close")} ✓
                             </button>
                           </div>
                         </div>
@@ -3364,14 +3367,14 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           --fs-9 no caben en 150px. */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(168px,1fr))",gap:10}}>
         {[
-          {label:"TOTAL FILES",value:files.length,color:"#4A90D9"},
-          {label:"CLOSED LOANS",value:closed.length,color:"#06D6A0"},
-          {label:"ACTIVE PIPELINE",value:active.length,color:"#F5A623"},
-          {label:"CLOSED THIS MONTH",value:closedThisMonth.length,color:"#BD65E8"},
-          {label:"PIPELINE VOLUME",value:`$${(activeVol/1e6).toFixed(2)}M`,color:"#4A90D9"},
-          {label:"FUNDED VOLUME",value:`$${(closedVol/1e6).toFixed(2)}M`,color:"#06D6A0"},
-          {label:"MONTH VOLUME",value:`$${(monthVol/1000).toFixed(0)}K`,color:"#BD65E8"},
-          {label:"BRANCH VOLUME",value:`$${((closedVol+activeVol)/1e6).toFixed(2)}M`,color:"#F5A623"},
+          {label:PL("TOTAL FILES"),value:files.length,color:"#4A90D9"},
+          {label:PL("CLOSED LOANS"),value:closed.length,color:"#06D6A0"},
+          {label:PL("ACTIVE PIPELINE"),value:active.length,color:"#F5A623"},
+          {label:PL("CLOSED THIS MONTH"),value:closedThisMonth.length,color:"#BD65E8"},
+          {label:PL("PIPELINE VOLUME"),value:`$${(activeVol/1e6).toFixed(2)}M`,color:"#4A90D9"},
+          {label:PL("FUNDED VOLUME"),value:`$${(closedVol/1e6).toFixed(2)}M`,color:"#06D6A0"},
+          {label:PL("MONTH VOLUME"),value:`$${(monthVol/1000).toFixed(0)}K`,color:"#BD65E8"},
+          {label:PL("BRANCH VOLUME"),value:`$${((closedVol+activeVol)/1e6).toFixed(2)}M`,color:"#F5A623"},
         ].map(s=>(
           <div key={s.label} style={{background:"#161B22",border:`1px solid ${s.color}33`,
             borderTop:`3px solid ${s.color}`,borderRadius:8,padding:"12px",
@@ -3395,13 +3398,13 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
       {/* INNER TAB BAR — now includes BANK REFERRALS */}
       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
         {[
-          !isAssistant && ["team","🏆 TEAM PRODUCTION"],
+          !isAssistant && ["team",PL("🏆 TEAM PRODUCTION")],
           ["overdue",TX("overdueTab")],
-          !isAssistant && ["monthly","📅 MONTHLY"],
-          !isAssistant && ["referrals","🤝 REFERRAL PARTNERS"],
-          !isAssistant && ["bankrefs","🏦 BANK REFERRALS"],
-          (isLO||isAdmin) && ["mycomp","💵 MY COMP"],
-          isAdmin && ["override","💰 OVERRIDE & COMP"],
+          !isAssistant && ["monthly",PL("📅 MONTHLY")],
+          !isAssistant && ["referrals",PL("🤝 REFERRAL PARTNERS")],
+          !isAssistant && ["bankrefs",PL("🏦 BANK REFERRALS")],
+          (isLO||isAdmin) && ["mycomp",PL("💵 MY COMP")],
+          isAdmin && ["override",PL("💰 OVERRIDE & COMP")],
           ["scorecard",TX("scorecardTab")],
           ["mix",TX("mixTab")],
         ].filter(Boolean).map(([t,l])=>(
@@ -3411,7 +3414,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           </button>
         ))}
         <div style={{marginLeft:"auto",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",alignSelf:"center"}}>
-          {prodTab==="mycomp" ? "" : isAdmin ? "ADMIN VIEW · ALL DATA VISIBLE" : isLO ? "LO VIEW · YOUR COMP ONLY" : "ASSISTANT VIEW · NO COMP"}
+          {prodTab==="mycomp" ? "" : isAdmin ? PL("ADMIN VIEW · ALL DATA VISIBLE") : isLO ? PL("LO VIEW · YOUR COMP ONLY") : PL("ASSISTANT VIEW · NO COMP")}
         </div>
       </div>
 
@@ -3466,9 +3469,9 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               </div>
               <div style={{padding:"12px 14px",display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
                 {[
-                  {l:"CLOSED",v:lo.closedCount,c:loColors[i]},
-                  {l:"ACTIVE",v:lo.activeCount,c:"#F5A623"},
-                  {l:"THIS MO",v:lo.monthCount,c:"#BD65E8"},
+                  {l:PL("CLOSED"),v:lo.closedCount,c:loColors[i]},
+                  {l:PL("ACTIVE"),v:lo.activeCount,c:"#F5A623"},
+                  {l:PL("THIS MO"),v:lo.monthCount,c:"#BD65E8"},
                 ].map(s=>(
                   <div key={s.l} style={{textAlign:"center",background:"#0D1117",borderRadius:6,padding:"8px 4px"}}>
                     <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:s.c}}>{s.v}</div>
@@ -3478,7 +3481,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               </div>
               <div style={{padding:"0 14px 12px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                 <div style={{background:"#0D1117",borderRadius:6,padding:"8px 10px"}}>
-                  <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginBottom:2}}>FUNDED VOL</div>
+                  <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginBottom:2}}>{PL("FUNDED VOL")}</div>
                   <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#06D6A0"}}>${(lo.closedVol/1000).toFixed(0)}K</div>
                 </div>
                 <div style={{background:"#0D1117",borderRadius:6,padding:"8px 10px"}}>
@@ -3493,9 +3496,9 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
         {orphanFiles.length > 0 && (
           <div style={{background:"#161B22",border:"1px solid #E85D7544",borderRadius:10,overflow:"hidden"}}>
             <div style={{background:"rgba(232,93,117,.08)",borderBottom:"2px solid #E85D75",padding:"10px 16px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#E85D75",letterSpacing:"1px"}}>⚠ UNASSIGNED LO FILES</span>
+              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#E85D75",letterSpacing:"1px"}}>{PL("⚠ UNASSIGNED LO FILES")}</span>
               <span style={{background:"#E85D75",color:"#0D1117",borderRadius:10,padding:"1px 8px",fontSize:"var(--fs-3)",fontWeight:500}}>{orphanFiles.length}</span>
-              <span style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginLeft:6,flex:1,minWidth:200}}>won't show in production stats until fixed · click any row to open & fix manually</span>
+              <span style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginLeft:6,flex:1,minWidth:200}}>{PL("won't show in production stats until fixed · click any row to open & fix manually")}</span>
               {isAdmin && autoFixableCount > 0 && (
                 <button className="hov" onClick={()=>setShowAutoFixPreview(true)}
                   style={{background:"#F5A623",color:"#0D1117",borderRadius:6,padding:"7px 14px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",fontWeight:500,border:"none",cursor:"pointer"}}>
@@ -3506,7 +3509,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
               <thead>
                 <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
-                  {["BORROWER","TYPE","LOAN","STAGE","CURRENT LO VALUE","SUGGESTED FIX"].map((h,i)=>(
+                  {["BORROWER","TYPE","LOAN","STAGE","CURRENT LO VALUE","SUGGESTED FIX"].map(h=>PL(h)).map((h,i)=>(
                     <th key={i} style={{padding:"8px 14px",textAlign:i<2?"left":i===2?"center":"left",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                   ))}
                 </tr>
@@ -3524,7 +3527,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                       {f._suggestedLo ? (
                         <span style={{color:"#06D6A0",fontWeight:500}}>→ {f._suggestedLo}</span>
                       ) : (
-                        <span style={{color:"var(--t3)",fontStyle:"italic"}}>no match · fix manually</span>
+                        <span style={{color:"var(--t3)",fontStyle:"italic"}}>{PL("no match · fix manually")}</span>
                       )}
                     </td>
                   </tr>
@@ -3539,7 +3542,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
             <div className="fi" style={{background:"#161B22",border:"1px solid #30363D",borderRadius:12,width:"100%",maxWidth:680,maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
               <div style={{padding:"20px 24px 16px",borderBottom:"1px solid #21262D",flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
                 <div>
-                  <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:"#F5A623"}}>✨ AUTO-FIX PREVIEW</div>
+                  <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:"#F5A623"}}>{PL("✨ AUTO-FIX PREVIEW")}</div>
                   <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:4,lineHeight:1.5}}>
                     Review the suggested LO assignments below. Click APPLY to update all {autoFixableCount} files at once.
                   </div>
@@ -3550,7 +3553,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
                   <thead>
                     <tr style={{borderBottom:"1px solid #30363D"}}>
-                      {["BORROWER","CURRENT","→","NEW LO"].map((h,i)=>(
+                      {["BORROWER","CURRENT","→","NEW LO"].map(h=>PL(h)).map((h,i)=>(
                         <th key={i} style={{padding:"8px 14px",textAlign:"left",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                       ))}
                     </tr>
@@ -3578,7 +3581,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 </button>
                 <button className="hov" onClick={()=>setShowAutoFixPreview(false)}
                   style={{flex:1,background:"#21262D",color:"var(--t2)",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:"var(--fs-4)",border:"none",cursor:"pointer"}}>
-                  CANCEL
+                  {PL("CANCEL")}
                 </button>
               </div>
             </div>
@@ -3807,31 +3810,31 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
       {prodTab==="monthly"&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:10}}>
           <div style={{background:"#161B22",border:"1px solid #06D6A044",borderTop:"3px solid #06D6A0",borderRadius:8,padding:12}}>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>BEST MONTH (12MO)</div>
+            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{PL("BEST MONTH (12MO)")}</div>
             <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:"#06D6A0"}}>{bestMonth.units > 0 ? monthLabel(bestMonth.month) : "—"}</div>
-            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{bestMonth.units} units · ${(bestMonth.volume/1000).toFixed(0)}K</div>
+            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{bestMonth.units} {PL("units")} · ${(bestMonth.volume/1000).toFixed(0)}K</div>
           </div>
           <div style={{background:"#161B22",border:"1px solid #E85D7544",borderTop:"3px solid #E85D75",borderRadius:8,padding:12}}>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>SLOWEST MONTH</div>
+            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{PL("SLOWEST MONTH")}</div>
             <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:"#E85D75"}}>{worstMonth.units > 0 ? monthLabel(worstMonth.month) : "—"}</div>
-            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{worstMonth.units} units · ${(worstMonth.volume/1000).toFixed(0)}K</div>
+            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{worstMonth.units} {PL("units")} · ${(worstMonth.volume/1000).toFixed(0)}K</div>
           </div>
           <div style={{background:"#161B22",border:"1px solid #4A90D944",borderTop:"3px solid #4A90D9",borderRadius:8,padding:12}}>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>12-MO TOTAL UNITS</div>
+            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{PL("12-MO TOTAL UNITS")}</div>
             <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:"#4A90D9"}}>{last12Months.reduce((s,m)=>s+m.units,0)}</div>
-            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>loans funded</div>
+            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{PL("loans funded")}</div>
           </div>
           <div style={{background:"#161B22",border:"1px solid #F5A62344",borderTop:"3px solid #F5A623",borderRadius:8,padding:12}}>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>12-MO TOTAL VOLUME</div>
+            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{PL("12-MO TOTAL VOLUME")}</div>
             <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:"#F5A623"}}>${(last12Months.reduce((s,m)=>s+m.volume,0)/1e6).toFixed(2)}M</div>
-            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>funded</div>
+            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{PL("funded")}</div>
           </div>
         </div>
 
         <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,padding:16}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-            <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#4A90D9",letterSpacing:"1px"}}>UNITS CLOSED · LAST 12 MONTHS</div>
-            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px"}}>peak: {maxUnits} unit{maxUnits===1?"":"s"}</div>
+            <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#4A90D9",letterSpacing:"1px"}}>{PL("UNITS CLOSED · LAST 12 MONTHS")}</div>
+            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px"}}>{PL("peak:")} {maxUnits} {maxUnits===1?PL("unit"):PL("units")}</div>
           </div>
           <div style={{display:"flex",gap:6,alignItems:"flex-end",height:140,paddingTop:8}}>
             {last12Months.map((m,i)=>{
@@ -3862,8 +3865,8 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
 
         <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,padding:16}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-            <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#F5A623",letterSpacing:"1px"}}>FUNDED VOLUME · LAST 12 MONTHS</div>
-            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px"}}>peak: ${(maxVolume/1000).toFixed(0)}K</div>
+            <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#F5A623",letterSpacing:"1px"}}>{PL("FUNDED VOLUME · LAST 12 MONTHS")}</div>
+            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px"}}>{PL("peak:")} ${(maxVolume/1000).toFixed(0)}K</div>
           </div>
           <div style={{display:"flex",gap:6,alignItems:"flex-end",height:140,paddingTop:8}}>
             {last12Months.map((m,i)=>{
@@ -3894,12 +3897,12 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
 
         <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
           <div style={{background:"#1a2a3a",borderBottom:"2px solid #4A90D9",padding:"10px 16px"}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#4A90D9",letterSpacing:"1px"}}>MONTHLY DETAIL · 12-MONTH ROLLING</span>
+            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#4A90D9",letterSpacing:"1px"}}>{PL("MONTHLY DETAIL · 12-MONTH ROLLING")}</span>
           </div>
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
             <thead>
               <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
-                {["MONTH","UNITS","VOLUME","AVG LOAN"].map((h,i)=>(
+                {["MONTH","UNITS","VOLUME","AVG LOAN"].map(h=>PL(h)).map((h,i)=>(
                   <th key={i} style={{padding:"8px 14px",textAlign:i===0?"left":"center",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                 ))}
               </tr>
@@ -3920,12 +3923,12 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
         {yearlyList.length > 0 && (
           <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
             <div style={{background:"#261535",borderBottom:"2px solid #BD65E8",padding:"10px 16px"}}>
-              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#BD65E8",letterSpacing:"1px"}}>ANNUAL SUMMARY</span>
+              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#BD65E8",letterSpacing:"1px"}}>{PL("ANNUAL SUMMARY")}</span>
             </div>
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
               <thead>
                 <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
-                  {["YEAR","UNITS","VOLUME","AVG LOAN"].map((h,i)=>(
+                  {["YEAR","UNITS","VOLUME","AVG LOAN"].map(h=>PL(h)).map((h,i)=>(
                     <th key={i} style={{padding:"8px 14px",textAlign:i===0?"left":"center",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                   ))}
                 </tr>
@@ -3947,16 +3950,16 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
 
       {/* REFERRAL PARTNERS TAB (existing — sources of business) */}
       {prodTab==="referrals"&&<div>
-        {topRefs.length===0?<div style={{padding:32,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-5)"}}>No referral partners tracked yet. Add partner names to your files to see them here.</div>:(
+        {topRefs.length===0?<div style={{padding:32,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-5)"}}>{TX("plNoRefPartners")}</div>:(
           <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
             <div style={{background:"#1a2e25",borderBottom:"2px solid #06D6A0",padding:"10px 16px",display:"flex",alignItems:"center",gap:10}}>
-              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#06D6A0",letterSpacing:"1px"}}>REFERRAL PARTNER LEADERBOARD</span>
+              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#06D6A0",letterSpacing:"1px"}}>{PL("REFERRAL PARTNER LEADERBOARD")}</span>
               <span style={{background:"#06D6A0",color:"#0D1117",borderRadius:10,padding:"1px 8px",fontSize:"var(--fs-3)",fontWeight:500}}>{topRefs.length}</span>
             </div>
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
               <thead>
                 <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
-                  {["#","REFERRAL PARTNER","TOTAL FILES","CLOSED","ACTIVE","FUNDED VOLUME"].map((h,i)=>(
+                  {["#","REFERRAL PARTNER","TOTAL FILES","CLOSED","ACTIVE","FUNDED VOLUME"].map(h=>PL(h)).map((h,i)=>(
                     <th key={i} style={{padding:"8px 14px",textAlign:i<2?"left":"center",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                   ))}
                 </tr>
@@ -3993,25 +3996,25 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
         {/* Headline metrics */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:10}}>
           <div style={{background:"#161B22",border:"1px solid #A78BFA44",borderTop:"3px solid #A78BFA",borderRadius:8,padding:12}}>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>REFERRED OUT (TOTAL)</div>
+            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{PL("REFERRED OUT (TOTAL)")}</div>
             <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",color:"#A78BFA"}}>{(referredOut||[]).length}</div>
-            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>${(outboundTotalVol/1000).toFixed(0)}K orig. volume</div>
+            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>${(outboundTotalVol/1000).toFixed(0)}K {PL("orig. volume")}</div>
           </div>
           <div style={{background:"#161B22",border:"1px solid #06D6A044",borderTop:"3px solid #06D6A0",borderRadius:8,padding:12}}>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>OUTBOUND FUNDED</div>
+            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{PL("OUTBOUND FUNDED")}</div>
             <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",color:"#06D6A0"}}>{outboundFunded.length}</div>
-            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>${(outboundFundedVol/1000).toFixed(0)}K closed at banker</div>
+            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>${(outboundFundedVol/1000).toFixed(0)}K {PL("closed at banker")}</div>
           </div>
           <div style={{background:"#161B22",border:"1px solid #F5A62344",borderTop:"3px solid #F5A623",borderRadius:8,padding:12}}>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>FEES EARNED (50 BPS)</div>
+            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{PL("FEES EARNED (50 BPS)")}</div>
             <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",color:"#F5A623"}}>${outboundFeesEarned.toLocaleString()}</div>
-            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>on referred-out funded</div>
+            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{PL("on referred-out funded")}</div>
           </div>
           {isAdmin && (
             <div style={{background:"#161B22",border:"1px solid #E85D7544",borderTop:"3px solid #E85D75",borderRadius:8,padding:12}}>
-              <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>LOST COMP (GROSS)</div>
+              <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{PL("LOST COMP (GROSS)")}</div>
               <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",color:"#E85D75"}}>${outboundLostComp.toLocaleString()}</div>
-              <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>vs. {BPS_RATE} bps de comp propia</div>
+              <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>vs. {BPS_RATE} {PL("bps of own comp")}</div>
             </div>
           )}
         </div>
@@ -4019,25 +4022,25 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
         {/* Inbound metrics */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:10}}>
           <div style={{background:"#161B22",border:"1px solid #FFD16644",borderTop:"3px solid #FFD166",borderRadius:8,padding:12}}>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>INBOUND (TOTAL)</div>
+            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{PL("INBOUND (TOTAL)")}</div>
             <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",color:"#FFD166"}}>{inboundList.length}</div>
-            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>from external bankers</div>
+            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{PL("from external bankers")}</div>
           </div>
           <div style={{background:"#161B22",border:"1px solid #06D6A044",borderTop:"3px solid #06D6A0",borderRadius:8,padding:12}}>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>INBOUND CLOSED</div>
+            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{PL("INBOUND CLOSED")}</div>
             <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",color:"#06D6A0"}}>{inboundClosed.length}</div>
-            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>${(inboundFundedVol/1000).toFixed(0)}K funded</div>
+            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>${(inboundFundedVol/1000).toFixed(0)}K {PL("funded")}</div>
           </div>
           <div style={{background:"#161B22",border:"1px solid #4A90D944",borderTop:"3px solid #4A90D9",borderRadius:8,padding:12}}>
-            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>INBOUND ACTIVE</div>
+            <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{PL("INBOUND ACTIVE")}</div>
             <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",color:"#4A90D9"}}>{inboundActive.length}</div>
-            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>${(inboundActiveVol/1000).toFixed(0)}K in pipeline</div>
+            <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>${(inboundActiveVol/1000).toFixed(0)}K {PL("in pipeline")}</div>
           </div>
           {isAdmin && (
             <div style={{background:"#161B22",border:"1px solid #06D6A044",borderTop:"3px solid #06D6A0",borderRadius:8,padding:12}}>
-              <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>COMP FROM INBOUND</div>
+              <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{PL("COMP FROM INBOUND")}</div>
               <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",color:"#06D6A0"}}>${inboundCompEarned.toLocaleString()}</div>
-              <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{BPS_RATE} bps on closed</div>
+              <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{BPS_RATE} {PL("bps on closed")}</div>
             </div>
           )}
         </div>
@@ -4045,19 +4048,19 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
         {/* Reciprocity table */}
         <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
           <div style={{background:"#1f1830",borderBottom:"2px solid #A78BFA",padding:"10px 16px",display:"flex",alignItems:"center",gap:10}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#A78BFA",letterSpacing:"1px"}}>🏦 BANKER RECIPROCITY</span>
-            <span style={{fontSize:"var(--fs-3)",color:"var(--t2)"}}>who's sending what · spot imbalances</span>
+            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#A78BFA",letterSpacing:"1px"}}>{PL("🏦 BANKER RECIPROCITY")}</span>
+            <span style={{fontSize:"var(--fs-3)",color:"var(--t2)"}}>{PL("who's sending what · spot imbalances")}</span>
           </div>
           {bankerReciprocity.length === 0 ? (
             <div style={{padding:24,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-4)"}}>
-              No banker referrals tracked yet.<br/>
-              <span style={{fontSize:"var(--fs-2)",marginTop:6,display:"block"}}>Refer a file out OR add an inbound referral to populate this table.</span>
+              {TX("plNoBankerRefs")}<br/>
+              <span style={{fontSize:"var(--fs-2)",marginTop:6,display:"block"}}>{PL("Refer a file out OR add an inbound referral to populate this table.")}</span>
             </div>
           ) : (
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
               <thead>
                 <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
-                  {["BANKER","COMPANY","SENT TO THEM","THEY SENT US","VOLUME OUT","VOLUME IN","BALANCE"].map((h,i)=>(
+                  {["BANKER","COMPANY","SENT TO THEM","THEY SENT US","VOLUME OUT","VOLUME IN","BALANCE"].map(h=>PL(h)).map((h,i)=>(
                     <th key={i} style={{padding:"8px 14px",textAlign:i<2?"left":"center",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                   ))}
                 </tr>
@@ -4088,32 +4091,32 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
         {isAdmin && (outboundFunded.length > 0 || inboundClosed.length > 0) && (
           <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
             <div style={{background:"#1a1000",borderBottom:"2px solid #F5A623",padding:"10px 16px"}}>
-              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#F5A623",letterSpacing:"1px"}}>💰 YEAR-END COMP IMPACT</span>
+              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#F5A623",letterSpacing:"1px"}}>{PL("💰 YEAR-END COMP IMPACT")}</span>
             </div>
             <div style={{padding:"16px 18px",display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:14}}>
               <div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>OUTBOUND — WHAT YOU WOULD HAVE EARNED IN HOUSE</div>
+                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>{PL("OUTBOUND — WHAT YOU WOULD HAVE EARNED IN HOUSE")}</div>
                 <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-8)",color:"var(--t2)"}}>${outboundWouldHaveEarned.toLocaleString()}</div>
                 <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:3}}>{BPS_RATE} bps × ${(outboundFundedVol/1000).toFixed(0)}K</div>
               </div>
               <div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>WHAT YOU EARNED IN REFERRAL FEES</div>
+                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>{PL("WHAT YOU EARNED IN REFERRAL FEES")}</div>
                 <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-8)",color:"#F5A623"}}>${outboundFeesEarned.toLocaleString()}</div>
                 <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:3}}>{REFERRAL_FEE_BPS} bps × ${(outboundFundedVol/1000).toFixed(0)}K</div>
               </div>
               <div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>NET LOST COMP (OUTBOUND)</div>
+                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>{PL("NET LOST COMP (OUTBOUND)")}</div>
                 <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-8)",color:"#E85D75"}}>${outboundLostComp.toLocaleString()}</div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:3}}>opportunity cost</div>
+                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:3}}>{PL("opportunity cost")}</div>
               </div>
               <div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>INBOUND COMP EARNED</div>
+                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>{PL("INBOUND COMP EARNED")}</div>
                 <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-8)",color:"#06D6A0"}}>${inboundCompEarned.toLocaleString()}</div>
                 <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:3}}>{BPS_RATE} bps × ${(inboundFundedVol/1000).toFixed(0)}K</div>
               </div>
             </div>
             <div style={{padding:"12px 18px",borderTop:"1px solid #21262D",background:"#0D1117",fontSize:"var(--fs-3)",color:"var(--t2)",lineHeight:1.6}}>
-              <strong style={{color:"#F5A623"}}>Read it:</strong> Outbound is what the branch could not place and you sent away — you got <strong style={{color:"#F5A623"}}>${outboundFeesEarned.toLocaleString()}</strong> in referral fees but missed <strong style={{color:"#E85D75"}}>${outboundLostComp.toLocaleString()}</strong> in your own comp. Inbound is what bankers send your way — you earned <strong style={{color:"#06D6A0"}}>${inboundCompEarned.toLocaleString()}</strong> from those. Use this to decide which lenders or channels are worth adding.
+              <strong style={{color:"#F5A623"}}>{PL("Read it:")}</strong> Outbound is what the branch could not place and you sent away — you got <strong style={{color:"#F5A623"}}>${outboundFeesEarned.toLocaleString()}</strong> in referral fees but missed <strong style={{color:"#E85D75"}}>${outboundLostComp.toLocaleString()}</strong> in your own comp. Inbound is what bankers send your way — you earned <strong style={{color:"#06D6A0"}}>${inboundCompEarned.toLocaleString()}</strong> from those. Use this to decide which lenders or channels are worth adding.
             </div>
           </div>
         )}
@@ -4999,13 +5002,13 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
 
         <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
           <div style={{background:"#1a2a3a",borderBottom:"2px solid #4A90D9",padding:"10px 16px",display:"flex",alignItems:"center",gap:10}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#4A90D9",letterSpacing:"1px"}}>MY PERSONAL LO COMP — {profile.name.toUpperCase()}</span>
-            <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>your files only · {BPS_RATE} bps default</span>
+            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#4A90D9",letterSpacing:"1px"}}>{PL("MY PERSONAL LO COMP")} — {profile.name.toUpperCase()}</span>
+            <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>{PL("your files only")} · {BPS_RATE} {PL("bps default")}</span>
           </div>
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
             <thead>
               <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
-                {["BORROWER","PROGRAM","LOAN AMOUNT","CLOSED","BPS","GROSS COMP"].map((h,i)=>(
+                {["BORROWER","PROGRAM","LOAN AMOUNT","CLOSED","BPS","GROSS COMP"].map(h=>PL(h)).map((h,i)=>(
                   <th key={i} style={{padding:"8px 14px",textAlign:"left",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                 ))}
               </tr>
@@ -5025,14 +5028,14 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
             {myClosedFiles.length>0&&(
               <tfoot>
                 <tr style={{background:"#0a1a2a",borderTop:"2px solid #4A90D9"}}>
-                  <td colSpan={4} style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"#4A90D9"}}>MY TOTAL PERSONAL COMP</td>
+                  <td colSpan={4} style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"#4A90D9"}}>{PL("MY TOTAL PERSONAL COMP")}</td>
                   <td style={{padding:"10px 14px",color:"var(--t3)",fontSize:"var(--fs-3)"}}>{BPS_RATE} bps avg</td>
                   <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-7)",color:"#4A90D9"}}>${myTotalComp.toLocaleString()}</td>
                 </tr>
               </tfoot>
             )}
           </table>
-          {myClosedFiles.length===0&&<div style={{padding:24,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-4)"}}>No personal closed files yet.</div>}
+          {myClosedFiles.length===0&&<div style={{padding:24,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-4)"}}>{TX("plNoPersonalClosed")}</div>}
         </div>
       </div>}
 
@@ -5040,13 +5043,13 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
       {prodTab==="mycomp"&&(isLO||isAdmin)&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
         <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
           <div style={{background:"#1a2a3a",borderBottom:"2px solid #4A90D9",padding:"10px 16px",display:"flex",alignItems:"center",gap:10}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#4A90D9",letterSpacing:"1px"}}>MY PERSONAL COMP — {profile.name.toUpperCase()}</span>
-            <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>your closed files only · {BPS_RATE} bps default</span>
+            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#4A90D9",letterSpacing:"1px"}}>{PL("MY PERSONAL COMP")} — {profile.name.toUpperCase()}</span>
+            <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>{PL("your closed files only")} · {BPS_RATE} {PL("bps default")}</span>
           </div>
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
             <thead>
               <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
-                {["BORROWER","PROGRAM","LOAN AMOUNT","CLOSED","BPS","GROSS COMP"].map((h,i)=>(
+                {["BORROWER","PROGRAM","LOAN AMOUNT","CLOSED","BPS","GROSS COMP"].map(h=>PL(h)).map((h,i)=>(
                   <th key={i} style={{padding:"8px 14px",textAlign:"left",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                 ))}
               </tr>
@@ -5066,14 +5069,14 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
             {myClosedFiles.length>0&&(
               <tfoot>
                 <tr style={{background:"#0a1a2a",borderTop:"2px solid #4A90D9"}}>
-                  <td colSpan={4} style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"#4A90D9"}}>MY TOTAL COMP</td>
+                  <td colSpan={4} style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"#4A90D9"}}>{PL("MY TOTAL COMP")}</td>
                   <td style={{padding:"10px 14px",color:"var(--t3)",fontSize:"var(--fs-3)"}}>{BPS_RATE} bps avg</td>
                   <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-7)",color:"#4A90D9"}}>${myTotalComp.toLocaleString()}</td>
                 </tr>
               </tfoot>
             )}
           </table>
-          {myClosedFiles.length===0&&<div style={{padding:24,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-4)"}}>No personal closed files yet.</div>}
+          {myClosedFiles.length===0&&<div style={{padding:24,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-4)"}}>{TX("plNoPersonalClosed")}</div>}
         </div>
       </div>}
 
@@ -7297,7 +7300,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
               <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#7EC8A4",letterSpacing:"1px"}}>⏸ IN PREPARATION</div>
               <div style={{fontSize:"var(--fs-4)",color:"var(--t1)"}}>{P(r.label)}</div>
               <div style={{fontSize:"var(--fs-3)",color:"var(--t2)"}}>
-                Review {p.reviewOn||"—"} · <span style={{color:dtr<=0?"#E85D75":"var(--t3)"}}>{dtr>0?`in ${dtr}d`:dtr===0?"today":`${Math.abs(dtr)}d overdue`}</span>
+                {TX("mvReview")} {p.reviewOn||"—"} · <span style={{color:dtr<=0?"#E85D75":"var(--t3)"}}>{dtr>0?TX("mvInDays",{n:dtr}):dtr===0?TX("mvToday"):TX("mvOverdue",{n:Math.abs(dtr)})}</span>
               </div>
               <div style={{fontSize:"var(--fs-3)",color:locked?"#E85D75":"var(--t3)"}}>
                 {age}d in preparation / {PREP_MAX_DAYS} max{p.reschedules>0?` · rescheduled ${p.reschedules}×`:""}
@@ -7934,6 +7937,12 @@ function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
               phone:phone.trim()||null,
               email:email.trim()||null,
               closedAt:null,
+              // Un archivo nuevo nace con procesadora escrita. Sin el campo,
+              // processorId() lo leia como DEFAULT_PROCESSOR —Martha, que es
+              // lo que significa el vacio en un archivo VIEJO— y el trabajo
+              // nuevo caia en su cola en vez de la de Laura, que solo ve la
+              // suya y nunca se enteraba.
+              processor: NEW_FILE_PROCESSOR,
             };
             // Id fijo por persona: reentrar al entrenamiento reemplaza el
             // archivo anterior en vez de acumular muestras sueltas.
