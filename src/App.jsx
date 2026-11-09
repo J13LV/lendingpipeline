@@ -10,7 +10,8 @@ const ProductionDashboard = lazy(() => import("./production"));
 import ProcessingView, { IntakePane, HistoryPane, SubmissionPane, Gate1Grid } from "./processing";
 import { downloadChecklist } from "./barrettChecklist";
 import { TourPanel, useTour, useTourTab, trainingFileId, trainingSampleName, isTraining,
-         excludeTraining, resetAllTours, readSkip, writeSkip, TourReopen } from "./tour";
+         excludeTraining, resetAllTours, readSkip, writeSkip, TourReopen,
+         seedPractice, practiceClosing, reportTraining, setTrainingReporter, TRAINING_PARTS } from "./tour";
 
 import { CURRENT_LANG, fijarIdioma, P, TX, PL, PN } from "./idioma";
 import {
@@ -123,6 +124,18 @@ const auth = getAuth(firebaseApp);
 // respaldo. Volver atrás es cambiar una línea.
 const PIPELINE_DOC = doc(db, "pipeline", "main");
 const LOANS = collection(db, "loans");
+
+// ─── AVANCE DEL ENTRENAMIENTO ──────────────────────────────────────
+// Un documento por persona en `training/{uid}`. Lo escribe cada quien sobre
+// sí misma (la regla no deja más) y lo lee el admin. Si la regla todavía no
+// está publicada, la escritura falla en silencio: el recorrido no depende
+// de que el admin lo vea.
+const TRAINING = collection(db, "training");
+setTrainingReporter((p, parts) =>
+  setDoc(doc(db, "training", p.uid), {
+    uid: p.uid, name: p.name || p.email || p.uid, role: p.role || null,
+    updatedAt: new Date().toISOString(), parts,
+  }, { merge: true }).catch(() => {}));
 
 // Firestore acepta 500 operaciones por lote. Se parte antes por margen.
 const LOTE = 400;
@@ -662,6 +675,7 @@ export default function App() {
   const [search,setSearch]=useState("");
   const [showAdd,setShowAdd]=useState(false);
   const [trainingMode,setTrainingMode]=useState(false);
+  const [showTrainProg,setShowTrainProg]=useState(false);
   // Aqui arriba a la fuerza: mas abajo quedaria despues de los return
   // tempranos de authReady, currentUser y loaded, y un hook que solo corre
   // en algunos renders tumba React entero.
@@ -1268,6 +1282,12 @@ export default function App() {
       setFiles(p=>p.filter(f=>f.id!==id));
     }
     resetAllTours(profile?.uid);
+    // Empezar de nuevo también borra lo que ve el admin: sin merge, el
+    // documento se reemplaza entero. Lo viejo no es avance de este intento.
+    if(profile?.uid) setDoc(doc(db,"training",profile.uid), {
+      uid: profile.uid, name: profile.name || profile.email || profile.uid, role: profile.role || null,
+      updatedAt: new Date().toISOString(), restartedAt: new Date().toISOString(), parts: {},
+    }).catch(()=>{});
     setTrainingMode(true); setShowAdd(true);
   };
 
@@ -1628,6 +1648,11 @@ export default function App() {
             <button data-cierra className="mi" onClick={startTraining} style={{color:"var(--gold)"}}>
               ▶ {TX("training")}
             </button>
+            {isAdmin && (
+              <button data-cierra className="mi" onClick={()=>setShowTrainProg(true)}>
+                {TX("trainProg")}
+              </button>
+            )}
             <div className="mi-sep"/>
             {/* TAMAÑO DEL TEXTO. Sin data-cierra: se pulsa varias veces
                 seguidas mirando cómo cambia la pantalla. */}
@@ -2518,6 +2543,7 @@ export default function App() {
           </div>
         </div>);})()}
 
+      {showTrainProg&&isAdmin&&<TrainingProgressModal lang={lang} onClose={()=>setShowTrainProg(false)}/>}
       {showAdd&&<AddModal profile={profile} existingFiles={files} training={trainingMode} lang={lang}
         onClose={()=>{setShowAdd(false);setTrainingMode(false);}} onAdd={f=>{
         const stamped = stampEdit(f, profile, "created");
@@ -4489,7 +4515,10 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
   const mostrarTour=()=>{ setTourOculto(false); writeSkip(profile?.uid,"detail",false); };
   const enTour = isTraining(file) && !tourOculto;
   const tourDet = useTour(profile, enTour, "detail");
-  const terminarTour=()=>{ tourDet.restart(); ocultarTour(); };
+  const terminarTour=()=>{
+    reportTraining(profile, { detail: { done: true, doneAt: new Date().toISOString() } });
+    tourDet.restart(); ocultarTour();
+  };
   useTourTab(tourDet.step, setTab, enTour);
   // Whatever the sub-panels are currently showing, ready for the single SAVE.
   const panelDrafts = useRef({});
@@ -4763,7 +4792,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
 
         {enTour && (
           <div style={{padding:"12px 22px 0"}}>
-            <TourPanel profile={profile} lang={lang} tour={tourDet} onExit={ocultarTour} onFinish={terminarTour}/>
+            <TourPanel profile={profile} lang={lang} tour={tourDet} onExit={ocultarTour} onFinish={terminarTour} ctx={file}/>
           </div>
         )}
         {isTraining(file) && tourOculto && (
@@ -5757,6 +5786,61 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
   );
 }
 
+// Quién va en qué parte del entrenamiento. Solo lectura: lo único que el
+// admin hace aquí es mirar. El avance lo escribe cada persona al moverse.
+function TrainingProgressModal({lang, onClose}){
+  const [rows,setRows]=useState(null);
+  const [err,setErr]=useState(false);
+  useEffect(()=>onSnapshot(TRAINING,
+    snap=>{ setRows(snap.docs.map(d=>d.data())); setErr(false); },
+    ()=>{ setErr(true); setRows([]); }), []);
+  const fecha = iso => { try{ return new Date(iso).toLocaleDateString(lang==="es"?"es-US":"en-US",{month:"short",day:"numeric"}); }catch{ return ""; } };
+  const celda = p => {
+    if(!p) return <span style={{color:"var(--t4)"}}>—</span>;
+    if(p.done) return <span style={{color:"var(--ok)"}}>✓ {fecha(p.doneAt)}</span>;
+    if(p.idx) return <span style={{color:"var(--gold)"}}>{TX("trainProgStep",{n:p.idx,t:p.total||"?"})}</span>;
+    return <span style={{color:"var(--t4)"}}>—</span>;
+  };
+  const lista = (rows||[]).slice().sort((a,b)=>String(b.updatedAt||"").localeCompare(String(a.updatedAt||"")));
+  const th = {textAlign:"left",padding:"6px 8px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-1)",letterSpacing:"1px",color:"var(--t3)",fontWeight:400,borderBottom:"1px solid var(--bd)"};
+  const td = {padding:"8px",fontSize:"var(--fs-3)",borderBottom:"1px solid var(--s2)",whiteSpace:"nowrap"};
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
+      <div className="fi" data-train-prog style={{background:"var(--s1)",border:"1px solid var(--bd)",borderRadius:12,width:"100%",maxWidth:760,maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
+        <div style={{padding:"20px 24px 12px",borderBottom:"1px solid var(--s2)"}}>
+          <div style={{fontFamily:"var(--ff-title)",fontWeight:800,fontSize:"var(--fs-8)",color:"var(--t1)"}}>{TX("trainProg")}</div>
+          <div style={{fontSize:"var(--fs-3)",color:"var(--t3)",marginTop:4}}>{TX("trainProgSub")}</div>
+        </div>
+        <div style={{padding:"12px 24px",overflow:"auto"}}>
+          {rows===null ? <div style={{color:"var(--t3)",fontSize:"var(--fs-3)"}}>…</div>
+          : err ? <div style={{color:"var(--yellow)",fontSize:"var(--fs-3)",lineHeight:1.5}}>{TX("trainProgRule")}</div>
+          : !lista.length ? <div style={{color:"var(--t3)",fontSize:"var(--fs-3)"}}>{TX("trainProgNone")}</div>
+          : (
+            <table style={{width:"100%",borderCollapse:"collapse"}}>
+              <thead><tr>
+                <th style={th}>{TX("trainProgWho")}</th>
+                {TRAINING_PARTS.map(k=><th key={k} style={th}>{TX("trainPart_"+k)}</th>)}
+                <th style={th}>{TX("trainProgLast")}</th>
+              </tr></thead>
+              <tbody>{lista.map(r=>(
+                <tr key={r.uid}>
+                  <td style={{...td,color:"var(--t1)"}}>{r.name}</td>
+                  {TRAINING_PARTS.map(k=><td key={k} style={td}>{celda(r.parts?.[k])}</td>)}
+                  <td style={{...td,color:"var(--t3)"}}>{r.updatedAt ? timeAgo(r.updatedAt) : "—"}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          )}
+        </div>
+        <div style={{padding:"12px 24px 20px",display:"flex",justifyContent:"flex-end"}}>
+          <button className="hov" onClick={onClose}
+            style={{background:"var(--s2)",color:"var(--t2)",borderRadius:7,padding:"9px 22px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-4)",border:"none",cursor:"pointer"}}>{TX("close")}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
   // El recorrido solo existe si se entro por el boton de entrenamiento.
   // La bandera isTraining la pone el motor por eso, no un checkbox que
@@ -5767,7 +5851,9 @@ function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
   const [loan,setLoan]=useState("");
   const [type,setType]=useState("Conventional");
   const [stage,setStage]=useState("Lead Inquiry");
-  const [closing,setClosing]=useState("");
+  // En práctica el cierre ya viene: es la fecha que ancla el contrato de
+  // ejemplo, y escribirla no es lo que se viene a aprender.
+  const [closing,setClosing]=useState(training ? practiceClosing() : "");
   const [note,setNote]=useState("");
   const [referralPartner,setReferralPartner]=useState("");
   const [phone,setPhone]=useState("");
@@ -5805,7 +5891,8 @@ function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
             es el que se mueve. */}
         {training && !tourOculto && (
           <div style={{padding:"12px 24px 0",flexShrink:0}}>
-            <TourPanel profile={profile} lang={lang} tour={tour} onExit={()=>setTourOculto(true)}/>
+            <TourPanel profile={profile} lang={lang} tour={tour} onExit={()=>setTourOculto(true)}
+              ctx={{loan, stage, note, closing}}/>
           </div>
         )}
         {training && tourOculto && (
@@ -5979,6 +6066,10 @@ function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
               // En la cola de quien entrena. Sin esto cae en la de Martha por
               // defecto y Laura, que solo ve la suya, nunca lo encontraria.
               newFile.processor = profile?.processorId || DEFAULT_PROCESSOR;
+              // Contrato de ejemplo: sin él FECHAS, el CD y DINERO salen
+              // vacíos y la parte dos se vuelve leer sobre bloques en blanco.
+              Object.assign(newFile, seedPractice(newFile));
+              reportTraining(profile, { newfile: { done: true, doneAt: new Date().toISOString() } });
             }
             if(isInbound){
               newFile.isInbound = true;

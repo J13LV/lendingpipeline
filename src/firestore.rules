@@ -85,6 +85,14 @@ service cloud.firestore {
       allow write: if esAdmin();
     }
 
+    // ─── Avance del entrenamiento, uno por persona ───────────────
+    // Cada quien escribe solo el suyo; el admin lee todos. Nadie del
+    // equipo puede tocar el avance de otro.
+    match /training/{uid} {
+      allow read:  if esAdmin() || (esDelEquipo() && request.auth.uid == uid);
+      allow write: if esDelEquipo() && request.auth.uid == uid;
+    }
+
     // ─── Todo lo demás, cerrado ──────────────────────────────────
     // Sin esta regla, una colección nueva podría quedar abierta por
     // descuido. Lo que no está permitido explícitamente, se niega.
