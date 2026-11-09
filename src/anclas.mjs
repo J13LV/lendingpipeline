@@ -305,9 +305,9 @@ for (const [regla, file, quien] of casos) {
 
   let raiz = montar();
   t("la primera vez el recorrido sale solo", cont.textContent.includes("PASO 1 DE"));
-  // Saltar recorrido.
+  // Ocultar recorrido.
   const saltar = [...cont.querySelectorAll("button")]
-    .find(b => /Saltar|Skip/i.test(b.textContent || ""));
+    .find(b => /Ocultar|Hide/i.test(b.textContent || ""));
   t("hay un botón para saltarlo", !!saltar);
   act(() => saltar.click());
   t("al saltarlo, el panel se va", !cont.textContent.includes("PASO 1 DE"));

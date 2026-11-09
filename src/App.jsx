@@ -10,7 +10,7 @@ const ProductionDashboard = lazy(() => import("./production"));
 import ProcessingView, { IntakePane, HistoryPane, SubmissionPane, Gate1Grid } from "./processing";
 import { downloadChecklist } from "./barrettChecklist";
 import { TourPanel, useTour, useTourTab, trainingFileId, trainingSampleName, isTraining,
-         excludeTraining, clearProgress } from "./tour";
+         excludeTraining, resetAllTours, readSkip, writeSkip, TourReopen } from "./tour";
 
 import { CURRENT_LANG, fijarIdioma, P, TX, PL, PN } from "./idioma";
 import {
@@ -1269,7 +1269,7 @@ export default function App() {
       if(!window.confirm(TX("trainResetAsk"))) return;
       setFiles(p=>p.filter(f=>f.id!==id));
     }
-    clearProgress(profile?.uid);
+    resetAllTours(profile?.uid);
     setTrainingMode(true); setShowAdd(true);
   };
 
@@ -4484,8 +4484,14 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
   },[irA]);
   // Segundo recorrido: solo sobre el archivo de entrenamiento. En un
   // archivo real no aparece, asi que no estorba a quien ya sabe.
-  const enTour = isTraining(file);
+  // Ocultarlo se recuerda: antes salia otra vez cada vez que se abria el
+  // archivo de practica, y la unica salida era cerrar la ventana.
+  const [tourOculto,setTourOculto]=useState(()=>readSkip(profile?.uid,"detail"));
+  const ocultarTour=()=>{ setTourOculto(true); writeSkip(profile?.uid,"detail",true); };
+  const mostrarTour=()=>{ setTourOculto(false); writeSkip(profile?.uid,"detail",false); };
+  const enTour = isTraining(file) && !tourOculto;
   const tourDet = useTour(profile, enTour, "detail");
+  const terminarTour=()=>{ tourDet.restart(); ocultarTour(); };
   useTourTab(tourDet.step, setTab, enTour);
   // Whatever the sub-panels are currently showing, ready for the single SAVE.
   const panelDrafts = useRef({});
@@ -4759,7 +4765,12 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
 
         {enTour && (
           <div style={{padding:"12px 22px 0"}}>
-            <TourPanel profile={profile} lang={lang} tour={tourDet} onExit={onClose}/>
+            <TourPanel profile={profile} lang={lang} tour={tourDet} onExit={ocultarTour} onFinish={terminarTour}/>
+          </div>
+        )}
+        {isTraining(file) && tourOculto && (
+          <div style={{padding:"10px 22px 0"}}>
+            <TourReopen lang={lang} onOpen={mostrarTour}/>
           </div>
         )}
 
@@ -5752,7 +5763,8 @@ function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
   // El recorrido solo existe si se entro por el boton de entrenamiento.
   // La bandera isTraining la pone el motor por eso, no un checkbox que
   // alguien pueda marcar por error ni olvidar marcar.
-  const tour = useTour(profile, !!training);
+  const [tourOculto,setTourOculto]=useState(false);
+  const tour = useTour(profile, !!training && !tourOculto);
   const [borrower,setBorrower]=useState(training ? trainingSampleName(profile) : "");
   const [loan,setLoan]=useState("");
   const [type,setType]=useState("Conventional");
@@ -5780,17 +5792,31 @@ function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
       <div className="fi" style={{background:"var(--s1)",border:"1px solid var(--bd)",borderRadius:12,width:"100%",maxWidth:480,maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
         <div style={{padding:"20px 24px 16px",borderBottom:"1px solid var(--s2)",flexShrink:0}}>
-          <div style={{fontFamily:"var(--ff-title)",fontWeight:800,fontSize:"var(--fs-8)",color:"var(--t1)"}}>NEW FILE</div>
+          <div style={{fontFamily:"var(--ff-title)",fontWeight:800,fontSize:"var(--fs-8)",color:"var(--t1)"}}>{TX("mvNewFile")}</div>
           {isAssistant && (
             <div style={{fontSize:"var(--fs-3)",color:"var(--gold)",marginTop:4,letterSpacing:"0.5px"}}>
-              ⚠ Assistant view — please confirm the LOAN OFFICER below before adding.
+              {TX("nfAssistWarn")}
             </div>
           )}
         </div>
 
-        <div style={{flex:1,overflowY:"auto",padding:"16px 24px",display:"flex",flexDirection:"column",gap:14}}>
+        {/* EL PANEL DEL RECORRIDO, FUERA DEL SCROLL. Vivia dentro del cuerpo
+            que se desplaza: al bajar al campo señalado, el panel —con el
+            texto y el boton Siguiente— se salia por arriba y habia que
+            subir a buscarlo en cada paso. Aqui se queda fijo y el campo
+            es el que se mueve. */}
+        {training && !tourOculto && (
+          <div style={{padding:"12px 24px 0",flexShrink:0}}>
+            <TourPanel profile={profile} lang={lang} tour={tour} onExit={()=>setTourOculto(true)}/>
+          </div>
+        )}
+        {training && tourOculto && (
+          <div style={{padding:"10px 24px 0",flexShrink:0}}>
+            <TourReopen lang={lang} onOpen={()=>setTourOculto(false)}/>
+          </div>
+        )}
 
-          {training && <TourPanel profile={profile} lang={lang} tour={tour} onExit={onClose}/>}
+        <div style={{flex:1,overflowY:"auto",padding:"16px 24px",display:"flex",flexDirection:"column",gap:14}}>
 
           {/* INBOUND REFERRAL TOGGLE — at top so it's visible */}
           <label data-tour="inbound" style={{
@@ -5803,10 +5829,10 @@ function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
               style={{accentColor:"var(--yellow)",width:16,height:16,cursor:"pointer"}}/>
             <div style={{flex:1}}>
               <div style={{fontSize:"var(--fs-4)",color: isInbound ? "var(--yellow)" : "var(--t1)",fontFamily:"var(--ff-title)",fontWeight:700,letterSpacing:"0.5px"}}>
-                🤝 This is an inbound referral from another banker
+                🤝 {TX("nfInbound")}
               </div>
               <div style={{fontSize:"var(--fs-2)",color:"var(--t2)",marginTop:2}}>
-                Tag this file so you can track who sent it your way + measure reciprocity at year end.
+                {TX("nfInboundHint")}
               </div>
             </div>
           </label>
@@ -5814,14 +5840,14 @@ function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
           {/* INBOUND BANKER FIELDS — shown only when checkbox is checked */}
           {isInbound && (
             <div style={{background:"rgba(255,209,102,.04)",border:"1px solid #FFD16633",borderRadius:8,padding:14,display:"flex",flexDirection:"column",gap:10}}>
-              <div style={{fontSize:"var(--fs-3)",color:"var(--yellow)",fontFamily:"var(--ff-title)",fontWeight:700,letterSpacing:"1px",marginBottom:2}}>REFERRING BANKER</div>
+              <div style={{fontSize:"var(--fs-3)",color:"var(--yellow)",fontFamily:"var(--ff-title)",fontWeight:700,letterSpacing:"1px",marginBottom:2}}>{TX("nfRefBanker")}</div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                 <div>
-                  <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>BANKER NAME</div>
+                  <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{TX("nfBankerName")}</div>
                   <input value={inBankerName} onChange={e=>setInBankerName(e.target.value)} placeholder="John Doe" style={IS}/>
                 </div>
                 <div>
-                  <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>COMPANY</div>
+                  <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{TX("nfCompany")}</div>
                   <input value={inBankerCompany} onChange={e=>setInBankerCompany(e.target.value)} placeholder="XYZ Mortgage" style={IS}/>
                 </div>
                 <div>
@@ -5837,7 +5863,7 @@ function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
           )}
 
           <div data-tour="borrower">
-            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>BORROWER NAME *</div>
+            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{TX("nfBorrower")} *</div>
             <input value={borrower} onChange={e=>setBorrower(e.target.value)} placeholder={TX("phLegalName")} style={IS} autoFocus/>
           </div>
 
@@ -5854,11 +5880,11 @@ function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
 
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
             <div data-tour="amount">
-              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>LOAN AMOUNT</div>
+              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{TX("nfAmount")}</div>
               <input value={loan} onChange={e=>setLoan(e.target.value)} placeholder="350000" style={IS}/>
             </div>
             <div data-tour="type">
-              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>LOAN TYPE</div>
+              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{TX("nfType")}</div>
               <select value={type} onChange={e=>setType(e.target.value)} style={IS}>
                 {LOAN_TYPE_GROUPS.map(g=><optgroup key={g.group} label={g.group}>{g.types.map(x=><option key={x}>{x}</option>)}</optgroup>)}
               </select>
@@ -5866,7 +5892,7 @@ function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
           </div>
 
           <div data-tour="stage">
-            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>STARTING STAGE</div>
+            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{TX("nfStage")}</div>
             <select value={stage} onChange={e=>setStage(e.target.value)} style={IS}>
               {ALL_STAGES.map((s,i)=><option key={i} value={s.stage}>[{s.phase.short}] {s.stage}</option>)}
             </select>
@@ -5874,7 +5900,7 @@ function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
 
           <div data-tour="lo">
             <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>
-              LOAN OFFICER {isAssistant && <span style={{color:"var(--gold)"}}>· assigning on behalf of</span>}
+              {TX("nfLo")} {isAssistant && <span style={{color:"var(--gold)"}}>· {TX("nfOnBehalf")}</span>}
             </div>
             <select value={lo} onChange={e=>setLo(e.target.value)} style={IS}>
               {LO_LIST.map(l=><option key={l.name} value={l.name}>{l.name} · {l.role}</option>)}
@@ -5882,12 +5908,12 @@ function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
           </div>
 
           <div data-tour="partner">
-            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>REFERRAL PARTNER</div>
+            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{TX("nfPartner")}</div>
             <input value={referralPartner} onChange={e=>setReferralPartner(e.target.value)} placeholder={TX("phPartner")} style={IS}/>
           </div>
 
           <div data-tour="closing">
-            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>EXPECTED CLOSING DATE</div>
+            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{TX("nfClosing")}</div>
             <input type="date" value={closing} onChange={e=>setClosing(e.target.value)} style={IS}/>
           </div>
 
@@ -5895,7 +5921,7 @@ function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
             <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>
               {TX("notes")} <span style={{color:"var(--t4)"}}>{TX("notesShape")}</span>
             </div>
-            <input value={note} onChange={e=>setNote(e.target.value)} placeholder="Subm 4/12 · UW queue · review by 4/15" style={IS}/>
+            <input value={note} onChange={e=>setNote(e.target.value)} placeholder={TX("phNoteNew")} style={IS}/>
           </div>
 
         </div>
@@ -5967,9 +5993,9 @@ function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
             }
             onAdd(newFile);
           }}
-            style={{flex:2,background:"var(--gold)",color:"var(--bg)",borderRadius:7,padding:"10px 0",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-4)",fontWeight:500,border:"none",cursor:"pointer"}}>ADD TO PIPELINE</button>
+            style={{flex:2,background:"var(--gold)",color:"var(--bg)",borderRadius:7,padding:"10px 0",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-4)",fontWeight:500,border:"none",cursor:"pointer"}}>{TX("nfAdd")}</button>
           <button className="hov" onClick={onClose}
-            style={{flex:1,background:"var(--s2)",color:"var(--t2)",borderRadius:7,padding:"10px 0",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-4)",border:"none",cursor:"pointer"}}>CANCEL</button>
+            style={{flex:1,background:"var(--s2)",color:"var(--t2)",borderRadius:7,padding:"10px 0",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-4)",border:"none",cursor:"pointer"}}>{TX("cancel")}</button>
         </div>
       </div>
     </div>

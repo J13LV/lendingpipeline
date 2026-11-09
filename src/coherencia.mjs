@@ -440,6 +440,32 @@ const nombradas = etapasMotor.filter(e => wiki.includes(e));
 t("el wiki nombra etapas reales (" + nombradas.length + " de " + etapasMotor.length + ")",
   nombradas.length > 10);
 
+// ─── EL RECORRIDO NOMBRA LOS BOTONES COMO LA PANTALLA ─────────────
+// Los pasos en español decían NEW FILE, SAVE, ADVANCE, PREP: botones que
+// en pantalla se llaman de otra forma. Dos comprobaciones: que ningún
+// paso en español use el nombre inglés, y que cada nombre que usa exista
+// tal cual en ui.js para ese idioma.
+{
+  const tour = readFileSync("tour.jsx", "utf8");
+  const ui = readFileSync("ui.js", "utf8");
+  const es = [...tour.matchAll(/\bes:\s*"((?:[^"\\]|\\.)*)"/g)].map(m => m[1]).join("\n");
+  const en = [...tour.matchAll(/\ben:\s*"((?:[^"\\]|\\.)*)"/g)].map(m => m[1]).join("\n");
+  const inglesEnEs = ["NEW FILE", "ADD TO PIPELINE", "SAVE", "ADVANCE", "PREP", "ARCH", "REFER", "BACKFILL", "CANCEL"]
+    .filter(w => new RegExp("\\b" + w + "\\b").test(es));
+  t("el recorrido en español no nombra botones en inglés" + (inglesEnEs.length ? " (" + inglesEnEs.join(", ") + ")" : ""),
+    inglesEnEs.length === 0);
+  const nombres = {
+    es: ["NUEVO ARCHIVO", "AGREGAR AL PIPELINE", "CANCELAR", "GUARDAR", "AVANZAR", "PREPARACIÓN", "ARCHIVAR", "REFERIR", "RELLENAR", "+ AGREGAR ACTUALIZACIÓN", "ORDENAR TODO", "HITOS", "FECHAS TOPE DERIVADAS"],
+    en: ["NEW FILE", "ADD TO PIPELINE", "CANCEL", "SAVE", "ADVANCE", "PREPARATION", "ARCHIVE", "REFER OUT", "BACKFILL", "+ ADD UPDATE", "ORDER ALL", "MILESTONES", "DERIVED DEADLINES"],
+  };
+  for (const [lng, lista2] of Object.entries(nombres)) {
+    const texto = lng === "es" ? es : en;
+    const faltan = lista2.filter(n => texto.includes(n) && !new RegExp(lng + ':\\s*"[^"]*' + n.replace(/[+]/g, "\\+")).test(ui));
+    t(`cada botón que el recorrido nombra en ${lng} existe en ui.js` + (faltan.length ? " (" + faltan.join(", ") + ")" : ""),
+      faltan.length === 0);
+  }
+}
+
 console.log();
 console.log(mal ? `✕ coherencia: ${ok} pasaron, ${mal} fallaron${avisos?`, ${avisos} avisos`:""}`
                 : `coherencia: ${ok}/${ok} el motor y la pantalla dicen lo mismo${avisos?` · ${avisos} avisos`:""}`);
