@@ -21,7 +21,7 @@ service cloud.firestore {
       return [
         // Jose Del Valle — cuenta nueva de Barrett
         'a7gM7SK7GhUuomyL8apuw68PptA2',
-        // Jose Del Valle — cuenta de PRMG, desactivar cuando se confirme
+        // Jose Del Valle — cuenta de PRMG
         'vllTjiE2Aba8CKIC3UWGxMdzBcM2',
         // Ana M Plasencia salio del equipo — sus dos UIDs se quitaron de
         // aqui, que es lo que de verdad le corta el acceso. Sigue en el
@@ -52,13 +52,22 @@ service cloud.firestore {
     }
 
     // ─── El pipeline ─────────────────────────────────────────────
-    // Hoy todo vive en un solo documento, así que no se puede separar
-    // por campo: quien puede escribir archivos puede escribir todo lo
-    // que esté ahí dentro. Separar la compensación a su propio
-    // documento es el siguiente paso, y de paso resuelve el tope de 1 MB.
+    // El documento viejo de un solo bloque. Se puede leer y actualizar,
+    // pero nunca borrar: es el respaldo de antes de partir en `loans`.
     match /pipeline/{doc} {
-      allow read:  if esDelEquipo();
-      allow write: if esDelEquipo();
+      allow read:           if esDelEquipo();
+      allow create, update: if esDelEquipo();
+      allow delete:         if false;
+    }
+
+    // ─── Los préstamos, un documento por archivo ─────────────────
+    // Aquí vive el pipeline de verdad (App.jsx → collection "loans").
+    // Sin esta regla, la de abajo lo cerraría todo y la app no cargaría.
+    // Borrar un préstamo es solo de admin, igual que el botón BORRAR.
+    match /loans/{doc} {
+      allow read:           if esDelEquipo();
+      allow create, update: if esDelEquipo();
+      allow delete:         if esAdmin();
     }
 
     // ─── Compensación y payroll, cuando se separen ───────────────
