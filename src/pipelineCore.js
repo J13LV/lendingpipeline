@@ -5944,6 +5944,8 @@ export function backfillGaps(file, cutover = BARRETT_CUTOVER) {
   for (const o of ORDERS) {
     const etapa = ORDER_STAGE[o.id];
     if (!etapa || !paso(etapa)) continue;
+    // Los docs del condominio solo existen si la propiedad es condominio.
+    if (o.id === "condo_docs" && !isCondo(file)) continue;
     const st = orderState(file, o.id);
     if (!st.req) add("order_req_" + o.id, "processor", etapa, STAGE_OWNERS[etapa],
       "Pedido: " + (o.es || o.id), "Ordered: " + (o.en || o.id));
@@ -5979,6 +5981,9 @@ export const ORDER_STAGE = {
   appraisal: "Appraisal Ordered",
   hoi_quote: "Insurance Ordered",
   hoi_binder: "Insurance Ordered",
+  // Se piden junto con la tasación: el tasador necesita el cuestionario
+  // del condominio. Solo cuenta si la propiedad es condominio (ver arriba).
+  condo_docs: "Appraisal Ordered",
 };
 
 // Los huecos de una persona, separados por epoca.

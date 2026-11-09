@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════
-//  verificar.mjs · LAS SIETE, DE UN TIRÓN
+//  verificar.mjs · LAS DIEZ, DE UN TIRÓN
 //
 //  Se corre antes de cada despliegue:  node verificar.mjs
 //  Si algo falla, el proceso termina en 1 y dice cuál.
@@ -8,7 +8,7 @@ import { execSync } from "child_process";
 
 const pasos = [
   ["1 · ESLint no-undef · no-shadow · no-use-before-define · rules-of-hooks",
-   "npx eslint App.jsx tour.jsx ui.js helpContent.js"],
+   "npx eslint App.jsx production.jsx catalogo.js idioma.js tour.jsx ui.js helpContent.js"],
   ["2 · ESLint sobre el motor (sin no-use-before-define)",
    "npx eslint pipelineCore.js processing.jsx --rule '{\"no-use-before-define\":\"off\"}'"],
   ["3 · auditoría bilingüe del JSX", "node i18n_jsx.mjs"],
@@ -16,6 +16,12 @@ const pasos = [
   ["5 · la aplicación monta y pinta", "node render.mjs"],
   ["6 · un préstamo de punta a punta", "node e2e.mjs"],
   ["7 · los bordes", "node sondeo.mjs"],
+  // Estas tres vivían sueltas y había que acordarse de correrlas. Las
+  // de motor leen _core.mjs, así que se reempaqueta antes: si no, se
+  // prueba el motor de la vez anterior.
+  ["8 · el motor y la pantalla dicen lo mismo", "node _corebundle.mjs && node coherencia.mjs"],
+  ["9 · ningún botón lleva a un callejón", "node anclas.mjs"],
+  ["10 · cada puerta tiene salida real", "node _corebundle.mjs && node puertas.mjs"],
 ];
 
 let fallos = 0;

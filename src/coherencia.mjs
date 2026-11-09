@@ -10,7 +10,11 @@
 // ═══════════════════════════════════════════════════════════════════
 import { readFileSync } from "fs";
 const C = await import("./_core.mjs");
-const app  = readFileSync("App.jsx", "utf8");
+// App.jsx se partió: el equipo y las fases viven en catalogo.js y la
+// pantalla de Producción en production.jsx. Se leen juntos, como si
+// siguieran siendo un archivo, para que ninguna comprobación pierda vista.
+const app  = ["App.jsx", "catalogo.js", "production.jsx"]
+  .map(f => readFileSync(f, "utf8")).join("\n");
 const proc = readFileSync("processing.jsx", "utf8");
 const core = readFileSync("pipelineCore.js", "utf8");
 

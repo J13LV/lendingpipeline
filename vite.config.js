@@ -18,4 +18,16 @@ function version() {
 export default defineConfig({
   plugins: [react()],
   define: { __APP_VERSION__: JSON.stringify(version()) },
+  // Firebase y React cambian casi nunca; la app, cada semana. En archivos
+  // aparte el navegador los guarda y en cada despliegue solo baja lo nuevo.
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/firebase') || id.includes('node_modules/@firebase')) return 'firebase'
+          if (id.includes('node_modules/react')) return 'react'
+        },
+      },
+    },
+  },
 })

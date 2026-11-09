@@ -1197,6 +1197,7 @@ export const UI = {
   phEmail:      { es:"cliente@correo.com", en:"borrower@email.com" },
   notesShape:   { es:"· ESTADO · BLOQUEO · SIGUIENTE", en:"· STATUS · BLOCKER · NEXT" },
   bpsComp:      { es:"COMP EN BPS", en:"BPS COMP" },
+  loadingScreen:{ es:"Cargando…", en:"Loading…" },
   dmDiscardAsk: { es:"¿Cerrar sin guardar? Lo que cambiaste y no guardaste con GUARDAR se pierde.",
                   en:"Close without saving? Anything you changed and didn't SAVE will be lost." },
   dmClose:      { es:"Cerrar", en:"Close" },
