@@ -953,7 +953,7 @@ export default function ProductionDashboard({profile, files, closed, active, ref
               </div>
             </div>
             <div style={{padding:"12px 18px",borderTop:"1px solid var(--s2)",background:"var(--bg)",fontSize:"var(--fs-3)",color:"var(--t2)",lineHeight:1.6}}>
-              <strong style={{color:"var(--gold)"}}>{PL("Read it:")}</strong> Outbound is what the branch could not place and you sent away — you got <strong style={{color:"var(--gold)"}}>${outboundFeesEarned.toLocaleString()}</strong> in referral fees but missed <strong style={{color:"var(--bad)"}}>${outboundLostComp.toLocaleString()}</strong> in your own comp. Inbound is what bankers send your way — you earned <strong style={{color:"var(--ok)"}}>${inboundCompEarned.toLocaleString()}</strong> from those. Use this to decide which lenders or channels are worth adding.
+              <strong style={{color:"var(--gold)"}}>{PL("Read it:")}</strong> {TX("brRead1")} <strong style={{color:"var(--gold)"}}>${outboundFeesEarned.toLocaleString()}</strong> {TX("brRead2")} <strong style={{color:"var(--bad)"}}>${outboundLostComp.toLocaleString()}</strong> {TX("brRead3")} <strong style={{color:"var(--ok)"}}>${inboundCompEarned.toLocaleString()}</strong> {TX("brRead4")}
             </div>
           </div>
         )}
@@ -1749,7 +1749,7 @@ export default function ProductionDashboard({profile, files, closed, active, ref
             <div style={{background:"var(--bg)",borderBottom:"1px solid var(--bd)",padding:"10px 16px",
               display:"flex",justifyContent:"space-between",alignItems:"baseline",flexWrap:"wrap",gap:8}}>
               <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--t2)",letterSpacing:"1px"}}>
-                REQUESTS ENVIADOS
+                {TX("reqSent")}
               </span>
               <span style={{fontSize:"var(--fs-2)",color:"var(--t3)"}}>
                 {TX("inTotal",{n:payrollLog.length,d:payrollLog.reduce((a,x)=>a+(x.total||0),0).toLocaleString()})}
