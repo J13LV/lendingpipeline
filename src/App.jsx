@@ -1738,6 +1738,66 @@ export default function App() {
         @media (max-width:900px){
           .tabbar{flex-wrap:nowrap !important;overflow-x:auto;overscroll-behavior-x:contain;}
         }
+        .hdr-ico{display:none;}
+        /* CELULAR · la barra de arriba. Ocupaba media pantalla: cada bloque
+           caía en su propia línea y el quinto número se salía por la
+           derecha. Aquí queda en tres filas cortas: marca, números en una
+           rejilla de cinco, y búsqueda con las acciones. */
+        @media (max-width:640px){
+          .hdr{padding:10px 12px !important;gap:8px 8px !important;}
+          .hdr-titulo{font-size:var(--fs-7) !important;}
+          .hdr-powered{display:none;}
+          .ver{position:absolute !important;top:12px;right:12px;width:auto !important;margin:0 !important;}
+          .hdr-stats{order:2;width:100%;margin-left:0 !important;gap:4px !important;
+            display:grid !important;grid-template-columns:repeat(5,minmax(0,1fr));}
+          .hdr-stats > div{padding:0 !important;min-width:0;}
+          .hdr-stats > div > div:first-child{font-size:var(--fs-6) !important;}
+          .hdr-stats > div > div:last-child{letter-spacing:0 !important;font-size:10.5px !important;
+            line-height:1.2;overflow-wrap:anywhere;}
+          .hdr-acts{order:3;width:100%;margin-left:0 !important;gap:6px !important;}
+          .hdr-buscar{flex:1 1 130px;min-width:0;width:auto !important;}
+          .hdr-acts button{font-size:var(--fs-2) !important;}
+          .hdr-acts > button{padding:8px 9px !important;}
+          .hdr-user > div:first-child{display:none !important;}
+          .hdr-lbl{display:none;}
+          .hdr-ico{display:inline;}
+          .hdr-quien{display:none !important;}
+          .hdr-user{margin-left:auto !important;padding-left:6px !important;border-left:none !important;}
+        }
+        /* CELULAR · tablas. Con nueve columnas en 390px cada celda quedaba
+           de dos letras de ancho y el nombre partido en cuatro líneas. Ahora
+           la tabla se desliza de lado dentro de su caja —la página no— y el
+           nombre del cliente se queda fijo a la izquierda para no perder de
+           quién es cada renglón. */
+        @media (max-width:640px){
+          table{display:block;overflow-x:auto;overscroll-behavior-x:contain;
+            -webkit-overflow-scrolling:touch;max-width:100%;font-size:var(--fs-3) !important;}
+          th{white-space:nowrap;padding:8px 10px !important;letter-spacing:.3px !important;}
+          td{padding:9px 10px !important;min-width:72px;}
+          tbody td:first-child{position:sticky;left:0;z-index:1;min-width:120px;background:inherit;
+            box-shadow:1px 0 0 var(--bd);}
+          thead th:first-child{position:sticky;left:0;z-index:2;background:var(--s1);}
+          .kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:8px !important;}
+          .kpi-grid > div > div:first-child{white-space:normal !important;line-height:1.25;}
+          .barras > div:nth-child(odd) .mes-lbl{visibility:hidden;}
+          .barras{gap:3px !important;}
+          .mes-lbl{font-size:10px !important;letter-spacing:0 !important;}
+          tbody tr{background-color:var(--bg);}
+          /* La ventana del archivo: una columna, la ✕ fija en su esquina y
+             la etapa del encabezado fuera —el selector de abajo ya la dice—. */
+          .dm-head{padding-right:46px !important;}
+          .dm-x{position:absolute;top:8px;right:10px;padding:6px !important;}
+          .dm-hright{width:100%;gap:14px !important;align-items:center !important;}
+          .dm-hright > div{text-align:left !important;}
+          .dm-hstage{display:none;}
+          .dm-lang{margin-left:auto;}
+          .dm-etapa{padding:8px 12px !important;flex-wrap:wrap;justify-content:flex-start !important;gap:6px 10px !important;}
+          .dm-etapa select{min-width:0 !important;flex:1 1 100%;}
+          .dm-body{grid-template-columns:minmax(0,1fr) !important;padding:12px !important;}
+          .proc-grid{grid-template-columns:minmax(0,1fr) !important;}
+          .proc-cola{border-right:none !important;max-height:46vh !important;
+            border-bottom:1px solid var(--bd);}
+        }
         /* MENÚ DESPLEGABLE (Herramientas y Más) */
         .menu-panel{position:fixed;z-index:60;flex-direction:column;gap:2px;
           min-width:230px;max-width:calc(100vw - 16px);padding:6px;
@@ -1763,7 +1823,7 @@ export default function App() {
       `}</style>
 
       {/* HEADER */}
-      <div style={{background:"var(--s1)",borderBottom:"1px solid var(--s2)",padding:"14px 24px",
+      <div className="hdr" style={{background:"var(--s1)",borderBottom:"1px solid var(--s2)",padding:"14px 24px",
         display:"flex",alignItems:"center",gap:16,flexWrap:"wrap",position:"relative"}}>
         {/* LA VERSIÓN, sola en su esquina. Debajo de la marca quedaba en un
             gris casi negro y no se veía; junto al nombre habría cargado más
@@ -1780,17 +1840,17 @@ export default function App() {
             el mismo grosor, los dos pierden y el bloque se vuelve una
             mancha. Syne queda para títulos y números, que es lo que lo hace
             reconocible cuando aparece. */}
-        <div style={{minWidth:0}}>
-          <div style={{fontFamily:"var(--ff-title)",fontWeight:800,fontSize:"var(--fs-9)",
+        <div className="hdr-marca" style={{minWidth:0}}>
+          <div className="hdr-titulo" style={{fontFamily:"var(--ff-title)",fontWeight:800,fontSize:"var(--fs-9)",
             letterSpacing:"-0.5px",lineHeight:1.05}}>PIPELINE</div>
           <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",letterSpacing:".3px",
             marginTop:3,whiteSpace:"nowrap"}}>{TX("branchLending")}</div>
-          <div style={{fontSize:"var(--fs-1)",color:"var(--t4)",letterSpacing:".3px",
+          <div className="hdr-powered" style={{fontSize:"var(--fs-1)",color:"var(--t4)",letterSpacing:".3px",
             marginTop:1,whiteSpace:"nowrap"}}>
             {TX("branchPowered")}
           </div>
         </div>
-        <div style={{display:"flex",gap:20,marginLeft:8}}>
+        <div className="hdr-stats" style={{display:"flex",gap:20,marginLeft:8}}>
           {[["ACTIVE",active.length,"#4A90D9"],["CLOSED",closed.length,"#06D6A0"],["CRITICAL",crit,"#E85D75"],["VOLUME",`$${(vol/1e6).toFixed(1)}M`,"#F5A623"]].map(([l,v,c])=>(
             <div key={l} className={l==="CRITICAL"&&crit>0?"hov":undefined}
               onClick={l==="CRITICAL"&&crit>0?()=>{
@@ -1815,7 +1875,7 @@ export default function App() {
             <div style={{fontSize:"var(--fs-1)",color:dueReview.length>0?"var(--bad)":"var(--t3)",letterSpacing:"1px"}}>{TX("dueReview")}</div>
           </div>
         </div>
-        <div style={{marginLeft:"auto",display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+        <div className="hdr-acts" style={{marginLeft:"auto",display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
           {saveStatus !== "idle" && (
             <div style={{
               fontSize:"var(--fs-2)", letterSpacing:"1px", padding:"4px 10px", borderRadius:12,
@@ -1827,9 +1887,9 @@ export default function App() {
               {saveStatus==="saving" ? TX("mvSaving") : saveStatus==="saved" ? TX("mvSaved") : TX("mvSaveFailed")}
             </div>
           )}
-          <input placeholder={TX("phSearch")} value={search} onChange={e=>setSearch(e.target.value)}
+          <input className="hdr-buscar" placeholder={TX("phSearch")} value={search} onChange={e=>setSearch(e.target.value)}
             style={{background:"var(--bg)",border:"1px solid var(--bd)",borderRadius:6,padding:"7px 12px",color:"var(--t1)",fontSize:"var(--fs-4)",width:170}}/>
-          <button className="hov" onClick={()=>setShowAdd(true)}
+          <button className="hov hdr-nuevo" onClick={()=>setShowAdd(true)}
             style={{background:"var(--gold)",color:"var(--bg)",borderRadius:6,padding:"8px 16px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-4)",fontWeight:500}}>
             + {TX("mvNewFile")}
           </button>
@@ -1852,7 +1912,7 @@ export default function App() {
             </button>);
           })()}
           {/* HERRAMIENTAS. Lo de una vez por semana, fuera de la barra. */}
-          <Menu label={"⚙ "+TX("mvTools")} align="right" title={TX("mvToolsHint")}
+          <Menu label={<>⚙<span className="hdr-lbl"> {TX("mvTools")}</span></>} align="right" title={TX("mvToolsHint")}
             style={{background:"var(--s2)",color:"var(--t2)",borderRadius:6,padding:"8px 12px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",border:"1px solid var(--bd)",cursor:"pointer",whiteSpace:"nowrap"}}>
             <button data-cierra className="mi" onClick={exportBackup} title={TX("mvBackupHint")}>
               ↓ {TX("backup")}
@@ -1909,8 +1969,8 @@ export default function App() {
             ?
           </button>
 
-          <div style={{display:"flex",alignItems:"center",gap:8,paddingLeft:12,marginLeft:4,borderLeft:"1px solid var(--bd)"}}>
-            <div style={{
+          <div className="hdr-user" style={{display:"flex",alignItems:"center",gap:8,paddingLeft:12,marginLeft:4,borderLeft:"1px solid var(--bd)"}}>
+            <div title={profile.name} style={{
               width:32, height:32, borderRadius:"50%",
               background: profile.color, color:"var(--bg)",
               display:"flex", alignItems:"center", justifyContent:"center",
@@ -1918,7 +1978,7 @@ export default function App() {
             }}>
               {profile.name.split(" ").map(n=>n[0]).join("").slice(0,2)}
             </div>
-            <div style={{display:"flex",flexDirection:"column",lineHeight:1.2}}>
+            <div className="hdr-quien" style={{display:"flex",flexDirection:"column",lineHeight:1.2}}>
               <span style={{fontSize:"var(--fs-3)",color:"var(--t1)",fontFamily:"var(--ff-title)",fontWeight:700}}>{profile.short}</span>
               <span style={{fontSize:"var(--fs-1)",color:profile.color,letterSpacing:"1px",textTransform:"uppercase"}}>{profile.role}</span>
             </div>
@@ -1926,9 +1986,9 @@ export default function App() {
               onClick={()=>{
                 if(confirm(TX("mvSignOutAsk"))) signOut(auth);
               }}
-              title={TX("mvSignOutHint")}
+              title={TX("mvSignOutHint")} aria-label={TX("signOut")}
               style={{background:"transparent",color:"var(--t3)",borderRadius:6,padding:"6px 8px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-2)",border:"1px solid var(--bd)",cursor:"pointer"}}>
-              {TX("signOut")}
+              <span className="hdr-lbl">{TX("signOut")}</span><span className="hdr-ico" aria-hidden="true">↪</span>
             </button>
           </div>
         </div>
@@ -3470,7 +3530,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
       {/* BRANCH STATS */}
       {/* De 150 a 168: con la escala nueva, ocho caracteres de Syne en
           --fs-9 no caben en 150px. */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(168px,1fr))",gap:10}}>
+      <div className="kpi-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(168px,1fr))",gap:10}}>
         {[
           {label:PL("TOTAL FILES"),value:files.length,color:"#4A90D9"},
           {label:PL("CLOSED LOANS"),value:closed.length,color:"#06D6A0"},
@@ -3942,7 +4002,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
             <div style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--blue)",letterSpacing:"1px"}}>{PL("UNITS CLOSED · LAST 12 MONTHS")}</div>
             <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px"}}>{PL("peak:")} {maxUnits} {maxUnits===1?PL("unit"):PL("units")}</div>
           </div>
-          <div style={{display:"flex",gap:6,alignItems:"flex-end",height:140,paddingTop:8}}>
+          <div className="barras" style={{display:"flex",gap:6,alignItems:"flex-end",height:140,paddingTop:8}}>
             {last12Months.map((m,i)=>{
               const heightPct = m.units>0 ? Math.max(8, (m.units/maxUnits)*100) : 0;
               const isBest = m.units===maxUnits && m.units>0;
@@ -3960,7 +4020,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                     transition:"all .2s",
                     minHeight: m.units>0 ? 4 : 0,
                   }}/>
-                  <div style={{fontSize:"var(--fs-1)",color:isCurrent?"var(--blue)":"var(--t3)",fontFamily:"var(--ff-mono)",letterSpacing:"0.5px",fontWeight:isCurrent?500:400,whiteSpace:"nowrap"}}>
+                  <div className="mes-lbl" style={{fontSize:"var(--fs-1)",color:isCurrent?"var(--blue)":"var(--t3)",fontFamily:"var(--ff-mono)",letterSpacing:"0.5px",fontWeight:isCurrent?500:400,whiteSpace:"nowrap"}}>
                     {monthLabel(m.month)}
                   </div>
                 </div>
@@ -3974,7 +4034,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
             <div style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--gold)",letterSpacing:"1px"}}>{PL("FUNDED VOLUME · LAST 12 MONTHS")}</div>
             <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px"}}>{PL("peak:")} ${(maxVolume/1000).toFixed(0)}K</div>
           </div>
-          <div style={{display:"flex",gap:6,alignItems:"flex-end",height:140,paddingTop:8}}>
+          <div className="barras" style={{display:"flex",gap:6,alignItems:"flex-end",height:140,paddingTop:8}}>
             {last12Months.map((m,i)=>{
               const heightPct = m.volume>0 ? Math.max(8, (m.volume/maxVolume)*100) : 0;
               const isBest = m.volume===maxVolume && m.volume>0;
@@ -3992,7 +4052,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                     transition:"all .2s",
                     minHeight: m.volume>0 ? 4 : 0,
                   }}/>
-                  <div style={{fontSize:"var(--fs-1)",color:isCurrent?"var(--blue)":"var(--t3)",fontFamily:"var(--ff-mono)",letterSpacing:"0.5px",fontWeight:isCurrent?500:400,whiteSpace:"nowrap"}}>
+                  <div className="mes-lbl" style={{fontSize:"var(--fs-1)",color:isCurrent?"var(--blue)":"var(--t3)",fontFamily:"var(--ff-mono)",letterSpacing:"0.5px",fontWeight:isCurrent?500:400,whiteSpace:"nowrap"}}>
                     {monthLabel(m.month)}
                   </div>
                 </div>
@@ -6736,7 +6796,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
             "FHA $450,655 eLend Jose Martha" de corrido y habia que
             adivinar quien era quien. */}
         <div className="dm-head" style={{padding:"14px 22px 12px",display:"flex",justifyContent:"space-between",
-          alignItems:"flex-start",gap:20,flexWrap:"wrap",flexShrink:0}}>
+          alignItems:"flex-start",gap:20,flexWrap:"wrap",flexShrink:0,position:"relative"}}>
           <div style={{minWidth:0}}>
             <div className="dm-name" style={{fontFamily:"var(--ff-title)",fontWeight:800,fontSize:"var(--fs-8)",color:"var(--t1)",letterSpacing:"-0.4px"}}>
               {/* Sigue al campo mientras se teclea. El input vive en la solapa
@@ -6769,9 +6829,9 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
               ))}
             </div>
           </div>
-          <div style={{display:"flex",gap:24,alignItems:"flex-start"}}>
+          <div className="dm-hright" style={{display:"flex",gap:24,alignItems:"flex-start"}}>
             {!inPrep&&!isReferredOut&&(
-              <div style={{textAlign:"right"}}>
+              <div className="dm-hstage" style={{textAlign:"right"}}>
                 <div style={{fontSize:"var(--fs-1)",letterSpacing:"1.3px",color:"var(--t3)",marginBottom:3}}>{TX("hdStage")}</div>
                 <div style={{fontSize:"var(--fs-4)",color:ph.color}}>{stage}</div>
                 <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:2}}>
@@ -6822,7 +6882,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
                   </button>))}
               </div>
             )}
-            <button onClick={cerrar} aria-label={TX("dmClose")} title={TX("dmCloseHint")}
+            <button className="dm-x" onClick={cerrar} aria-label={TX("dmClose")} title={TX("dmCloseHint")}
               style={{background:"transparent",border:"none",color:"var(--t3)",
               fontSize:"var(--fs-8)",cursor:"pointer",padding:"2px 0 0 4px",lineHeight:1}}>✕</button>
           </div>
@@ -6836,7 +6896,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
             cruzar la pantalla. Y la izquierda, que ya carga nombre,
             producto, monto, lender, LO y procesadora, se descarga. */}
         {!isClosed&&!inPrep&&!isReferredOut&&(
-          <div style={{padding:"9px 22px",borderTop:"1px solid var(--s2)",
+          <div className="dm-etapa" style={{padding:"9px 22px",borderTop:"1px solid var(--s2)",
             display:"flex",alignItems:"center",gap:11,flexShrink:0,justifyContent:"flex-end"}}>
             <span style={{fontSize:"var(--fs-1)",color:"var(--t3)"}}>
               {daysInStage(file)===null?"—":`${daysInStage(file)}d`}
