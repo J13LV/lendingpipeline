@@ -961,8 +961,10 @@ export function MilestonesPane({ file, lang, onSave, readOnly }) {
               <button key={id} className="hov" disabled={readOnly}
                 onClick={readOnly ? undefined : () => onSave(setUwOutcome(file,
                   { outcome: id, note: nota, by: file.__who || null }))}
-                style={{ background: on ? col : "transparent", color: on ? C.bg : col,
-                  border: `1px solid ${col}`, borderRadius: 4, padding: "4px 10px",
+                // Sin escoger, los tres van neutros. En rojo, Suspendido y
+                // Negado parecían ya marcados antes de tocar nada.
+                style={{ background: on ? col : "transparent", color: on ? C.bg : C.soft,
+                  border: `1px solid ${on ? col : C.edge}`, borderRadius: 4, padding: "4px 10px",
                   fontSize: "var(--fs-2)", fontFamily: "var(--ff-mono)",
                   cursor: readOnly ? "default" : "pointer" }}>
                 {P(m)}
@@ -1195,7 +1197,11 @@ function FilePane({ file, lang, onSave, who, readOnly, onOpenFull, irA, paseo })
   useEffect(() => { if (paseo) setTab(paseo); }, [paseo]);
   const [note, setNote] = useState("");
   const coe = okDate(file?.contingencies?.coe) || okDate(file?.closing);
-  const faltan = coe ? daysBetween(today(), coe) : null;
+  // daysBetween no da negativos: un COE de abril leido en noviembre salia
+  // "cierra en 0d", como si cerrara hoy. Ahora se separa lo que falta de lo
+  // que ya se pasó, y lo vencido se dice con todas sus letras.
+  const coeVencido = coe && coe < today() ? daysBetween(coe, today()) : 0;
+  const faltan = coe && !coeVencido ? daysBetween(today(), coe) : null;
   const clock = stageClock(file?.stage, file);
   const dias = daysInStage(file);
   const head = contingencyHeadline(file);
@@ -1208,6 +1214,22 @@ function FilePane({ file, lang, onSave, who, readOnly, onOpenFull, irA, paseo })
   // etapa ya alcanzada esta HECHA aunque el calendario haya pasado.
   const rotas = derivadas.filter(r => deadlineSignal(r, file) === "broken").length;
 
+  // Una solapa de la ventana de procesamiento.
+  const pintarSolapa = ([id, label, n, mal, hint, paso]) => {
+    const on = tab === id;
+    return (
+      <button key={id} className="hov" data-tour={id} onClick={() => setTab(id)}
+              title={hint && n > 0 ? T(hint, { n }) : undefined}
+              style={{ background: "transparent", border: "none", cursor: "pointer",
+                color: on ? C.gold : C.soft, fontSize: "var(--fs-2)", fontFamily: "var(--ff-title)",
+                fontWeight: on ? 800 : 500, letterSpacing: ".8px", padding: "0 0 6px",
+                borderBottom: `2px solid ${on ? C.gold : "transparent"}`, whiteSpace: "nowrap" }}>
+              {paso > 0 && <span style={{ fontFamily: "var(--ff-mono)", fontWeight: 400, color: on ? C.gold : C.dim, marginRight: 5 }}>{paso}</span>}
+              {String(label).replace(/^[^A-Za-zÁ-ú]+/, "")}
+              {n > 0 && <span style={{ fontFamily: "var(--ff-mono)", fontWeight: 400, color: mal ? C.red : C.mid }}> {mal && id === "findings" ? "⚑" : ""}{n}</span>}
+            </button>
+    );
+  };
   return (
     <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 14 }}>
       <div style={{ borderBottom: `1px solid ${C.line}`, paddingBottom: 10 }}>
@@ -1215,16 +1237,22 @@ function FilePane({ file, lang, onSave, who, readOnly, onOpenFull, irA, paseo })
           <div>
             <div style={{ fontFamily: "var(--ff-title)", fontWeight: 700, fontSize: "var(--fs-6)", color: C.text }}>{file.borrower}</div>
             <div style={{ fontSize: "var(--fs-2)", color: C.mid, marginTop: 3 }}>
-              {file.type} · {lenderNameOf(file) || T("unassigned")} · {String(file.lo || "").split(" ")[0]}
+              {file.type} · {lenderNameOf(file) || <span style={{ color: C.gold }}>{T("noLender")}</span>} · {String(file.lo || "").split(" ")[0]}
             </div>
           </div>
-          <div style={{ textAlign: "right" }}>
+          <div className="proc-hright" style={{ textAlign: "right" }}>
             {coe && <div style={{ fontSize: "var(--fs-3)", color: C.gold }}>COE {md(coe)}</div>}
-            <div style={{ fontSize: "var(--fs-1)", color: C.dim, marginTop: 2 }}>
-              {faltan !== null ? T("closeInDays", { n: faltan }) : ""}
-              {dias !== null ? ` · ${T("stageDays", { n: dias })}` : ""}
-              {clock ? ` / ${clock.late}d` : ""}
-            </div>
+            {coeVencido > 0 && (
+              <div style={{ fontSize: "var(--fs-2)", color: C.red, marginTop: 2 }}>{T("coeLateDays", { n: coeVencido })}</div>
+            )}
+            {faltan !== null && (
+              <div style={{ fontSize: "var(--fs-1)", color: C.dim, marginTop: 2 }}>{T("closeInDays", { n: faltan })}</div>
+            )}
+            {dias !== null && (
+              <div style={{ fontSize: "var(--fs-1)", color: C.dim, marginTop: 2 }}>
+                {T("stageDays", { n: dias })}{clock ? ` · ${T("stageCap", { n: clock.late })}` : ""}
+              </div>
+            )}
           </div>
         </div>
         <div style={{ fontSize: "var(--fs-2)", color: C.mid, marginTop: 6 }}>{file.stage}</div>
@@ -1234,29 +1262,44 @@ function FilePane({ file, lang, onSave, who, readOnly, onOpenFull, irA, paseo })
           no deberia hacer scroll por cinco bloques para llegar al que
           necesita. El contador en la solapa dice si hay algo ahi sin
           tener que entrar. */}
-      <div style={{ display: "flex", gap: 14, borderBottom: `1px solid ${C.line}`, paddingBottom: 7 }}>
-        {[
-          ["orders",   T("orders"),      pendingOrders(file).length],
-          ["intake",   T("intake"),      intakeCompleteness(file).total - intakeCompleteness(file).filled],
-          ["findings", T("findings"),
-            openFindings(file).length + gate1Coverage(file).pending],
-          ["docs",     T("subTab"), submissionCoverage(file).missing],
-          ["checklist", T("milestones"),  0],
-          ["dates",    T("derivedDates"), rotas],
-          ["notes",    T("notes"),       noteEntries(file).length],
-        ].map(([id, label, n]) => {
-          const on = tab === id;
-          return (
-            <button key={id} className="hov" data-tour={id} onClick={() => setTab(id)}
-              style={{ background: "transparent", border: "none", cursor: "pointer",
-                color: on ? C.gold : C.soft, fontSize: "var(--fs-2)", fontFamily: "var(--ff-title)",
-                fontWeight: on ? 800 : 500, letterSpacing: "1.2px", padding: "0 0 6px",
-                borderBottom: `2px solid ${on ? C.gold : "transparent"}` }}>
-              {String(label).replace(/^[^A-Za-zÁ-ú]+/, "")}
-              {n > 0 && <span style={{ color: id === "findings" || id === "dates" ? C.red : C.gold }}> {n}</span>}
-            </button>
-          );
-        })}
+      {/* Las cinco primeras son el ORDEN en que se trabaja un archivo y
+          llevan su número; las dos últimas son de consulta y van aparte.
+          El número de cada solapa era rojo o dorado sin decir de qué: un
+          "12" rojo en HALLAZGOS eran doce puntos SIN REVISAR, no doce
+          problemas. Ahora el rojo es solo lo que está roto —un hallazgo
+          abierto, una fecha tope rota— y lo pendiente va en gris, con el
+          significado al pasar el mouse. */}
+      <div style={{ display: "flex", gap: "6px 13px", borderBottom: `1px solid ${C.line}`, paddingBottom: 7,
+        flexWrap: "wrap", alignItems: "flex-end" }}>
+        {(() => {
+          const abiertos = openFindings(file).length;
+          const sinRevisar = gate1Coverage(file).pending;
+          const ic = intakeCompleteness(file);
+          return [
+            ["orders",    T("orders"),       pendingOrders(file).length, false, "tabCntOrders", 1],
+            ["intake",    T("intake"),       ic.total - ic.filled,        false, "tabCntIntake", 2],
+            ["findings",  T("findings"),     abiertos || sinRevisar,      abiertos > 0,
+              abiertos ? "tabCntFindOpen" : "tabCntFindPend", 3],
+            ["docs",      T("subTab"),       submissionCoverage(file).missing, false, "tabCntDocs", 4],
+            ["checklist", T("milestones"),   0, false, null, 5],
+            ["sep"],
+            ["dates",     T("derivedDates"), rotas, rotas > 0, "tabCntDates", 0],
+            ["notes",     T("notes"),        noteEntries(file).length, false, "tabCntNotes", 0],
+          ];
+        })().reduce((acc, it) => {
+          // Las de consulta van juntas a la derecha: si no caben, bajan las
+          // dos a la siguiente línea y no queda una sola colgada.
+          if (it[0] === "sep") acc.push({ grupo: [] });
+          else if (acc.length && acc[acc.length - 1].grupo) acc[acc.length - 1].grupo.push(it);
+          else acc.push(it);
+          return acc;
+        }, []).map(item => item.grupo
+          ? (
+            <span key="consulta" style={{ marginLeft: "auto", display: "flex", gap: 13, alignItems: "flex-end",
+              borderLeft: `1px solid ${C.line}`, paddingLeft: 13 }}>
+              {item.grupo.map(pintarSolapa)}
+            </span>)
+          : pintarSolapa(item))}
       </div>
 
       {tab === "orders" && (
@@ -1380,7 +1423,7 @@ function FilePane({ file, lang, onSave, who, readOnly, onOpenFull, irA, paseo })
 }
 
 // ─── LA PANTALLA ───────────────────────────────────────────────────
-export default function ProcessingView({ files, profile, lang, onSetLang, onSaveFile, onOpenFull, irA }) {
+export default function ProcessingView({ files, profile, lang, onSaveFile, onOpenFull, irA, onStartTraining }) {
   const { T, P } = mk(lang);
   const esAdmin = profile?.role === "admin";
   // Una procesadora ve SU cola y nada mas. El admin puede pararse en
@@ -1411,6 +1454,12 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
   const abrirTour  = () => { setSaltado(false); writeSkip(profile?.uid, "processing", false); };
   const enTour = !!entrena && !saltado;
   const tourProc = useTour(profile, enTour, "processing");
+  // Sin archivo de práctica se crea uno nuevo y el recorrido arranca desde
+  // el paso 1: el avance guardado era de otro archivo.
+  const aprender = () => {
+    if (!entrena && onStartTraining) { onStartTraining(); tourProc.restart(); }
+    abrirTour();
+  };
   // Con el recorrido puesto, el archivo abierto es el de entrenamiento: los
   // pasos hablan de sub-solapas y no tendria sentido enseñarlas sobre el
   // archivo real de otra persona.
@@ -1478,11 +1527,15 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
             }} />
         </div>
       )}
-      <div className="proc-grid" style={{ display: "grid", gridTemplateColumns: "minmax(240px,32%) 1fr", minHeight: 420 }}>
+      {/* El alto era fijo de 620px: en una pantalla grande la cola mostraba
+          cinco archivos y sobraba media pantalla. Ahora llena lo que hay
+          debajo del encabezado. La cola gana ancho: es lo que se recorre. */}
+      <div className="proc-grid" style={{ display: "grid", gridTemplateColumns: "minmax(280px,34%) 1fr",
+        height: "max(460px, calc(100vh - 190px))" }}>
 
         {/* COLA */}
         <div data-tour="cola" className="proc-cola" style={{ borderRight: `1px solid ${C.line}`, background: C.card,
-          padding: "12px 10px", maxHeight: 620, overflowY: "auto" }}>
+          padding: "12px 10px", minHeight: 0, overflowY: "auto" }}>
           <div data-tour="colas" style={{ display: "flex", gap: 5, marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
             {PROCESSOR_IDS.map(id => {
               const on = quien === id, puede = esAdmin || id === propia;
@@ -1496,29 +1549,20 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
                 </button>
               );
             })}
-            {/* Cerrado el recorrido, este boton es la unica forma de volver
-                a abrirlo. Solo sale si hay archivo de entrenamiento. */}
-            {entrena && saltado && (
-              <button className="hov" onClick={abrirTour}
+            {/* APRENDER ESTA PANTALLA. Antes el recorrido solo existía si la
+                persona había creado su archivo de práctica desde HERRAMIENTAS:
+                quien entraba directo a procesamiento no tenía por dónde
+                aprender. Ahora el botón está siempre; si no hay archivo de
+                práctica, se crea aquí mismo, ya en Full Application. El
+                ES/EN que vivía aquí se quitó: el del encabezado está siempre
+                a la vista y dos selectores para lo mismo confundían. */}
+            {!enTour && (
+              <button className="hov" data-tour="aprender" onClick={aprender}
                 style={{ marginLeft: "auto", background: "transparent", color: C.gold,
                   border: `1px solid ${C.gold}`, borderRadius: 5, padding: "4px 10px",
                   fontSize: "var(--fs-2)", fontFamily: "var(--ff-mono)", cursor: "pointer" }}>
-                {T("tourOpen")}
+                {T("procLearn")}
               </button>
-            )}
-            {/* Martha y Tina entran directo a su cola: sin esto tendrian
-                que salir de la pantalla para cambiar de idioma. */}
-            {onSetLang && (
-              <div style={{ marginLeft: entrena && saltado ? 0 : "auto", display: "flex",
-                border: `1px solid ${C.edge}`, borderRadius: 5, overflow: "hidden" }}>
-                {["es", "en"].map(l => (
-                  <button key={l} className="hov" onClick={() => onSetLang(l)}
-                    style={{ background: lang === l ? C.gold : "transparent",
-                      color: lang === l ? C.bg : C.mid, border: "none",
-                      padding: "4px 8px", fontSize: "var(--fs-1)", fontFamily: "var(--ff-mono)", cursor: "pointer" }}>
-                    {l.toUpperCase()}
-                  </button>))}
-              </div>
             )}
           </div>
 
@@ -1565,14 +1609,18 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
                   agrupa. Para quien construyo el sistema el color basta;
                   para alguien que entra hoy, no. Ahora es una barra solida
                   en Syne 800, mas grande que los nombres. */}
-              <div style={{ background: g.color, borderRadius: 5, padding: "7px 10px",
-                marginBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>
+              {/* Sigue siendo más grande que los nombres, pero ya no es una
+                  barra sólida: siete barras de color seguidas pesaban más que
+                  los archivos y la cola se veía apretada. El color queda en
+                  la raya de la izquierda y en el título. */}
+              <div style={{ borderLeft: `4px solid ${g.color}`, borderBottom: `1px solid ${g.color}55`,
+                padding: "5px 8px 5px 10px", marginBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ fontFamily: "var(--ff-title)", fontWeight: 800, fontSize: "var(--fs-3)",
-                  color: C.bg, letterSpacing: "1.2px" }}>
+                  color: g.color, letterSpacing: "1.2px" }}>
                   {P(g).toUpperCase()}
                 </span>
-                <span style={{ background: "rgba(13,17,23,.22)", color: C.bg, borderRadius: 9,
-                  padding: "0 7px", fontSize: "var(--fs-2)", fontWeight: 800, marginLeft: "auto" }}>
+                <span style={{ color: g.files.length ? g.color : C.dim, border: `1px solid ${g.files.length ? g.color : C.edge}`,
+                  borderRadius: 9, padding: "0 7px", fontSize: "var(--fs-2)", fontFamily: "var(--ff-mono)", marginLeft: "auto" }}>
                   {g.files.length}
                 </span>
               </div>
@@ -1601,7 +1649,7 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
                 const borde = abiertos ? C.red : g.color;
                 const reloj = ck.applies
                   ? (ck.kind === "coe"
-                      ? (ck.days < 0 ? `COE ${Math.abs(ck.days)}d` : `COE ${ck.days}d`)
+                      ? (ck.days < 0 ? T("coeLateChip", { n: Math.abs(ck.days) }) : T("coeInChip", { n: ck.days }))
                       : `${ck.days}d/${ck.ceiling}d${ck.legal ? " ⚖" : ""}`)
                   : null;
                 return (
@@ -1658,7 +1706,7 @@ export default function ProcessingView({ files, profile, lang, onSetLang, onSave
         </div>
 
         {/* ARCHIVO */}
-        <div style={{ background: C.bg, maxHeight: 620, overflowY: "auto" }}>
+        <div className="proc-file" style={{ background: C.bg, minHeight: 0, overflowY: "auto" }}>
           {sel
             ? <FilePane file={sel} lang={lang} onSave={guardar} who={who}
                 readOnly={readOnly} onOpenFull={onOpenFull}
