@@ -1,0 +1,68 @@
+/* ─── TEMA GLOBAL · una sola fuente de verdad para color y letra ─────────
+   Se carga en main.jsx, antes que cualquier pantalla, así que vale igual
+   para la entrada, la carga y la app. Los tamaños (--fs-N) y los grises de
+   texto (--t1..--t4) siguen viviendo en el <style> de cada pantalla, porque
+   coherencia.mjs los comprueba ahí.
+
+   Antes: cada color estaba escrito a mano en el código (#F5A623 aparecía
+   198 veces). Cambiar el dorado era buscar y reemplazar en 8,000 líneas. Ahora
+   se cambia aquí y cambia en todas partes. */
+
+/* NÚMEROS LEGIBLES. Syne es la letra de los títulos y le da carácter a la
+   app, pero sus cifras son tan anchas y redondas que "0" parece una "o" y
+   "$0.81M" se lee como una fila de óvalos. Esta familia solo tiene cifras y
+   signos de cantidad (IBM Plex Sans, la misma de los textos). Va primero en
+   --ff-title: el navegador la usa para los números y cae a Syne para las
+   letras. Los títulos siguen viéndose igual y los números se leen al vuelo. */
+@font-face{
+  font-family:"PipeNum";
+  src:url("/fonts/plex-sans-latin.woff2") format("woff2");
+  font-weight:100 900;
+  font-style:normal;
+  font-display:swap;
+  unicode-range:U+0024-0025,U+002C-002E,U+0030-0039;
+}
+
+:root{
+  /* superficies, de la más oscura a la más clara */
+  --bg:#0D1117;        /* fondo de la app */
+  --s1:#161B22;        /* tarjetas y paneles */
+  --s2:#21262D;        /* botones, filas, controles */
+  --bd:#30363D;        /* bordes */
+  --bd2:#484F58;       /* bordes fuertes, barras de desplazamiento */
+
+  /* colores con significado: uno por idea, en toda la app */
+  --gold:#F5A623;      /* acción principal y "se avecina" */
+  --gold-d:#C8922A;    /* dorado del botón de entrada */
+  --ok:#06D6A0;        /* listo, cerrado, a favor */
+  --bad:#E85D75;       /* vencido, error, borrar */
+  --blue:#4A90D9;      /* información y comp */
+  --mint:#7EC8A4;      /* estado sano, secundario */
+  --violet:#A78BFA;    /* referidos */
+  --purple:#BD65E8;    /* procesamiento */
+  --yellow:#FFD166;    /* aviso suave */
+
+  /* letras: tres familias (Syne, IBM Plex Sans y DM Mono) y nada más */
+  --ff-title:"PipeNum","Syne",sans-serif;
+  --ff-body:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  --ff-mono:"DM Mono","Courier New",monospace;
+  /* Indicadores y montos grandes ($0.81M, $805K, 92%) e iniciales de los
+     avatares. Con PipeNum las cifras ya se leían, pero la M y la K seguían en
+     Syne y "$0.81M" quedaba mitad y mitad. Las iniciales en Syne no cabían en
+     el círculo ("AM" y "MP" se cortaban). Aquí va todo en Plex. */
+  --ff-num:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+}
+
+/* Cifras del mismo ancho en los textos: las columnas de montos quedan
+   alineadas sin tener que hacer nada en cada tabla. */
+body{font-variant-numeric:tabular-nums;}
+
+/* Quien navega con el teclado tiene que ver dónde está. El borde solo sale
+   con el teclado (focus-visible), no al hacer clic con el ratón. Lleva
+   "html" delante para ganarle al input:focus{outline:none} de las hojas
+   de cada pantalla, que se cargan después. */
+html button:focus-visible,html a:focus-visible,html [role="button"]:focus-visible,
+html input:focus-visible,html select:focus-visible,html textarea:focus-visible{
+  outline:2px solid var(--gold);
+  outline-offset:2px;
+}
