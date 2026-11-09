@@ -63,7 +63,7 @@ t("el modal monta sin reventar", h.length > 1000);
 t("el nombre sale en el encabezado", h.includes("IDALAIS MARTINEZ BARBAN"));
 t("hay un campo con el nombre dentro", h.includes('value="IDALAIS MARTINEZ BARBAN"'));
 t("con su etiqueta NOMBRE DEL CLIENTE", h.includes("NOMBRE DEL CLIENTE"));
-t("telefono y correo siguen ahi", h.includes("PHONE") && h.includes("EMAIL"));
+t("telefono y correo siguen ahi", h.includes("TELÉFONO") && h.includes("CORREO"));
 t("un archivo sin registrar NO trae el aviso de Arive", !h.includes("Arive"));
 
 // ─── las fechas del contrato en Under Contract ───

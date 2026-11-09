@@ -1867,7 +1867,7 @@ export const TRAINER_RATES = { newbie: 0.15, intermediate: 0.10, senior: 0, bm: 
 // Reescribir cheques viejos al cambiar una regla es lo que rompe la confianza.
 export const LEAD_ORIGINS = [
   { id: "self",     es: "Self-Generated",   en: "Self-Generated",   klass: "self",     note_es: "Esfera y marketing propios del originador", note_en: "The originator's own sphere and marketing" },
-  { id: "partner",  es: "Referral Partner", en: "Referral Partner", klass: "self",     note_es: "Socio referidor del originador", note_en: "A referral partner of the originator" },
+  { id: "partner",  es: "Socio referidor",  en: "Referral Partner", klass: "self",     note_es: "Socio referidor del originador", note_en: "A referral partner of the originator" },
   { id: "inhouse",  es: "In-House Lead",    en: "In-House Lead",    klass: "in_house", note_es: "Asignado por la sucursal — sin importar de dónde venga", note_en: "Assigned by the branch — no matter where it came from" },
   { id: "smartb",   es: "Smart Bee Client", en: "Smart Bee Client", klass: "in_house", note_es: "Base de la práctica de taxes · misma regla para todos los LO", note_en: "The tax practice database · same rule for every LO" },
   { id: "apg",      es: "APG Realty",       en: "APG Realty",       klass: "self",     note_es: "Socia referidora, no es de la sucursal · split completo", note_en: "A referral partner, not branch staff · full split" },
