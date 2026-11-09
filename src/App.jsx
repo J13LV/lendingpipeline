@@ -1735,19 +1735,32 @@ export default function App() {
             </Menu>
           </>;
         })()}
-        {view==="active"&&<>
-          <div style={{width:1,height:20,background:"var(--bd)",margin:"0 4px"}}/>
-          <button className="hov" onClick={()=>setActivePhase(null)}
-            style={{background:!activePhase?"var(--t1)":"transparent",color:!activePhase?"var(--bg)":"var(--t2)",borderRadius:20,padding:"4px 12px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",border:"1px solid var(--bd)",whiteSpace:"nowrap"}}>
-            {TX("mvAll")} · {active.length}
-          </button>
-          {phaseCounts.map(p=>(
-            <button key={p.id} className="hov" onClick={()=>setActivePhase(activePhase===p.id?null:p.id)}
-              style={{background:activePhase===p.id?p.color:"transparent",color:activePhase===p.id?"var(--bg)":p.color,borderRadius:20,padding:"4px 12px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",border:`1px solid ${p.color}`,whiteSpace:"nowrap"}}>
-              {p.short} · {p.count}
-            </button>
-          ))}
-        </>}
+        {/* FILTROS DE FASE. Iban sueltos en la fila: cuando no cabían, CL y
+            PC caían solos a la segunda línea, separados de su grupo. Ahora
+            van juntos en un bloque que no se parte — si no cabe, baja
+            entero — y más compactos (sin el " · ") para que en la
+            computadora quepan junto a las pestañas. */}
+        {view==="active"&&(
+          <div className="fases" style={{display:"flex",alignItems:"center",gap:6,flexWrap:"nowrap"}}>
+            <div style={{width:1,height:20,background:"var(--bd)",margin:"0 4px 0 2px"}}/>
+            {(()=>{
+              const chip=(on,col,borde)=>({background:on?col:"transparent",color:on?"var(--bg)":col,borderRadius:20,padding:"4px 10px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",border:`1px solid ${borde}`,whiteSpace:"nowrap",display:"inline-flex",alignItems:"baseline",gap:6});
+              const num={opacity:.75,fontVariantNumeric:"tabular-nums"};
+              return <>
+                <button className="hov" onClick={()=>setActivePhase(null)}
+                  style={chip(!activePhase,!activePhase?"var(--t1)":"var(--t2)","var(--bd)")}>
+                  {TX("mvAll")}<span style={num}>{active.length}</span>
+                </button>
+                {phaseCounts.map(p=>(
+                  <button key={p.id} className="hov" onClick={()=>setActivePhase(activePhase===p.id?null:p.id)}
+                    style={chip(activePhase===p.id,p.color,p.color)}>
+                    {p.short}<span style={num}>{p.count}</span>
+                  </button>
+                ))}
+              </>;
+            })()}
+          </div>
+        )}
         <div style={{marginLeft:"auto",display:"flex",gap:12,fontSize:"var(--fs-2)",color:"var(--t3)",whiteSpace:"nowrap"}}>
           <span style={{color:"var(--bad)"}}>● {TX("mvLegCrit")}</span>
           <span style={{color:"var(--gold)"}}>● {TX("mvLegWarn")}</span>
