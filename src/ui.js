@@ -1194,6 +1194,15 @@ export const UI = {
   plNoRefPartners:{ es:"Todavía no hay socios referidores. Agrega el nombre del socio en tus archivos para verlos aquí.",
                   en:"No referral partners tracked yet. Add partner names to your files to see them here." },
   plNoBankerRefs:{ es:"Todavía no hay referidos con banqueros.", en:"No banker referrals tracked yet." },
+  mvTools:      { es:"HERRAMIENTAS",       en:"TOOLS" },
+  mvToolsHint:  { es:"Respaldo, restaurar, hoja de Martha, entrenamiento y tamaño del texto",
+                  en:"Backup, restore, Martha's sheet, training and text size" },
+  mvMore:       { es:"MÁS",                en:"MORE" },
+  mvMoreHint:   { es:"Referidos, preparación, revisión pendiente y archivados",
+                  en:"Referrals, preparation, due for review and archived" },
+  exMember:     { es:"EX-MIEMBRO",         en:"FORMER" },
+  exMemberHint: { es:"Ya no está en el equipo. Sus archivos cerrados siguen contando en la producción del año.",
+                  en:"No longer on the team. Their closed files still count toward the year's production." },
   plNoPersonalClosed:{ es:"Todavía no tienes archivos cerrados.", en:"No personal closed files yet." },
 };
 
