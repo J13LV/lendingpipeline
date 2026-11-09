@@ -297,12 +297,12 @@ function timeAgo(iso){
   if(!iso) return "";
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff/60000);
-  if(m<1) return "just now";
-  if(m<60) return `${m}m ago`;
+  if(m<1) return TX("agoNow");
+  if(m<60) return TX("agoMin",{n:m});
   const h = Math.floor(m/60);
-  if(h<24) return `${h}h ago`;
+  if(h<24) return TX("agoHr",{n:h});
   const d = Math.floor(h/24);
-  if(d<30) return `${d}d ago`;
+  if(d<30) return TX("agoDay",{n:d});
   return new Date(iso).toLocaleDateString();
 }
 
@@ -940,13 +940,11 @@ export default function App() {
           return;
         }
         const ok = confirm(
-          `Restore ${incomingFiles.length} loan files from backup?\n\n` +
-          `This will REPLACE your current pipeline of ${files.length} files.\n\n` +
-          `Tip: export a backup of the current pipeline first if you want to be safe.`
+          TX("restoreAsk",{n:incomingFiles.length,m:files.length})
         );
         if(ok){
           setFiles(incomingFiles);
-          alert(`Restored ${incomingFiles.length} files from backup.`);
+          alert(TX("restoreDone",{n:incomingFiles.length}));
         }
       } catch(err){
         alert(TX("errBadJson"));
@@ -1114,10 +1112,10 @@ export default function App() {
         <div className="spinner"/>
         <div style={{textAlign:"center"}}>
           <div style={{fontFamily:"var(--ff-title)",fontWeight:800,fontSize:"var(--fs-8)",color:"var(--t1)",letterSpacing:"-0.5px"}}>
-            LOADING PIPELINE
+            {TX("loadingTitle")}
           </div>
           <div className="pulse" style={{fontSize:"var(--fs-3)",color:"var(--t3)",letterSpacing:"2px",marginTop:6}}>
-            SYNCING WITH CLOUD DATABASE…
+            {TX("loadingSync")}
           </div>
         </div>
       </div>
@@ -1914,7 +1912,7 @@ export default function App() {
                         {ro.bankerName||"—"}<br/>
                         <span style={{fontSize:"var(--fs-2)",color:"var(--t3)"}}>{ro.bankerCompany||""}</span>
                       </td>
-                      <td style={{padding:"11px 14px",color:"var(--t2)",fontSize:"var(--fs-3)",background:i%2===0?"var(--bg)":"var(--s1)"}}>{ro.reason||"—"}</td>
+                      <td style={{padding:"11px 14px",color:"var(--t2)",fontSize:"var(--fs-3)",background:i%2===0?"var(--bg)":"var(--s1)"}}>{ro.reason?PL(ro.reason):"—"}</td>
                       <td style={{padding:"11px 14px",background:i%2===0?"var(--bg)":"var(--s1)"}}>
                         <span style={{
                           fontSize:"var(--fs-2)",padding:"3px 7px",borderRadius:4,
@@ -2139,7 +2137,7 @@ export default function App() {
                     <td style={{padding:"11px 14px",color:"var(--t2)",background:i%2===0?"var(--bg)":"var(--s1)"}}>{f.type}</td>
                     <td style={{padding:"11px 14px",color:"var(--t2)",background:i%2===0?"var(--bg)":"var(--s1)"}}>${((f.loan||0)/1000).toFixed(0)}K</td>
                     <td style={{padding:"11px 14px",color:"var(--t2)",fontSize:"var(--fs-3)",background:i%2===0?"var(--bg)":"var(--s1)"}}>{isPrep(f)?(f.prep?.prevStage||TX("mvPreparationWord")):f.stage}</td>
-                    <td style={{padding:"11px 14px",color:"var(--t2)",fontSize:"var(--fs-3)",background:i%2===0?"var(--bg)":"var(--s1)"}}>{f.archiveReason||"—"}</td>
+                    <td style={{padding:"11px 14px",color:"var(--t2)",fontSize:"var(--fs-3)",background:i%2===0?"var(--bg)":"var(--s1)"}}>{f.archiveReason?PL(f.archiveReason):"—"}</td>
                     <td style={{padding:"11px 14px",color:"var(--t3)",fontSize:"var(--fs-3)",background:i%2===0?"var(--bg)":"var(--s1)"}}>{f.archivedAt||"—"}</td>
                     <td style={{padding:"11px 14px",background:i%2===0?"var(--bg)":"var(--s1)"}}>
                       <button className="hov" onClick={e=>{e.stopPropagation();restoreFile(f.id);}}
@@ -2581,16 +2579,16 @@ function PrepModal({file, onClose, onConfirm}){
         style={{background:"var(--s1)",border:"1px solid #7EC8A455",borderRadius:12,width:"100%",maxWidth:430,maxHeight:"calc(100vh - 40px)",overflowY:"auto",padding:22,display:"flex",flexDirection:"column",gap:14}}>
         <div>
           <div style={{fontFamily:"var(--ff-title)",fontWeight:800,fontSize:"var(--fs-7)",color:"var(--mint)"}}>
-            {isReschedule?"↻ RESCHEDULE":"⏸ SEND TO PREPARATION"}
+            {isReschedule?TX("prepTitleRes"):TX("prepTitleNew")}
           </div>
           <div style={{fontSize:"var(--fs-4)",color:"var(--t2)",marginTop:3}}>{file.borrower}</div>
           {!isReschedule&&<div style={{fontSize:"var(--fs-3)",color:"var(--t3)",marginTop:6,lineHeight:1.5}}>
-            Leaves the active board and stops the stage clock. It is not closed and not archived — it comes back on the review date.
+            {TX("prepIntro")}
           </div>}
         </div>
 
         <div>
-          <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>WHY IS THIS CLIENT WAITING?</div>
+          <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{TX("prepWhy")}</div>
           <select value={reason} onChange={e=>setReason(e.target.value)} style={fs}>
             {PREP_REASONS.map(x=><option key={x.id} value={x.id}>{P(x.label)}</option>)}
           </select>
@@ -2599,7 +2597,7 @@ function PrepModal({file, onClose, onConfirm}){
 
         <div>
           <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>
-            REVIEW ON {r.mode==="date"&&<span style={{color:"var(--gold)"}}>— pick the real date</span>}
+            {TX("prepReviewOn")} {r.mode==="date"&&<span style={{color:"var(--gold)"}}>{TX("prepPickReal")}</span>}
           </div>
           <input type="date" value={reviewOn} onChange={e=>setReviewOn(e.target.value)} style={fs}/>
           <div style={{display:"flex",gap:6,marginTop:8,flexWrap:"wrap"}}>
@@ -2610,26 +2608,26 @@ function PrepModal({file, onClose, onConfirm}){
               </button>
             ))}
             {daysOut!==null&&<span style={{fontSize:"var(--fs-2)",color:daysOut>PREP_MAX_DAYS?"var(--bad)":"var(--t3)",alignSelf:"center",marginLeft:4}}>
-              {daysOut}d out{daysOut>PREP_MAX_DAYS?` — past the ${PREP_MAX_DAYS}-day cap`:""}
+              {TX("prepDaysOut",{n:daysOut})}{daysOut>PREP_MAX_DAYS?TX("prepPastCap",{n:PREP_MAX_DAYS}):""}
             </span>}
           </div>
         </div>
 
         <div>
-          <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>WHAT HAS TO HAPPEN BEFORE THEY COME BACK?</div>
+          <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{TX("prepWhat")}</div>
           <textarea value={note} onChange={e=>setNote(e.target.value)} rows={3}
-            placeholder="e.g. collections paid off, 2025 taxes filed, 3 months of statements"
+            placeholder={TX("phPrepNote")}
             style={{...fs,resize:"vertical"}}/>
         </div>
 
         <div style={{display:"flex",gap:8}}>
           <button className="hov" onClick={onClose}
-            style={{flex:1,background:"var(--s2)",color:"var(--t2)",borderRadius:7,padding:"10px 0",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-4)",border:"none"}}>CANCEL</button>
+            style={{flex:1,background:"var(--s2)",color:"var(--t2)",borderRadius:7,padding:"10px 0",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-4)",border:"none"}}>{TX("cancel")}</button>
           <button className="hov"
             disabled={!reviewOn}
             onClick={()=>{ if(reviewOn) onConfirm({reason, reviewOn, note}); }}
             style={{flex:2,background:reviewOn?"var(--mint)":"var(--s2)",color:reviewOn?"var(--bg)":"var(--t3)",borderRadius:7,padding:"10px 0",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-4)",fontWeight:500,border:"none",cursor:reviewOn?"pointer":"not-allowed"}}>
-            {reviewOn?(isReschedule?"RESCHEDULE":"SEND TO PREPARATION"):"PICK A REVIEW DATE"}
+            {reviewOn?(isReschedule?TX("prepBtnRes"):TX("prepBtnNew")):TX("prepPickDate")}
           </button>
         </div>
       </div>
@@ -3030,23 +3028,23 @@ function ArchiveModal({file, onClose, onConfirm}){
       <div className="fi" onClick={e=>e.stopPropagation()}
         style={{background:"var(--s1)",border:"1px solid var(--bd)",borderRadius:12,width:"100%",maxWidth:400,padding:22,display:"flex",flexDirection:"column",gap:14}}>
         <div>
-          <div style={{fontFamily:"var(--ff-title)",fontWeight:800,fontSize:"var(--fs-7)",color:"var(--t1)"}}>🗄 ARCHIVE</div>
+          <div style={{fontFamily:"var(--ff-title)",fontWeight:800,fontSize:"var(--fs-7)",color:"var(--t1)"}}>🗄 {TX("archive")}</div>
           <div style={{fontSize:"var(--fs-4)",color:"var(--t2)",marginTop:3}}>{file.borrower}</div>
           <div style={{fontSize:"var(--fs-3)",color:"var(--t3)",marginTop:6,lineHeight:1.5}}>
-            Nothing is deleted. The file leaves every count and every average, and can be restored from the ARCHIVED tab.
+            {TX("arcIntro")}
           </div>
         </div>
         <div>
-          <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>REASON</div>
+          <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{TX("reason")}</div>
           <select value={reason} onChange={e=>setReason(e.target.value)} style={fs}>
-            {ARCHIVE_REASONS.map(x=><option key={x} value={x}>{x}</option>)}
+            {ARCHIVE_REASONS.map(x=><option key={x} value={x}>{PL(x)}</option>)}
           </select>
         </div>
         <div style={{display:"flex",gap:8}}>
           <button className="hov" onClick={onClose}
-            style={{flex:1,background:"var(--s2)",color:"var(--t2)",borderRadius:7,padding:"10px 0",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-4)",border:"none"}}>CANCEL</button>
+            style={{flex:1,background:"var(--s2)",color:"var(--t2)",borderRadius:7,padding:"10px 0",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-4)",border:"none"}}>{TX("cancel")}</button>
           <button className="hov" onClick={()=>onConfirm(reason)}
-            style={{flex:2,background:"var(--bd)",color:"var(--t1)",borderRadius:7,padding:"10px 0",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-4)",fontWeight:500,border:"none"}}>ARCHIVE</button>
+            style={{flex:2,background:"var(--bd)",color:"var(--t1)",borderRadius:7,padding:"10px 0",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-4)",fontWeight:500,border:"none"}}>{TX("archive")}</button>
         </div>
       </div>
     </div>
@@ -4615,7 +4613,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
                   movil (`.dm-name`, `.dm-strip`) y meterle un input rompe el
                   apilado. */}
               {borrower.trim()||file.borrower}
-              {isInbound&&<span title="Inbound referral" style={{marginLeft:9,fontSize:"var(--fs-4)",color:"var(--yellow)"}}>🤝</span>}
+              {isInbound&&<span title={TX("nfInbound")} style={{marginLeft:9,fontSize:"var(--fs-4)",color:"var(--yellow)"}}>🤝</span>}
             </div>
             {/* En el telefono los cinco campos con etiqueta se comen media
                 pantalla. Se reemplazan por una tira de una linea; el dato
@@ -4724,8 +4722,8 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
                 color:ph.color,padding:"7px 11px",fontSize:"var(--fs-4)",fontFamily:"var(--ff-mono)",
                 minWidth:280,cursor:"pointer"}}>
               {ALL_STAGES.map((s,i)=><option key={i} value={s.stage} style={{color:s.phase.color,background:"var(--bg)"}}>[{s.phase.short}] {s.stage}</option>)}
-              <optgroup label="── Bank-to-Bank Referral ──">
-                <option value={REFERRED_OUT_STAGE} style={{color:"var(--violet)",background:"var(--bg)"}}>🔀 REFERRED OUT — EXTERNAL BANK</option>
+              <optgroup label={TX("optRefGroup")}>
+                <option value={REFERRED_OUT_STAGE} style={{color:"var(--violet)",background:"var(--bg)"}}>{TX("optRefOut")}</option>
               </optgroup>
             </select>
           </div>
@@ -5276,24 +5274,24 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
         {tab==="loan" && isInbound && (
           <div style={{background:"rgba(255,209,102,.06)",border:"1px solid #FFD16644",borderRadius:8,padding:14,display:"flex",flexDirection:"column",gap:10}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:2}}>
-              <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--yellow)",letterSpacing:"1px"}}>🤝 INBOUND — REFERRING BANKER</span>
-              <span style={{fontSize:"var(--fs-2)",color:"var(--t2)"}}>who sent you this deal</span>
+              <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--yellow)",letterSpacing:"1px"}}>🤝 INBOUND — {TX("nfRefBanker")}</span>
+              <span style={{fontSize:"var(--fs-2)",color:"var(--t2)"}}>{TX("refWhoSent")}</span>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
               <div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>BANKER NAME</div>
+                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{TX("nfBankerName")}</div>
                 <input value={inBankerName} onChange={e=>setInBankerName(e.target.value)} placeholder="John Doe" style={fs2}/>
               </div>
               <div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>COMPANY</div>
+                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{TX("nfCompany")}</div>
                 <input value={inBankerCompany} onChange={e=>setInBankerCompany(e.target.value)} placeholder="XYZ Mortgage" style={fs2}/>
               </div>
               <div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>📱 BANKER PHONE</div>
+                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>📱 {TX("bkPhone")}</div>
                 <input type="tel" value={inBankerPhone} onChange={e=>setInBankerPhone(e.target.value)} placeholder="(702) 555-0000" style={fs2}/>
               </div>
               <div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>✉ BANKER EMAIL</div>
+                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>✉ {TX("bkEmail")}</div>
                 <input type="email" value={inBankerEmail} onChange={e=>setInBankerEmail(e.target.value)} placeholder="banker@company.com" style={fs2}/>
               </div>
             </div>
@@ -5302,13 +5300,13 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
                 {inBankerPhone && (
                   <a href={`tel:${inBankerPhone.replace(/[^\d+]/g,"")}`}
                     style={{background:"rgba(255,209,102,.1)",border:"1px solid #FFD16655",borderRadius:5,padding:"4px 9px",color:"var(--yellow)",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",textDecoration:"none"}}>
-                    📱 Call banker
+                    📱 {TX("bkCall")}
                   </a>
                 )}
                 {inBankerEmail && (
                   <a href={`mailto:${inBankerEmail}`}
                     style={{background:"rgba(255,209,102,.1)",border:"1px solid #FFD16655",borderRadius:5,padding:"4px 9px",color:"var(--yellow)",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",textDecoration:"none"}}>
-                    ✉ Email banker
+                    ✉ {TX("bkMail")}
                   </a>
                 )}
               </div>
@@ -5321,15 +5319,15 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
           const dtr=prepDaysToReview(file); const age=prepAge(file); const locked=prepLocked(file);
           return(
             <div style={{background:"rgba(126,200,164,.06)",border:"1px solid #7EC8A444",borderRadius:8,padding:14,display:"flex",flexDirection:"column",gap:8}}>
-              <div style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--mint)",letterSpacing:"1px"}}>⏸ IN PREPARATION</div>
+              <div style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--mint)",letterSpacing:"1px"}}>⏸ {TX("prepBanner")}</div>
               <div style={{fontSize:"var(--fs-4)",color:"var(--t1)"}}>{P(r.label)}</div>
               <div style={{fontSize:"var(--fs-3)",color:"var(--t2)"}}>
                 {TX("mvReview")} {p.reviewOn||"—"} · <span style={{color:dtr<=0?"var(--bad)":"var(--t3)"}}>{dtr>0?TX("mvInDays",{n:dtr}):dtr===0?TX("mvToday"):TX("mvOverdue",{n:Math.abs(dtr)})}</span>
               </div>
               <div style={{fontSize:"var(--fs-3)",color:locked?"var(--bad)":"var(--t3)"}}>
-                {age}d in preparation / {PREP_MAX_DAYS} max{p.reschedules>0?` · rescheduled ${p.reschedules}×`:""}
+                {TX("prepAgeLine",{a:age,m:PREP_MAX_DAYS})}{p.reschedules>0?TX("prepResN",{n:p.reschedules}):""}
               </div>
-              <div style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>Returns to: <span style={{color:"var(--t2)"}}>{p.prevStage||"Lead Inquiry"}</span></div>
+              <div style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>{TX("prepReturns")} <span style={{color:"var(--t2)"}}>{p.prevStage||"Lead Inquiry"}</span></div>
               {p.note&&<div style={{fontSize:"var(--fs-3)",color:"var(--t2)",fontStyle:"italic",borderTop:"1px solid var(--s2)",paddingTop:7}}>{p.note}</div>}
             </div>
           );
@@ -5339,45 +5337,45 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
         {tab==="loan" && isReferredOut && (
           <div style={{background:"rgba(167,139,250,.06)",border:"1px solid #A78BFA44",borderRadius:8,padding:14,display:"flex",flexDirection:"column",gap:10}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:2}}>
-              <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--violet)",letterSpacing:"1px"}}>🔀 OUTBOUND — RECEIVING BANKER</span>
-              <span style={{fontSize:"var(--fs-2)",color:"var(--t2)"}}>who you sent this deal to</span>
+              <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--violet)",letterSpacing:"1px"}}>🔀 OUTBOUND — {TX("refRecv")}</span>
+              <span style={{fontSize:"var(--fs-2)",color:"var(--t2)"}}>{TX("refWhoTo")}</span>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
               <div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>BANKER NAME</div>
+                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{TX("nfBankerName")}</div>
                 <input value={outBankerName} onChange={e=>setOutBankerName(e.target.value)} placeholder="Jane Smith" style={fs2}/>
               </div>
               <div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>COMPANY</div>
+                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{TX("nfCompany")}</div>
                 <input value={outBankerCompany} onChange={e=>setOutBankerCompany(e.target.value)} placeholder="ABC Mortgage" style={fs2}/>
               </div>
               <div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>📱 BANKER PHONE</div>
+                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>📱 {TX("bkPhone")}</div>
                 <input type="tel" value={outBankerPhone} onChange={e=>setOutBankerPhone(e.target.value)} placeholder="(702) 555-0000" style={fs2}/>
               </div>
               <div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>✉ BANKER EMAIL</div>
+                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>✉ {TX("bkEmail")}</div>
                 <input type="email" value={outBankerEmail} onChange={e=>setOutBankerEmail(e.target.value)} placeholder="banker@company.com" style={fs2}/>
               </div>
               <div style={{gridColumn:"1/-1"}}>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>REFERRAL REASON</div>
+                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{TX("refReason")}</div>
                 <select value={outReason} onChange={e=>setOutReason(e.target.value)} style={fs2}>
-                  <option value="">-- Select reason --</option>
-                  {REFERRAL_REASONS.map(r=><option key={r} value={r}>{r}</option>)}
+                  <option value="">{TX("refPick")}</option>
+                  {REFERRAL_REASONS.map(r=><option key={r} value={r}>{PL(r)}</option>)}
                 </select>
               </div>
               <div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>STATUS</div>
+                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{TX("refStatus")}</div>
                 <select value={outStatus} onChange={e=>setOutStatus(e.target.value)} style={fs2}>
-                  {REFERRAL_STATUSES.map(s=><option key={s} value={s}>{s}</option>)}
+                  {REFERRAL_STATUSES.map(s=><option key={s} value={s}>{PL(s)}</option>)}
                 </select>
               </div>
               <div>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>CLOSE DATE (AT BANKER)</div>
+                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{TX("refCloseAt")}</div>
                 <input type="date" value={outCloseDate} onChange={e=>setOutCloseDate(e.target.value)} style={fs2}/>
               </div>
               <div style={{gridColumn:"1/-1"}}>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>FINAL LOAN AMOUNT AT BANKER <span style={{color:"var(--t3)",fontWeight:400}}>· (may differ from original)</span></div>
+                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{TX("refFinalLoan")} <span style={{color:"var(--t3)",fontWeight:400}}>{TX("refMayDiffer")}</span></div>
                 <input value={outFinalLoan} onChange={e=>setOutFinalLoan(e.target.value)} placeholder={String(file.loan||"350000")} style={fs2}/>
               </div>
             </div>
@@ -5386,13 +5384,13 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
                 {outBankerPhone && (
                   <a href={`tel:${outBankerPhone.replace(/[^\d+]/g,"")}`}
                     style={{background:"rgba(167,139,250,.1)",border:"1px solid #A78BFA55",borderRadius:5,padding:"4px 9px",color:"var(--violet)",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",textDecoration:"none"}}>
-                    📱 Call banker
+                    📱 {TX("bkCall")}
                   </a>
                 )}
                 {outBankerEmail && (
                   <a href={`mailto:${outBankerEmail}`}
                     style={{background:"rgba(167,139,250,.1)",border:"1px solid #A78BFA55",borderRadius:5,padding:"4px 9px",color:"var(--violet)",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",textDecoration:"none"}}>
-                    ✉ Email banker
+                    ✉ {TX("bkMail")}
                   </a>
                 )}
               </div>
@@ -5400,18 +5398,18 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
             {/* Live fee calc — admin only */}
             {isAdmin && outStatus === "Closed (Funded)" && (
               <div style={{background:"var(--bg)",border:"1px solid var(--s2)",borderRadius:6,padding:12,marginTop:4}}>
-                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:8}}>COMP CALCULATION</div>
+                <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:8}}>{TX("refCompCalc")}</div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
                   <div>
-                    <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginBottom:2}}>FEE EARNED ({REFERRAL_FEE_BPS} BPS)</div>
+                    <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginBottom:2}}>{TX("refFeeEarned")} ({REFERRAL_FEE_BPS} BPS)</div>
                     <div style={{fontFamily:"var(--ff-num)",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--gold)"}}>${feeEarned.toLocaleString()}</div>
                   </div>
                   <div>
-                    <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginBottom:2}}>WOULD HAVE ({parseInt(bps)||BPS_RATE} BPS)</div>
+                    <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginBottom:2}}>{TX("refWouldHave")} ({parseInt(bps)||BPS_RATE} BPS)</div>
                     <div style={{fontFamily:"var(--ff-num)",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--t2)"}}>${wouldHaveEarned.toLocaleString()}</div>
                   </div>
                   <div>
-                    <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginBottom:2}}>LOST COMP</div>
+                    <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginBottom:2}}>{TX("refLostComp")}</div>
                     <div style={{fontFamily:"var(--ff-num)",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--bad)"}}>${lostComp.toLocaleString()}</div>
                   </div>
                 </div>
@@ -5423,16 +5421,16 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
         {tab==="dates" && (isClosed && isAdmin ? (
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
             <div style={{background:"rgba(6,214,160,.06)",border:"1px solid #06D6A044",borderRadius:8,padding:12}}>
-              <div style={{fontSize:"var(--fs-2)",color:"var(--ok)",letterSpacing:"1px",marginBottom:5,fontWeight:500}}>ACTUAL CLOSE DATE <span style={{color:"var(--t3)"}}>· editable</span></div>
+              <div style={{fontSize:"var(--fs-2)",color:"var(--ok)",letterSpacing:"1px",marginBottom:5,fontWeight:500}}>{TX("actualClose")} <span style={{color:"var(--t3)"}}>· {TX("editable")}</span></div>
               <input type="date" value={closedAt} onChange={e=>setClosedAt(e.target.value)}
                 style={{background:"transparent",border:"none",color:"var(--ok)",fontSize:"var(--fs-5)",fontFamily:"var(--ff-mono)",width:"100%",fontWeight:500}}/>
-              <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:4,letterSpacing:"0.5px"}}>The month this counts toward production</div>
+              <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:4,letterSpacing:"0.5px"}}>{TX("actualCloseHint")}</div>
             </div>
             <div style={{background:"var(--bg)",borderRadius:8,padding:12}}>
-              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>EXPECTED CLOSING DATE</div>
+              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{TX("nfClosing")}</div>
               <input type="date" value={closing} onChange={e=>setClosing(e.target.value)}
                 style={{background:"transparent",border:"none",color:"var(--t2)",fontSize:"var(--fs-5)",fontFamily:"var(--ff-mono)",width:"100%"}}/>
-              <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:4,letterSpacing:"0.5px"}}>Original target date</div>
+              <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:4,letterSpacing:"0.5px"}}>{TX("closingHint")}</div>
             </div>
           </div>
         ) : !isReferredOut ? (
@@ -5551,11 +5549,11 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
                     <span style={{color:"var(--t3)",minWidth:75,fontSize:"var(--fs-2)"}}>{timeAgo(h.at)}</span>
                     <span style={{color:"var(--t1)",fontWeight:500,minWidth:90}}>{h.name?.split(" ")[0] || "?"}</span>
                     <span style={{flex:1}}>
-                      {h.action==="created" && "created file"}
-                      {h.action==="edited" && `edited ${h.fields?.join(", ") || "fields"}`}
-                      {h.action==="stage_advanced" && <>advanced to <span style={{color:"var(--gold)"}}>{h.to}</span></>}
-                      {h.action==="closed" && <span style={{color:"var(--ok)"}}>marked as closed</span>}
-                      {h.action==="reopened" && <span style={{color:"var(--gold)"}}>reopened file</span>}
+                      {h.action==="created" && TX("hCreated")}
+                      {h.action==="edited" && TX("hEdited",{f:h.fields?.join(", ") || TX("hFields")})}
+                      {h.action==="stage_advanced" && <>{TX("hAdvanced")} <span style={{color:"var(--gold)"}}>{h.to}</span></>}
+                      {h.action==="closed" && <span style={{color:"var(--ok)"}}>{TX("hMarkedClosed")}</span>}
+                      {h.action==="reopened" && <span style={{color:"var(--gold)"}}>{TX("hReopened")}</span>}
                     </span>
                   </div>
                 ))}
