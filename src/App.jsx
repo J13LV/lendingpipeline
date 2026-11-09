@@ -501,8 +501,8 @@ function LoginScreen() {
 
   return (
     <div style={{
-      background:"#0D1117", minHeight:"100vh", display:"flex",
-      alignItems:"center", justifyContent:"center", fontFamily:"'IBM Plex Sans',system-ui,-apple-system,sans-serif", padding:20
+      background:"var(--bg)", minHeight:"100vh", display:"flex",
+      alignItems:"center", justifyContent:"center", fontFamily:"var(--ff-body)", padding:20
     }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
@@ -580,31 +580,31 @@ function LoginScreen() {
         <div style={{textAlign:"center", marginBottom:24}}>
           <div style={{
             width:62, height:62, borderRadius:16, margin:"0 auto 15px",
-            background:"linear-gradient(140deg,#F5A623,#B87F1E)",
+            background:"linear-gradient(140deg,var(--gold),#B87F1E)",
             display:"flex", alignItems:"center", justifyContent:"center",
-            fontFamily:"Syne", fontWeight:800, fontSize:"var(--fs-10)", color:"#0D1117",
+            fontFamily:"var(--ff-title)", fontWeight:800, fontSize:"var(--fs-10)", color:"var(--bg)",
             letterSpacing:"-1px", boxShadow:"0 10px 30px rgba(245,166,35,.16)"
           }}>DV</div>
-          <div style={{fontFamily:"Syne", fontWeight:800, fontSize:"var(--fs-10)", color:"var(--t1)",
+          <div style={{fontFamily:"var(--ff-title)", fontWeight:800, fontSize:"var(--fs-10)", color:"var(--t1)",
             letterSpacing:"-0.7px", lineHeight:1.15}}>Del Valle Lending Co.</div>
-            <div style={{fontFamily:"DM Mono",fontSize:"var(--fs-2)",color:"var(--t2)",letterSpacing:"0.5px",marginTop:4}}>powered by Barrett Financial Group</div>
+            <div style={{fontFamily:"var(--ff-mono)",fontSize:"var(--fs-2)",color:"var(--t2)",letterSpacing:"0.5px",marginTop:4}}>powered by Barrett Financial Group</div>
           {/* Barrett ya está en el renglón de arriba. Decirlo dos veces en
               tres líneas no refuerza la marca: la diluye. */}
           <div style={{fontSize:"var(--fs-3)", color:"var(--t3)", letterSpacing:"2.5px", marginTop:8}}>
             PIPELINE
           </div>
-          <div style={{width:34, height:2, background:"#F5A623", margin:"16px auto 13px",
+          <div style={{width:34, height:2, background:"var(--gold)", margin:"16px auto 13px",
             borderRadius:2, opacity:.7}}/>
-          <div style={{fontFamily:"Syne", fontWeight:700, fontSize:"var(--fs-4)", color:"#F5A623",
+          <div style={{fontFamily:"var(--ff-title)", fontWeight:700, fontSize:"var(--fs-4)", color:"var(--gold)",
             letterSpacing:"0.3px"}}>Trust the Numbers. Trust the Name.</div>
         </div>
 
-        <div style={{background:"#161B22", border:"1px solid #30363D", borderRadius:14,
+        <div style={{background:"var(--s1)", border:"1px solid var(--bd)", borderRadius:14,
           padding:"26px 24px", display:"flex", flexDirection:"column", gap:16}}>
 
         {resetSent ? (
           <div style={{width:"100%", display:"flex", flexDirection:"column", gap:12, textAlign:"center"}}>
-            <div style={{color:"#06D6A0", fontSize:"var(--fs-6)", lineHeight:1.5}}>
+            <div style={{color:"var(--ok)", fontSize:"var(--fs-6)", lineHeight:1.5}}>
               ✓ Reset email sent to:<br/>
               <strong style={{color:"var(--t1)"}}>{email}</strong>
             </div>
@@ -612,8 +612,8 @@ function LoginScreen() {
               Check your inbox (and spam folder). Click the link to set a new password, then come back and sign in.
             </div>
             <button onClick={()=>{setResetSent(false);setResetMode(false);setError("");}}
-              style={{background:"#21262D", color:"var(--t2)", borderRadius:8, padding:"10px 0",
-                fontFamily:"DM Mono", fontSize:"var(--fs-4)", border:"1px solid #30363D", cursor:"pointer", marginTop:4}}>
+              style={{background:"var(--s2)", color:"var(--t2)", borderRadius:8, padding:"10px 0",
+                fontFamily:"var(--ff-mono)", fontSize:"var(--fs-4)", border:"1px solid var(--bd)", cursor:"pointer", marginTop:4}}>
               ← BACK TO SIGN IN
             </button>
           </div>
@@ -631,11 +631,11 @@ function LoginScreen() {
                 autoFocus
                 disabled={busy}
                 style={{
-                  background:"#0D1117",
-                  border: error ? "1px solid #E85D75" : "1px solid #30363D",
+                  background:"var(--bg)",
+                  border: error ? "1px solid var(--bad)" : "1px solid var(--bd)",
                   borderRadius:8, padding:"12px 14px",
                   color:"var(--t1)", fontSize:"var(--fs-6)",
-                  fontFamily:"'IBM Plex Sans',system-ui,-apple-system,sans-serif",
+                  fontFamily:"var(--ff-body)",
                   width:"100%", transition:"border .15s",
                   opacity: busy ? 0.6 : 1,
                 }}
@@ -647,7 +647,7 @@ function LoginScreen() {
                 <div style={{fontSize:"var(--fs-3)", color:"var(--t3)", letterSpacing:"1px", marginBottom:6, display:"flex", justifyContent:"space-between"}}>
                   <span>PASSWORD</span>
                   <button onClick={()=>{setResetMode(true);setError("");}}
-                    style={{background:"transparent", border:"none", color:"#F5A623", fontSize:"var(--fs-3)", fontFamily:"DM Mono", cursor:"pointer", letterSpacing:"1px"}}>
+                    style={{background:"transparent", border:"none", color:"var(--gold)", fontSize:"var(--fs-3)", fontFamily:"var(--ff-mono)", cursor:"pointer", letterSpacing:"1px"}}>
                     FORGOT?
                   </button>
                 </div>
@@ -660,11 +660,11 @@ function LoginScreen() {
                   placeholder={TX("phPassword")}
                   disabled={busy}
                   style={{
-                    background:"#0D1117",
-                    border: error ? "1px solid #E85D75" : "1px solid #30363D",
+                    background:"var(--bg)",
+                    border: error ? "1px solid var(--bad)" : "1px solid var(--bd)",
                     borderRadius:8, padding:"12px 14px",
                     color:"var(--t1)", fontSize:"var(--fs-6)",
-                    fontFamily:"'IBM Plex Sans',system-ui,-apple-system,sans-serif",
+                    fontFamily:"var(--ff-body)",
                     width:"100%", transition:"border .15s",
                     opacity: busy ? 0.6 : 1,
                   }}
@@ -673,15 +673,15 @@ function LoginScreen() {
             )}
 
             {error && (
-              <div style={{fontSize:"var(--fs-4)", color:"#E85D75", lineHeight:1.4}}>{error}</div>
+              <div style={{fontSize:"var(--fs-4)", color:"var(--bad)", lineHeight:1.4}}>{error}</div>
             )}
 
             <button
               onClick={resetMode ? sendReset : attempt}
               disabled={busy}
               style={{
-                width:"100%", background: busy ? "#8B6914" : "#C8922A", color:"#0D1117",
-                borderRadius:8, padding:"13px 0", fontFamily:"DM Mono",
+                width:"100%", background: busy ? "#8B6914" : "var(--gold-d)", color:"var(--bg)",
+                borderRadius:8, padding:"13px 0", fontFamily:"var(--ff-mono)",
                 fontSize:"var(--fs-5)", fontWeight:500, border:"none", cursor: busy ? "wait" : "pointer",
                 transition:"opacity .15s", marginTop:4
               }}
@@ -693,7 +693,7 @@ function LoginScreen() {
 
             {resetMode && (
               <button onClick={()=>{setResetMode(false);setError("");}}
-                style={{background:"transparent", border:"none", color:"var(--t2)", fontSize:"var(--fs-3)", fontFamily:"DM Mono", cursor:"pointer", letterSpacing:"1px"}}>
+                style={{background:"transparent", border:"none", color:"var(--t2)", fontSize:"var(--fs-3)", fontFamily:"var(--ff-mono)", cursor:"pointer", letterSpacing:"1px"}}>
                 ← BACK TO SIGN IN
               </button>
             )}
@@ -1197,10 +1197,10 @@ export default function App() {
   if (!authReady) {
     return (
       <div style={{
-        background:"#0D1117", minHeight:"100vh",
+        background:"var(--bg)", minHeight:"100vh",
         display:"flex", flexDirection:"column",
         alignItems:"center", justifyContent:"center",
-        fontFamily:"'IBM Plex Sans',system-ui,-apple-system,sans-serif", gap:18
+        fontFamily:"var(--ff-body)", gap:18
       }}>
         <style>{`
           @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
@@ -1277,10 +1277,10 @@ export default function App() {
   if (!loaded) {
     return (
       <div style={{
-        background:"#0D1117", minHeight:"100vh",
+        background:"var(--bg)", minHeight:"100vh",
         display:"flex", flexDirection:"column",
         alignItems:"center", justifyContent:"center",
-        fontFamily:"'IBM Plex Sans',system-ui,-apple-system,sans-serif", gap:18
+        fontFamily:"var(--ff-body)", gap:18
       }}>
         <style>{`
           @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
@@ -1351,7 +1351,7 @@ export default function App() {
         `}</style>
         <div className="spinner"/>
         <div style={{textAlign:"center"}}>
-          <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:"var(--t1)",letterSpacing:"-0.5px"}}>
+          <div style={{fontFamily:"var(--ff-title)",fontWeight:800,fontSize:"var(--fs-8)",color:"var(--t1)",letterSpacing:"-0.5px"}}>
             LOADING PIPELINE
           </div>
           <div className="pulse" style={{fontSize:"var(--fs-3)",color:"var(--t3)",letterSpacing:"2px",marginTop:6}}>
@@ -1518,7 +1518,7 @@ export default function App() {
   const phaseCounts=PHASES.map(p=>({...p,count:active.filter(f=>getPhase(f.stage).id===p.id).length}));
 
   return(
-    <div style={{fontFamily:"'IBM Plex Sans',system-ui,-apple-system,sans-serif",background:"#0D1117",minHeight:"100vh",color:"var(--t1)"}}>
+    <div style={{fontFamily:"var(--ff-body)",background:"var(--bg)",minHeight:"100vh",color:"var(--t1)"}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
         /* ESTAS DOS VIVEN AQUI, NO EN EL BLOQUE DE LOGIN.
@@ -1671,7 +1671,7 @@ export default function App() {
       `}</style>
 
       {/* HEADER */}
-      <div style={{background:"#161B22",borderBottom:"1px solid #21262D",padding:"14px 24px",
+      <div style={{background:"var(--s1)",borderBottom:"1px solid var(--s2)",padding:"14px 24px",
         display:"flex",alignItems:"center",gap:16,flexWrap:"wrap",position:"relative"}}>
         {/* LA VERSIÓN, sola en su esquina. Debajo de la marca quedaba en un
             gris casi negro y no se veía; junto al nombre habría cargado más
@@ -1689,7 +1689,7 @@ export default function App() {
             mancha. Syne queda para títulos y números, que es lo que lo hace
             reconocible cuando aparece. */}
         <div style={{minWidth:0}}>
-          <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",
+          <div style={{fontFamily:"var(--ff-title)",fontWeight:800,fontSize:"var(--fs-9)",
             letterSpacing:"-0.5px",lineHeight:1.05}}>PIPELINE</div>
           <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",letterSpacing:".3px",
             marginTop:3,whiteSpace:"nowrap"}}>{TX("branchLending")}</div>
@@ -1707,45 +1707,45 @@ export default function App() {
               title={l==="CRITICAL"&&crit>0?TX("critFilterHint"):undefined}
               style={{textAlign:"center",
                 cursor:l==="CRITICAL"&&crit>0?"pointer":"default",
-                borderBottom:l==="CRITICAL"&&critOnly?"2px solid #E85D75":"2px solid transparent",
+                borderBottom:l==="CRITICAL"&&critOnly?"2px solid var(--bad)":"2px solid transparent",
                 paddingBottom:2}}>
-              <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:c}}>{v}</div>
+              <div style={{fontFamily:"var(--ff-num)",fontWeight:800,fontSize:"var(--fs-8)",color:c}}>{v}</div>
               <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px"}}>{TX("mvStat_"+l)}</div>
             </div>
           ))}
           {/* Always visible. A hidden list never gets opened; a number up here does. */}
           <div className="hov" onClick={()=>{setView("review");setActivePhase(null);}}
             title={TX("reviewSub")}
-            style={{textAlign:"center",cursor:"pointer",padding:"0 10px",borderLeft:"1px solid #30363D"}}>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:dueReview.length>0?"#E85D75":"var(--t3)"}}>
+            style={{textAlign:"center",cursor:"pointer",padding:"0 10px",borderLeft:"1px solid var(--bd)"}}>
+            <div style={{fontFamily:"var(--ff-num)",fontWeight:800,fontSize:"var(--fs-8)",color:dueReview.length>0?"var(--bad)":"var(--t3)"}}>
               {dueReview.length}
             </div>
-            <div style={{fontSize:"var(--fs-1)",color:dueReview.length>0?"#E85D75":"var(--t3)",letterSpacing:"1px"}}>{TX("dueReview")}</div>
+            <div style={{fontSize:"var(--fs-1)",color:dueReview.length>0?"var(--bad)":"var(--t3)",letterSpacing:"1px"}}>{TX("dueReview")}</div>
           </div>
         </div>
         <div style={{marginLeft:"auto",display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
           {saveStatus !== "idle" && (
             <div style={{
               fontSize:"var(--fs-2)", letterSpacing:"1px", padding:"4px 10px", borderRadius:12,
-              background: saveStatus==="saving" ? "#21262D" : saveStatus==="saved" ? "rgba(6,214,160,.1)" : "rgba(232,93,117,.15)",
-              color: saveStatus==="saving" ? "var(--t2)" : saveStatus==="saved" ? "#06D6A0" : "#E85D75",
-              border: "1px solid " + (saveStatus==="saving" ? "#30363D" : saveStatus==="saved" ? "#06D6A0" : "#E85D75"),
-              fontFamily:"DM Mono"
+              background: saveStatus==="saving" ? "var(--s2)" : saveStatus==="saved" ? "rgba(6,214,160,.1)" : "rgba(232,93,117,.15)",
+              color: saveStatus==="saving" ? "var(--t2)" : saveStatus==="saved" ? "var(--ok)" : "var(--bad)",
+              border: "1px solid " + (saveStatus==="saving" ? "var(--bd)" : saveStatus==="saved" ? "var(--ok)" : "var(--bad)"),
+              fontFamily:"var(--ff-mono)"
             }}>
               {saveStatus==="saving" ? TX("mvSaving") : saveStatus==="saved" ? TX("mvSaved") : TX("mvSaveFailed")}
             </div>
           )}
           <input placeholder={TX("phSearch")} value={search} onChange={e=>setSearch(e.target.value)}
-            style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:6,padding:"7px 12px",color:"var(--t1)",fontSize:"var(--fs-4)",width:170}}/>
+            style={{background:"var(--bg)",border:"1px solid var(--bd)",borderRadius:6,padding:"7px 12px",color:"var(--t1)",fontSize:"var(--fs-4)",width:170}}/>
           <button className="hov" onClick={exportBackup}
             title={TX("mvBackupHint")}
-            style={{background:"#21262D",color:"var(--t2)",borderRadius:6,padding:"8px 12px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",border:"1px solid #30363D"}}>
+            style={{background:"var(--s2)",color:"var(--t2)",borderRadius:6,padding:"8px 12px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",border:"1px solid var(--bd)"}}>
             ↓ {TX("backup")}
           </button>
           {isAdmin && (
             <button className="hov" onClick={exportMarthaSheet} disabled={marthaBusy}
               title={TX("marthaHint")}
-              style={{background:"#21262D",color:marthaBusy?"var(--t3)":"var(--t2)",borderRadius:6,padding:"8px 12px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",border:"1px solid #30363D",cursor:marthaBusy?"wait":"pointer"}}>
+              style={{background:"var(--s2)",color:marthaBusy?"var(--t3)":"var(--t2)",borderRadius:6,padding:"8px 12px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",border:"1px solid var(--bd)",cursor:marthaBusy?"wait":"pointer"}}>
               {marthaBusy ? TX("marthaBusy") : TX("marthaBtn")}
             </button>
           )}
@@ -1761,8 +1761,8 @@ export default function App() {
             return (
             <button className="hov" onClick={()=>setShowBackfill(true)}
               title={TX("bfLead")}
-              style={{background:"rgba(245,166,35,.1)",color:"#F5A623",borderRadius:6,
-                padding:"8px 12px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",
+              style={{background:"rgba(245,166,35,.1)",color:"var(--gold)",borderRadius:6,
+                padding:"8px 12px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",
                 border:"1px solid #F5A62366",cursor:"pointer"}}>
               {TX("bfBtn")} {mios}
             </button>);
@@ -1770,66 +1770,66 @@ export default function App() {
           {isAdmin && (
             <label className="hov"
               title={TX("backupHint")}
-              style={{background:"#21262D",color:"var(--t2)",borderRadius:6,padding:"8px 12px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",border:"1px solid #30363D",cursor:"pointer"}}>
+              style={{background:"var(--s2)",color:"var(--t2)",borderRadius:6,padding:"8px 12px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",border:"1px solid var(--bd)",cursor:"pointer"}}>
               ↑ {TX("restore")}
               <input type="file" accept="application/json,.json" onChange={importBackup} style={{display:"none"}}/>
             </label>
           )}
           <button className="hov" onClick={()=>setShowAdd(true)}
-            style={{background:"#F5A623",color:"#0D1117",borderRadius:6,padding:"8px 16px",fontFamily:"DM Mono",fontSize:"var(--fs-4)",fontWeight:500}}>
+            style={{background:"var(--gold)",color:"var(--bg)",borderRadius:6,padding:"8px 16px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-4)",fontWeight:500}}>
             + {TX("mvNewFile")}
           </button>
 
           <button className="hov" onClick={startTraining}
-            style={{background:"transparent",color:"#F5A623",border:"1px solid #F5A623",borderRadius:6,padding:"8px 14px",fontFamily:"DM Mono",fontSize:"var(--fs-4)",fontWeight:500}}>
+            style={{background:"transparent",color:"var(--gold)",border:"1px solid var(--gold)",borderRadius:6,padding:"8px 14px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-4)",fontWeight:500}}>
             {TX("training")}
           </button>
 
           {/* TAMAÑO DEL TEXTO. Junto al idioma porque es la misma clase de
               ajuste: como quiero ver yo esta pantalla. */}
           <div title={TX("textSize")} style={{display:"flex",alignItems:"center",
-            border:"1px solid #30363D",borderRadius:6,overflow:"hidden",marginRight:2}}>
+            border:"1px solid var(--bd)",borderRadius:6,overflow:"hidden",marginRight:2}}>
             {[["-",-.05],["+",.05]].map(([sig,paso])=>(
               <button key={sig} className="hov"
                 onClick={()=>setEscala(v=>Math.min(1.4,Math.max(.9,Math.round((v+paso)*100)/100)))}
                 style={{background:"transparent",color:"var(--t2)",border:"none",
                   padding:"6px 9px",fontSize:sig==="+"?"var(--fs-5)":"var(--fs-2)",
-                  fontFamily:"DM Mono",cursor:"pointer",lineHeight:1}}>A{sig}</button>
+                  fontFamily:"var(--ff-mono)",cursor:"pointer",lineHeight:1}}>A{sig}</button>
             ))}
             {escala!==1&&(
               <button className="hov" onClick={()=>setEscala(1)} title={TX("textSizeReset")}
-                style={{background:"transparent",color:"#F5A623",border:"none",borderLeft:"1px solid #30363D",
-                  padding:"6px 8px",fontSize:"var(--fs-1)",fontFamily:"DM Mono",cursor:"pointer"}}>
+                style={{background:"transparent",color:"var(--gold)",border:"none",borderLeft:"1px solid var(--bd)",
+                  padding:"6px 8px",fontSize:"var(--fs-1)",fontFamily:"var(--ff-mono)",cursor:"pointer"}}>
                 {Math.round(escala*100)}%
               </button>
             )}
           </div>
 
-          <div style={{display:"flex",border:"1px solid #30363D",borderRadius:6,overflow:"hidden",marginRight:2}}>
+          <div style={{display:"flex",border:"1px solid var(--bd)",borderRadius:6,overflow:"hidden",marginRight:2}}>
             {["es","en"].map(l=>(
               <button key={l} className="hov" onClick={()=>setLang(l)}
-                style={{background:lang===l?"#F5A623":"transparent",color:lang===l?"#0D1117":"var(--t2)",
-                  border:"none",padding:"6px 10px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",cursor:"pointer"}}>
+                style={{background:lang===l?"var(--gold)":"transparent",color:lang===l?"var(--bg)":"var(--t2)",
+                  border:"none",padding:"6px 10px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",cursor:"pointer"}}>
                 {l.toUpperCase()}
               </button>))}
           </div>
           <button className="hov" onClick={()=>setShowHelp(true)}
             title={TX("mvHelpHint")}
-            style={{background:"transparent",color:"var(--t2)",borderRadius:6,padding:"8px 10px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",border:"1px solid #30363D",cursor:"pointer"}}>
+            style={{background:"transparent",color:"var(--t2)",borderRadius:6,padding:"8px 10px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",border:"1px solid var(--bd)",cursor:"pointer"}}>
             ❓ {TX("help")}
           </button>
 
-          <div style={{display:"flex",alignItems:"center",gap:8,paddingLeft:12,marginLeft:4,borderLeft:"1px solid #30363D"}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,paddingLeft:12,marginLeft:4,borderLeft:"1px solid var(--bd)"}}>
             <div style={{
               width:32, height:32, borderRadius:"50%",
-              background: profile.color, color:"#0D1117",
+              background: profile.color, color:"var(--bg)",
               display:"flex", alignItems:"center", justifyContent:"center",
-              fontFamily:"Syne", fontWeight:800, fontSize:"var(--fs-3)"
+              fontFamily:"var(--ff-num)", fontWeight:800, fontSize:"var(--fs-3)"
             }}>
               {profile.name.split(" ").map(n=>n[0]).join("").slice(0,2)}
             </div>
             <div style={{display:"flex",flexDirection:"column",lineHeight:1.2}}>
-              <span style={{fontSize:"var(--fs-3)",color:"var(--t1)",fontFamily:"Syne",fontWeight:700}}>{profile.short}</span>
+              <span style={{fontSize:"var(--fs-3)",color:"var(--t1)",fontFamily:"var(--ff-title)",fontWeight:700}}>{profile.short}</span>
               <span style={{fontSize:"var(--fs-1)",color:profile.color,letterSpacing:"1px",textTransform:"uppercase"}}>{profile.role}</span>
             </div>
             <button className="hov"
@@ -1837,7 +1837,7 @@ export default function App() {
                 if(confirm(TX("mvSignOutAsk"))) signOut(auth);
               }}
               title={TX("mvSignOutHint")}
-              style={{background:"transparent",color:"var(--t3)",borderRadius:6,padding:"6px 8px",fontFamily:"DM Mono",fontSize:"var(--fs-2)",border:"1px solid #30363D",cursor:"pointer"}}>
+              style={{background:"transparent",color:"var(--t3)",borderRadius:6,padding:"6px 8px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-2)",border:"1px solid var(--bd)",cursor:"pointer"}}>
               {TX("signOut")}
             </button>
           </div>
@@ -1846,7 +1846,7 @@ export default function App() {
 
       {/* TAB BAR — added REFERRED OUT and INBOUND filters */}
       <div onWheel={ruedaHorizontal}
-        style={{background:"#161B22",borderBottom:"1px solid #21262D",padding:"10px 24px 12px",
+        style={{background:"var(--s1)",borderBottom:"1px solid var(--s2)",padding:"10px 24px 12px",
           display:"flex",gap:8,alignItems:"center",overflowX:"auto",overscrollBehaviorX:"contain"}}>
         {[
           [TX("activePipeline"),active.length,"active","#4A90D9"],
@@ -1858,50 +1858,50 @@ export default function App() {
           ["🗄 "+TX("archived"),archived.length,"archived","var(--t2)"],
         ].map(([l,c,v,col])=>(
           <button key={v} className="hov" onClick={()=>{setView(v);setActivePhase(null);}}
-            style={{background:view===v?col:"#21262D",color:view===v?"#0D1117":col,borderRadius:6,padding:"6px 14px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",fontWeight:500,whiteSpace:"nowrap"}}>
+            style={{background:view===v?col:"var(--s2)",color:view===v?"var(--bg)":col,borderRadius:6,padding:"6px 14px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",fontWeight:500,whiteSpace:"nowrap"}}>
             {l} · {c}
           </button>
         ))}
         {(isAdmin||isAssistant)&&(
           <button className="hov" onClick={()=>{setView("processing");setActivePhase(null);}}
-            style={{background:view==="processing"?"#F5A623":"#21262D",color:view==="processing"?"#0D1117":"#F5A623",borderRadius:6,padding:"6px 14px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",fontWeight:500,whiteSpace:"nowrap"}}>
+            style={{background:view==="processing"?"var(--gold)":"var(--s2)",color:view==="processing"?"var(--bg)":"var(--gold)",borderRadius:6,padding:"6px 14px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",fontWeight:500,whiteSpace:"nowrap"}}>
             {TX("processingTab")}
           </button>
         )}
         <button className="hov" onClick={()=>{setView("production");setActivePhase(null);}}
-          style={{background:view==="production"?"#BD65E8":"#21262D",color:view==="production"?"#0D1117":"#BD65E8",borderRadius:6,padding:"6px 14px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",fontWeight:500,whiteSpace:"nowrap"}}>
+          style={{background:view==="production"?"var(--purple)":"var(--s2)",color:view==="production"?"var(--bg)":"var(--purple)",borderRadius:6,padding:"6px 14px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",fontWeight:500,whiteSpace:"nowrap"}}>
           📊 {TX("production")}
         </button>
         {view==="active"&&<>
-          <div style={{width:1,height:20,background:"#30363D",margin:"0 4px"}}/>
+          <div style={{width:1,height:20,background:"var(--bd)",margin:"0 4px"}}/>
           <button className="hov" onClick={()=>setActivePhase(null)}
-            style={{background:!activePhase?"var(--t1)":"transparent",color:!activePhase?"#0D1117":"var(--t2)",borderRadius:20,padding:"4px 12px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",border:"1px solid #30363D",whiteSpace:"nowrap"}}>
+            style={{background:!activePhase?"var(--t1)":"transparent",color:!activePhase?"var(--bg)":"var(--t2)",borderRadius:20,padding:"4px 12px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",border:"1px solid var(--bd)",whiteSpace:"nowrap"}}>
             {TX("mvAll")} · {active.length}
           </button>
           {phaseCounts.map(p=>(
             <button key={p.id} className="hov" onClick={()=>setActivePhase(activePhase===p.id?null:p.id)}
-              style={{background:activePhase===p.id?p.color:"transparent",color:activePhase===p.id?"#0D1117":p.color,borderRadius:20,padding:"4px 12px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",border:`1px solid ${p.color}`,whiteSpace:"nowrap"}}>
+              style={{background:activePhase===p.id?p.color:"transparent",color:activePhase===p.id?"var(--bg)":p.color,borderRadius:20,padding:"4px 12px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",border:`1px solid ${p.color}`,whiteSpace:"nowrap"}}>
               {p.short} · {p.count}
             </button>
           ))}
         </>}
         <div style={{marginLeft:"auto",display:"flex",gap:12,fontSize:"var(--fs-2)",color:"var(--t3)",whiteSpace:"nowrap"}}>
-          <span style={{color:"#E85D75"}}>● {TX("mvLegCrit")}</span>
-          <span style={{color:"#F5A623"}}>● {TX("mvLegWarn")}</span>
+          <span style={{color:"var(--bad)"}}>● {TX("mvLegCrit")}</span>
+          <span style={{color:"var(--gold)"}}>● {TX("mvLegWarn")}</span>
           <span style={{color:"var(--t3)"}}>● {TX("mvLegStale")}</span>
         </div>
       </div>
 
       {versionVieja&&(
         <div style={{margin:"0 24px 10px",background:"rgba(245,166,35,.12)",
-          border:"1px solid #F5A623",borderRadius:8,padding:"11px 14px",
+          border:"1px solid var(--gold)",borderRadius:8,padding:"11px 14px",
           display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
-          <span style={{fontSize:"var(--fs-3)",color:"#F5A623",lineHeight:1.55,flex:1,minWidth:220}}>
+          <span style={{fontSize:"var(--fs-3)",color:"var(--gold)",lineHeight:1.55,flex:1,minWidth:220}}>
             {TX("newVersion")}
           </span>
           <button className="hov" onClick={recargarDeVerdad}
-            style={{background:"#F5A623",color:"#0D1117",borderRadius:6,padding:"8px 16px",
-              fontFamily:"DM Mono",fontSize:"var(--fs-3)",fontWeight:500,border:"none",
+            style={{background:"var(--gold)",color:"var(--bg)",borderRadius:6,padding:"8px 16px",
+              fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",fontWeight:500,border:"none",
               cursor:"pointer",whiteSpace:"nowrap"}}>
             {TX("newVersionBtn")}
           </button>
@@ -1910,22 +1910,22 @@ export default function App() {
 
       {migrado!==null&&(
         <div style={{margin:"0 24px 10px",background:"rgba(126,200,164,.1)",
-          border:"1px solid #7EC8A4",borderRadius:8,padding:"11px 14px",
-          fontSize:"var(--fs-3)",color:"#7EC8A4",lineHeight:1.6}}>
+          border:"1px solid var(--mint)",borderRadius:8,padding:"11px 14px",
+          fontSize:"var(--fs-3)",color:"var(--mint)",lineHeight:1.6}}>
           {TX("migrated",{n:migrado})}
         </div>
       )}
 
       {idsBackfilled>0&&(
-        <div style={{margin:"0 24px 10px",background:"rgba(74,144,217,.1)",border:"1px solid #4A90D9",
-          borderRadius:8,padding:"10px 14px",fontSize:"var(--fs-3)",color:"#4A90D9",lineHeight:1.6}}>
+        <div style={{margin:"0 24px 10px",background:"rgba(74,144,217,.1)",border:"1px solid var(--blue)",
+          borderRadius:8,padding:"10px 14px",fontSize:"var(--fs-3)",color:"var(--blue)",lineHeight:1.6}}>
           {TX("idsBackfilledMsg",{n:idsBackfilled})}
         </div>
       )}
 
       {sizeAlert&&(
-        <div style={{margin:"0 24px",background:"rgba(232,93,117,.1)",border:"1px solid #E85D75",
-          borderRadius:8,padding:"11px 14px",fontSize:"var(--fs-3)",color:"#E85D75",lineHeight:1.6}}>
+        <div style={{margin:"0 24px",background:"rgba(232,93,117,.1)",border:"1px solid var(--bad)",
+          borderRadius:8,padding:"11px 14px",fontSize:"var(--fs-3)",color:"var(--bad)",lineHeight:1.6}}>
           {sizeAlert > 1000000
             ? TX("docTooBig",{mb:(sizeAlert/1048576).toFixed(2)})
             : TX("docNearLimit",{mb:(sizeAlert/1048576).toFixed(2)})}
@@ -2008,7 +2008,7 @@ export default function App() {
         {/* REFERRED OUT TABLE */}
         {view==="referred"&&<div className="fi">
           <div style={{marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#A78BFA"}}>🔀 {TX("referredOut")} — {referredOut.length} {TX("mvTotal")}</span>
+            <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--violet)"}}>🔀 {TX("referredOut")} — {referredOut.length} {TX("mvTotal")}</span>
             <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>{TX("mvReferredSub")}</span>
           </div>
           {display.length===0?<div style={{padding:40,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-5)"}}>
@@ -2017,7 +2017,7 @@ export default function App() {
           </div>:(
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
               <thead>
-                <tr style={{background:"#161B22",borderBottom:"2px solid #A78BFA"}}>
+                <tr style={{background:"var(--s1)",borderBottom:"2px solid var(--violet)"}}>
                   {["thBorrower","thLoanType","thAmount","thReferredTo","thReason","thStatus","thFeeEarned"].map(k=>TX(k)).map((h,i)=>(
                     <th key={i} style={{padding:"10px 14px",textAlign:"left",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                   ))}
@@ -2030,29 +2030,29 @@ export default function App() {
                   const finalAmount = parseInt(ro.finalLoanAmount)||f.loan||0;
                   const feeEarned = isFunded ? Math.round(finalAmount * REFERRAL_FEE_BPS / 10000) : 0;
                   return (
-                    <tr key={f.id} className="row" style={{borderBottom:"1px solid #21262D",cursor:"pointer"}} onClick={()=>setDetail(f)}>
-                      <td style={{padding:"11px 14px",fontFamily:"Syne",fontWeight:700,color:"var(--t1)",background:i%2===0?"#0D1117":"#161B22"}}>{f.borrower}</td>
-                      <td style={{padding:"11px 14px",color:"var(--t2)",background:i%2===0?"#0D1117":"#161B22"}}>{f.type}</td>
-                      <td style={{padding:"11px 14px",color:"#A78BFA",fontWeight:500,background:i%2===0?"#0D1117":"#161B22"}}>{fmtLoan(f.loan)}</td>
-                      <td style={{padding:"11px 14px",color:"var(--t1)",background:i%2===0?"#0D1117":"#161B22"}}>
+                    <tr key={f.id} className="row" style={{borderBottom:"1px solid var(--s2)",cursor:"pointer"}} onClick={()=>setDetail(f)}>
+                      <td style={{padding:"11px 14px",fontFamily:"var(--ff-title)",fontWeight:700,color:"var(--t1)",background:i%2===0?"var(--bg)":"var(--s1)"}}>{f.borrower}</td>
+                      <td style={{padding:"11px 14px",color:"var(--t2)",background:i%2===0?"var(--bg)":"var(--s1)"}}>{f.type}</td>
+                      <td style={{padding:"11px 14px",color:"var(--violet)",fontWeight:500,background:i%2===0?"var(--bg)":"var(--s1)"}}>{fmtLoan(f.loan)}</td>
+                      <td style={{padding:"11px 14px",color:"var(--t1)",background:i%2===0?"var(--bg)":"var(--s1)"}}>
                         {ro.bankerName||"—"}<br/>
                         <span style={{fontSize:"var(--fs-2)",color:"var(--t3)"}}>{ro.bankerCompany||""}</span>
                       </td>
-                      <td style={{padding:"11px 14px",color:"var(--t2)",fontSize:"var(--fs-3)",background:i%2===0?"#0D1117":"#161B22"}}>{ro.reason||"—"}</td>
-                      <td style={{padding:"11px 14px",background:i%2===0?"#0D1117":"#161B22"}}>
+                      <td style={{padding:"11px 14px",color:"var(--t2)",fontSize:"var(--fs-3)",background:i%2===0?"var(--bg)":"var(--s1)"}}>{ro.reason||"—"}</td>
+                      <td style={{padding:"11px 14px",background:i%2===0?"var(--bg)":"var(--s1)"}}>
                         <span style={{
                           fontSize:"var(--fs-2)",padding:"3px 7px",borderRadius:4,
                           background: ro.status==="Closed (Funded)" ? "rgba(6,214,160,.15)" :
                                       ro.status==="Fell Through" ? "rgba(232,93,117,.15)" :
                                       ro.status==="Withdrawn by Borrower" ? "rgba(139,148,158,.15)" :
                                       "rgba(245,166,35,.15)",
-                          color: ro.status==="Closed (Funded)" ? "#06D6A0" :
-                                 ro.status==="Fell Through" ? "#E85D75" :
+                          color: ro.status==="Closed (Funded)" ? "var(--ok)" :
+                                 ro.status==="Fell Through" ? "var(--bad)" :
                                  ro.status==="Withdrawn by Borrower" ? "var(--t2)" :
-                                 "#F5A623",
+                                 "var(--gold)",
                         }}>{ro.status||TX("mvPending")}</span>
                       </td>
-                      <td style={{padding:"11px 14px",color:isFunded?"#06D6A0":"var(--t3)",fontWeight:500,background:i%2===0?"#0D1117":"#161B22"}}>
+                      <td style={{padding:"11px 14px",color:isFunded?"var(--ok)":"var(--t3)",fontWeight:500,background:i%2===0?"var(--bg)":"var(--s1)"}}>
                         {feeEarned > 0 ? `$${feeEarned.toLocaleString()}` : "—"}
                       </td>
                     </tr>
@@ -2066,7 +2066,7 @@ export default function App() {
         {/* INBOUND VIEW */}
         {view==="inbound"&&<div className="fi">
           <div style={{marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#FFD166"}}>🤝 {TX("mvInboundTitle")} — {inbound.length} {TX("mvTotal")}</span>
+            <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--yellow)"}}>🤝 {TX("mvInboundTitle")} — {inbound.length} {TX("mvTotal")}</span>
             <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>{TX("mvInboundSub")}</span>
           </div>
           {display.length===0?<div style={{padding:40,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-5)"}}>
@@ -2075,7 +2075,7 @@ export default function App() {
           </div>:(
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
               <thead>
-                <tr style={{background:"#161B22",borderBottom:"2px solid #FFD166"}}>
+                <tr style={{background:"var(--s1)",borderBottom:"2px solid var(--yellow)"}}>
                   {["thBorrower","thLoanType","thAmount","thReferredBy","thStage","thClosing"].map(k=>TX(k)).map((h,i)=>(
                     <th key={i} style={{padding:"10px 14px",textAlign:"left",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                   ))}
@@ -2085,16 +2085,16 @@ export default function App() {
                 {display.map((f,i)=>{
                   const rb = f.referringBanker || {};
                   return (
-                    <tr key={f.id} className="row" style={{borderBottom:"1px solid #21262D",cursor:"pointer"}} onClick={()=>setDetail(f)}>
-                      <td style={{padding:"11px 14px",fontFamily:"Syne",fontWeight:700,color:"var(--t1)",background:i%2===0?"#0D1117":"#161B22"}}>{f.borrower}</td>
-                      <td style={{padding:"11px 14px",color:"var(--t2)",background:i%2===0?"#0D1117":"#161B22"}}>{f.type}</td>
-                      <td style={{padding:"11px 14px",color:"#FFD166",fontWeight:500,background:i%2===0?"#0D1117":"#161B22"}}>{fmtLoan(f.loan)}</td>
-                      <td style={{padding:"11px 14px",color:"var(--t1)",background:i%2===0?"#0D1117":"#161B22"}}>
+                    <tr key={f.id} className="row" style={{borderBottom:"1px solid var(--s2)",cursor:"pointer"}} onClick={()=>setDetail(f)}>
+                      <td style={{padding:"11px 14px",fontFamily:"var(--ff-title)",fontWeight:700,color:"var(--t1)",background:i%2===0?"var(--bg)":"var(--s1)"}}>{f.borrower}</td>
+                      <td style={{padding:"11px 14px",color:"var(--t2)",background:i%2===0?"var(--bg)":"var(--s1)"}}>{f.type}</td>
+                      <td style={{padding:"11px 14px",color:"var(--yellow)",fontWeight:500,background:i%2===0?"var(--bg)":"var(--s1)"}}>{fmtLoan(f.loan)}</td>
+                      <td style={{padding:"11px 14px",color:"var(--t1)",background:i%2===0?"var(--bg)":"var(--s1)"}}>
                         {rb.bankerName||"—"}<br/>
                         <span style={{fontSize:"var(--fs-2)",color:"var(--t3)"}}>{rb.bankerCompany||""}</span>
                       </td>
-                      <td style={{padding:"11px 14px",color:getPhase(f.stage).color,fontWeight:500,fontSize:"var(--fs-3)",background:i%2===0?"#0D1117":"#161B22"}}>{f.stage}</td>
-                      <td style={{padding:"11px 14px",color:"var(--t2)",background:i%2===0?"#0D1117":"#161B22"}}>{f.closedAt||f.closing||"—"}</td>
+                      <td style={{padding:"11px 14px",color:getPhase(f.stage).color,fontWeight:500,fontSize:"var(--fs-3)",background:i%2===0?"var(--bg)":"var(--s1)"}}>{f.stage}</td>
+                      <td style={{padding:"11px 14px",color:"var(--t2)",background:i%2===0?"var(--bg)":"var(--s1)"}}>{f.closedAt||f.closing||"—"}</td>
                     </tr>
                   );
                 })}
@@ -2106,13 +2106,13 @@ export default function App() {
         {/* CLOSED TABLE */}
         {view==="closed"&&<div className="fi">
           <div style={{marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#06D6A0"}}>{TX("closedFiles")} — {closed.length} {TX("mvTotal")}</span>
+            <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--ok)"}}>{TX("closedFiles")} — {closed.length} {TX("mvTotal")}</span>
             <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>{TX("mvClosedSub")}</span>
           </div>
           {display.length===0?<div style={{padding:40,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-5)"}}>{TX("mvClosedEmpty")}</div>:(
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
               <thead>
-                <tr style={{background:"#161B22",borderBottom:"2px solid #06D6A0"}}>
+                <tr style={{background:"var(--s1)",borderBottom:"2px solid var(--ok)"}}>
                   {["thBorrower","thType","thLoanAmount","thClosedDate","thNotes",""].map(k=>k?TX(k):"").map((h,i)=>(
                     <th key={i} style={{padding:"10px 14px",textAlign:"left",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                   ))}
@@ -2120,15 +2120,15 @@ export default function App() {
               </thead>
               <tbody>
                 {display.map((f,i)=>(
-                  <tr key={f.id} className="row" style={{borderBottom:"1px solid #21262D",cursor:"pointer"}} onClick={()=>setDetail(f)}>
-                    <td style={{padding:"11px 14px",fontFamily:"Syne",fontWeight:700,color:"var(--t1)",background:i%2===0?"#0D1117":"#161B22"}}>{f.borrower}</td>
-                    <td style={{padding:"11px 14px",color:"var(--t2)",background:i%2===0?"#0D1117":"#161B22"}}>{f.type}</td>
-                    <td style={{padding:"11px 14px",color:"#06D6A0",fontWeight:500,background:i%2===0?"#0D1117":"#161B22"}}>${f.loan.toLocaleString()}</td>
-                    <td style={{padding:"11px 14px",color:"var(--t2)",background:i%2===0?"#0D1117":"#161B22"}}>{f.closedAt||f.closing}</td>
-                    <td style={{padding:"11px 14px",color:"var(--t3)",fontStyle:"italic",maxWidth:220,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",background:i%2===0?"#0D1117":"#161B22"}}>{f.note||"—"}</td>
-                    <td style={{padding:"11px 14px",background:i%2===0?"#0D1117":"#161B22"}}>
+                  <tr key={f.id} className="row" style={{borderBottom:"1px solid var(--s2)",cursor:"pointer"}} onClick={()=>setDetail(f)}>
+                    <td style={{padding:"11px 14px",fontFamily:"var(--ff-title)",fontWeight:700,color:"var(--t1)",background:i%2===0?"var(--bg)":"var(--s1)"}}>{f.borrower}</td>
+                    <td style={{padding:"11px 14px",color:"var(--t2)",background:i%2===0?"var(--bg)":"var(--s1)"}}>{f.type}</td>
+                    <td style={{padding:"11px 14px",color:"var(--ok)",fontWeight:500,background:i%2===0?"var(--bg)":"var(--s1)"}}>${f.loan.toLocaleString()}</td>
+                    <td style={{padding:"11px 14px",color:"var(--t2)",background:i%2===0?"var(--bg)":"var(--s1)"}}>{f.closedAt||f.closing}</td>
+                    <td style={{padding:"11px 14px",color:"var(--t3)",fontStyle:"italic",maxWidth:220,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",background:i%2===0?"var(--bg)":"var(--s1)"}}>{f.note||"—"}</td>
+                    <td style={{padding:"11px 14px",background:i%2===0?"var(--bg)":"var(--s1)"}}>
                       <button className="hov" onClick={e=>{e.stopPropagation();reopenFile(f.id);}}
-                        style={{background:"#21262D",color:"var(--t2)",borderRadius:5,padding:"4px 10px",fontSize:"var(--fs-2)",fontFamily:"DM Mono"}}>{TX("reopen")}</button>
+                        style={{background:"var(--s2)",color:"var(--t2)",borderRadius:5,padding:"4px 10px",fontSize:"var(--fs-2)",fontFamily:"var(--ff-mono)"}}>{TX("reopen")}</button>
                     </td>
                   </tr>
                 ))}
@@ -2140,7 +2140,7 @@ export default function App() {
         {/* PREPARATION + DUE REVIEW */}
         {(view==="prep"||view==="review")&&<div className="fi">
           <div style={{marginBottom:14,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:view==="review"?"#E85D75":"#7EC8A4"}}>
+            <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-6)",color:view==="review"?"var(--bad)":"var(--mint)"}}>
               {view==="review" ? `🔔 ${TX("dueReview")} — ${dueReview.length}` : `⏸ ${TX("preparation")} — ${prep.length}`}
             </span>
             <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>
@@ -2153,12 +2153,12 @@ export default function App() {
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
               background:"rgba(232,93,117,.08)",border:"1px solid #E85D7544",borderRadius:8,
               padding:"8px 14px",marginBottom:12}}>
-              <span style={{fontSize:"var(--fs-3)",color:"#E85D75",fontFamily:"DM Mono"}}>
+              <span style={{fontSize:"var(--fs-3)",color:"var(--bad)",fontFamily:"var(--ff-mono)"}}>
                 ⚑ {TX("critFilterOn",{n:display.length,t:active.length})}
               </span>
               <button className="hov" onClick={()=>setCritOnly(false)}
                 style={{background:"transparent",border:"1px solid #E85D7566",borderRadius:6,
-                  color:"#E85D75",padding:"4px 12px",fontFamily:"DM Mono",
+                  color:"var(--bad)",padding:"4px 12px",fontFamily:"var(--ff-mono)",
                   fontSize:"var(--fs-2)",cursor:"pointer"}}>
                 {TX("critFilterOff")}
               </button>
@@ -2182,55 +2182,55 @@ export default function App() {
                 const edge=locked?"#E85D75":due?"#F5A623":"#21262D";
                 return(
                   <div key={f.id} className="card" onClick={()=>setDetail(f)}
-                    style={{background:"#0D1117",border:`1px solid ${edge}`,borderRadius:8,padding:"12px 14px",display:"flex",flexDirection:"column",gap:8}}>
+                    style={{background:"var(--bg)",border:`1px solid ${edge}`,borderRadius:8,padding:"12px 14px",display:"flex",flexDirection:"column",gap:8}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:6}}>
                       <div>
-                        <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--t1)",lineHeight:1.2}}>{f.borrower}</div>
+                        <div style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--t1)",lineHeight:1.2}}>{f.borrower}</div>
                         <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{f.type} · {fmtLoan(f.loan)}</div>
                         {f.lo&&<div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:1}}>{f.lo.split(" ")[0]}</div>}
                       </div>
                       {locked
-                        ? <span style={{background:"#E85D75",color:"#0D1117",borderRadius:4,padding:"2px 6px",fontSize:"var(--fs-1)",fontWeight:500,whiteSpace:"nowrap"}}>{TX("mvDecideNow")}</span>
-                        : due && <span style={{background:"#F5A623",color:"#0D1117",borderRadius:4,padding:"2px 6px",fontSize:"var(--fs-2)",fontWeight:500}}>{TX("mvDue")}</span>}
+                        ? <span style={{background:"var(--bad)",color:"var(--bg)",borderRadius:4,padding:"2px 6px",fontSize:"var(--fs-1)",fontWeight:500,whiteSpace:"nowrap"}}>{TX("mvDecideNow")}</span>
+                        : due && <span style={{background:"var(--gold)",color:"var(--bg)",borderRadius:4,padding:"2px 6px",fontSize:"var(--fs-2)",fontWeight:500}}>{TX("mvDue")}</span>}
                     </div>
 
                     <div style={{background:"rgba(126,200,164,.07)",border:"1px solid #7EC8A433",borderRadius:6,padding:"7px 9px"}}>
-                      <div style={{fontSize:"var(--fs-3)",color:"#7EC8A4",fontWeight:500}}>{P(r.label)}</div>
+                      <div style={{fontSize:"var(--fs-3)",color:"var(--mint)",fontWeight:500}}>{P(r.label)}</div>
                       <div style={{fontSize:"var(--fs-2)",color:"var(--t2)",marginTop:3}}>
                         {TX("mvReview")} {p.reviewOn||"—"}
                         {" · "}
-                        <span style={{color:due?"#E85D75":"var(--t3)"}}>
+                        <span style={{color:due?"var(--bad)":"var(--t3)"}}>
                           {dtr>0?TX("mvInDays",{n:dtr}):dtr===0?TX("mvToday"):TX("mvOverdue",{n:Math.abs(dtr)})}
                         </span>
                       </div>
                     </div>
 
-                    <div style={{fontSize:"var(--fs-2)",color:locked?"#E85D75":"var(--t3)"}}>
+                    <div style={{fontSize:"var(--fs-2)",color:locked?"var(--bad)":"var(--t3)"}}>
                       {TX("mvInPrep",{n:age})}
                       <span style={{color:"var(--t4)"}}> / {PREP_MAX_DAYS} {TX("mvMax")}</span>
                       {(p.reschedules>0)&&<span style={{color:"var(--t4)"}}> · {TX("mvRescheduled",{n:p.reschedules})}</span>}
                     </div>
-                    <div style={{height:3,background:"#21262D",borderRadius:2,overflow:"hidden"}}>
-                      <div style={{height:"100%",width:`${Math.min(100,(age/PREP_MAX_DAYS)*100)}%`,background:locked?"#E85D75":age/PREP_MAX_DAYS>0.75?"#F5A623":"#7EC8A4"}}/>
+                    <div style={{height:3,background:"var(--s2)",borderRadius:2,overflow:"hidden"}}>
+                      <div style={{height:"100%",width:`${Math.min(100,(age/PREP_MAX_DAYS)*100)}%`,background:locked?"var(--bad)":age/PREP_MAX_DAYS>0.75?"var(--gold)":"var(--mint)"}}/>
                     </div>
 
-                    {(p.note||f.note)&&<div style={{fontSize:"var(--fs-2)",color:"var(--t2)",borderTop:"1px solid #21262D",paddingTop:6,fontStyle:"italic"}}>{p.note||f.note}</div>}
-                    {locked&&<div style={{fontSize:"var(--fs-2)",color:"#E85D75",lineHeight:1.4}}>
+                    {(p.note||f.note)&&<div style={{fontSize:"var(--fs-2)",color:"var(--t2)",borderTop:"1px solid var(--s2)",paddingTop:6,fontStyle:"italic"}}>{p.note||f.note}</div>}
+                    {locked&&<div style={{fontSize:"var(--fs-2)",color:"var(--bad)",lineHeight:1.4}}>
                       {TX("mvPrepLocked",{n:PREP_MAX_DAYS})}
                     </div>}
 
                     <div style={{display:"flex",gap:6,marginTop:2,flexWrap:"wrap"}}>
                       <button className="hov" onClick={e=>{e.stopPropagation();if(confirm(TX("mvBringBack",{n:f.borrower,s:p.prevStage||"Lead Inquiry"})))continueFromPrep(f.id);}}
-                        style={{flex:1,background:"rgba(74,144,217,.1)",border:"1px solid #4A90D9",borderRadius:5,color:"#4A90D9",fontSize:"var(--fs-2)",padding:"5px 8px",whiteSpace:"nowrap"}}>
+                        style={{flex:1,background:"rgba(74,144,217,.1)",border:"1px solid var(--blue)",borderRadius:5,color:"var(--blue)",fontSize:"var(--fs-2)",padding:"5px 8px",whiteSpace:"nowrap"}}>
                         ✓ {TX("mvContinue")}
                       </button>
                       <button className="hov" disabled={locked} onClick={e=>{e.stopPropagation();if(!locked)setPrepFor(f);}}
                         title={locked?TX("mvLockedAt",{n:PREP_MAX_DAYS}):TX("mvNewReviewDate")}
-                        style={{flex:1,background:locked?"#161B22":"rgba(245,166,35,.1)",border:`1px solid ${locked?"#21262D":"#F5A623"}`,borderRadius:5,color:locked?"#30363D":"#F5A623",fontSize:"var(--fs-2)",padding:"5px 8px",whiteSpace:"nowrap",cursor:locked?"not-allowed":"pointer"}}>
+                        style={{flex:1,background:locked?"var(--s1)":"rgba(245,166,35,.1)",border:`1px solid ${locked?"var(--s2)":"var(--gold)"}`,borderRadius:5,color:locked?"var(--bd)":"var(--gold)",fontSize:"var(--fs-2)",padding:"5px 8px",whiteSpace:"nowrap",cursor:locked?"not-allowed":"pointer"}}>
                         ↻ {TX("mvReschedule")}
                       </button>
                       <button className="hov" onClick={e=>{e.stopPropagation();setArchiveFor(f);}}
-                        style={{background:"rgba(110,118,129,.12)",border:"1px solid #30363D",borderRadius:5,color:"var(--t2)",fontSize:"var(--fs-2)",padding:"5px 10px",whiteSpace:"nowrap"}}>
+                        style={{background:"rgba(110,118,129,.12)",border:"1px solid var(--bd)",borderRadius:5,color:"var(--t2)",fontSize:"var(--fs-2)",padding:"5px 10px",whiteSpace:"nowrap"}}>
                         🗄
                       </button>
                     </div>
@@ -2244,13 +2244,13 @@ export default function App() {
         {/* ARCHIVED */}
         {view==="archived"&&<div className="fi">
           <div style={{marginBottom:14,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--t2)"}}>🗄 {TX("archived")} — {archived.length}</span>
+            <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--t2)"}}>🗄 {TX("archived")} — {archived.length}</span>
             <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>{TX("mvArchivedSub")}</span>
           </div>
           {display.length===0?<div style={{padding:40,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-5)"}}>{TX("mvArchivedEmpty")}</div>:(
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
               <thead>
-                <tr style={{background:"#161B22",borderBottom:"2px solid #30363D"}}>
+                <tr style={{background:"var(--s1)",borderBottom:"2px solid var(--bd)"}}>
                   {["thBorrower","thType","thAmount","thLastStage","thReason","thArchived",""].map(k=>k?TX(k):"").map((h,i)=>(
                     <th key={i} style={{padding:"10px 14px",textAlign:"left",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                   ))}
@@ -2258,16 +2258,16 @@ export default function App() {
               </thead>
               <tbody>
                 {display.map((f,i)=>(
-                  <tr key={f.id} className="row" style={{borderBottom:"1px solid #21262D",cursor:"pointer"}} onClick={()=>setDetail(f)}>
-                    <td style={{padding:"11px 14px",fontFamily:"Syne",fontWeight:700,color:"var(--t2)",background:i%2===0?"#0D1117":"#161B22"}}>{f.borrower}</td>
-                    <td style={{padding:"11px 14px",color:"var(--t2)",background:i%2===0?"#0D1117":"#161B22"}}>{f.type}</td>
-                    <td style={{padding:"11px 14px",color:"var(--t2)",background:i%2===0?"#0D1117":"#161B22"}}>${((f.loan||0)/1000).toFixed(0)}K</td>
-                    <td style={{padding:"11px 14px",color:"var(--t2)",fontSize:"var(--fs-3)",background:i%2===0?"#0D1117":"#161B22"}}>{isPrep(f)?(f.prep?.prevStage||TX("mvPreparationWord")):f.stage}</td>
-                    <td style={{padding:"11px 14px",color:"var(--t2)",fontSize:"var(--fs-3)",background:i%2===0?"#0D1117":"#161B22"}}>{f.archiveReason||"—"}</td>
-                    <td style={{padding:"11px 14px",color:"var(--t3)",fontSize:"var(--fs-3)",background:i%2===0?"#0D1117":"#161B22"}}>{f.archivedAt||"—"}</td>
-                    <td style={{padding:"11px 14px",background:i%2===0?"#0D1117":"#161B22"}}>
+                  <tr key={f.id} className="row" style={{borderBottom:"1px solid var(--s2)",cursor:"pointer"}} onClick={()=>setDetail(f)}>
+                    <td style={{padding:"11px 14px",fontFamily:"var(--ff-title)",fontWeight:700,color:"var(--t2)",background:i%2===0?"var(--bg)":"var(--s1)"}}>{f.borrower}</td>
+                    <td style={{padding:"11px 14px",color:"var(--t2)",background:i%2===0?"var(--bg)":"var(--s1)"}}>{f.type}</td>
+                    <td style={{padding:"11px 14px",color:"var(--t2)",background:i%2===0?"var(--bg)":"var(--s1)"}}>${((f.loan||0)/1000).toFixed(0)}K</td>
+                    <td style={{padding:"11px 14px",color:"var(--t2)",fontSize:"var(--fs-3)",background:i%2===0?"var(--bg)":"var(--s1)"}}>{isPrep(f)?(f.prep?.prevStage||TX("mvPreparationWord")):f.stage}</td>
+                    <td style={{padding:"11px 14px",color:"var(--t2)",fontSize:"var(--fs-3)",background:i%2===0?"var(--bg)":"var(--s1)"}}>{f.archiveReason||"—"}</td>
+                    <td style={{padding:"11px 14px",color:"var(--t3)",fontSize:"var(--fs-3)",background:i%2===0?"var(--bg)":"var(--s1)"}}>{f.archivedAt||"—"}</td>
+                    <td style={{padding:"11px 14px",background:i%2===0?"var(--bg)":"var(--s1)"}}>
                       <button className="hov" onClick={e=>{e.stopPropagation();restoreFile(f.id);}}
-                        style={{background:"#21262D",color:"#7EC8A4",borderRadius:5,padding:"4px 10px",fontSize:"var(--fs-2)",fontFamily:"DM Mono"}}>↩ {TX("restore")}</button>
+                        style={{background:"var(--s2)",color:"var(--mint)",borderRadius:5,padding:"4px 10px",fontSize:"var(--fs-2)",fontFamily:"var(--ff-mono)"}}>↩ {TX("restore")}</button>
                     </td>
                   </tr>
                 ))}
@@ -2282,12 +2282,12 @@ export default function App() {
             const pf=display.filter(f=>getPhase(f.stage).id===phase.id);
             if(pf.length===0&&activePhase)return null;
             return(
-              <div key={phase.id} className="fi" style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
+              <div key={phase.id} className="fi" style={{background:"var(--s1)",border:"1px solid var(--s2)",borderRadius:10,overflow:"hidden"}}>
                 <div style={{background:phase.bg,borderBottom:`2px solid ${phase.color}`,padding:"10px 16px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-                  <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:phase.color,letterSpacing:"1px"}}>{TX("mvPhase")} {phase.id} — {TX("mvPhaseName_"+phase.id).toUpperCase()}</span>
-                  <span style={{background:phase.color,color:"#0D1117",borderRadius:10,padding:"1px 8px",fontSize:"var(--fs-3)",fontWeight:500}}>{pf.length}</span>
+                  <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:phase.color,letterSpacing:"1px"}}>{TX("mvPhase")} {phase.id} — {TX("mvPhaseName_"+phase.id).toUpperCase()}</span>
+                  <span style={{background:phase.color,color:"var(--bg)",borderRadius:10,padding:"1px 8px",fontSize:"var(--fs-3)",fontWeight:500}}>{pf.length}</span>
                   <div style={{marginLeft:"auto",display:"flex",gap:5,flexWrap:"wrap"}}>
-                    {phase.stages.map((s,i)=><span key={i} style={{fontSize:"var(--fs-2)",color:"var(--t3)",background:"#0D1117",borderRadius:4,padding:"2px 6px"}}>{s}</span>)}
+                    {phase.stages.map((s,i)=><span key={i} style={{fontSize:"var(--fs-2)",color:"var(--t3)",background:"var(--bg)",borderRadius:4,padding:"2px 6px"}}>{s}</span>)}
                   </div>
                 </div>
                 {pf.length===0?(
@@ -2302,15 +2302,15 @@ export default function App() {
                       const uc=u==="critical"?"#E85D75":u==="warning"?"#F5A623":u==="stale"?"var(--t3)":"#21262D";
                       return(
                         <div key={f.id} className="card" onClick={()=>setDetail(f)}
-                          style={{background:"#0D1117",
-                            border: isTraining(f) ? "1px dashed #F5A623" : `1px solid ${uc}`,
+                          style={{background:"var(--bg)",
+                            border: isTraining(f) ? "1px dashed var(--gold)" : `1px solid ${uc}`,
                             borderRadius:8,padding:"12px 14px",display:"flex",flexDirection:"column",gap:8}}>
                           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
                             <div>
-                              <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--t1)",lineHeight:1.2}}>
+                              <div style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--t1)",lineHeight:1.2}}>
                                 {f.borrower}
-                                {f.isInbound && <span title={TX("mvInboundOne")} style={{marginLeft:6,fontSize:"var(--fs-2)",color:"#FFD166"}}>🤝</span>}
-                                {isTraining(f) && <span style={{marginLeft:8,fontSize:"var(--fs-1)",fontFamily:"DM Mono",fontWeight:400,color:"#F5A623",border:"1px solid #F5A623",borderRadius:4,padding:"1px 6px",verticalAlign:"middle"}}>{TX("trainBadge")}</span>}
+                                {f.isInbound && <span title={TX("mvInboundOne")} style={{marginLeft:6,fontSize:"var(--fs-2)",color:"var(--yellow)"}}>🤝</span>}
+                                {isTraining(f) && <span style={{marginLeft:8,fontSize:"var(--fs-1)",fontFamily:"var(--ff-mono)",fontWeight:400,color:"var(--gold)",border:"1px solid var(--gold)",borderRadius:4,padding:"1px 6px",verticalAlign:"middle"}}>{TX("trainBadge")}</span>}
                               </div>
                               <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{f.type} · {fmtLoan(f.loan)}</div>
                               {f.lo&&<div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:1}}>{f.lo.split(" ")[0]}{f.referralPartner?` · ${f.referralPartner.split(" ")[0]}`:""}</div>}
@@ -2323,7 +2323,7 @@ export default function App() {
                                 cierre a cuatro. */}
                             {(()=>{const ck=fileClock(f);
                               if(!ck.applies){
-                                return u!=="normal"?<span style={{background:uc,color:"#0D1117",
+                                return u!=="normal"?<span style={{background:uc,color:"var(--bg)",
                                   borderRadius:4,padding:"2px 6px",fontSize:"var(--fs-2)",
                                   fontWeight:500}}>
                                   {u==="critical"?TX("critical"):u==="warning"?TX("mvWarn"):TX("mvStale")}
@@ -2337,11 +2337,11 @@ export default function App() {
                                 ? (ck.days<0?`COE ${Math.abs(ck.days)}d ${TX("pastDue")}`:`COE ${ck.days}d`)
                                 : `${ck.days}d / ${ck.ceiling}d${ck.legal?" ⚖":""}`;
                               return <div style={{textAlign:"right",flexShrink:0}}>
-                                <span style={{background:c,color:"#0D1117",borderRadius:4,
+                                <span style={{background:c,color:"var(--bg)",borderRadius:4,
                                   padding:"2px 7px",fontSize:"var(--fs-2)",fontWeight:500,
-                                  whiteSpace:"nowrap",fontFamily:"DM Mono"}}>{texto}</span>
+                                  whiteSpace:"nowrap",fontFamily:"var(--ff-mono)"}}>{texto}</span>
                                 {etapaRoja&&<span title={TX("stageOverCeiling")}
-                                  style={{marginLeft:5,color:"#E85D75",fontSize:"var(--fs-3)"}}>●</span>}
+                                  style={{marginLeft:5,color:"var(--bad)",fontSize:"var(--fs-3)"}}>●</span>}
                                 {ck.waitOn&&<div style={{fontSize:"var(--fs-1)",color:"var(--t4)",
                                   marginTop:3,whiteSpace:"nowrap"}}>{P(ck.waitOn)}</div>}
                               </div>;})()}
@@ -2355,7 +2355,7 @@ export default function App() {
                               {daysInStage(f)===null ? TX("mvInStageNone") : TX("mvInStage",{n:daysInStage(f)})}
                               {fileAge(f)!==null && <span style={{color:"var(--t4)"}}> · {TX("mvTotalDays",{n:fileAge(f)})}</span>}
                             </span>
-                            {f.closing&&<span style={{color:cd!==null&&cd<=3?"#E85D75":cd!==null&&cd<=7?"#F5A623":"var(--t3)"}}>
+                            {f.closing&&<span style={{color:cd!==null&&cd<=3?"var(--bad)":cd!==null&&cd<=7?"var(--gold)":"var(--t3)"}}>
                               {cd===0?TX("mvClosingToday"):cd!==null&&cd>0?TX("mvCloseIn",{n:cd}):cd!==null?TX("mvPastDue"):f.closing}
                               {/* El ritmo se lee sin abrir el archivo: de un
                                   vistazo se ve cual va adelantado y cual
@@ -2371,9 +2371,9 @@ export default function App() {
                             if(!c||f.stage!=="Active Search") return null;
                             return (
                               <div style={{background:"rgba(245,166,35,.07)",
-                                border:"1px solid #F5A62333",borderLeft:"2px solid #F5A623",
+                                border:"1px solid #F5A62333",borderLeft:"2px solid var(--gold)",
                                 borderRadius:"0 5px 5px 0",padding:"6px 9px",marginTop:8}}>
-                                <div style={{fontSize:"var(--fs-2)",color:"#F5A623",lineHeight:1.45}}>
+                                <div style={{fontSize:"var(--fs-2)",color:"var(--gold)",lineHeight:1.45}}>
                                   {TX("cancelWas",{d:c.at,r:P(cancelReason(c.reasonId))})}
                                 </div>
                                 {cancelCount(f)>1&&(
@@ -2388,9 +2388,9 @@ export default function App() {
                             const m=waitingMeta(w.waitingOn), edad=findingAge(w);
                             return (
                               <div style={{background:"rgba(232,93,117,.08)",border:"1px solid #E85D7544",
-                                borderLeft:"2px solid #E85D75",borderRadius:"0 5px 5px 0",
+                                borderLeft:"2px solid var(--bad)",borderRadius:"0 5px 5px 0",
                                 padding:"6px 8px",marginTop:7}}>
-                                <div style={{fontSize:"var(--fs-2)",color:"#E85D75",lineHeight:1.4,
+                                <div style={{fontSize:"var(--fs-2)",color:"var(--bad)",lineHeight:1.4,
                                   display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>
                                   ⚑ {w.text}
                                 </div>
@@ -2403,7 +2403,7 @@ export default function App() {
                           <ContingencyStrip file={f}/>
                           {(()=>{const n=latestNote(f); if(!n) return null; const c=noteCount(f);
                             return (
-                              <div style={{borderTop:"1px solid #21262D",paddingTop:6}}>
+                              <div style={{borderTop:"1px solid var(--s2)",paddingTop:6}}>
                                 <div style={{fontSize:"var(--fs-2)",color:"var(--t2)",fontStyle:"italic",lineHeight:1.45,
                                   display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>
                                   {n.text}
@@ -2416,7 +2416,7 @@ export default function App() {
                                 </div>
                               </div>
                             );})()}
-                          {f.lastEditedBy&&!latestNote(f)&&<div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"0.5px",borderTop:"1px solid #21262D",paddingTop:6}}>
+                          {f.lastEditedBy&&!latestNote(f)&&<div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"0.5px",borderTop:"1px solid var(--s2)",paddingTop:6}}>
                             Edited by {f.lastEditedBy.name?.split(" ")[0]||"?"} · {timeAgo(f.lastEditedAt)}
                           </div>}
                           {(f.phone || f.email) && (
@@ -2424,14 +2424,14 @@ export default function App() {
                               {f.phone && (
                                 <a href={`tel:${f.phone.replace(/[^\d+]/g,"")}`} onClick={e=>e.stopPropagation()}
                                   title={TX("mvCall",{n:f.phone})}
-                                  style={{background:"rgba(74,144,217,.08)",border:"1px solid #4A90D944",borderRadius:4,padding:"3px 7px",color:"#4A90D9",fontSize:"var(--fs-2)",fontFamily:"DM Mono",textDecoration:"none"}}>
+                                  style={{background:"rgba(74,144,217,.08)",border:"1px solid #4A90D944",borderRadius:4,padding:"3px 7px",color:"var(--blue)",fontSize:"var(--fs-2)",fontFamily:"var(--ff-mono)",textDecoration:"none"}}>
                                   📱 {f.phone}
                                 </a>
                               )}
                               {f.email && (
                                 <a href={`mailto:${f.email}`} onClick={e=>e.stopPropagation()}
                                   title={TX("mvEmail",{n:f.email})}
-                                  style={{background:"rgba(189,101,232,.08)",border:"1px solid #BD65E844",borderRadius:4,padding:"3px 7px",color:"#BD65E8",fontSize:"var(--fs-2)",fontFamily:"DM Mono",textDecoration:"none"}}>
+                                  style={{background:"rgba(189,101,232,.08)",border:"1px solid #BD65E844",borderRadius:4,padding:"3px 7px",color:"var(--purple)",fontSize:"var(--fs-2)",fontFamily:"var(--ff-mono)",textDecoration:"none"}}>
                                   ✉
                                 </a>
                               )}
@@ -2439,7 +2439,7 @@ export default function App() {
                           )}
                           <div style={{display:"flex",gap:6,marginTop:2}}>
                             <button className="hov" onClick={e=>{e.stopPropagation();advance(f.id);}}
-                              style={{flex:1,background:"rgba(255,255,255,.05)",border:"1px solid #21262D",borderRadius:5,color:"var(--t2)",fontSize:"var(--fs-2)",padding:"5px 0"}}>
+                              style={{flex:1,background:"rgba(255,255,255,.05)",border:"1px solid var(--s2)",borderRadius:5,color:"var(--t2)",fontSize:"var(--fs-2)",padding:"5px 0"}}>
                               {TX("advance")} →
                             </button>
                             <button className="hov" onClick={e=>{e.stopPropagation();
@@ -2451,7 +2451,7 @@ export default function App() {
                               if(d===null) return;
                               if(!okDate(d)){ window.alert(TX("closeDateBad")); return; }
                               closeFile(f.id,d);}}
-                              style={{background:"rgba(6,214,160,.1)",border:"1px solid #06D6A0",borderRadius:5,color:"#06D6A0",fontSize:"var(--fs-2)",padding:"5px 10px"}}>
+                              style={{background:"rgba(6,214,160,.1)",border:"1px solid var(--ok)",borderRadius:5,color:"var(--ok)",fontSize:"var(--fs-2)",padding:"5px 10px"}}>
                               {TX("close")} ✓
                             </button>
                           </div>
@@ -2542,11 +2542,11 @@ export default function App() {
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.72)",zIndex:400,
           display:"flex",alignItems:"center",justifyContent:"center",padding:20}}
           onClick={()=>setGateBlock(null)}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"#0D1117",
-            border:`1px solid ${dur.length?"#E85D75":"#F5A623"}`,borderRadius:10,
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--bg)",
+            border:`1px solid ${dur.length?"var(--bad)":"var(--gold)"}`,borderRadius:10,
             maxWidth:560,width:"100%",padding:"18px 20px"}}>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-5)",
-              color:dur.length?"#E85D75":"#F5A623",letterSpacing:"1px",marginBottom:4}}>
+            <div style={{fontFamily:"var(--ff-title)",fontWeight:800,fontSize:"var(--fs-5)",
+              color:dur.length?"var(--bad)":"var(--gold)",letterSpacing:"1px",marginBottom:4}}>
               {dur.length?TX("gateTitle"):TX("gateSoftTitle")}
             </div>
             <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginBottom:14}}>
@@ -2559,7 +2559,7 @@ export default function App() {
               const f0=files.find(x=>x.id===gateBlock.id);
               const fix=f0?gateFix(r.id,f0,profile):null;
               return (
-              <div key={r.id} style={{borderLeft:`2px solid ${r.hard?"#E85D75":"#F5A623"}`,
+              <div key={r.id} style={{borderLeft:`2px solid ${r.hard?"var(--bad)":"var(--gold)"}`,
                 paddingLeft:10,marginBottom:12}}>
                 <div style={{fontSize:"var(--fs-4)",color:"var(--t1)",marginBottom:3}}>{P(r)}</div>
                 <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",lineHeight:1.5}}>
@@ -2569,14 +2569,14 @@ export default function App() {
                     botón existe pero nace apagado, así que la ruta seria un
                     callejón. Se dice qué falta de verdad, no dónde tocar. */}
                 {fix&&fix.espera&&(
-                  <div style={{fontSize:"var(--fs-2)",color:"#F5A623",marginTop:6,lineHeight:1.5}}>
+                  <div style={{fontSize:"var(--fs-2)",color:"var(--gold)",marginTop:6,lineHeight:1.5}}>
                     ⚖ {P(fix)}
                   </div>
                 )}
                 {fix&&fix.puede&&(
                   <button className="hov" onClick={()=>irAlFix(gateBlock.id,fix)}
-                    style={{marginTop:8,background:"transparent",border:"1px solid #F5A623",
-                      borderRadius:6,color:"#F5A623",padding:"6px 14px",fontFamily:"DM Mono",
+                    style={{marginTop:8,background:"transparent",border:"1px solid var(--gold)",
+                      borderRadius:6,color:"var(--gold)",padding:"6px 14px",fontFamily:"var(--ff-mono)",
                       fontSize:"var(--fs-2)",cursor:"pointer"}}>
                     {TX("gateFixNow")}
                   </button>
@@ -2584,11 +2584,11 @@ export default function App() {
                 {fix&&!fix.espera&&(
                   <div style={{marginTop:6,fontSize:"var(--fs-2)",lineHeight:1.5}}>
                     <span style={{color:"var(--t4)",letterSpacing:"1px"}}>{TX("gateWhere")}: </span>
-                    <span style={{color:"var(--t2)",fontFamily:"DM Mono"}}>{P(fix)}</span>
+                    <span style={{color:"var(--t2)",fontFamily:"var(--ff-mono)"}}>{P(fix)}</span>
                   </div>
                 )}
                 {fix&&!fix.puede&&fix.quien&&(
-                  <div style={{fontSize:"var(--fs-2)",color:"#F5A623",marginTop:4,lineHeight:1.5}}>
+                  <div style={{fontSize:"var(--fs-2)",color:"var(--gold)",marginTop:4,lineHeight:1.5}}>
                     {TX("gateWhoFixes",{q:String(fix.quien).split(" ")[0]})}
                   </div>
                 )}
@@ -2600,7 +2600,7 @@ export default function App() {
               </div>
             )}
             {dur.length>0&&isAdmin&&(
-              <div style={{marginTop:14,paddingTop:12,borderTop:"1px solid #21262D"}}>
+              <div style={{marginTop:14,paddingTop:12,borderTop:"1px solid var(--s2)"}}>
                 <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>
                   {TX("gateReason")}
                 </div>
@@ -2608,23 +2608,23 @@ export default function App() {
                   onInput={()=>{const a=document.getElementById("gateReasonErr");
                     const e2=document.getElementById("gateReason");
                     if(a) a.style.display="none"; if(e2) e2.style.border="1px solid #30363D";}}
-                  style={{width:"100%",background:"#0D1117",border:"1px solid #30363D",
+                  style={{width:"100%",background:"var(--bg)",border:"1px solid var(--bd)",
                     borderRadius:6,padding:"8px 10px",color:"var(--t1)",
-                    fontFamily:"IBM Plex Sans",fontSize:"var(--fs-3)"}}/>
+                    fontFamily:"var(--ff-body)",fontSize:"var(--fs-3)"}}/>
                 <div id="gateReasonErr" style={{display:"none",fontSize:"var(--fs-2)",
-                  color:"#E85D75",marginTop:6}}>{TX("gateNeedReason")}</div>
+                  color:"var(--bad)",marginTop:6}}>{TX("gateNeedReason")}</div>
               </div>
             )}
             <div style={{display:"flex",gap:8,marginTop:16,justifyContent:"flex-end"}}>
               <button className="hov" onClick={()=>setGateBlock(null)}
-                style={{background:"transparent",color:"var(--t2)",border:"1px solid #30363D",
-                  borderRadius:6,padding:"8px 16px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",cursor:"pointer"}}>
+                style={{background:"transparent",color:"var(--t2)",border:"1px solid var(--bd)",
+                  borderRadius:6,padding:"8px 16px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",cursor:"pointer"}}>
                 {TX("gateGotIt")}
               </button>
               {dur.length===0&&(
                 <button className="hov" onClick={()=>seguir(null)}
-                  style={{background:"#F5A623",color:"#0D1117",border:"none",borderRadius:6,
-                    padding:"8px 16px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",cursor:"pointer"}}>
+                  style={{background:"var(--gold)",color:"var(--bg)",border:"none",borderRadius:6,
+                    padding:"8px 16px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",cursor:"pointer"}}>
                   {TX("gateAdvanceAnyway")}
                 </button>
               )}
@@ -2635,8 +2635,8 @@ export default function App() {
                     if(!razon){ marcarFalta(); return; }
                     seguir(razon);
                   }}
-                  style={{background:"#E85D75",color:"#0D1117",border:"none",borderRadius:6,
-                    padding:"8px 16px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",cursor:"pointer"}}>
+                  style={{background:"var(--bad)",color:"var(--bg)",border:"none",borderRadius:6,
+                    padding:"8px 16px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",cursor:"pointer"}}>
                   {TX("gateOverride")}
                 </button>
               )}
@@ -2702,9 +2702,9 @@ function PrepModal({file, onClose, onConfirm}){
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:120,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
       <div className="fi" onClick={e=>e.stopPropagation()}
-        style={{background:"#161B22",border:"1px solid #7EC8A455",borderRadius:12,width:"100%",maxWidth:430,maxHeight:"calc(100vh - 40px)",overflowY:"auto",padding:22,display:"flex",flexDirection:"column",gap:14}}>
+        style={{background:"var(--s1)",border:"1px solid #7EC8A455",borderRadius:12,width:"100%",maxWidth:430,maxHeight:"calc(100vh - 40px)",overflowY:"auto",padding:22,display:"flex",flexDirection:"column",gap:14}}>
         <div>
-          <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-7)",color:"#7EC8A4"}}>
+          <div style={{fontFamily:"var(--ff-title)",fontWeight:800,fontSize:"var(--fs-7)",color:"var(--mint)"}}>
             {isReschedule?"↻ RESCHEDULE":"⏸ SEND TO PREPARATION"}
           </div>
           <div style={{fontSize:"var(--fs-4)",color:"var(--t2)",marginTop:3}}>{file.borrower}</div>
@@ -2723,17 +2723,17 @@ function PrepModal({file, onClose, onConfirm}){
 
         <div>
           <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>
-            REVIEW ON {r.mode==="date"&&<span style={{color:"#F5A623"}}>— pick the real date</span>}
+            REVIEW ON {r.mode==="date"&&<span style={{color:"var(--gold)"}}>— pick the real date</span>}
           </div>
           <input type="date" value={reviewOn} onChange={e=>setReviewOn(e.target.value)} style={fs}/>
           <div style={{display:"flex",gap:6,marginTop:8,flexWrap:"wrap"}}>
             {[30,60,90].map(d=>(
               <button key={d} className="hov" onClick={()=>setReviewOn(addDaysISO(today(),d))}
-                style={{background:"#21262D",border:"1px solid #30363D",borderRadius:5,color:"var(--t2)",fontSize:"var(--fs-3)",padding:"5px 12px",fontFamily:"DM Mono"}}>
+                style={{background:"var(--s2)",border:"1px solid var(--bd)",borderRadius:5,color:"var(--t2)",fontSize:"var(--fs-3)",padding:"5px 12px",fontFamily:"var(--ff-mono)"}}>
                 +{d}d
               </button>
             ))}
-            {daysOut!==null&&<span style={{fontSize:"var(--fs-2)",color:daysOut>PREP_MAX_DAYS?"#E85D75":"var(--t3)",alignSelf:"center",marginLeft:4}}>
+            {daysOut!==null&&<span style={{fontSize:"var(--fs-2)",color:daysOut>PREP_MAX_DAYS?"var(--bad)":"var(--t3)",alignSelf:"center",marginLeft:4}}>
               {daysOut}d out{daysOut>PREP_MAX_DAYS?` — past the ${PREP_MAX_DAYS}-day cap`:""}
             </span>}
           </div>
@@ -2748,11 +2748,11 @@ function PrepModal({file, onClose, onConfirm}){
 
         <div style={{display:"flex",gap:8}}>
           <button className="hov" onClick={onClose}
-            style={{flex:1,background:"#21262D",color:"var(--t2)",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:"var(--fs-4)",border:"none"}}>CANCEL</button>
+            style={{flex:1,background:"var(--s2)",color:"var(--t2)",borderRadius:7,padding:"10px 0",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-4)",border:"none"}}>CANCEL</button>
           <button className="hov"
             disabled={!reviewOn}
             onClick={()=>{ if(reviewOn) onConfirm({reason, reviewOn, note}); }}
-            style={{flex:2,background:reviewOn?"#7EC8A4":"#21262D",color:reviewOn?"#0D1117":"var(--t3)",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:"var(--fs-4)",fontWeight:500,border:"none",cursor:reviewOn?"pointer":"not-allowed"}}>
+            style={{flex:2,background:reviewOn?"var(--mint)":"var(--s2)",color:reviewOn?"var(--bg)":"var(--t3)",borderRadius:7,padding:"10px 0",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-4)",fontWeight:500,border:"none",cursor:reviewOn?"pointer":"not-allowed"}}>
             {reviewOn?(isReschedule?"RESCHEDULE":"SEND TO PREPARATION"):"PICK A REVIEW DATE"}
           </button>
         </div>
@@ -2774,16 +2774,16 @@ function CancelContractModal({file, lang, onClose, onConfirm}){
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.8)",zIndex:130,display:"flex",
       alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
-      <div className="fi" onClick={e=>e.stopPropagation()} style={{background:"#161B22",
+      <div className="fi" onClick={e=>e.stopPropagation()} style={{background:"var(--s1)",
         border:"1px solid #F5A62355",borderRadius:12,width:"100%",maxWidth:520,
         maxHeight:"calc(100vh - 40px)",overflowY:"auto",padding:22,
         display:"flex",flexDirection:"column",gap:14}}>
         <div>
-          <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-6)",color:"#F5A623"}}>
+          <div style={{fontFamily:"var(--ff-title)",fontWeight:800,fontSize:"var(--fs-6)",color:"var(--gold)"}}>
             {TX("cancelTitle")}
           </div>
           <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:4}}>{file.borrower}</div>
-          {n>0&&<div style={{fontSize:"var(--fs-1)",color:"#F5A623",marginTop:3}}>
+          {n>0&&<div style={{fontSize:"var(--fs-1)",color:"var(--gold)",marginTop:3}}>
             {TX("cancelNth",{n:n+1})}</div>}
           <div style={{fontSize:"var(--fs-2)",color:"var(--t2)",marginTop:9,lineHeight:1.6}}>
             {TX("cancelLead")}
@@ -2807,13 +2807,13 @@ function CancelContractModal({file, lang, onClose, onConfirm}){
 
         <div style={{display:"flex",gap:8}}>
           <button className="hov" onClick={onClose}
-            style={{flex:1,background:"#21262D",color:"var(--t2)",borderRadius:7,padding:"11px 0",
-              fontFamily:"DM Mono",fontSize:"var(--fs-3)",border:"none",cursor:"pointer"}}>
+            style={{flex:1,background:"var(--s2)",color:"var(--t2)",borderRadius:7,padding:"11px 0",
+              fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",border:"none",cursor:"pointer"}}>
             {TX("cancel")}
           </button>
           <button className="hov" onClick={()=>onConfirm({reasonId:motivo,notes:nota})}
-            style={{flex:2,background:"#F5A623",color:"#0D1117",borderRadius:7,padding:"11px 0",
-              fontFamily:"DM Mono",fontSize:"var(--fs-3)",fontWeight:500,border:"none",cursor:"pointer"}}>
+            style={{flex:2,background:"var(--gold)",color:"var(--bg)",borderRadius:7,padding:"11px 0",
+              fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",fontWeight:500,border:"none",cursor:"pointer"}}>
             {TX("cancelDo")}
           </button>
         </div>
@@ -2866,8 +2866,8 @@ function LettersPanel({file, lang, who, onSave}){
     <div style={{marginTop:14,background:"rgba(167,139,250,.05)",
       border:"1px solid #A78BFA44",borderRadius:8,padding:14}}>
       <div style={{display:"flex",alignItems:"baseline",gap:9,flexWrap:"wrap"}}>
-        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-4)",
-          color:"#A78BFA",letterSpacing:"1px"}}>{T("ltTitle")}</span>
+        <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-4)",
+          color:"var(--violet)",letterSpacing:"1px"}}>{T("ltTitle")}</span>
         <span style={{marginLeft:"auto",fontSize:"var(--fs-2)",color:"var(--t3)"}}>
           {abiertas.length>0?T("findingOpen",{n:abiertas.length}):T("ltNone")}
         </span>
@@ -2877,9 +2877,9 @@ function LettersPanel({file, lang, who, onSave}){
       {abiertas.map(l=>{
         const est=letterState(l), edad=letterAge(l);
         return (
-        <div key={l.id} style={{borderLeft:"2px solid #A78BFA",paddingLeft:10,
+        <div key={l.id} style={{borderLeft:"2px solid var(--violet)",paddingLeft:10,
           marginBottom:10}}>
-          <div style={{fontSize:"var(--fs-2)",color:"#A78BFA",marginBottom:2}}>
+          <div style={{fontSize:"var(--fs-2)",color:"var(--violet)",marginBottom:2}}>
             {P3(letterKind(l.kind))} · {P3(letterFrom(l.from))}
             {edad!==null?` · ${T("ltDaysOpen",{n:edad})}`:""}
           </div>
@@ -2889,25 +2889,25 @@ function LettersPanel({file, lang, who, onSave}){
           <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
             <button className="hov" onClick={()=>copiar(l)}
               style={{background:"transparent",border:"1px solid #A78BFA66",borderRadius:4,
-                color:"#A78BFA",padding:"3px 10px",fontSize:"var(--fs-1)",
-                fontFamily:"DM Mono",cursor:"pointer"}}>
+                color:"var(--violet)",padding:"3px 10px",fontSize:"var(--fs-1)",
+                fontFamily:"var(--ff-mono)",cursor:"pointer"}}>
               {copiado===l.id?T("ltCopied"):T("ltCopy")}
             </button>
             {est==="raised"&&(
               <button className="hov" onClick={()=>onSave(stampLetterRequested(file,l.id,who))}
                 style={{background:"transparent",border:"1px solid #F5A62366",borderRadius:4,
-                  color:"#F5A623",padding:"3px 10px",fontSize:"var(--fs-1)",
-                  fontFamily:"DM Mono",cursor:"pointer"}}>{T("ltMarkReq")}</button>
+                  color:"var(--gold)",padding:"3px 10px",fontSize:"var(--fs-1)",
+                  fontFamily:"var(--ff-mono)",cursor:"pointer"}}>{T("ltMarkReq")}</button>
             )}
             {est==="requested"&&(
-              <span style={{fontSize:"var(--fs-1)",color:"#F5A623",fontFamily:"DM Mono"}}>
+              <span style={{fontSize:"var(--fs-1)",color:"var(--gold)",fontFamily:"var(--ff-mono)"}}>
                 {T("ltRequested")} {l.requestedAt}
               </span>
             )}
             <button className="hov" onClick={()=>onSave(stampLetterReceived(file,l.id,who))}
-              style={{background:"transparent",border:"1px solid #06D6A0",borderRadius:4,
-                color:"#06D6A0",padding:"3px 10px",fontSize:"var(--fs-1)",
-                fontFamily:"DM Mono",cursor:"pointer"}}>{T("ltMarkRec")}</button>
+              style={{background:"transparent",border:"1px solid var(--ok)",borderRadius:4,
+                color:"var(--ok)",padding:"3px 10px",fontSize:"var(--fs-1)",
+                fontFamily:"var(--ff-mono)",cursor:"pointer"}}>{T("ltMarkRec")}</button>
           </div>
         </div>);
       })}
@@ -2942,30 +2942,30 @@ function LettersPanel({file, lang, who, onSave}){
             </div>
             <input value={texto} placeholder={T("ltWhatPh")} style={bx}
               onChange={e=>{setTexto(e.target.value);setFalta(false);}}/>
-            {falta&&<div style={{fontSize:"var(--fs-2)",color:"#E85D75",marginTop:4}}>
+            {falta&&<div style={{fontSize:"var(--fs-2)",color:"var(--bad)",marginTop:4}}>
               {T("ltNeedText")}
             </div>}
           </div>
           <div style={{display:"flex",gap:6}}>
             <button className="hov" onClick={guardar}
-              style={{background:"#A78BFA",color:"#0D1117",border:"none",borderRadius:5,
-                padding:"6px 16px",fontSize:"var(--fs-2)",fontFamily:"DM Mono",
+              style={{background:"var(--violet)",color:"var(--bg)",border:"none",borderRadius:5,
+                padding:"6px 16px",fontSize:"var(--fs-2)",fontFamily:"var(--ff-mono)",
                 cursor:"pointer"}}>{T("ltSave")}</button>
             <button className="hov" onClick={()=>{setAbierto(false);setFalta(false);}}
-              style={{background:"transparent",border:"1px solid #30363D",borderRadius:5,
+              style={{background:"transparent",border:"1px solid var(--bd)",borderRadius:5,
                 color:"var(--t2)",padding:"6px 14px",fontSize:"var(--fs-2)",
-                fontFamily:"DM Mono",cursor:"pointer"}}>{T("gateGotIt")}</button>
+                fontFamily:"var(--ff-mono)",cursor:"pointer"}}>{T("gateGotIt")}</button>
           </div>
         </div>
       ):(
         <button className="hov" onClick={()=>setAbierto(true)}
           style={{background:"transparent",border:"1px dashed #A78BFA66",borderRadius:5,
-            color:"#A78BFA",padding:"6px 14px",fontSize:"var(--fs-2)",
-            fontFamily:"DM Mono",cursor:"pointer",marginTop:4}}>{T("ltAdd")}</button>
+            color:"var(--violet)",padding:"6px 14px",fontSize:"var(--fs-2)",
+            fontFamily:"var(--ff-mono)",cursor:"pointer",marginTop:4}}>{T("ltAdd")}</button>
       )}
 
       {recibidas.length>0&&(
-        <div style={{marginTop:12,paddingTop:10,borderTop:"1px solid #21262D"}}>
+        <div style={{marginTop:12,paddingTop:10,borderTop:"1px solid var(--s2)"}}>
           <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>
             {T("ltHistory")}
           </div>
@@ -3006,14 +3006,14 @@ function BackfillModal({files, profile, lang, soyAdmin, onOpenFile, onClose, onA
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:200,display:"flex",
       alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
-      <div className="fi" onClick={e=>e.stopPropagation()} style={{background:"#161B22",
+      <div className="fi" onClick={e=>e.stopPropagation()} style={{background:"var(--s1)",
         border:"1px solid #F5A62355",borderRadius:12,width:"100%",maxWidth:960,
         maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column",overflow:"hidden"}}>
 
-        <div style={{padding:"18px 22px 14px",borderBottom:"1px solid #21262D",flexShrink:0}}>
+        <div style={{padding:"18px 22px 14px",borderBottom:"1px solid var(--s2)",flexShrink:0}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12}}>
             <div>
-              <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-6)",color:"#F5A623"}}>
+              <div style={{fontFamily:"var(--ff-title)",fontWeight:800,fontSize:"var(--fs-6)",color:"var(--gold)"}}>
                 {TX("bfTitle")}
               </div>
               <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:5,lineHeight:1.6,maxWidth:720}}>
@@ -3029,26 +3029,26 @@ function BackfillModal({files, profile, lang, soyAdmin, onOpenFile, onClose, onA
           <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center",marginTop:12}}>
             {[[BF_ERA_PENDING,TX("bfPending")],["historic",TX("bfHistoric")]].map(([e,l])=>(
               <button key={e} className="hov" onClick={()=>setEpoca(e)}
-                style={{background:epoca===e?"#F5A623":"#21262D",
-                  color:epoca===e?"#0D1117":"var(--t2)",border:"none",borderRadius:6,
-                  padding:"5px 12px",fontSize:"var(--fs-2)",fontFamily:"DM Mono",cursor:"pointer"}}>
+                style={{background:epoca===e?"var(--gold)":"var(--s2)",
+                  color:epoca===e?"var(--bg)":"var(--t2)",border:"none",borderRadius:6,
+                  padding:"5px 12px",fontSize:"var(--fs-2)",fontFamily:"var(--ff-mono)",cursor:"pointer"}}>
                 {l}
               </button>
             ))}
-            {soyAdmin&&<div style={{width:1,height:20,background:"#21262D",margin:"0 4px"}}/>}
+            {soyAdmin&&<div style={{width:1,height:20,background:"var(--s2)",margin:"0 4px"}}/>}
             {soyAdmin&&(
               <button className="hov" onClick={()=>setQuien(null)}
-                style={{background:quien===null?"#4A90D9":"#21262D",
-                  color:quien===null?"#0D1117":"var(--t2)",border:"none",borderRadius:6,
-                  padding:"5px 12px",fontSize:"var(--fs-2)",fontFamily:"DM Mono",cursor:"pointer"}}>
+                style={{background:quien===null?"var(--blue)":"var(--s2)",
+                  color:quien===null?"var(--bg)":"var(--t2)",border:"none",borderRadius:6,
+                  padding:"5px 12px",fontSize:"var(--fs-2)",fontFamily:"var(--ff-mono)",cursor:"pointer"}}>
                 {TX("bfAll")}
               </button>
             )}
             {soyAdmin&&reparto.map(([nombre,n])=>(
               <button key={nombre} className="hov" onClick={()=>setQuien(x=>x===nombre?null:nombre)}
-                style={{background:quien===nombre?"#4A90D9":"#21262D",
-                  color:quien===nombre?"#0D1117":"var(--t2)",border:"none",borderRadius:6,
-                  padding:"5px 12px",fontSize:"var(--fs-2)",fontFamily:"DM Mono",cursor:"pointer"}}>
+                style={{background:quien===nombre?"var(--blue)":"var(--s2)",
+                  color:quien===nombre?"var(--bg)":"var(--t2)",border:"none",borderRadius:6,
+                  padding:"5px 12px",fontSize:"var(--fs-2)",fontFamily:"var(--ff-mono)",cursor:"pointer"}}>
                 {String(nombre).split(" ")[0]} · {n}
               </button>
             ))}
@@ -3072,9 +3072,9 @@ function BackfillModal({files, profile, lang, soyAdmin, onOpenFile, onClose, onA
           ):pendientes.map(f=>{
             const huecos=backfillGaps(f);
             return (
-              <div key={f.id} style={{borderBottom:"1px solid #21262D",padding:"12px 0"}}>
+              <div key={f.id} style={{borderBottom:"1px solid var(--s2)",padding:"12px 0"}}>
                 <div style={{display:"flex",alignItems:"baseline",gap:10,flexWrap:"wrap",marginBottom:8}}>
-                  <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-4)",
+                  <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-4)",
                     color:"var(--t1)"}}>{f.borrower}</span>
                   <span style={{fontSize:"var(--fs-2)",color:"var(--t3)"}}>
                     {f.type} · {lenderNameOf(f)||TX("unassigned")} · {f.stage}
@@ -3089,14 +3089,14 @@ function BackfillModal({files, profile, lang, soyAdmin, onOpenFile, onClose, onA
                   {huecos.map(h=>(
                     <div key={h.id}>
                       <div style={{fontSize:"var(--fs-1)",
-                        color:h.fill==="action"?"#F5A623":"var(--t4)",marginBottom:3}}>
+                        color:h.fill==="action"?"var(--gold)":"var(--t4)",marginBottom:3}}>
                         {P2(h)}
                       </div>
                       {h.fill==="action" ? (
                         <button className="hov" onClick={()=>{onClose();onOpenFile&&onOpenFile(f,h.tab);}}
                           style={{background:"transparent",border:"1px dashed #F5A62366",
-                            borderRadius:5,color:"#F5A623",padding:"5px 8px",width:"100%",
-                            fontSize:"var(--fs-2)",fontFamily:"DM Mono",cursor:"pointer",
+                            borderRadius:5,color:"var(--gold)",padding:"5px 8px",width:"100%",
+                            fontSize:"var(--fs-2)",fontFamily:"var(--ff-mono)",cursor:"pointer",
                             textAlign:"left",whiteSpace:"nowrap",overflow:"hidden"}}>
                           {TX("bfOpenFile")} →
                         </button>
@@ -3112,7 +3112,7 @@ function BackfillModal({files, profile, lang, soyAdmin, onOpenFile, onClose, onA
           })}
         </div>
 
-        <div style={{padding:"13px 22px",borderTop:"1px solid #21262D",background:"#161B22",
+        <div style={{padding:"13px 22px",borderTop:"1px solid var(--s2)",background:"var(--s1)",
           flexShrink:0,display:"flex",gap:9,alignItems:"center",flexWrap:"wrap"}}>
           <button className="hov" disabled={llenos===0}
             onClick={()=>{
@@ -3129,13 +3129,13 @@ function BackfillModal({files, profile, lang, soyAdmin, onOpenFile, onClose, onA
               setHecho(n); setDatos({});
               setTimeout(()=>setHecho(null),4000);
             }}
-            style={{background:llenos?"#F5A623":"#21262D",color:llenos?"#0D1117":"var(--t4)",
-              borderRadius:7,padding:"10px 20px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",
+            style={{background:llenos?"var(--gold)":"var(--s2)",color:llenos?"var(--bg)":"var(--t4)",
+              borderRadius:7,padding:"10px 20px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",
               fontWeight:500,border:"none",cursor:llenos?"pointer":"not-allowed"}}>
             {TX("bfSave")} · {llenos}
           </button>
           {hecho!==null&&(
-            <span style={{fontSize:"var(--fs-2)",color:"#7EC8A4"}}>{TX("bfSaved",{n:hecho})}</span>
+            <span style={{fontSize:"var(--fs-2)",color:"var(--mint)"}}>{TX("bfSaved",{n:hecho})}</span>
           )}
           <span className="sys" style={{marginLeft:"auto",maxWidth:420,textAlign:"right"}}>
             {TX("bfBlank")}
@@ -3152,9 +3152,9 @@ function ArchiveModal({file, onClose, onConfirm}){
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:120,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
       <div className="fi" onClick={e=>e.stopPropagation()}
-        style={{background:"#161B22",border:"1px solid #30363D",borderRadius:12,width:"100%",maxWidth:400,padding:22,display:"flex",flexDirection:"column",gap:14}}>
+        style={{background:"var(--s1)",border:"1px solid var(--bd)",borderRadius:12,width:"100%",maxWidth:400,padding:22,display:"flex",flexDirection:"column",gap:14}}>
         <div>
-          <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-7)",color:"var(--t1)"}}>🗄 ARCHIVE</div>
+          <div style={{fontFamily:"var(--ff-title)",fontWeight:800,fontSize:"var(--fs-7)",color:"var(--t1)"}}>🗄 ARCHIVE</div>
           <div style={{fontSize:"var(--fs-4)",color:"var(--t2)",marginTop:3}}>{file.borrower}</div>
           <div style={{fontSize:"var(--fs-3)",color:"var(--t3)",marginTop:6,lineHeight:1.5}}>
             Nothing is deleted. The file leaves every count and every average, and can be restored from the ARCHIVED tab.
@@ -3168,9 +3168,9 @@ function ArchiveModal({file, onClose, onConfirm}){
         </div>
         <div style={{display:"flex",gap:8}}>
           <button className="hov" onClick={onClose}
-            style={{flex:1,background:"#21262D",color:"var(--t2)",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:"var(--fs-4)",border:"none"}}>CANCEL</button>
+            style={{flex:1,background:"var(--s2)",color:"var(--t2)",borderRadius:7,padding:"10px 0",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-4)",border:"none"}}>CANCEL</button>
           <button className="hov" onClick={()=>onConfirm(reason)}
-            style={{flex:2,background:"#30363D",color:"var(--t1)",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:"var(--fs-4)",fontWeight:500,border:"none"}}>ARCHIVE</button>
+            style={{flex:2,background:"var(--bd)",color:"var(--t1)",borderRadius:7,padding:"10px 0",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-4)",fontWeight:500,border:"none"}}>ARCHIVE</button>
         </div>
       </div>
     </div>
@@ -3376,7 +3376,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           {label:PL("MONTH VOLUME"),value:`$${(monthVol/1000).toFixed(0)}K`,color:"#BD65E8"},
           {label:PL("BRANCH VOLUME"),value:`$${((closedVol+activeVol)/1e6).toFixed(2)}M`,color:"#F5A623"},
         ].map(s=>(
-          <div key={s.label} style={{background:"#161B22",border:`1px solid ${s.color}33`,
+          <div key={s.label} style={{background:"var(--s1)",border:`1px solid ${s.color}33`,
             borderTop:`3px solid ${s.color}`,borderRadius:8,padding:"12px",
             // De red: nada se sale de su caja aunque el número crezca.
             // `containerType` va AQUÍ, en la tarjeta: las unidades cqw del
@@ -3388,7 +3388,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 el lado. clamp() lo deja encoger SOLO si no cabe: el día que
                 cruces los $100M o alguien baje la escala, el número se ajusta
                 en vez de romper la tarjeta. */}
-            <div style={{fontFamily:"Syne",fontWeight:800,
+            <div style={{fontFamily:"var(--ff-num)",fontWeight:800,
               fontSize:"clamp(var(--fs-6), 15cqw, var(--fs-9))",
               color:s.color,whiteSpace:"nowrap",letterSpacing:"-0.5px"}}>{s.value}</div>
           </div>
@@ -3409,7 +3409,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           ["mix",TX("mixTab")],
         ].filter(Boolean).map(([t,l])=>(
           <button key={t} className="hov" onClick={()=>setProdTab(t)}
-            style={{background:prodTab===t?"#F5A623":"#21262D",color:prodTab===t?"#0D1117":"var(--t2)",borderRadius:6,padding:"6px 14px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",fontWeight:500}}>
+            style={{background:prodTab===t?"var(--gold)":"var(--s2)",color:prodTab===t?"var(--bg)":"var(--t2)",borderRadius:6,padding:"6px 14px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",fontWeight:500}}>
             {l}
           </button>
         ))}
@@ -3424,13 +3424,13 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
         if(!r.total) return null;
         const col=r.pct===null?"var(--t3)":r.pct>=90?"#7EC8A4":r.pct>=70?"#F5A623":"#E85D75";
         return (
-          <div style={{background:"#161B22",border:`1px solid ${col}44`,
+          <div style={{background:"var(--s1)",border:`1px solid ${col}44`,
             borderTop:`3px solid ${col}`,borderRadius:10,padding:"14px 18px",
             display:"flex",flexDirection:"column",gap:9}}>
             <div style={{display:"flex",alignItems:"baseline",gap:12,flexWrap:"wrap"}}>
-              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-4)",
+              <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-4)",
                 color:col,letterSpacing:"1px"}}>{TX("leadReportTitle")}</span>
-              <span style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",
+              <span style={{fontFamily:"var(--ff-num)",fontWeight:800,fontSize:"var(--fs-9)",
                 color:col,marginLeft:"auto"}}>
                 {r.pct===null?"—":r.pct+"%"}
               </span>
@@ -3442,8 +3442,8 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
             {/* Los que llevan más tiempo, arriba. Es la lista de llamadas. */}
             {r.rows.filter(x=>x.open).slice(0,6).map(x=>(
               <div key={x.file.id} style={{display:"flex",gap:10,alignItems:"baseline",
-                fontSize:"var(--fs-2)",fontFamily:"DM Mono"}}>
-                <span style={{color:x.met===false?"#E85D75":"var(--t3)",minWidth:34}}>{x.days}d</span>
+                fontSize:"var(--fs-2)",fontFamily:"var(--ff-mono)"}}>
+                <span style={{color:x.met===false?"var(--bad)":"var(--t3)",minWidth:34}}>{x.days}d</span>
                 <span style={{color:"var(--t1)",flex:1,overflow:"hidden",
                   textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{x.file.borrower}</span>
                 <span style={{color:"var(--t4)",fontSize:"var(--fs-1)"}}>{x.file.lo?.split(" ")[0]||""}</span>
@@ -3457,13 +3457,13 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
       {prodTab==="team"&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:12}}>
           {loStats.map((lo,i)=>(
-            <div key={lo.name} style={{background:"#161B22",border:`1px solid ${loColors[i]}44`,borderRadius:10,overflow:"hidden"}}>
+            <div key={lo.name} style={{background:"var(--s1)",border:`1px solid ${loColors[i]}44`,borderRadius:10,overflow:"hidden"}}>
               <div style={{background:`${loColors[i]}18`,borderBottom:`2px solid ${loColors[i]}`,padding:"10px 14px",display:"flex",alignItems:"center",gap:10}}>
-                <div style={{width:36,height:36,borderRadius:"50%",background:loColors[i],display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-5)",color:"#0D1117",flexShrink:0}}>
+                <div style={{width:36,height:36,borderRadius:"50%",background:loColors[i],display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--ff-num)",fontWeight:800,fontSize:"var(--fs-5)",color:"var(--bg)",flexShrink:0}}>
                   {lo.name.split(" ").map(n=>n[0]).join("").slice(0,2)}
                 </div>
                 <div>
-                  <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:loColors[i]}}>{lo.name}</div>
+                  <div style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:loColors[i]}}>{lo.name}</div>
                   <div style={{fontSize:"var(--fs-2)",color:"var(--t3)"}}>{lo.role}</div>
                 </div>
               </div>
@@ -3473,20 +3473,20 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                   {l:PL("ACTIVE"),v:lo.activeCount,c:"#F5A623"},
                   {l:PL("THIS MO"),v:lo.monthCount,c:"#BD65E8"},
                 ].map(s=>(
-                  <div key={s.l} style={{textAlign:"center",background:"#0D1117",borderRadius:6,padding:"8px 4px"}}>
-                    <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:s.c}}>{s.v}</div>
+                  <div key={s.l} style={{textAlign:"center",background:"var(--bg)",borderRadius:6,padding:"8px 4px"}}>
+                    <div style={{fontFamily:"var(--ff-num)",fontWeight:800,fontSize:"var(--fs-8)",color:s.c}}>{s.v}</div>
                     <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"0.5px"}}>{s.l}</div>
                   </div>
                 ))}
               </div>
               <div style={{padding:"0 14px 12px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                <div style={{background:"#0D1117",borderRadius:6,padding:"8px 10px"}}>
+                <div style={{background:"var(--bg)",borderRadius:6,padding:"8px 10px"}}>
                   <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginBottom:2}}>{PL("FUNDED VOL")}</div>
-                  <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#06D6A0"}}>${(lo.closedVol/1000).toFixed(0)}K</div>
+                  <div style={{fontFamily:"var(--ff-num)",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--ok)"}}>${(lo.closedVol/1000).toFixed(0)}K</div>
                 </div>
-                <div style={{background:"#0D1117",borderRadius:6,padding:"8px 10px"}}>
+                <div style={{background:"var(--bg)",borderRadius:6,padding:"8px 10px"}}>
                   <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginBottom:2}}>PIPELINE</div>
-                  <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#4A90D9"}}>${(lo.activeVol/1000).toFixed(0)}K</div>
+                  <div style={{fontFamily:"var(--ff-num)",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--blue)"}}>${(lo.activeVol/1000).toFixed(0)}K</div>
                 </div>
               </div>
             </div>
@@ -3494,21 +3494,21 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
         </div>
 
         {orphanFiles.length > 0 && (
-          <div style={{background:"#161B22",border:"1px solid #E85D7544",borderRadius:10,overflow:"hidden"}}>
-            <div style={{background:"rgba(232,93,117,.08)",borderBottom:"2px solid #E85D75",padding:"10px 16px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#E85D75",letterSpacing:"1px"}}>{PL("⚠ UNASSIGNED LO FILES")}</span>
-              <span style={{background:"#E85D75",color:"#0D1117",borderRadius:10,padding:"1px 8px",fontSize:"var(--fs-3)",fontWeight:500}}>{orphanFiles.length}</span>
+          <div style={{background:"var(--s1)",border:"1px solid #E85D7544",borderRadius:10,overflow:"hidden"}}>
+            <div style={{background:"rgba(232,93,117,.08)",borderBottom:"2px solid var(--bad)",padding:"10px 16px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+              <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--bad)",letterSpacing:"1px"}}>{PL("⚠ UNASSIGNED LO FILES")}</span>
+              <span style={{background:"var(--bad)",color:"var(--bg)",borderRadius:10,padding:"1px 8px",fontSize:"var(--fs-3)",fontWeight:500}}>{orphanFiles.length}</span>
               <span style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginLeft:6,flex:1,minWidth:200}}>{PL("won't show in production stats until fixed · click any row to open & fix manually")}</span>
               {isAdmin && autoFixableCount > 0 && (
                 <button className="hov" onClick={()=>setShowAutoFixPreview(true)}
-                  style={{background:"#F5A623",color:"#0D1117",borderRadius:6,padding:"7px 14px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",fontWeight:500,border:"none",cursor:"pointer"}}>
+                  style={{background:"var(--gold)",color:"var(--bg)",borderRadius:6,padding:"7px 14px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",fontWeight:500,border:"none",cursor:"pointer"}}>
                   ✨ AUTO-FIX {autoFixableCount}
                 </button>
               )}
             </div>
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
               <thead>
-                <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
+                <tr style={{background:"var(--s1)",borderBottom:"1px solid var(--bd)"}}>
                   {["BORROWER","TYPE","LOAN","STAGE","CURRENT LO VALUE","SUGGESTED FIX"].map(h=>PL(h)).map((h,i)=>(
                     <th key={i} style={{padding:"8px 14px",textAlign:i<2?"left":i===2?"center":"left",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                   ))}
@@ -3517,15 +3517,15 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               <tbody>
                 {orphanFiles.map((f,i)=>(
                   <tr key={f.id} className="row" onClick={()=>onOpenFile && onOpenFile(f)}
-                    style={{borderBottom:"1px solid #21262D",background:i%2===0?"#0D1117":"#161B22",cursor:"pointer"}}>
-                    <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"var(--t1)"}}>{f.borrower}</td>
+                    style={{borderBottom:"1px solid var(--s2)",background:i%2===0?"var(--bg)":"var(--s1)",cursor:"pointer"}}>
+                    <td style={{padding:"10px 14px",fontFamily:"var(--ff-title)",fontWeight:700,color:"var(--t1)"}}>{f.borrower}</td>
                     <td style={{padding:"10px 14px",color:"var(--t2)"}}>{f.type}</td>
-                    <td style={{padding:"10px 14px",textAlign:"center",color:"#06D6A0",fontWeight:500}}>{fmtLoan(f.loan)}</td>
+                    <td style={{padding:"10px 14px",textAlign:"center",color:"var(--ok)",fontWeight:500}}>{fmtLoan(f.loan)}</td>
                     <td style={{padding:"10px 14px",color:"var(--t2)"}}>{f.stage}</td>
-                    <td style={{padding:"10px 14px",color:"#E85D75",fontWeight:500,fontStyle:"italic"}}>{f.lo ? `"${f.lo}"` : "(blank)"}</td>
+                    <td style={{padding:"10px 14px",color:"var(--bad)",fontWeight:500,fontStyle:"italic"}}>{f.lo ? `"${f.lo}"` : "(blank)"}</td>
                     <td style={{padding:"10px 14px"}}>
                       {f._suggestedLo ? (
-                        <span style={{color:"#06D6A0",fontWeight:500}}>→ {f._suggestedLo}</span>
+                        <span style={{color:"var(--ok)",fontWeight:500}}>→ {f._suggestedLo}</span>
                       ) : (
                         <span style={{color:"var(--t3)",fontStyle:"italic"}}>{PL("no match · fix manually")}</span>
                       )}
@@ -3539,10 +3539,10 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
 
         {showAutoFixPreview && isAdmin && (
           <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setShowAutoFixPreview(false)}>
-            <div className="fi" style={{background:"#161B22",border:"1px solid #30363D",borderRadius:12,width:"100%",maxWidth:680,maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
-              <div style={{padding:"20px 24px 16px",borderBottom:"1px solid #21262D",flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+            <div className="fi" style={{background:"var(--s1)",border:"1px solid var(--bd)",borderRadius:12,width:"100%",maxWidth:680,maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
+              <div style={{padding:"20px 24px 16px",borderBottom:"1px solid var(--s2)",flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
                 <div>
-                  <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:"#F5A623"}}>{PL("✨ AUTO-FIX PREVIEW")}</div>
+                  <div style={{fontFamily:"var(--ff-title)",fontWeight:800,fontSize:"var(--fs-8)",color:"var(--gold)"}}>{PL("✨ AUTO-FIX PREVIEW")}</div>
                   <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:4,lineHeight:1.5}}>
                     Review the suggested LO assignments below. Click APPLY to update all {autoFixableCount} files at once.
                   </div>
@@ -3552,7 +3552,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               <div style={{flex:1,overflowY:"auto",padding:"12px 0"}}>
                 <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
                   <thead>
-                    <tr style={{borderBottom:"1px solid #30363D"}}>
+                    <tr style={{borderBottom:"1px solid var(--bd)"}}>
                       {["BORROWER","CURRENT","→","NEW LO"].map(h=>PL(h)).map((h,i)=>(
                         <th key={i} style={{padding:"8px 14px",textAlign:"left",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                       ))}
@@ -3560,27 +3560,27 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                   </thead>
                   <tbody>
                     {orphanFiles.filter(f=>f._suggestedLo).map((f,i)=>(
-                      <tr key={f.id} style={{borderBottom:"1px solid #21262D",background:i%2===0?"#0D1117":"#161B22"}}>
-                        <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"var(--t1)"}}>{f.borrower}</td>
-                        <td style={{padding:"10px 14px",color:"#E85D75",fontStyle:"italic"}}>{f.lo ? `"${f.lo}"` : "(blank)"}</td>
+                      <tr key={f.id} style={{borderBottom:"1px solid var(--s2)",background:i%2===0?"var(--bg)":"var(--s1)"}}>
+                        <td style={{padding:"10px 14px",fontFamily:"var(--ff-title)",fontWeight:700,color:"var(--t1)"}}>{f.borrower}</td>
+                        <td style={{padding:"10px 14px",color:"var(--bad)",fontStyle:"italic"}}>{f.lo ? `"${f.lo}"` : "(blank)"}</td>
                         <td style={{padding:"10px 14px",color:"var(--t3)",textAlign:"center"}}>→</td>
-                        <td style={{padding:"10px 14px",color:"#06D6A0",fontWeight:500}}>{f._suggestedLo}</td>
+                        <td style={{padding:"10px 14px",color:"var(--ok)",fontWeight:500}}>{f._suggestedLo}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              <div style={{padding:"14px 24px",borderTop:"1px solid #21262D",background:"#161B22",flexShrink:0,display:"flex",gap:8}}>
+              <div style={{padding:"14px 24px",borderTop:"1px solid var(--s2)",background:"var(--s1)",flexShrink:0,display:"flex",gap:8}}>
                 <button className="hov" onClick={()=>{
                   const updates = orphanFiles.filter(f=>f._suggestedLo).map(f=>({id:f.id, lo:f._suggestedLo}));
                   if(onBulkUpdate) onBulkUpdate(updates);
                   setShowAutoFixPreview(false);
                 }}
-                  style={{flex:2,background:"#F5A623",color:"#0D1117",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:"var(--fs-4)",fontWeight:500,border:"none",cursor:"pointer"}}>
+                  style={{flex:2,background:"var(--gold)",color:"var(--bg)",borderRadius:7,padding:"10px 0",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-4)",fontWeight:500,border:"none",cursor:"pointer"}}>
                   ✨ APPLY {autoFixableCount} FIXES
                 </button>
                 <button className="hov" onClick={()=>setShowAutoFixPreview(false)}
-                  style={{flex:1,background:"#21262D",color:"var(--t2)",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:"var(--fs-4)",border:"none",cursor:"pointer"}}>
+                  style={{flex:1,background:"var(--s2)",color:"var(--t2)",borderRadius:7,padding:"10px 0",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-4)",border:"none",cursor:"pointer"}}>
                   {PL("CANCEL")}
                 </button>
               </div>
@@ -3610,7 +3610,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 .filter(x=>x.sev==="critical"||x.sev==="warning");
               if(!enProblemas.length){
                 return (
-                  <div style={{background:"#161B22",border:"1px solid #30363D",
+                  <div style={{background:"var(--s1)",border:"1px solid var(--bd)",
                     borderRadius:8,padding:"12px 16px"}}>
                     <div className="sys">{TX("mtgNone")}</div>
                   </div>
@@ -3630,26 +3630,26 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               const visibles = mtgPhase==null ? fases : fases.filter(g=>g.ph.id===mtgPhase);
 
               return (
-                <div style={{background:"#161B22",border:"1px solid #E85D7544",
+                <div style={{background:"var(--s1)",border:"1px solid #E85D7544",
                   borderRadius:8,padding:"14px 16px"}}>
-                  <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-5)",
-                    color:"#E85D75",letterSpacing:"1px",marginBottom:4}}>{TX("mtgTitle")}</div>
+                  <div style={{fontFamily:"var(--ff-title)",fontWeight:800,fontSize:"var(--fs-5)",
+                    color:"var(--bad)",letterSpacing:"1px",marginBottom:4}}>{TX("mtgTitle")}</div>
                   <div className="sys" style={{marginBottom:10}}>{TX("mtgLead")}</div>
 
                   {/* Una fila por fase, ordenadas por donde duele mas. */}
                   <div style={{display:"flex",gap:7,flexWrap:"wrap",marginBottom:12}}>
                     <button className="hov" onClick={()=>setMtgPhase(null)}
-                      style={{background:mtgPhase===null?"#E85D75":"#21262D",
-                        color:mtgPhase===null?"#0D1117":"var(--t2)",border:"none",borderRadius:6,
-                        padding:"5px 12px",fontSize:"var(--fs-2)",fontFamily:"DM Mono",cursor:"pointer"}}>
+                      style={{background:mtgPhase===null?"var(--bad)":"var(--s2)",
+                        color:mtgPhase===null?"var(--bg)":"var(--t2)",border:"none",borderRadius:6,
+                        padding:"5px 12px",fontSize:"var(--fs-2)",fontFamily:"var(--ff-mono)",cursor:"pointer"}}>
                       {TX("mtgAll")} · {total}
                     </button>
                     {fases.map(g=>(
                       <button key={g.ph.id} className="hov" onClick={()=>setMtgPhase(x=>x===g.ph.id?null:g.ph.id)}
-                        style={{background:mtgPhase===g.ph.id?g.ph.color:"#21262D",
-                          color:mtgPhase===g.ph.id?"#0D1117":"var(--t2)",border:`1px solid ${g.ph.color}44`,
+                        style={{background:mtgPhase===g.ph.id?g.ph.color:"var(--s2)",
+                          color:mtgPhase===g.ph.id?"var(--bg)":"var(--t2)",border:`1px solid ${g.ph.color}44`,
                           borderRadius:6,padding:"5px 12px",fontSize:"var(--fs-2)",
-                          fontFamily:"DM Mono",cursor:"pointer"}}>
+                          fontFamily:"var(--ff-mono)",cursor:"pointer"}}>
                         {g.ph.label} · {g.crit>0?`${g.crit}🔴`:""}{g.warn>0?` ${g.warn}🟡`:""}
                       </button>
                     ))}
@@ -3658,8 +3658,8 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                   {/* El diagnostico, no el conteo: si una fase se lleva la
                       mitad o mas, eso es un problema y no varios. */}
                   {peor && peor.crit+peor.warn >= Math.ceil(total/2) && total>2 && (
-                    <div style={{fontSize:"var(--fs-3)",color:"#F5A623",lineHeight:1.5,
-                      marginBottom:12,paddingLeft:10,borderLeft:"2px solid #F5A623"}}>
+                    <div style={{fontSize:"var(--fs-3)",color:"var(--gold)",lineHeight:1.5,
+                      marginBottom:12,paddingLeft:10,borderLeft:"2px solid var(--gold)"}}>
                       {TX("mtgWorst",{p:peor.ph.label,n:peor.crit+peor.warn})}
                     </div>
                   )}
@@ -3675,7 +3675,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                     const etapas=[...porEtapa.entries()].sort((a,b)=>b[1].length-a[1].length);
                     return (
                       <div key={g.ph.id} style={{marginBottom:14}}>
-                        <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-4)",
+                        <div style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-4)",
                           color:g.ph.color,letterSpacing:"1px",marginBottom:6}}>
                           {g.ph.label.toUpperCase()} · {TX("mtgCrit",{n:g.crit})} · {TX("mtgWarn",{n:g.warn})}
                         </div>
@@ -3692,7 +3692,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                                 <div key={f.id} className="hov" onClick={()=>onOpenFile&&onOpenFile(f)}
                                   style={{display:"flex",justifyContent:"space-between",
                                     alignItems:"baseline",gap:10,padding:"5px 9px",cursor:"pointer",
-                                    borderLeft:`2px solid ${col}`,background:"#0D1117",
+                                    borderLeft:`2px solid ${col}`,background:"var(--bg)",
                                     borderRadius:"0 6px 6px 0",marginBottom:3}}>
                                   <span style={{fontSize:"var(--fs-3)",color:"var(--t1)"}}>
                                     {f.borrower}
@@ -3701,7 +3701,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                                     </span>
                                   </span>
                                   <span style={{fontSize:"var(--fs-2)",color:col,
-                                    fontFamily:"DM Mono",whiteSpace:"nowrap"}}>
+                                    fontFamily:"var(--ff-mono)",whiteSpace:"nowrap"}}>
                                     {ck.applies&&ck.ceiling
                                       ? TX("mtgOverCeil",{d:ck.days,c:ck.ceiling})
                                       : ck.applies&&ck.kind==="coe" ? `COE ${ck.days}d` : ""}
@@ -3720,7 +3720,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               );
             })()}
 
-            <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:8,
+            <div style={{background:"var(--s1)",border:"1px solid var(--bd)",borderRadius:8,
               padding:"12px 16px"}}>
               <div className="sys">{TX("overdueLead")}</div>
             </div>
@@ -3731,19 +3731,19 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
             {porDueno.length>0&&(
               <div style={{display:"flex",gap:7,flexWrap:"wrap",alignItems:"center"}}>
                 <button className="hov" onClick={()=>setDuenoFiltro(null)}
-                  style={{background:duenoFiltro===null?"#E85D75":"#21262D",
-                    color:duenoFiltro===null?"#0D1117":"var(--t2)",border:"none",
+                  style={{background:duenoFiltro===null?"var(--bad)":"var(--s2)",
+                    color:duenoFiltro===null?"var(--bg)":"var(--t2)",border:"none",
                     borderRadius:6,padding:"5px 12px",fontSize:"var(--fs-2)",
-                    fontFamily:"DM Mono",cursor:"pointer"}}>
+                    fontFamily:"var(--ff-mono)",cursor:"pointer"}}>
                   {TX("showAll")} · {overdueReport(files).total}
                 </button>
                 {porDueno.map(([quien,n])=>(
                   <button key={quien} className="hov"
                     onClick={()=>setDuenoFiltro(duenoFiltro===quien?null:quien)}
-                    style={{background:duenoFiltro===quien?"#E85D75":"#21262D",
-                      color:duenoFiltro===quien?"#0D1117":"var(--t2)",border:"none",
+                    style={{background:duenoFiltro===quien?"var(--bad)":"var(--s2)",
+                      color:duenoFiltro===quien?"var(--bg)":"var(--t2)",border:"none",
                       borderRadius:6,padding:"5px 12px",fontSize:"var(--fs-2)",
-                      fontFamily:"DM Mono",cursor:"pointer"}}>
+                      fontFamily:"var(--ff-mono)",cursor:"pointer"}}>
                     {quien} · {n}
                   </button>
                 ))}
@@ -3751,40 +3751,40 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
             )}
 
             {r.total===0?(
-              <div style={{background:"#161B22",border:"1px solid #7EC8A444",borderRadius:10,
-                padding:"26px 16px",textAlign:"center",color:"#7EC8A4",
+              <div style={{background:"var(--s1)",border:"1px solid #7EC8A444",borderRadius:10,
+                padding:"26px 16px",textAlign:"center",color:"var(--mint)",
                 fontSize:"var(--fs-4)"}}>{TX("overdueClean")}</div>
             ):(<>
               <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
-                <span style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",
-                  color:"#E85D75"}}>{r.total}</span>
+                <span style={{fontFamily:"var(--ff-num)",fontWeight:800,fontSize:"var(--fs-8)",
+                  color:"var(--bad)"}}>{r.total}</span>
                 <span style={{fontSize:"var(--fs-3)",color:"var(--t2)"}}>
                   {TX("overdueFiles",{n:r.total})}
                 </span>
                 {Object.entries(r.byKind).map(([k,n])=>(
                   <span key={k} style={{marginLeft:0,fontSize:"var(--fs-1)",
                     color:TONO[k],border:`1px solid ${TONO[k]}55`,borderRadius:4,
-                    padding:"2px 8px",fontFamily:"DM Mono"}}>
+                    padding:"2px 8px",fontFamily:"var(--ff-mono)"}}>
                     {n} {P(TASK_SEVERITY[k])}
                   </span>
                 ))}
               </div>
-              <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,
+              <div style={{background:"var(--s1)",border:"1px solid var(--bd)",borderRadius:10,
                 overflow:"hidden"}}>
                 {r.rows.map((x,i)=>(
                   <div key={i} className="hov" onClick={()=>onOpenFile&&onOpenFile(x.file)}
                     style={{display:"flex",gap:12,alignItems:"baseline",padding:"10px 14px",
-                      borderBottom:"1px solid #21262D",cursor:"pointer",
-                      background:i%2?"#161B22":"#0D1117"}}>
+                      borderBottom:"1px solid var(--s2)",cursor:"pointer",
+                      background:i%2?"var(--s1)":"var(--bg)"}}>
                     <span style={{fontSize:"var(--fs-1)",color:TONO[x.kind],minWidth:118,
-                      fontFamily:"DM Mono"}}>{P(TASK_SEVERITY[x.kind])}</span>
-                    <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-3)",
+                      fontFamily:"var(--ff-mono)"}}>{P(TASK_SEVERITY[x.kind])}</span>
+                    <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-3)",
                       color:"var(--t1)",minWidth:180}}>
                       {x.file.borrower}
                       {/* Cuantas MAS le deben a este archivo. Sin esto, el
                           reporte parece decir que solo tiene un problema. */}
                       {x.alsoCount>0&&(
-                        <span style={{color:"var(--t4)",fontFamily:"DM Mono",
+                        <span style={{color:"var(--t4)",fontFamily:"var(--ff-mono)",
                           fontSize:"var(--fs-1)",fontWeight:400}}>{` +${x.alsoCount}`}</span>
                       )}
                     </span>
@@ -3792,12 +3792,12 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                       lineHeight:1.45}}>{P(x)}</span>
                     {/* Cuanto lleva pasado. Ordena la urgencia dentro de un
                         mismo motivo: doce dias no es lo mismo que uno. */}
-                    <span style={{fontSize:"var(--fs-2)",color:x.days>=7?"#E85D75":"var(--t3)",
-                      minWidth:44,textAlign:"right",fontFamily:"DM Mono"}}>
+                    <span style={{fontSize:"var(--fs-2)",color:x.days>=7?"var(--bad)":"var(--t3)",
+                      minWidth:44,textAlign:"right",fontFamily:"var(--ff-mono)"}}>
                       {Number.isFinite(x.days)?`${x.days}d`:""}
                     </span>
                     <span style={{fontSize:"var(--fs-2)",color:"var(--t3)",minWidth:96,
-                      textAlign:"right",fontFamily:"DM Mono"}}>{P(x.owner)}</span>
+                      textAlign:"right",fontFamily:"var(--ff-mono)"}}>{P(x.owner)}</span>
                   </div>
                 ))}
               </div>
@@ -3809,31 +3809,31 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
       {/* MONTHLY TAB */}
       {prodTab==="monthly"&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:10}}>
-          <div style={{background:"#161B22",border:"1px solid #06D6A044",borderTop:"3px solid #06D6A0",borderRadius:8,padding:12}}>
+          <div style={{background:"var(--s1)",border:"1px solid #06D6A044",borderTop:"3px solid var(--ok)",borderRadius:8,padding:12}}>
             <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{PL("BEST MONTH (12MO)")}</div>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:"#06D6A0"}}>{bestMonth.units > 0 ? monthLabel(bestMonth.month) : "—"}</div>
+            <div style={{fontFamily:"var(--ff-title)",fontWeight:800,fontSize:"var(--fs-8)",color:"var(--ok)"}}>{bestMonth.units > 0 ? monthLabel(bestMonth.month) : "—"}</div>
             <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{bestMonth.units} {PL("units")} · ${(bestMonth.volume/1000).toFixed(0)}K</div>
           </div>
-          <div style={{background:"#161B22",border:"1px solid #E85D7544",borderTop:"3px solid #E85D75",borderRadius:8,padding:12}}>
+          <div style={{background:"var(--s1)",border:"1px solid #E85D7544",borderTop:"3px solid var(--bad)",borderRadius:8,padding:12}}>
             <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{PL("SLOWEST MONTH")}</div>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:"#E85D75"}}>{worstMonth.units > 0 ? monthLabel(worstMonth.month) : "—"}</div>
+            <div style={{fontFamily:"var(--ff-title)",fontWeight:800,fontSize:"var(--fs-8)",color:"var(--bad)"}}>{worstMonth.units > 0 ? monthLabel(worstMonth.month) : "—"}</div>
             <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{worstMonth.units} {PL("units")} · ${(worstMonth.volume/1000).toFixed(0)}K</div>
           </div>
-          <div style={{background:"#161B22",border:"1px solid #4A90D944",borderTop:"3px solid #4A90D9",borderRadius:8,padding:12}}>
+          <div style={{background:"var(--s1)",border:"1px solid #4A90D944",borderTop:"3px solid var(--blue)",borderRadius:8,padding:12}}>
             <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{PL("12-MO TOTAL UNITS")}</div>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:"#4A90D9"}}>{last12Months.reduce((s,m)=>s+m.units,0)}</div>
+            <div style={{fontFamily:"var(--ff-num)",fontWeight:800,fontSize:"var(--fs-8)",color:"var(--blue)"}}>{last12Months.reduce((s,m)=>s+m.units,0)}</div>
             <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{PL("loans funded")}</div>
           </div>
-          <div style={{background:"#161B22",border:"1px solid #F5A62344",borderTop:"3px solid #F5A623",borderRadius:8,padding:12}}>
+          <div style={{background:"var(--s1)",border:"1px solid #F5A62344",borderTop:"3px solid var(--gold)",borderRadius:8,padding:12}}>
             <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{PL("12-MO TOTAL VOLUME")}</div>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:"#F5A623"}}>${(last12Months.reduce((s,m)=>s+m.volume,0)/1e6).toFixed(2)}M</div>
+            <div style={{fontFamily:"var(--ff-num)",fontWeight:800,fontSize:"var(--fs-8)",color:"var(--gold)"}}>${(last12Months.reduce((s,m)=>s+m.volume,0)/1e6).toFixed(2)}M</div>
             <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{PL("funded")}</div>
           </div>
         </div>
 
-        <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,padding:16}}>
+        <div style={{background:"var(--s1)",border:"1px solid var(--s2)",borderRadius:10,padding:16}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-            <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#4A90D9",letterSpacing:"1px"}}>{PL("UNITS CLOSED · LAST 12 MONTHS")}</div>
+            <div style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--blue)",letterSpacing:"1px"}}>{PL("UNITS CLOSED · LAST 12 MONTHS")}</div>
             <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px"}}>{PL("peak:")} {maxUnits} {maxUnits===1?PL("unit"):PL("units")}</div>
           </div>
           <div style={{display:"flex",gap:6,alignItems:"flex-end",height:140,paddingTop:8}}>
@@ -3843,18 +3843,18 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               const isCurrent = i===last12Months.length-1;
               return (
                 <div key={m.month} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4,minWidth:0}}>
-                  <div style={{fontSize:"var(--fs-2)",fontFamily:"DM Mono",color:isBest?"#06D6A0":"var(--t2)",fontWeight:isBest?500:400,minHeight:12}}>
+                  <div style={{fontSize:"var(--fs-2)",fontFamily:"var(--ff-mono)",color:isBest?"var(--ok)":"var(--t2)",fontWeight:isBest?500:400,minHeight:12}}>
                     {m.units>0 ? m.units : ""}
                   </div>
                   <div style={{
                     width:"100%",
                     height:`${heightPct}%`,
-                    background: isBest ? "linear-gradient(180deg,#06D6A0,#03A77B)" : isCurrent ? "linear-gradient(180deg,#4A90D9,#2D6BAF)" : "#30363D",
+                    background: isBest ? "linear-gradient(180deg,var(--ok),#03A77B)" : isCurrent ? "linear-gradient(180deg,var(--blue),#2D6BAF)" : "var(--bd)",
                     borderRadius:"3px 3px 0 0",
                     transition:"all .2s",
                     minHeight: m.units>0 ? 4 : 0,
                   }}/>
-                  <div style={{fontSize:"var(--fs-1)",color:isCurrent?"#4A90D9":"var(--t3)",fontFamily:"DM Mono",letterSpacing:"0.5px",fontWeight:isCurrent?500:400,whiteSpace:"nowrap"}}>
+                  <div style={{fontSize:"var(--fs-1)",color:isCurrent?"var(--blue)":"var(--t3)",fontFamily:"var(--ff-mono)",letterSpacing:"0.5px",fontWeight:isCurrent?500:400,whiteSpace:"nowrap"}}>
                     {monthLabel(m.month)}
                   </div>
                 </div>
@@ -3863,9 +3863,9 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           </div>
         </div>
 
-        <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,padding:16}}>
+        <div style={{background:"var(--s1)",border:"1px solid var(--s2)",borderRadius:10,padding:16}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-            <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#F5A623",letterSpacing:"1px"}}>{PL("FUNDED VOLUME · LAST 12 MONTHS")}</div>
+            <div style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--gold)",letterSpacing:"1px"}}>{PL("FUNDED VOLUME · LAST 12 MONTHS")}</div>
             <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px"}}>{PL("peak:")} ${(maxVolume/1000).toFixed(0)}K</div>
           </div>
           <div style={{display:"flex",gap:6,alignItems:"flex-end",height:140,paddingTop:8}}>
@@ -3875,18 +3875,18 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               const isCurrent = i===last12Months.length-1;
               return (
                 <div key={m.month} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4,minWidth:0}}>
-                  <div style={{fontSize:"var(--fs-1)",fontFamily:"DM Mono",color:isBest?"#F5A623":"var(--t2)",fontWeight:isBest?500:400,minHeight:12,whiteSpace:"nowrap"}}>
+                  <div style={{fontSize:"var(--fs-1)",fontFamily:"var(--ff-mono)",color:isBest?"var(--gold)":"var(--t2)",fontWeight:isBest?500:400,minHeight:12,whiteSpace:"nowrap"}}>
                     {m.volume>0 ? `$${(m.volume/1000).toFixed(0)}K` : ""}
                   </div>
                   <div style={{
                     width:"100%",
                     height:`${heightPct}%`,
-                    background: isBest ? "linear-gradient(180deg,#F5A623,#C8851A)" : isCurrent ? "linear-gradient(180deg,#4A90D9,#2D6BAF)" : "#30363D",
+                    background: isBest ? "linear-gradient(180deg,var(--gold),#C8851A)" : isCurrent ? "linear-gradient(180deg,var(--blue),#2D6BAF)" : "var(--bd)",
                     borderRadius:"3px 3px 0 0",
                     transition:"all .2s",
                     minHeight: m.volume>0 ? 4 : 0,
                   }}/>
-                  <div style={{fontSize:"var(--fs-1)",color:isCurrent?"#4A90D9":"var(--t3)",fontFamily:"DM Mono",letterSpacing:"0.5px",fontWeight:isCurrent?500:400,whiteSpace:"nowrap"}}>
+                  <div style={{fontSize:"var(--fs-1)",color:isCurrent?"var(--blue)":"var(--t3)",fontFamily:"var(--ff-mono)",letterSpacing:"0.5px",fontWeight:isCurrent?500:400,whiteSpace:"nowrap"}}>
                     {monthLabel(m.month)}
                   </div>
                 </div>
@@ -3895,13 +3895,13 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           </div>
         </div>
 
-        <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
-          <div style={{background:"#1a2a3a",borderBottom:"2px solid #4A90D9",padding:"10px 16px"}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#4A90D9",letterSpacing:"1px"}}>{PL("MONTHLY DETAIL · 12-MONTH ROLLING")}</span>
+        <div style={{background:"var(--s1)",border:"1px solid var(--s2)",borderRadius:10,overflow:"hidden"}}>
+          <div style={{background:"#1a2a3a",borderBottom:"2px solid var(--blue)",padding:"10px 16px"}}>
+            <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--blue)",letterSpacing:"1px"}}>{PL("MONTHLY DETAIL · 12-MONTH ROLLING")}</span>
           </div>
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
             <thead>
-              <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
+              <tr style={{background:"var(--s1)",borderBottom:"1px solid var(--bd)"}}>
                 {["MONTH","UNITS","VOLUME","AVG LOAN"].map(h=>PL(h)).map((h,i)=>(
                   <th key={i} style={{padding:"8px 14px",textAlign:i===0?"left":"center",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                 ))}
@@ -3909,10 +3909,10 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
             </thead>
             <tbody>
               {[...last12Months].reverse().map((m,i)=>(
-                <tr key={m.month} style={{borderBottom:"1px solid #21262D",background:i%2===0?"#0D1117":"#161B22"}}>
-                  <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"var(--t1)"}}>{monthLabel(m.month)}</td>
-                  <td style={{padding:"10px 14px",textAlign:"center",color:m.units>0?"#06D6A0":"#30363D",fontWeight:500}}>{m.units}</td>
-                  <td style={{padding:"10px 14px",textAlign:"center",color:m.volume>0?"#F5A623":"#30363D",fontWeight:500}}>${(m.volume/1000).toFixed(0)}K</td>
+                <tr key={m.month} style={{borderBottom:"1px solid var(--s2)",background:i%2===0?"var(--bg)":"var(--s1)"}}>
+                  <td style={{padding:"10px 14px",fontFamily:"var(--ff-title)",fontWeight:700,color:"var(--t1)"}}>{monthLabel(m.month)}</td>
+                  <td style={{padding:"10px 14px",textAlign:"center",color:m.units>0?"var(--ok)":"var(--bd)",fontWeight:500}}>{m.units}</td>
+                  <td style={{padding:"10px 14px",textAlign:"center",color:m.volume>0?"var(--gold)":"var(--bd)",fontWeight:500}}>${(m.volume/1000).toFixed(0)}K</td>
                   <td style={{padding:"10px 14px",textAlign:"center",color:"var(--t2)"}}>{m.units>0?`$${(m.volume/m.units/1000).toFixed(0)}K`:"—"}</td>
                 </tr>
               ))}
@@ -3921,13 +3921,13 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
         </div>
 
         {yearlyList.length > 0 && (
-          <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
-            <div style={{background:"#261535",borderBottom:"2px solid #BD65E8",padding:"10px 16px"}}>
-              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#BD65E8",letterSpacing:"1px"}}>{PL("ANNUAL SUMMARY")}</span>
+          <div style={{background:"var(--s1)",border:"1px solid var(--s2)",borderRadius:10,overflow:"hidden"}}>
+            <div style={{background:"#261535",borderBottom:"2px solid var(--purple)",padding:"10px 16px"}}>
+              <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--purple)",letterSpacing:"1px"}}>{PL("ANNUAL SUMMARY")}</span>
             </div>
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
               <thead>
-                <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
+                <tr style={{background:"var(--s1)",borderBottom:"1px solid var(--bd)"}}>
                   {["YEAR","UNITS","VOLUME","AVG LOAN"].map(h=>PL(h)).map((h,i)=>(
                     <th key={i} style={{padding:"8px 14px",textAlign:i===0?"left":"center",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                   ))}
@@ -3935,10 +3935,10 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               </thead>
               <tbody>
                 {yearlyList.map((y,i)=>(
-                  <tr key={y.year} style={{borderBottom:"1px solid #21262D",background:i%2===0?"#0D1117":"#161B22"}}>
-                    <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#BD65E8"}}>{y.year}</td>
-                    <td style={{padding:"10px 14px",textAlign:"center",color:"#06D6A0",fontWeight:500}}>{y.units}</td>
-                    <td style={{padding:"10px 14px",textAlign:"center",color:"#F5A623",fontWeight:500}}>${(y.volume/1e6).toFixed(2)}M</td>
+                  <tr key={y.year} style={{borderBottom:"1px solid var(--s2)",background:i%2===0?"var(--bg)":"var(--s1)"}}>
+                    <td style={{padding:"10px 14px",fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--purple)"}}>{y.year}</td>
+                    <td style={{padding:"10px 14px",textAlign:"center",color:"var(--ok)",fontWeight:500}}>{y.units}</td>
+                    <td style={{padding:"10px 14px",textAlign:"center",color:"var(--gold)",fontWeight:500}}>${(y.volume/1e6).toFixed(2)}M</td>
                     <td style={{padding:"10px 14px",textAlign:"center",color:"var(--t2)"}}>${(y.volume/y.units/1000).toFixed(0)}K</td>
                   </tr>
                 ))}
@@ -3951,14 +3951,14 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
       {/* REFERRAL PARTNERS TAB (existing — sources of business) */}
       {prodTab==="referrals"&&<div>
         {topRefs.length===0?<div style={{padding:32,textAlign:"center",color:"var(--t4)",fontSize:"var(--fs-5)"}}>{TX("plNoRefPartners")}</div>:(
-          <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
-            <div style={{background:"#1a2e25",borderBottom:"2px solid #06D6A0",padding:"10px 16px",display:"flex",alignItems:"center",gap:10}}>
-              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#06D6A0",letterSpacing:"1px"}}>{PL("REFERRAL PARTNER LEADERBOARD")}</span>
-              <span style={{background:"#06D6A0",color:"#0D1117",borderRadius:10,padding:"1px 8px",fontSize:"var(--fs-3)",fontWeight:500}}>{topRefs.length}</span>
+          <div style={{background:"var(--s1)",border:"1px solid var(--s2)",borderRadius:10,overflow:"hidden"}}>
+            <div style={{background:"#1a2e25",borderBottom:"2px solid var(--ok)",padding:"10px 16px",display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--ok)",letterSpacing:"1px"}}>{PL("REFERRAL PARTNER LEADERBOARD")}</span>
+              <span style={{background:"var(--ok)",color:"var(--bg)",borderRadius:10,padding:"1px 8px",fontSize:"var(--fs-3)",fontWeight:500}}>{topRefs.length}</span>
             </div>
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
               <thead>
-                <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
+                <tr style={{background:"var(--s1)",borderBottom:"1px solid var(--bd)"}}>
                   {["#","REFERRAL PARTNER","TOTAL FILES","CLOSED","ACTIVE","FUNDED VOLUME"].map(h=>PL(h)).map((h,i)=>(
                     <th key={i} style={{padding:"8px 14px",textAlign:i<2?"left":"center",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                   ))}
@@ -3966,22 +3966,22 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               </thead>
               <tbody>
                 {topRefs.map((ref,i)=>(
-                  <tr key={ref.name} style={{borderBottom:"1px solid #21262D",background:i%2===0?"#0D1117":"#161B22"}}>
-                    <td style={{padding:"10px 14px",color:i===0?"#F5A623":i===1?"var(--t2)":i===2?"#CD7F32":"var(--t3)",fontFamily:"Syne",fontWeight:700}}>{i+1}</td>
-                    <td style={{padding:"10px 14px",color:"var(--t1)",fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-4)"}}>
+                  <tr key={ref.name} style={{borderBottom:"1px solid var(--s2)",background:i%2===0?"var(--bg)":"var(--s1)"}}>
+                    <td style={{padding:"10px 14px",color:i===0?"var(--gold)":i===1?"var(--t2)":i===2?"#CD7F32":"var(--t3)",fontFamily:"var(--ff-num)",fontWeight:700}}>{i+1}</td>
+                    <td style={{padding:"10px 14px",color:"var(--t1)",fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-4)"}}>
                       {ref.name}
                       {ref.merged&&(
-                        <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",fontFamily:"DM Mono",fontWeight:400,marginTop:2}}>
+                        <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",fontFamily:"var(--ff-mono)",fontWeight:400,marginTop:2}}>
                           {TX("unifies")} {ref.variants.map(v=>v.name+" ("+v.count+")").join(" · ")}
                         </div>
                       )}
                     </td>
                     <td style={{padding:"10px 14px",textAlign:"center"}}>
-                      <span style={{background:"#21262D",color:"var(--t1)",borderRadius:12,padding:"2px 10px",fontSize:"var(--fs-4)",fontWeight:500}}>{ref.total}</span>
+                      <span style={{background:"var(--s2)",color:"var(--t1)",borderRadius:12,padding:"2px 10px",fontSize:"var(--fs-4)",fontWeight:500}}>{ref.total}</span>
                     </td>
-                    <td style={{padding:"10px 14px",textAlign:"center",color:"#06D6A0",fontWeight:500}}>{ref.closed}</td>
-                    <td style={{padding:"10px 14px",textAlign:"center",color:"#F5A623",fontWeight:500}}>{ref.active}</td>
-                    <td style={{padding:"10px 14px",textAlign:"center",color:"#06D6A0",fontWeight:500}}>${(ref.vol/1000).toFixed(0)}K</td>
+                    <td style={{padding:"10px 14px",textAlign:"center",color:"var(--ok)",fontWeight:500}}>{ref.closed}</td>
+                    <td style={{padding:"10px 14px",textAlign:"center",color:"var(--gold)",fontWeight:500}}>{ref.active}</td>
+                    <td style={{padding:"10px 14px",textAlign:"center",color:"var(--ok)",fontWeight:500}}>${(ref.vol/1000).toFixed(0)}K</td>
                   </tr>
                 ))}
               </tbody>
@@ -3995,25 +3995,25 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
 
         {/* Headline metrics */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:10}}>
-          <div style={{background:"#161B22",border:"1px solid #A78BFA44",borderTop:"3px solid #A78BFA",borderRadius:8,padding:12}}>
+          <div style={{background:"var(--s1)",border:"1px solid #A78BFA44",borderTop:"3px solid var(--violet)",borderRadius:8,padding:12}}>
             <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{PL("REFERRED OUT (TOTAL)")}</div>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",color:"#A78BFA"}}>{(referredOut||[]).length}</div>
+            <div style={{fontFamily:"var(--ff-num)",fontWeight:800,fontSize:"var(--fs-9)",color:"var(--violet)"}}>{(referredOut||[]).length}</div>
             <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>${(outboundTotalVol/1000).toFixed(0)}K {PL("orig. volume")}</div>
           </div>
-          <div style={{background:"#161B22",border:"1px solid #06D6A044",borderTop:"3px solid #06D6A0",borderRadius:8,padding:12}}>
+          <div style={{background:"var(--s1)",border:"1px solid #06D6A044",borderTop:"3px solid var(--ok)",borderRadius:8,padding:12}}>
             <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{PL("OUTBOUND FUNDED")}</div>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",color:"#06D6A0"}}>{outboundFunded.length}</div>
+            <div style={{fontFamily:"var(--ff-num)",fontWeight:800,fontSize:"var(--fs-9)",color:"var(--ok)"}}>{outboundFunded.length}</div>
             <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>${(outboundFundedVol/1000).toFixed(0)}K {PL("closed at banker")}</div>
           </div>
-          <div style={{background:"#161B22",border:"1px solid #F5A62344",borderTop:"3px solid #F5A623",borderRadius:8,padding:12}}>
+          <div style={{background:"var(--s1)",border:"1px solid #F5A62344",borderTop:"3px solid var(--gold)",borderRadius:8,padding:12}}>
             <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{PL("FEES EARNED (50 BPS)")}</div>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",color:"#F5A623"}}>${outboundFeesEarned.toLocaleString()}</div>
+            <div style={{fontFamily:"var(--ff-num)",fontWeight:800,fontSize:"var(--fs-9)",color:"var(--gold)"}}>${outboundFeesEarned.toLocaleString()}</div>
             <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{PL("on referred-out funded")}</div>
           </div>
           {isAdmin && (
-            <div style={{background:"#161B22",border:"1px solid #E85D7544",borderTop:"3px solid #E85D75",borderRadius:8,padding:12}}>
+            <div style={{background:"var(--s1)",border:"1px solid #E85D7544",borderTop:"3px solid var(--bad)",borderRadius:8,padding:12}}>
               <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{PL("LOST COMP (GROSS)")}</div>
-              <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",color:"#E85D75"}}>${outboundLostComp.toLocaleString()}</div>
+              <div style={{fontFamily:"var(--ff-num)",fontWeight:800,fontSize:"var(--fs-9)",color:"var(--bad)"}}>${outboundLostComp.toLocaleString()}</div>
               <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>vs. {BPS_RATE} {PL("bps of own comp")}</div>
             </div>
           )}
@@ -4021,34 +4021,34 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
 
         {/* Inbound metrics */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:10}}>
-          <div style={{background:"#161B22",border:"1px solid #FFD16644",borderTop:"3px solid #FFD166",borderRadius:8,padding:12}}>
+          <div style={{background:"var(--s1)",border:"1px solid #FFD16644",borderTop:"3px solid var(--yellow)",borderRadius:8,padding:12}}>
             <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{PL("INBOUND (TOTAL)")}</div>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",color:"#FFD166"}}>{inboundList.length}</div>
+            <div style={{fontFamily:"var(--ff-num)",fontWeight:800,fontSize:"var(--fs-9)",color:"var(--yellow)"}}>{inboundList.length}</div>
             <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{PL("from external bankers")}</div>
           </div>
-          <div style={{background:"#161B22",border:"1px solid #06D6A044",borderTop:"3px solid #06D6A0",borderRadius:8,padding:12}}>
+          <div style={{background:"var(--s1)",border:"1px solid #06D6A044",borderTop:"3px solid var(--ok)",borderRadius:8,padding:12}}>
             <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{PL("INBOUND CLOSED")}</div>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",color:"#06D6A0"}}>{inboundClosed.length}</div>
+            <div style={{fontFamily:"var(--ff-num)",fontWeight:800,fontSize:"var(--fs-9)",color:"var(--ok)"}}>{inboundClosed.length}</div>
             <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>${(inboundFundedVol/1000).toFixed(0)}K {PL("funded")}</div>
           </div>
-          <div style={{background:"#161B22",border:"1px solid #4A90D944",borderTop:"3px solid #4A90D9",borderRadius:8,padding:12}}>
+          <div style={{background:"var(--s1)",border:"1px solid #4A90D944",borderTop:"3px solid var(--blue)",borderRadius:8,padding:12}}>
             <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{PL("INBOUND ACTIVE")}</div>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",color:"#4A90D9"}}>{inboundActive.length}</div>
+            <div style={{fontFamily:"var(--ff-num)",fontWeight:800,fontSize:"var(--fs-9)",color:"var(--blue)"}}>{inboundActive.length}</div>
             <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>${(inboundActiveVol/1000).toFixed(0)}K {PL("in pipeline")}</div>
           </div>
           {isAdmin && (
-            <div style={{background:"#161B22",border:"1px solid #06D6A044",borderTop:"3px solid #06D6A0",borderRadius:8,padding:12}}>
+            <div style={{background:"var(--s1)",border:"1px solid #06D6A044",borderTop:"3px solid var(--ok)",borderRadius:8,padding:12}}>
               <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{PL("COMP FROM INBOUND")}</div>
-              <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-9)",color:"#06D6A0"}}>${inboundCompEarned.toLocaleString()}</div>
+              <div style={{fontFamily:"var(--ff-num)",fontWeight:800,fontSize:"var(--fs-9)",color:"var(--ok)"}}>${inboundCompEarned.toLocaleString()}</div>
               <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:2}}>{BPS_RATE} {PL("bps on closed")}</div>
             </div>
           )}
         </div>
 
         {/* Reciprocity table */}
-        <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
-          <div style={{background:"#1f1830",borderBottom:"2px solid #A78BFA",padding:"10px 16px",display:"flex",alignItems:"center",gap:10}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#A78BFA",letterSpacing:"1px"}}>{PL("🏦 BANKER RECIPROCITY")}</span>
+        <div style={{background:"var(--s1)",border:"1px solid var(--s2)",borderRadius:10,overflow:"hidden"}}>
+          <div style={{background:"#1f1830",borderBottom:"2px solid var(--violet)",padding:"10px 16px",display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--violet)",letterSpacing:"1px"}}>{PL("🏦 BANKER RECIPROCITY")}</span>
             <span style={{fontSize:"var(--fs-3)",color:"var(--t2)"}}>{PL("who's sending what · spot imbalances")}</span>
           </div>
           {bankerReciprocity.length === 0 ? (
@@ -4059,7 +4059,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           ) : (
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
               <thead>
-                <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
+                <tr style={{background:"var(--s1)",borderBottom:"1px solid var(--bd)"}}>
                   {["BANKER","COMPANY","SENT TO THEM","THEY SENT US","VOLUME OUT","VOLUME IN","BALANCE"].map(h=>PL(h)).map((h,i)=>(
                     <th key={i} style={{padding:"8px 14px",textAlign:i<2?"left":"center",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                   ))}
@@ -4071,13 +4071,13 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                   const netLabel = netCount > 0 ? `+${netCount} (favoring you)` : netCount < 0 ? `${netCount} (favoring them)` : "even";
                   const netColor = netCount > 0 ? "#06D6A0" : netCount < 0 ? "#E85D75" : "var(--t2)";
                   return (
-                    <tr key={b.name} style={{borderBottom:"1px solid #21262D",background:i%2===0?"#0D1117":"#161B22"}}>
-                      <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"var(--t1)"}}>{b.name}</td>
+                    <tr key={b.name} style={{borderBottom:"1px solid var(--s2)",background:i%2===0?"var(--bg)":"var(--s1)"}}>
+                      <td style={{padding:"10px 14px",fontFamily:"var(--ff-title)",fontWeight:700,color:"var(--t1)"}}>{b.name}</td>
                       <td style={{padding:"10px 14px",color:"var(--t2)",fontSize:"var(--fs-3)"}}>{b.company || "—"}</td>
-                      <td style={{padding:"10px 14px",textAlign:"center",color:"#A78BFA",fontWeight:500}}>{b.sentOut}</td>
-                      <td style={{padding:"10px 14px",textAlign:"center",color:"#FFD166",fontWeight:500}}>{b.receivedIn}</td>
-                      <td style={{padding:"10px 14px",textAlign:"center",color:"#A78BFA",fontSize:"var(--fs-3)"}}>${(b.sentOutVol/1000).toFixed(0)}K</td>
-                      <td style={{padding:"10px 14px",textAlign:"center",color:"#FFD166",fontSize:"var(--fs-3)"}}>${(b.receivedInVol/1000).toFixed(0)}K</td>
+                      <td style={{padding:"10px 14px",textAlign:"center",color:"var(--violet)",fontWeight:500}}>{b.sentOut}</td>
+                      <td style={{padding:"10px 14px",textAlign:"center",color:"var(--yellow)",fontWeight:500}}>{b.receivedIn}</td>
+                      <td style={{padding:"10px 14px",textAlign:"center",color:"var(--violet)",fontSize:"var(--fs-3)"}}>${(b.sentOutVol/1000).toFixed(0)}K</td>
+                      <td style={{padding:"10px 14px",textAlign:"center",color:"var(--yellow)",fontSize:"var(--fs-3)"}}>${(b.receivedInVol/1000).toFixed(0)}K</td>
                       <td style={{padding:"10px 14px",textAlign:"center",color:netColor,fontWeight:500,fontSize:"var(--fs-3)"}}>{netLabel}</td>
                     </tr>
                   );
@@ -4089,34 +4089,34 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
 
         {/* Year-end summary */}
         {isAdmin && (outboundFunded.length > 0 || inboundClosed.length > 0) && (
-          <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
-            <div style={{background:"#1a1000",borderBottom:"2px solid #F5A623",padding:"10px 16px"}}>
-              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#F5A623",letterSpacing:"1px"}}>{PL("💰 YEAR-END COMP IMPACT")}</span>
+          <div style={{background:"var(--s1)",border:"1px solid var(--s2)",borderRadius:10,overflow:"hidden"}}>
+            <div style={{background:"#1a1000",borderBottom:"2px solid var(--gold)",padding:"10px 16px"}}>
+              <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--gold)",letterSpacing:"1px"}}>{PL("💰 YEAR-END COMP IMPACT")}</span>
             </div>
             <div style={{padding:"16px 18px",display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:14}}>
               <div>
                 <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>{PL("OUTBOUND — WHAT YOU WOULD HAVE EARNED IN HOUSE")}</div>
-                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-8)",color:"var(--t2)"}}>${outboundWouldHaveEarned.toLocaleString()}</div>
+                <div style={{fontFamily:"var(--ff-num)",fontWeight:700,fontSize:"var(--fs-8)",color:"var(--t2)"}}>${outboundWouldHaveEarned.toLocaleString()}</div>
                 <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:3}}>{BPS_RATE} bps × ${(outboundFundedVol/1000).toFixed(0)}K</div>
               </div>
               <div>
                 <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>{PL("WHAT YOU EARNED IN REFERRAL FEES")}</div>
-                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-8)",color:"#F5A623"}}>${outboundFeesEarned.toLocaleString()}</div>
+                <div style={{fontFamily:"var(--ff-num)",fontWeight:700,fontSize:"var(--fs-8)",color:"var(--gold)"}}>${outboundFeesEarned.toLocaleString()}</div>
                 <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:3}}>{REFERRAL_FEE_BPS} bps × ${(outboundFundedVol/1000).toFixed(0)}K</div>
               </div>
               <div>
                 <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>{PL("NET LOST COMP (OUTBOUND)")}</div>
-                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-8)",color:"#E85D75"}}>${outboundLostComp.toLocaleString()}</div>
+                <div style={{fontFamily:"var(--ff-num)",fontWeight:700,fontSize:"var(--fs-8)",color:"var(--bad)"}}>${outboundLostComp.toLocaleString()}</div>
                 <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:3}}>{PL("opportunity cost")}</div>
               </div>
               <div>
                 <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>{PL("INBOUND COMP EARNED")}</div>
-                <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-8)",color:"#06D6A0"}}>${inboundCompEarned.toLocaleString()}</div>
+                <div style={{fontFamily:"var(--ff-num)",fontWeight:700,fontSize:"var(--fs-8)",color:"var(--ok)"}}>${inboundCompEarned.toLocaleString()}</div>
                 <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:3}}>{BPS_RATE} bps × ${(inboundFundedVol/1000).toFixed(0)}K</div>
               </div>
             </div>
-            <div style={{padding:"12px 18px",borderTop:"1px solid #21262D",background:"#0D1117",fontSize:"var(--fs-3)",color:"var(--t2)",lineHeight:1.6}}>
-              <strong style={{color:"#F5A623"}}>{PL("Read it:")}</strong> Outbound is what the branch could not place and you sent away — you got <strong style={{color:"#F5A623"}}>${outboundFeesEarned.toLocaleString()}</strong> in referral fees but missed <strong style={{color:"#E85D75"}}>${outboundLostComp.toLocaleString()}</strong> in your own comp. Inbound is what bankers send your way — you earned <strong style={{color:"#06D6A0"}}>${inboundCompEarned.toLocaleString()}</strong> from those. Use this to decide which lenders or channels are worth adding.
+            <div style={{padding:"12px 18px",borderTop:"1px solid var(--s2)",background:"var(--bg)",fontSize:"var(--fs-3)",color:"var(--t2)",lineHeight:1.6}}>
+              <strong style={{color:"var(--gold)"}}>{PL("Read it:")}</strong> Outbound is what the branch could not place and you sent away — you got <strong style={{color:"var(--gold)"}}>${outboundFeesEarned.toLocaleString()}</strong> in referral fees but missed <strong style={{color:"var(--bad)"}}>${outboundLostComp.toLocaleString()}</strong> in your own comp. Inbound is what bankers send your way — you earned <strong style={{color:"var(--ok)"}}>${inboundCompEarned.toLocaleString()}</strong> from those. Use this to decide which lenders or channels are worth adding.
             </div>
           </div>
         )}
@@ -4142,118 +4142,118 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{t}</th>);
         const money=n=>"$"+Math.round(n).toLocaleString();
         if(totF===0&&byProd.every(r=>!r.active)) return (
-          <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,
+          <div style={{background:"var(--s1)",border:"1px solid var(--bd)",borderRadius:10,
             padding:"26px 16px",textAlign:"center",color:"var(--t3)",fontSize:"var(--fs-4)"}}>{TX("mixNoData")}</div>
         );
         return (
           <div style={{display:"flex",flexDirection:"column",gap:14}}>
-            <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:8,padding:"12px 16px",
+            <div style={{background:"var(--s1)",border:"1px solid var(--bd)",borderRadius:8,padding:"12px 16px",
               fontSize:"var(--fs-3)",color:"var(--t2)",lineHeight:1.6}}>{TX("mixLead")}</div>
 
             {totF<20&&(
               <div style={{background:"rgba(245,166,35,.08)",border:"1px solid #F5A62344",borderRadius:8,
-                padding:"10px 14px",fontSize:"var(--fs-3)",color:"#F5A623",lineHeight:1.55}}>
+                padding:"10px 14px",fontSize:"var(--fs-3)",color:"var(--gold)",lineHeight:1.55}}>
                 {TX("thinMix",{n:totF})}
               </div>
             )}
 
-            <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
-              <div style={{background:"#0D1117",padding:"9px 14px",fontSize:"var(--fs-2)",color:"#F5A623",
-                letterSpacing:"1px",borderBottom:"1px solid #30363D"}}>{TX("byBaseProduct")}</div>
+            <div style={{background:"var(--s1)",border:"1px solid var(--bd)",borderRadius:10,overflow:"hidden"}}>
+              <div style={{background:"var(--bg)",padding:"9px 14px",fontSize:"var(--fs-2)",color:"var(--gold)",
+                letterSpacing:"1px",borderBottom:"1px solid var(--bd)"}}>{TX("byBaseProduct")}</div>
               <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
-                <thead><tr style={{borderBottom:"1px solid #21262D"}}>
+                <thead><tr style={{borderBottom:"1px solid var(--s2)"}}>
                   {th(TX("byBaseProduct"),"left")}{th(TX("hClosed"))}{th(TX("hVolume"))}
                   {th(TX("hShare"))}{th(TX("hAvg"))}{th(TX("hComp"))}{th(TX("hActive"))}
                 </tr></thead>
                 <tbody>
                   {byProd.map((r,i)=>(
-                    <tr key={r.key} style={{borderBottom:"1px solid #21262D",background:i%2?"#161B22":"#0D1117"}}>
+                    <tr key={r.key} style={{borderBottom:"1px solid var(--s2)",background:i%2?"var(--s1)":"var(--bg)"}}>
                       <td style={{padding:"10px 12px",color:"var(--t1)"}}>{P(baseProductLabel(r.key))}</td>
-                      <td style={{padding:"10px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>{r.funded||"—"}</td>
-                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono"}}>{r.fundedVolume?money(r.fundedVolume):"—"}</td>
-                      <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,
-                        fontSize:"var(--fs-5)",color:"#F5A623"}}>{r.unitShare?r.unitShare+"%":"—"}</td>
-                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono",fontSize:"var(--fs-3)"}}>{r.avgLoan?money(r.avgLoan):"—"}</td>
-                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono"}}>{r.comp?money(r.comp):"—"}</td>
-                      <td style={{padding:"10px 12px",textAlign:"center",color:"#4A90D9",fontFamily:"DM Mono"}}>{r.active||"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--ok)",fontFamily:"var(--ff-mono)"}}>{r.funded||"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"var(--ff-mono)"}}>{r.fundedVolume?money(r.fundedVolume):"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"var(--ff-num)",fontWeight:800,
+                        fontSize:"var(--fs-5)",color:"var(--gold)"}}>{r.unitShare?r.unitShare+"%":"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)"}}>{r.avgLoan?money(r.avgLoan):"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"var(--ff-mono)"}}>{r.comp?money(r.comp):"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--blue)",fontFamily:"var(--ff-mono)"}}>{r.active||"—"}</td>
                     </tr>
                   ))}
                 </tbody>
-                <tfoot><tr style={{background:"#1a1000",borderTop:"2px solid #F5A623"}}>
-                  <td style={{padding:"10px 12px",fontFamily:"Syne",fontWeight:700,color:"#F5A623"}}>{TX("mixTotal",{n:totF})}</td>
+                <tfoot><tr style={{background:"#1a1000",borderTop:"2px solid var(--gold)"}}>
+                  <td style={{padding:"10px 12px",fontFamily:"var(--ff-title)",fontWeight:700,color:"var(--gold)"}}>{TX("mixTotal",{n:totF})}</td>
                   <td/>
-                  <td style={{padding:"10px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>{money(totV)}</td>
+                  <td style={{padding:"10px 12px",textAlign:"center",color:"var(--ok)",fontFamily:"var(--ff-mono)"}}>{money(totV)}</td>
                   <td/><td/>
-                  <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,color:"#F5A623"}}>{money(totC)}</td>
+                  <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"var(--ff-num)",fontWeight:800,color:"var(--gold)"}}>{money(totC)}</td>
                   <td/>
                 </tr></tfoot>
               </table>
             </div>
 
-            <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
-              <div style={{background:"#0D1117",padding:"9px 14px",fontSize:"var(--fs-2)",color:"#7EC8A4",
-                letterSpacing:"1px",borderBottom:"1px solid #30363D",display:"flex",
+            <div style={{background:"var(--s1)",border:"1px solid var(--bd)",borderRadius:10,overflow:"hidden"}}>
+              <div style={{background:"var(--bg)",padding:"9px 14px",fontSize:"var(--fs-2)",color:"var(--mint)",
+                letterSpacing:"1px",borderBottom:"1px solid var(--bd)",display:"flex",
                 justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
                 <span>{TX("byGroup")}</span>
                 <span className="act">{TX("planEdit")}</span>
               </div>
               <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
-                <thead><tr style={{borderBottom:"1px solid #21262D"}}>
+                <thead><tr style={{borderBottom:"1px solid var(--s2)"}}>
                   {th(TX("byGroup"),"left")}{th(TX("hClosed"))}{th(TX("hVolume"))}
                   {th(TX("hShare"))}{th(TX("hPlan"))}{th(TX("hDelta"))}{th(TX("hActive"))}
                 </tr></thead>
                 <tbody>
                   {byGrp.map((r,i)=>(
-                    <tr key={r.key} style={{borderBottom:"1px solid #21262D",background:i%2?"#161B22":"#0D1117"}}>
+                    <tr key={r.key} style={{borderBottom:"1px solid var(--s2)",background:i%2?"var(--s1)":"var(--bg)"}}>
                       <td style={{padding:"10px 12px",color:"var(--t1)"}}>{r.key}</td>
-                      <td style={{padding:"10px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>{r.funded||"—"}</td>
-                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono"}}>{r.fundedVolume?money(r.fundedVolume):"—"}</td>
-                      <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,
-                        fontSize:"var(--fs-5)",color:"#F5A623"}}>{r.unitShare}%</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--ok)",fontFamily:"var(--ff-mono)"}}>{r.funded||"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"var(--ff-mono)"}}>{r.fundedVolume?money(r.fundedVolume):"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"var(--ff-num)",fontWeight:800,
+                        fontSize:"var(--fs-5)",color:"var(--gold)"}}>{r.unitShare}%</td>
                       <td style={{padding:"10px 12px",textAlign:"center"}}>
                         <input value={mixPlan[r.key]??""} inputMode="numeric"
                           onChange={e=>{const v=e.target.value.replace(/[^\d]/g,"");
                             setMixPlan({...mixPlan,[r.key]:v===""?undefined:Number(v)});}}
-                          style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:4,
-                            color:"var(--t2)",padding:"3px 6px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",
+                          style={{background:"var(--bg)",border:"1px solid var(--bd)",borderRadius:4,
+                            color:"var(--t2)",padding:"3px 6px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",
                             width:46,textAlign:"center"}}/>
                       </td>
-                      <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"DM Mono",
-                        color:r.delta===null?"var(--t3)":Math.abs(r.delta)<=5?"#7EC8A4":r.delta>0?"#4A90D9":"#F5A623"}}>
+                      <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"var(--ff-mono)",
+                        color:r.delta===null?"var(--t3)":Math.abs(r.delta)<=5?"var(--mint)":r.delta>0?"var(--blue)":"var(--gold)"}}>
                         {r.delta===null?"—":(r.delta>0?"+":"")+r.delta}
                       </td>
-                      <td style={{padding:"10px 12px",textAlign:"center",color:"#4A90D9",fontFamily:"DM Mono"}}>{r.active||"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--blue)",fontFamily:"var(--ff-mono)"}}>{r.active||"—"}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
 
-            <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
-              <div style={{background:"#0D1117",padding:"9px 14px",fontSize:"var(--fs-2)",color:"#7EC8A4",
-                letterSpacing:"1px",borderBottom:"1px solid #30363D"}}>{TX("byDpaMix")}</div>
+            <div style={{background:"var(--s1)",border:"1px solid var(--bd)",borderRadius:10,overflow:"hidden"}}>
+              <div style={{background:"var(--bg)",padding:"9px 14px",fontSize:"var(--fs-2)",color:"var(--mint)",
+                letterSpacing:"1px",borderBottom:"1px solid var(--bd)"}}>{TX("byDpaMix")}</div>
               {(()=>{const rows=productionByDpa(files,{cutover:BARRETT_CUTOVER,bpsDefault:BPS_RATE});
                 if(!rows.length) return (
                   <div style={{padding:"18px 14px",color:"var(--t3)",fontSize:"var(--fs-3)"}}>{TX("noDpaYet")}</div>
                 );
                 return (
                   <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
-                    <thead><tr style={{borderBottom:"1px solid #21262D"}}>
+                    <thead><tr style={{borderBottom:"1px solid var(--s2)"}}>
                       {th(TX("byBaseProduct"),"left")}{th(TX("hPct"))}{th(TX("hForm"))}
                       {th(TX("hClosed"))}{th(TX("hVolume"))}{th(TX("hShare"))}
                       {th(TX("hDays"))}{th(TX("hActive"))}
                     </tr></thead>
                     <tbody>
                       {rows.map((r,i)=>(
-                        <tr key={r.key} style={{borderBottom:"1px solid #21262D",background:i%2?"#161B22":"#0D1117"}}>
+                        <tr key={r.key} style={{borderBottom:"1px solid var(--s2)",background:i%2?"var(--s1)":"var(--bg)"}}>
                           <td style={{padding:"10px 12px",color:"var(--t1)"}}>{P(baseProductLabel(r.base))}</td>
-                          <td style={{padding:"10px 12px",textAlign:"center",color:r.dpa?"#F5A623":"#30363D",fontFamily:"DM Mono"}}>{r.pct?r.pct+"%":"—"}</td>
-                          <td style={{padding:"10px 12px",textAlign:"center",color:r.dpa?"#7EC8A4":"#30363D",fontSize:"var(--fs-3)"}}>{r.dpa?(P(dpaForm(r.form))||"—"):TX("noDpaRow")}</td>
-                          <td style={{padding:"10px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>{r.funded||"—"}</td>
-                          <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono"}}>{r.fundedVolume?money(r.fundedVolume):"—"}</td>
-                          <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-5)",color:"#F5A623"}}>{r.unitShare?r.unitShare+"%":"—"}</td>
-                          <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono",fontSize:"var(--fs-3)"}}>{r.avgDays??"—"}</td>
-                          <td style={{padding:"10px 12px",textAlign:"center",color:"#4A90D9",fontFamily:"DM Mono"}}>{r.active||"—"}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:r.dpa?"var(--gold)":"var(--bd)",fontFamily:"var(--ff-mono)"}}>{r.pct?r.pct+"%":"—"}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:r.dpa?"var(--mint)":"var(--bd)",fontSize:"var(--fs-3)"}}>{r.dpa?(P(dpaForm(r.form))||"—"):TX("noDpaRow")}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:"var(--ok)",fontFamily:"var(--ff-mono)"}}>{r.funded||"—"}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"var(--ff-mono)"}}>{r.fundedVolume?money(r.fundedVolume):"—"}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"var(--ff-num)",fontWeight:800,fontSize:"var(--fs-5)",color:"var(--gold)"}}>{r.unitShare?r.unitShare+"%":"—"}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)"}}>{r.avgDays??"—"}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:"var(--blue)",fontFamily:"var(--ff-mono)"}}>{r.active||"—"}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -4261,50 +4261,50 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 );})()}
             </div>
 
-            <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
-              <div style={{background:"#0D1117",padding:"9px 14px",fontSize:"var(--fs-2)",color:"#4A90D9",
-                letterSpacing:"1px",borderBottom:"1px solid #30363D"}}>{TX("byState")}</div>
+            <div style={{background:"var(--s1)",border:"1px solid var(--bd)",borderRadius:10,overflow:"hidden"}}>
+              <div style={{background:"var(--bg)",padding:"9px 14px",fontSize:"var(--fs-2)",color:"var(--blue)",
+                letterSpacing:"1px",borderBottom:"1px solid var(--bd)"}}>{TX("byState")}</div>
               <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
-                <thead><tr style={{borderBottom:"1px solid #21262D"}}>
+                <thead><tr style={{borderBottom:"1px solid var(--s2)"}}>
                   {th(TX("byState"),"left")}{th(TX("hClosed"))}{th(TX("hVolume"))}
                   {th(TX("hShare"))}{th(TX("hAvg"))}{th(TX("hActive"))}
                 </tr></thead>
                 <tbody>
                   {productionByState(files,{cutover:BARRETT_CUTOVER,bpsDefault:BPS_RATE}).map((r,i)=>(
-                    <tr key={r.key} style={{borderBottom:"1px solid #21262D",background:i%2?"#161B22":"#0D1117"}}>
+                    <tr key={r.key} style={{borderBottom:"1px solid var(--s2)",background:i%2?"var(--s1)":"var(--bg)"}}>
                       <td style={{padding:"10px 12px",color:"var(--t1)"}}>{r.key}</td>
-                      <td style={{padding:"10px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>{r.funded||"—"}</td>
-                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono"}}>{r.fundedVolume?money(r.fundedVolume):"—"}</td>
-                      <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-5)",color:"#F5A623"}}>{r.unitShare}%</td>
-                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono",fontSize:"var(--fs-3)"}}>{r.avgLoan?money(r.avgLoan):"—"}</td>
-                      <td style={{padding:"10px 12px",textAlign:"center",color:"#4A90D9",fontFamily:"DM Mono"}}>{r.active||"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--ok)",fontFamily:"var(--ff-mono)"}}>{r.funded||"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"var(--ff-mono)"}}>{r.fundedVolume?money(r.fundedVolume):"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"var(--ff-num)",fontWeight:800,fontSize:"var(--fs-5)",color:"var(--gold)"}}>{r.unitShare}%</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)"}}>{r.avgLoan?money(r.avgLoan):"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--blue)",fontFamily:"var(--ff-mono)"}}>{r.active||"—"}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
 
-            <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
-              <div style={{background:"#0D1117",padding:"9px 14px",fontSize:"var(--fs-2)",color:"#BD65E8",
-                letterSpacing:"1px",borderBottom:"1px solid #30363D"}}>{TX("byOriginator")}</div>
+            <div style={{background:"var(--s1)",border:"1px solid var(--bd)",borderRadius:10,overflow:"hidden"}}>
+              <div style={{background:"var(--bg)",padding:"9px 14px",fontSize:"var(--fs-2)",color:"var(--purple)",
+                letterSpacing:"1px",borderBottom:"1px solid var(--bd)"}}>{TX("byOriginator")}</div>
               <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
-                <thead><tr style={{borderBottom:"1px solid #21262D"}}>
+                <thead><tr style={{borderBottom:"1px solid var(--s2)"}}>
                   {th("LO","left")}{th(TX("hClosed"))}{th(TX("hVolume"))}{th(TX("hShare"))}
                   {th(TX("hAvg"))}{th(TX("hActive"))}
                 </tr></thead>
                 <tbody>
                   {byLo.map((r,i)=>(
-                    <tr key={r.key} style={{borderBottom:"1px solid #21262D",background:i%2?"#161B22":"#0D1117"}}>
+                    <tr key={r.key} style={{borderBottom:"1px solid var(--s2)",background:i%2?"var(--s1)":"var(--bg)"}}>
                       <td style={{padding:"10px 12px",color:r.funded||r.active?"var(--t1)":"var(--t2)"}}>
                         {r.key}
                         {!r.funded&&!r.active&&<span style={{color:"var(--t3)",fontSize:"var(--fs-2)"}}>{"  "}{TX("noProduction")}</span>}
                       </td>
-                      <td style={{padding:"10px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>{r.funded||"—"}</td>
-                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono"}}>{r.fundedVolume?money(r.fundedVolume):"—"}</td>
-                      <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,
-                        fontSize:"var(--fs-5)",color:r.unitShare?"#F5A623":"var(--t3)"}}>{r.unitShare}%</td>
-                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono",fontSize:"var(--fs-3)"}}>{r.avgLoan?money(r.avgLoan):"—"}</td>
-                      <td style={{padding:"10px 12px",textAlign:"center",color:"#4A90D9",fontFamily:"DM Mono"}}>{r.active||"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--ok)",fontFamily:"var(--ff-mono)"}}>{r.funded||"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"var(--ff-mono)"}}>{r.fundedVolume?money(r.fundedVolume):"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"var(--ff-num)",fontWeight:800,
+                        fontSize:"var(--fs-5)",color:r.unitShare?"var(--gold)":"var(--t3)"}}>{r.unitShare}%</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)"}}>{r.avgLoan?money(r.avgLoan):"—"}</td>
+                      <td style={{padding:"10px 12px",textAlign:"center",color:"var(--blue)",fontFamily:"var(--ff-mono)"}}>{r.active||"—"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -4321,7 +4321,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
         const TONE={good:"#7EC8A4",warn:"#F5A623",bad:"#E85D75",neutral:"var(--t2)"};
         return (
           <div style={{display:"flex",flexDirection:"column",gap:14}}>
-            <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:8,padding:"12px 16px",
+            <div style={{background:"var(--s1)",border:"1px solid var(--bd)",borderRadius:8,padding:"12px 16px",
               fontSize:"var(--fs-3)",color:"var(--t2)",lineHeight:1.6}}>
               {vista==="lender"?TX("scorecardLead"):vista==="product"?TX("productStrength"):TX("specLead")}
               <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:6}}>{TX("autoDerived")}</div>
@@ -4330,39 +4330,39 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
             <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
               {(isAssistant?["spec"]:["lender","product","spec"]).map(v=>(
                 <button key={v} className="hov" onClick={()=>setScView(v)}
-                  style={{background:scView===v?"#F5A623":"#21262D",color:scView===v?"#0D1117":"var(--t2)",
-                    border:"none",borderRadius:6,padding:"6px 14px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",
+                  style={{background:scView===v?"var(--gold)":"var(--s2)",color:scView===v?"var(--bg)":"var(--t2)",
+                    border:"none",borderRadius:6,padding:"6px 14px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",
                     fontWeight:500,cursor:"pointer"}}>
                   {v==="lender"?TX("byLender"):v==="product"?TX("byProduct"):TX("bySpecialty")}
                 </button>
               ))}
               {vista==="spec"&&specialtyCatalog().map(c=>(
                 <button key={c.category} className="hov" onClick={()=>{setScCat(c.category);setScSpec(null);}}
-                  style={{background:scCat===c.category?"#4A90D9":"#21262D",color:scCat===c.category?"#0D1117":"var(--t2)",
-                    border:"none",borderRadius:6,padding:"5px 11px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",cursor:"pointer"}}>
+                  style={{background:scCat===c.category?"var(--blue)":"var(--s2)",color:scCat===c.category?"var(--bg)":"var(--t2)",
+                    border:"none",borderRadius:6,padding:"5px 11px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",cursor:"pointer"}}>
                   {P(c.label)} · {c.lenders}
                 </button>
               ))}
               {vista==="product"&&productsWorked(files,{cutover:BARRETT_CUTOVER}).map(pw=>(
                 <button key={pw.product} className="hov" onClick={()=>setScProduct(pw.product)}
-                  style={{background:(scProduct||productsWorked(files,{cutover:BARRETT_CUTOVER})[0]?.product)===pw.product?"#4A90D9":"#21262D",
-                    color:(scProduct||productsWorked(files,{cutover:BARRETT_CUTOVER})[0]?.product)===pw.product?"#0D1117":"var(--t2)",
-                    border:"none",borderRadius:6,padding:"5px 11px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",cursor:"pointer"}}>
+                  style={{background:(scProduct||productsWorked(files,{cutover:BARRETT_CUTOVER})[0]?.product)===pw.product?"var(--blue)":"var(--s2)",
+                    color:(scProduct||productsWorked(files,{cutover:BARRETT_CUTOVER})[0]?.product)===pw.product?"var(--bg)":"var(--t2)",
+                    border:"none",borderRadius:6,padding:"5px 11px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",cursor:"pointer"}}>
                   {P(categoryLabel(pw.product))} · {pw.files}
                 </button>
               ))}
             </div>
 
             {vista==="lender"&&(sc.length===0?(
-              <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,
+              <div style={{background:"var(--s1)",border:"1px solid var(--bd)",borderRadius:10,
                 padding:"26px 16px",textAlign:"center",color:"var(--t3)",fontSize:"var(--fs-4)"}}>
                 {TX("scNoData")}
               </div>
             ):(
-              <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
+              <div style={{background:"var(--s1)",border:"1px solid var(--bd)",borderRadius:10,overflow:"hidden"}}>
                 <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
                   <thead>
-                    <tr style={{background:"#0D1117",borderBottom:"1px solid #30363D"}}>
+                    <tr style={{background:"var(--bg)",borderBottom:"1px solid var(--bd)"}}>
                       {[TX("scHeadLender"),TX("scHeadTouched"),TX("scHeadFunded"),TX("scHeadPull"),
                         TX("scHeadShare"),TX("scHeadExits"),TX("scHeadFault"),TX("scHeadDays"),TX("scHeadBps"),TX("scHeadVerdict")]
                         .map((h,i)=>(
@@ -4375,31 +4375,31 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                     {sc.map((r,i)=>{
                       const v=lenderVerdict(r); const c=TONE[v.tone];
                       return (
-                        <tr key={r.id} style={{borderBottom:"1px solid #21262D",
-                          background:i%2===0?"#0D1117":"#161B22"}}>
+                        <tr key={r.id} style={{borderBottom:"1px solid var(--s2)",
+                          background:i%2===0?"var(--bg)":"var(--s1)"}}>
                           <td style={{padding:"10px 12px",color:"var(--t1)"}}>
                             {r.name}
                             {r.compLost>0&&(
-                              <div style={{fontSize:"var(--fs-1)",color:"#E85D75"}}>
+                              <div style={{fontSize:"var(--fs-1)",color:"var(--bad)"}}>
                                 −${r.compLost.toLocaleString()} {TX("scCompLost")}
                               </div>
                             )}
                           </td>
-                          <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono"}}>{r.touched}</td>
-                          <td style={{padding:"10px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>{r.funded}</td>
-                          <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,
-                            fontSize:"var(--fs-6)",color:r.pullThrough>=80?"#7EC8A4":r.pullThrough>=50?"#F5A623":"#E85D75"}}>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"var(--ff-mono)"}}>{r.touched}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:"var(--ok)",fontFamily:"var(--ff-mono)"}}>{r.funded}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"var(--ff-num)",fontWeight:800,
+                            fontSize:"var(--fs-6)",color:r.pullThrough>=80?"var(--mint)":r.pullThrough>=50?"var(--gold)":"var(--bad)"}}>
                             {r.pullThrough!==null?r.pullThrough+"%":"—"}
                           </td>
-                          <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"DM Mono",
-                            color:r.sharePct>=40?"#F5A623":"var(--t2)"}}>{r.sharePct?r.sharePct+"%":"—"}</td>
-                          <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono"}}>{r.exits||"—"}</td>
-                          <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"DM Mono",
-                            color:r.exitsLender>0?"#E85D75":"var(--t3)"}}>
+                          <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"var(--ff-mono)",
+                            color:r.sharePct>=40?"var(--gold)":"var(--t2)"}}>{r.sharePct?r.sharePct+"%":"—"}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"var(--ff-mono)"}}>{r.exits||"—"}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"var(--ff-mono)",
+                            color:r.exitsLender>0?"var(--bad)":"var(--t3)"}}>
                             {r.exitsLender||"—"}{r.exitsLender>0&&r.faultRate!==null?` · ${r.faultRate}%`:""}
                           </td>
-                          <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono"}}>{r.avgDaysToClose??"—"}</td>
-                          <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono"}}>{r.avgBps??"—"}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"var(--ff-mono)"}}>{r.avgDaysToClose??"—"}</td>
+                          <td style={{padding:"10px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"var(--ff-mono)"}}>{r.avgBps??"—"}</td>
                           <td style={{padding:"10px 12px",color:c,fontSize:"var(--fs-3)"}}>{P(v)}</td>
                         </tr>
                       );
@@ -4413,50 +4413,50 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               const worked=productsWorked(files,{cutover:BARRETT_CUTOVER});
               const prod=scProduct||worked[0]?.product;
               if(!prod) return (
-                <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,
+                <div style={{background:"var(--s1)",border:"1px solid var(--bd)",borderRadius:10,
                   padding:"26px 16px",textAlign:"center",color:"var(--t3)",fontSize:"var(--fs-4)"}}>{TX("noProductData")}</div>
               );
               const list=productScorecard(files,prod,{cutover:BARRETT_CUTOVER});
               const tried=list.filter(x=>x.tried), untried=list.filter(x=>!x.tried).slice(0,12);
               const prodRow=(r,proven)=>(
                 <div key={r.lenderId} style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:10,
-                  padding:"9px 14px",borderBottom:"1px solid #21262D",fontSize:"var(--fs-3)"}}>
+                  padding:"9px 14px",borderBottom:"1px solid var(--s2)",fontSize:"var(--fs-3)"}}>
                   <span style={{color:proven?"var(--t1)":"var(--t2)",flex:1}}>{r.lenderName}</span>
                   {proven?(
                     <>
-                      <span style={{color:"var(--t2)",fontFamily:"DM Mono",fontSize:"var(--fs-3)"}}>
+                      <span style={{color:"var(--t2)",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)"}}>
                         {TX("closedOf",{a:r.funded,b:r.touched})}
                       </span>
-                      <span style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-5)",minWidth:48,textAlign:"right",
-                        color:r.pullThrough>=80?"#7EC8A4":r.pullThrough>=50?"#F5A623":"#E85D75"}}>
+                      <span style={{fontFamily:"var(--ff-num)",fontWeight:800,fontSize:"var(--fs-5)",minWidth:48,textAlign:"right",
+                        color:r.pullThrough>=80?"var(--mint)":r.pullThrough>=50?"var(--gold)":"var(--bad)"}}>
                         {r.pullThrough}%
                       </span>
-                      <span style={{color:r.exitsLender>0?"#E85D75":"var(--t3)",fontFamily:"DM Mono",
+                      <span style={{color:r.exitsLender>0?"var(--bad)":"var(--t3)",fontFamily:"var(--ff-mono)",
                         fontSize:"var(--fs-2)",minWidth:90,textAlign:"right"}}>
                         {r.exitsLender>0?TX("ownCall",{n:r.exitsLender}):""}
                       </span>
                     </>
                   ):null}
-                  <span style={{color:"var(--t3)",fontFamily:"DM Mono",fontSize:"var(--fs-3)",minWidth:56,textAlign:"right"}}>
+                  <span style={{color:"var(--t3)",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",minWidth:56,textAlign:"right"}}>
                     {r.avgBps?r.avgBps+" bps":"—"}
                   </span>
                 </div>
               );
               return (
                 <div style={{display:"flex",flexDirection:"column",gap:12}}>
-                  <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#F5A623"}}>
+                  <div style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--gold)"}}>
                     {TX("productQ",{p:P(categoryLabel(prod))})}
                   </div>
-                  <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
-                    <div style={{background:"#0D1117",padding:"8px 14px",fontSize:"var(--fs-2)",color:"#7EC8A4",
-                      letterSpacing:"1px",borderBottom:"1px solid #30363D"}}>{TX("proven")}</div>
+                  <div style={{background:"var(--s1)",border:"1px solid var(--bd)",borderRadius:10,overflow:"hidden"}}>
+                    <div style={{background:"var(--bg)",padding:"8px 14px",fontSize:"var(--fs-2)",color:"var(--mint)",
+                      letterSpacing:"1px",borderBottom:"1px solid var(--bd)"}}>{TX("proven")}</div>
                     {tried.length===0
                       ? <div style={{padding:"16px",color:"var(--t3)",fontSize:"var(--fs-3)"}}>—</div>
                       : tried.map(r=>prodRow(r,true))}
                   </div>
-                  <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
-                    <div style={{background:"#0D1117",padding:"8px 14px",fontSize:"var(--fs-2)",color:"var(--t3)",
-                      letterSpacing:"1px",borderBottom:"1px solid #21262D"}}>{TX("untried")}</div>
+                  <div style={{background:"var(--s1)",border:"1px solid var(--s2)",borderRadius:10,overflow:"hidden"}}>
+                    <div style={{background:"var(--bg)",padding:"8px 14px",fontSize:"var(--fs-2)",color:"var(--t3)",
+                      letterSpacing:"1px",borderBottom:"1px solid var(--s2)"}}>{TX("untried")}</div>
                     {untried.map(r=>prodRow(r,false))}
                     <div style={{padding:"9px 14px",fontSize:"var(--fs-2)",color:"var(--t3)",lineHeight:1.55}}>
                       {TX("offersNotProof")}
@@ -4487,16 +4487,16 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                     <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{label}</div>
                     {opts?(
                       <select value={d[k]??""} onChange={e=>set(e.target.value||null)}
-                        style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,color:"var(--t1)",
-                          padding:"5px 7px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",width:"100%"}}>
+                        style={{background:"var(--bg)",border:"1px solid var(--bd)",borderRadius:5,color:"var(--t1)",
+                          padding:"5px 7px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",width:"100%"}}>
                         <option value="">—</option>
                         {opts.map(o=><option key={o.v} value={o.v}>{o.l}</option>)}
                       </select>
                     ):(
                       <input value={d[k]??""} inputMode={type==="num"?"decimal":undefined}
                         onChange={e=>set(e.target.value)}
-                        style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,color:"var(--t1)",
-                          padding:"5px 7px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",width:"100%"}}/>
+                        style={{background:"var(--bg)",border:"1px solid var(--bd)",borderRadius:5,color:"var(--t1)",
+                          padding:"5px 7px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",width:"100%"}}/>
                     )}
                   </div>
                 );
@@ -4507,7 +4507,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 const sum=det?specDetailSummary(det,CURRENT_LANG,isDpa):null;
                 const open=dpaOpen===key;
                 return (
-                  <div key={key} style={{borderBottom:"1px solid #21262D"}}>
+                  <div key={key} style={{borderBottom:"1px solid var(--s2)"}}>
                     <div style={{display:"flex",alignItems:"baseline",gap:10,padding:"9px 14px",fontSize:"var(--fs-3)"}}>
                       <span style={{flex:1,color:l.tried?"var(--t1)":"var(--t2)"}}>
                         {l.name}
@@ -4516,7 +4516,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                             {"  "}{TX("alsoDoes")} {l.siblings.slice(0,3).map(x=>P(specialtyLabel(x))).join(", ")}
                           </span>
                         )}
-                        {sum&&<div style={{fontSize:"var(--fs-2)",color:"#7EC8A4",marginTop:2}}>
+                        {sum&&<div style={{fontSize:"var(--fs-2)",color:"var(--mint)",marginTop:2}}>
                           {sum}
                           {det?.updatedBy&&<span style={{color:"var(--t3)"}}>
                             {"  "}{TX("capturedBy",{who:String(det.updatedBy).split(" ")[0],d:det.updatedAt})}
@@ -4525,16 +4525,16 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                       </span>
                       {l.tried&&!isAssistant&&(
                         <>
-                          <span style={{color:"var(--t2)",fontFamily:"DM Mono",fontSize:"var(--fs-3)"}}>
+                          <span style={{color:"var(--t2)",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)"}}>
                             {TX("closedOf",{a:l.funded,b:l.touched})}
                           </span>
-                          <span style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-5)",minWidth:44,textAlign:"right",
-                            color:l.pullThrough>=80?"#7EC8A4":l.pullThrough>=50?"#F5A623":"#E85D75"}}>
+                          <span style={{fontFamily:"var(--ff-num)",fontWeight:800,fontSize:"var(--fs-5)",minWidth:44,textAlign:"right",
+                            color:l.pullThrough>=80?"var(--mint)":l.pullThrough>=50?"var(--gold)":"var(--bad)"}}>
                             {l.pullThrough}%
                           </span>
                         </>
                       )}
-                      <span style={{color:"var(--t3)",fontFamily:"DM Mono",fontSize:"var(--fs-3)",minWidth:54,textAlign:"right"}}>
+                      <span style={{color:"var(--t3)",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",minWidth:54,textAlign:"right"}}>
                         {l.bps?l.bps+" bps":"—"}
                       </span>
                       {(
@@ -4543,16 +4543,16 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                             setDpaDraft(open?null:{...emptySpecDetail(),...(det||{}),
                               states:(det?.states||[]).join(","),newNote:""});
                           }}
-                          style={{background:sum?"#21262D":"rgba(126,200,164,.12)",
-                            border:`1px solid ${sum?"#7EC8A4":"#7EC8A488"}`,
-                            borderRadius:5,color:"#7EC8A4",fontSize:"var(--fs-2)",padding:"4px 10px",
-                            cursor:"pointer",fontFamily:"DM Mono",whiteSpace:"nowrap"}}>
+                          style={{background:sum?"var(--s2)":"rgba(126,200,164,.12)",
+                            border:`1px solid ${sum?"var(--mint)":"#7EC8A488"}`,
+                            borderRadius:5,color:"var(--mint)",fontSize:"var(--fs-2)",padding:"4px 10px",
+                            cursor:"pointer",fontFamily:"var(--ff-mono)",whiteSpace:"nowrap"}}>
                           {open?"✕":(sum?TX("dpaEdit"):TX("dpaEmpty"))}
                         </button>
                       )}
                     </div>
                     {open&&(
-                      <div style={{padding:"11px 14px 14px",background:"#0D1117",borderTop:"1px solid #21262D"}}>
+                      <div style={{padding:"11px 14px 14px",background:"var(--bg)",borderTop:"1px solid var(--s2)"}}>
                         <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:8}}>
                           {TX("specDetailTitle")}
                         </div>
@@ -4577,7 +4577,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                               {TX("observations")}
                             </div>
                             {det.notes.slice().reverse().map((n,ni)=>(
-                              <div key={ni} style={{borderLeft:"2px solid #21262D",paddingLeft:9,marginBottom:6}}>
+                              <div key={ni} style={{borderLeft:"2px solid var(--s2)",paddingLeft:9,marginBottom:6}}>
                                 <div style={{fontSize:"var(--fs-1)",color:"var(--t3)"}}>
                                   {n.at}{n.by?" · "+String(n.by).split(" ")[0]:""}
                                 </div>
@@ -4589,8 +4589,8 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                         <input value={dpaDraft?.newNote??""}
                           onChange={e=>setDpaDraft({...dpaDraft,newNote:e.target.value})}
                           placeholder={TX("addObservation")}
-                          style={{background:"#161B22",border:"1px solid #30363D",borderRadius:5,color:"var(--t1)",
-                            padding:"6px 9px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",width:"100%",marginBottom:9}}/>
+                          style={{background:"var(--s1)",border:"1px solid var(--bd)",borderRadius:5,color:"var(--t1)",
+                            padding:"6px 9px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",width:"100%",marginBottom:9}}/>
                         <button className="hov" onClick={()=>{
                             const d={...dpaDraft};
                             d.fixesRate = d.fixesRate==="true"?true:d.fixesRate==="false"?false:null;
@@ -4598,8 +4598,8 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                             onSaveDpa&&onSaveDpa(setSpecDetail(dpaDetails,l.lenderId,cat.category,spec,d,profile.name));
                             setDpaOpen(null); setDpaDraft(null);
                           }}
-                          style={{background:"#7EC8A4",color:"#0D1117",border:"none",borderRadius:6,
-                            padding:"7px 16px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",fontWeight:500,cursor:"pointer"}}>
+                          style={{background:"var(--mint)",color:"var(--bg)",border:"none",borderRadius:6,
+                            padding:"7px 16px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",fontWeight:500,cursor:"pointer"}}>
                           {TX("dpaSave")}
                         </button>
                         <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:7,lineHeight:1.5}}>{TX("specDetailHint")}</div>
@@ -4613,16 +4613,16 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                   <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
                     {cat.specialties.map(sp=>(
                       <button key={sp.id} className="hov" onClick={()=>setScSpec(sp.id)}
-                        style={{background:spec===sp.id?"#7EC8A4":"transparent",
-                          border:`1px solid ${spec===sp.id?"#7EC8A4":sp.lenders<=12?"#F5A62366":"#30363D"}`,
-                          color:spec===sp.id?"#0D1117":sp.lenders<=12?"#F5A623":"var(--t2)",
-                          borderRadius:5,padding:"4px 9px",fontSize:"var(--fs-2)",fontFamily:"DM Mono",cursor:"pointer"}}>
+                        style={{background:spec===sp.id?"var(--mint)":"transparent",
+                          border:`1px solid ${spec===sp.id?"var(--mint)":sp.lenders<=12?"#F5A62366":"var(--bd)"}`,
+                          color:spec===sp.id?"var(--bg)":sp.lenders<=12?"var(--gold)":"var(--t2)",
+                          borderRadius:5,padding:"4px 9px",fontSize:"var(--fs-2)",fontFamily:"var(--ff-mono)",cursor:"pointer"}}>
                         {P(specialtyLabel(sp.id))} <span style={{opacity:.6}}>{sp.lenders}</span>
                       </button>
                     ))}
                   </div>
                   <div style={{display:"flex",alignItems:"baseline",gap:10,flexWrap:"wrap"}}>
-                    <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#7EC8A4"}}>
+                    <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--mint)"}}>
                       {TX("specQ",{p:P(specialtyLabel(spec))})}
                     </span>
                     <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>{list.length} lenders</span>
@@ -4631,21 +4631,21 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                   </div>
                   {(
                     <div style={{background:"rgba(126,200,164,.08)",border:"1px solid #7EC8A455",
-                      borderRadius:8,padding:"10px 14px",fontSize:"var(--fs-3)",color:"#7EC8A4",lineHeight:1.55}}>
+                      borderRadius:8,padding:"10px 14px",fontSize:"var(--fs-3)",color:"var(--mint)",lineHeight:1.55}}>
                       <span className="act">{isDpa?TX("dpaFillHere"):TX("specFillHere")}</span>
                     </div>
                   )}
                   {thin&&(
                     <div style={{background:"rgba(245,166,35,.08)",border:"1px solid #F5A62344",borderRadius:8,
-                      padding:"10px 14px",fontSize:"var(--fs-3)",color:"#F5A623",lineHeight:1.55}}>{TX("specThin")}</div>
+                      padding:"10px 14px",fontSize:"var(--fs-3)",color:"var(--gold)",lineHeight:1.55}}>{TX("specThin")}</div>
                   )}
-                  <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
-                    {tried.length>0&&<div style={{background:"#0D1117",padding:"8px 14px",fontSize:"var(--fs-2)",
-                      color:"#7EC8A4",letterSpacing:"1px",borderBottom:"1px solid #30363D"}}>{TX("proven")}</div>}
+                  <div style={{background:"var(--s1)",border:"1px solid var(--bd)",borderRadius:10,overflow:"hidden"}}>
+                    {tried.length>0&&<div style={{background:"var(--bg)",padding:"8px 14px",fontSize:"var(--fs-2)",
+                      color:"var(--mint)",letterSpacing:"1px",borderBottom:"1px solid var(--bd)"}}>{TX("proven")}</div>}
                     {tried.map(l=>row(l))}
-                    {rest.length>0&&<div style={{background:"#0D1117",padding:"8px 14px",fontSize:"var(--fs-2)",
-                      color:"var(--t3)",letterSpacing:"1px",borderTop:tried.length?"1px solid #30363D":"none",
-                      borderBottom:"1px solid #21262D"}}>{TX("untried")}</div>}
+                    {rest.length>0&&<div style={{background:"var(--bg)",padding:"8px 14px",fontSize:"var(--fs-2)",
+                      color:"var(--t3)",letterSpacing:"1px",borderTop:tried.length?"1px solid var(--bd)":"none",
+                      borderBottom:"1px solid var(--s2)"}}>{TX("untried")}</div>}
                     {rest.slice(0,30).map(l=>row(l))}
                     {rest.length>30&&<div style={{padding:"9px 14px",fontSize:"var(--fs-2)",color:"var(--t3)"}}>
                       +{rest.length-30}</div>}
@@ -4654,7 +4654,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               );
             })()}
 
-            <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:8,padding:"11px 16px",
+            <div style={{background:"var(--s1)",border:"1px solid var(--bd)",borderRadius:8,padding:"11px 16px",
               fontSize:"var(--fs-2)",color:"var(--t3)",lineHeight:1.6}}>
               {TX("scFaultNote")}
             </div>
@@ -4665,32 +4665,32 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
       {/* OVERRIDE & PAYROLL — modelo Barrett por % del NET */}
       {prodTab==="override"&&isAdmin&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
         <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center",
-          background:"#161B22",border:"1px solid #30363D",borderRadius:8,padding:"10px 14px"}}>
+          background:"var(--s1)",border:"1px solid var(--bd)",borderRadius:8,padding:"10px 14px"}}>
           <span style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px"}}>{TX("year")}</span>
           <select value={compYear} onChange={e=>setCompYear(Number(e.target.value))}
-            style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,color:"var(--t1)",
-              padding:"5px 8px",fontSize:"var(--fs-3)",fontFamily:"DM Mono"}}>
+            style={{background:"var(--bg)",border:"1px solid var(--bd)",borderRadius:5,color:"var(--t1)",
+              padding:"5px 8px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)"}}>
             {[1,2,3].map(y=><option key={y} value={y}>Año {y} · Paulo {(teamLeadShare(y)*100).toFixed(0)}%</option>)}
           </select>
           <span style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginLeft:8}}>{TX("filesPerMo")}</span>
           <input type="number" value={filesMo} onChange={e=>setFilesMo(Math.max(1,Number(e.target.value)||1))}
-            style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,color:"var(--t1)",
-              padding:"5px 8px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",width:58}}/>
+            style={{background:"var(--bg)",border:"1px solid var(--bd)",borderRadius:5,color:"var(--t1)",
+              padding:"5px 8px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",width:58}}/>
           <span style={{fontSize:"var(--fs-2)",color:"var(--t2)"}}>
             {TX("costPerFile")} ${Math.round(branchCostPerFile(filesMo)).toLocaleString()} · {TX("seniorCap")} {(ladderCeiling(filesMo,9174,compYear)*100).toFixed(1)}% · {TX("since")} {BARRETT_CUTOVER}
           </span>
         </div>
 
         {justClaimed&&(
-          <div style={{background:"rgba(74,144,217,.1)",border:"1px solid #4A90D9",borderRadius:8,
-            padding:"9px 14px",fontSize:"var(--fs-3)",color:"#4A90D9"}}>
+          <div style={{background:"rgba(74,144,217,.1)",border:"1px solid var(--blue)",borderRadius:8,
+            padding:"9px 14px",fontSize:"var(--fs-3)",color:"var(--blue)"}}>
             Reclamado para el corte {payrollPeriodLabel(currentPayrollPeriod(),CURRENT_LANG)} — {justClaimed}
           </div>
         )}
 
         {losWithoutCompRule(files,COMP_ROSTER).length>0&&(
           <div style={{background:"rgba(232,93,117,.08)",border:"1px solid #E85D7555",borderRadius:8,
-            padding:"10px 14px",fontSize:"var(--fs-3)",color:"#E85D75",lineHeight:1.5}}>
+            padding:"10px 14px",fontSize:"var(--fs-3)",color:"var(--bad)",lineHeight:1.5}}>
             Sin regla de compensación: {losWithoutCompRule(files,COMP_ROSTER).join(", ")}.
             Sus archivos se reparten por volumen derivado, que puede no ser su acuerdo real.
           </div>
@@ -4707,21 +4707,21 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           ].map(s=>(
             <div key={s.label} style={{background:"#1a1000",border:`1px solid ${s.color}44`,borderTop:`3px solid ${s.color}`,borderRadius:8,padding:"12px"}}>
               <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:3}}>{s.label}</div>
-              <div style={{fontFamily:"Syne",fontWeight:800,fontSize:s.small?"var(--fs-5)":"var(--fs-9)",color:s.color}}>{s.value}</div>
+              <div style={{fontFamily:"var(--ff-num)",fontWeight:800,fontSize:s.small?"var(--fs-5)":"var(--fs-9)",color:s.color}}>{s.value}</div>
               <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",marginTop:2}}>{s.sub}</div>
             </div>
           ))}
         </div>
 
-        <div style={{background:"#161B22",border:"1px solid #F5A62333",borderRadius:10,overflow:"hidden"}}>
-          <div style={{background:"#1a1000",borderBottom:"2px solid #F5A623",padding:"10px 16px",
+        <div style={{background:"var(--s1)",border:"1px solid #F5A62333",borderRadius:10,overflow:"hidden"}}>
+          <div style={{background:"#1a1000",borderBottom:"2px solid var(--gold)",padding:"10px 16px",
             display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#F5A623",letterSpacing:"1px"}}>{TX("nextRequest")}</span>
+            <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--gold)",letterSpacing:"1px"}}>{TX("nextRequest")}</span>
             <span style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
               <span style={{fontSize:"var(--fs-2)",color:"var(--t2)"}}>{TX("claimOptional")}</span>
               <button className="hov" disabled={picked.size===0} onClick={()=>setShowRequest(true)}
-                style={{background:picked.size?"#F5A623":"#21262D",color:picked.size?"#0D1117":"var(--t3)",
-                  border:"none",borderRadius:6,padding:"7px 14px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",
+                style={{background:picked.size?"var(--gold)":"var(--s2)",color:picked.size?"var(--bg)":"var(--t3)",
+                  border:"none",borderRadius:6,padding:"7px 14px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",
                   fontWeight:500,cursor:picked.size?"pointer":"not-allowed"}}>
                 {TX("generateRequest")} · {picked.size}
               </button>
@@ -4734,12 +4734,12 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           ):(
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
               <thead>
-                <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
+                <tr style={{background:"var(--s1)",borderBottom:"1px solid var(--bd)"}}>
                   <th style={{padding:"8px 6px 8px 12px",width:24}}>
                     <input type="checkbox"
                       checked={payroll.rows.filter(r=>r.ready).length>0&&picked.size===payroll.rows.filter(r=>r.ready).length}
                       onChange={e=>setPicked(e.target.checked?new Set(payroll.rows.filter(r=>r.ready).map(r=>r.file.id)):new Set())}
-                      style={{accentColor:"#F5A623",cursor:"pointer"}}/>
+                      style={{accentColor:"var(--gold)",cursor:"pointer"}}/>
                   </th>
                   {[TX("client"),TX("fundedOn"),TX("cut"),"LO",TX("split"),"NET",TX("yourShare"),""].map((h,i)=>(
                     <th key={i} style={{padding:"8px 12px",textAlign:i<4?"left":"center",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
@@ -4748,44 +4748,44 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               </thead>
               <tbody>
                 {payroll.rows.map((r,i)=>(
-                  <tr key={r.file.id||i} style={{borderBottom:"1px solid #21262D",background:r.stale?"rgba(232,93,117,.06)":(i%2===0?"#0D1117":"#161B22")}}>
+                  <tr key={r.file.id||i} style={{borderBottom:"1px solid var(--s2)",background:r.stale?"rgba(232,93,117,.06)":(i%2===0?"var(--bg)":"var(--s1)")}}>
                     <td style={{padding:"9px 6px 9px 12px"}}>
                       <input type="checkbox" checked={picked.has(r.file.id)} disabled={!r.ready}
                         onChange={()=>{const n=new Set(picked); n.has(r.file.id)?n.delete(r.file.id):n.add(r.file.id); setPicked(n);}}
-                        style={{accentColor:"#F5A623",cursor:r.ready?"pointer":"not-allowed",opacity:r.ready?1:.3}}/>
+                        style={{accentColor:"var(--gold)",cursor:r.ready?"pointer":"not-allowed",opacity:r.ready?1:.3}}/>
                     </td>
                     <td style={{padding:"9px 12px",color:"var(--t1)"}}>
                       {r.file.borrower}
                       {!r.ready&&(
-                        <div style={{fontSize:"var(--fs-1)",color:"#E85D75",marginTop:2}}>
+                        <div style={{fontSize:"var(--fs-1)",color:"var(--bad)",marginTop:2}}>
                           {TX("blocked")} · {TX("blockedWhy")} {r.blockers.map(x=>P(x)).join(" · ")}
                         </div>
                       )}
                       {r.kind==="referral"&&(
-                        <div style={{fontSize:"var(--fs-1)",color:"#A78BFA"}}>
+                        <div style={{fontSize:"var(--fs-1)",color:"var(--violet)"}}>
                           {TX("referralFeeOf",{b:r.referral.bps})}{r.referral.banker?` · ${r.referral.banker}`:""}
                           {r.branchPct>0? + " · " + TX("branchPctOf",{n:(r.branchPct*100).toFixed(0)}):" · "+TX("ofTheLo")}
                         </div>
                       )}
                     </td>
-                    <td style={{padding:"9px 12px",color:"var(--t2)",fontFamily:"DM Mono",fontSize:"var(--fs-3)"}}>
+                    <td style={{padding:"9px 12px",color:"var(--t2)",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)"}}>
                       {r.kind==="referral"?r.referral.date:fundedDate(r.file)}
                     </td>
-                    <td style={{padding:"9px 12px",fontSize:"var(--fs-2)",color:r.stale?"#E85D75":"var(--t2)"}}>
+                    <td style={{padding:"9px 12px",fontSize:"var(--fs-2)",color:r.stale?"var(--bad)":"var(--t2)"}}>
                       {payrollPeriodLabel(r.period)}{r.stale?" · "+TX("carried"):""}
                     </td>
                     <td style={{padding:"9px 12px",color:"var(--t2)",fontSize:"var(--fs-3)"}}>
                       {r.file.lo||"—"}
-                      <span style={{color:r.rosterMissing?"#E85D75":"var(--t3)"}}>
+                      <span style={{color:r.rosterMissing?"var(--bad)":"var(--t3)"}}>
                         {" · "}{r.kind==="referral"?TX("referredShort"):r.rosterMissing?TX("noCompRule"):P(r.split.stageMeta)}
                       </span>
                     </td>
-                    <td style={{padding:"9px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"DM Mono",fontSize:"var(--fs-3)"}}>
+                    <td style={{padding:"9px 12px",textAlign:"center",color:"var(--t2)",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)"}}>
                       {r.kind==="referral"?"—":`${(r.split.shares.lo*100).toFixed(1)}%${r.split.floorApplied?" ⚑":""}`}
                     </td>
-                    <td style={{padding:"9px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>${r.split.net.toLocaleString()}</td>
+                    <td style={{padding:"9px 12px",textAlign:"center",color:"var(--ok)",fontFamily:"var(--ff-mono)"}}>${r.split.net.toLocaleString()}</td>
                     <td style={{padding:"9px 12px",textAlign:"center"}}>
-                      <span style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-6)",color:"#F5A623"}}>${r.split.toBM.toLocaleString()}</span>
+                      <span style={{fontFamily:"var(--ff-num)",fontWeight:800,fontSize:"var(--fs-6)",color:"var(--gold)"}}>${r.split.toBM.toLocaleString()}</span>
                       {r.split.isBM&&<div style={{fontSize:"var(--fs-1)",color:"var(--t3)"}}>{TX("yourLoSplit")}</div>}
                     </td>
                     <td style={{padding:"9px 12px",textAlign:"center"}}>
@@ -4794,17 +4794,17 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                           setJustClaimed(`${r.file.borrower} · $${r.split.toBM.toLocaleString()}`);
                           setTimeout(()=>setJustClaimed(null),3500);
                         }}
-                        style={{background:"#21262D",border:"1px solid #4A90D9",borderRadius:4,color:"#4A90D9",
-                          fontSize:"var(--fs-2)",padding:"4px 9px",cursor:"pointer",fontFamily:"DM Mono"}}>{TX("claim")}</button>
+                        style={{background:"var(--s2)",border:"1px solid var(--blue)",borderRadius:4,color:"var(--blue)",
+                          fontSize:"var(--fs-2)",padding:"4px 9px",cursor:"pointer",fontFamily:"var(--ff-mono)"}}>{TX("claim")}</button>
                     </td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
-                <tr style={{background:"#1a1000",borderTop:"2px solid #F5A623"}}>
-                  <td colSpan={6} style={{padding:"10px 12px",fontFamily:"Syne",fontWeight:700,color:"#F5A623"}}>{TX("totalFiles",{n:payroll.count})}</td>
-                  <td style={{padding:"10px 12px",textAlign:"center",color:"#06D6A0",fontFamily:"DM Mono"}}>${payroll.net.toLocaleString()}</td>
-                  <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-7)",color:"#F5A623"}}>${payroll.toBM.toLocaleString()}</td>
+                <tr style={{background:"#1a1000",borderTop:"2px solid var(--gold)"}}>
+                  <td colSpan={6} style={{padding:"10px 12px",fontFamily:"var(--ff-title)",fontWeight:700,color:"var(--gold)"}}>{TX("totalFiles",{n:payroll.count})}</td>
+                  <td style={{padding:"10px 12px",textAlign:"center",color:"var(--ok)",fontFamily:"var(--ff-mono)"}}>${payroll.net.toLocaleString()}</td>
+                  <td style={{padding:"10px 12px",textAlign:"center",fontFamily:"var(--ff-num)",fontWeight:800,fontSize:"var(--fs-7)",color:"var(--gold)"}}>${payroll.toBM.toLocaleString()}</td>
                   <td/>
                 </tr>
               </tfoot>
@@ -4821,33 +4821,33 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           return (
             <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.82)",zIndex:130,display:"flex",
               alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setShowRequest(false)}>
-              <div className="fi" onClick={e=>e.stopPropagation()} style={{background:"#161B22",
+              <div className="fi" onClick={e=>e.stopPropagation()} style={{background:"var(--s1)",
                 border:"1px solid #F5A62355",borderRadius:12,width:"100%",maxWidth:700,
                 maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column"}}>
-                <div style={{padding:"16px 22px 12px",borderBottom:"1px solid #21262D"}}>
-                  <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-7)",color:"#F5A623"}}>{TX("payrollRequest")}</div>
+                <div style={{padding:"16px 22px 12px",borderBottom:"1px solid var(--s2)"}}>
+                  <div style={{fontFamily:"var(--ff-title)",fontWeight:800,fontSize:"var(--fs-7)",color:"var(--gold)"}}>{TX("payrollRequest")}</div>
                   <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:3}}>
                     {req.periodLabel} · {TX("filesTotal",{n:req.fileCount,d:req.total.toLocaleString()})}
                   </div>
                 </div>
                 <div style={{flex:1,overflow:"auto",padding:"14px 22px"}}>
-                  <pre style={{margin:0,fontFamily:"'IBM Plex Mono','DM Mono',monospace",fontSize:"var(--fs-3)",
+                  <pre style={{margin:0,fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",
                     color:"var(--t1)",whiteSpace:"pre",lineHeight:1.65}}>{text}</pre>
                 </div>
                 {reqError&&(
-                  <div style={{margin:"0 22px",background:"rgba(232,93,117,.1)",border:"1px solid #E85D75",
-                    borderRadius:6,padding:"9px 12px",fontSize:"var(--fs-3)",color:"#E85D75"}}>
+                  <div style={{margin:"0 22px",background:"rgba(232,93,117,.1)",border:"1px solid var(--bad)",
+                    borderRadius:6,padding:"9px 12px",fontSize:"var(--fs-3)",color:"var(--bad)"}}>
                     {TX("couldNotClose",{e:reqError})}
                   </div>
                 )}
-                <div style={{padding:"12px 22px",borderTop:"1px solid #21262D",display:"flex",gap:8,flexWrap:"wrap"}}>
+                <div style={{padding:"12px 22px",borderTop:"1px solid var(--s2)",display:"flex",gap:8,flexWrap:"wrap"}}>
                   <button className="hov" onClick={()=>{
                       try{ navigator.clipboard?.writeText(text); }catch(err){ setReqError(TX("errClipboard")); }
                       setCopied(true); setTimeout(()=>setCopied(false),2200);
                     }}
-                    style={{flex:1,background:"#21262D",color:copied?"#7EC8A4":"var(--t2)",borderRadius:7,
-                      padding:"10px 0",fontFamily:"DM Mono",fontSize:"var(--fs-3)",
-                      border:`1px solid ${copied?"#7EC8A4":"#30363D"}`,cursor:"pointer"}}>
+                    style={{flex:1,background:"var(--s2)",color:copied?"var(--mint)":"var(--t2)",borderRadius:7,
+                      padding:"10px 0",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",
+                      border:`1px solid ${copied?"var(--mint)":"var(--bd)"}`,cursor:"pointer"}}>
                     {copied?TX("copied"):TX("copyText")}
                   </button>
                   <button className="hov" onClick={()=>{
@@ -4890,13 +4890,13 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                         setReqError(`al ${step} — ${String(err&&err.message||err)}${where?" · "+where:""}`);
                       }
                     }}
-                    style={{flex:2,background:"#F5A623",color:"#0D1117",borderRadius:7,padding:"10px 0",
-                      fontFamily:"DM Mono",fontSize:"var(--fs-3)",fontWeight:500,border:"none",cursor:"pointer"}}>
+                    style={{flex:2,background:"var(--gold)",color:"var(--bg)",borderRadius:7,padding:"10px 0",
+                      fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",fontWeight:500,border:"none",cursor:"pointer"}}>
                     {TX("alreadySent")}
                   </button>
                   <button className="hov" onClick={()=>setShowRequest(false)}
                     style={{flex:1,background:"transparent",color:"var(--t2)",borderRadius:7,padding:"10px 0",
-                      fontFamily:"DM Mono",fontSize:"var(--fs-3)",border:"1px solid #30363D",cursor:"pointer"}}>CERRAR</button>
+                      fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",border:"1px solid var(--bd)",cursor:"pointer"}}>CERRAR</button>
                 </div>
                 <div style={{padding:"0 22px 14px",fontSize:"var(--fs-1)",color:"var(--t3)"}}>
                   <span className="act">{TX("sendYourself")}</span>
@@ -4908,10 +4908,10 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
 
 
         {(payrollLog||[]).length>0&&(
-          <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,overflow:"hidden"}}>
-            <div style={{background:"#0D1117",borderBottom:"1px solid #30363D",padding:"10px 16px",
+          <div style={{background:"var(--s1)",border:"1px solid var(--bd)",borderRadius:10,overflow:"hidden"}}>
+            <div style={{background:"var(--bg)",borderBottom:"1px solid var(--bd)",padding:"10px 16px",
               display:"flex",justifyContent:"space-between",alignItems:"baseline",flexWrap:"wrap",gap:8}}>
-              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--t2)",letterSpacing:"1px"}}>
+              <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--t2)",letterSpacing:"1px"}}>
                 REQUESTS ENVIADOS
               </span>
               <span style={{fontSize:"var(--fs-2)",color:"var(--t3)"}}>
@@ -4919,7 +4919,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               </span>
             </div>
             {[...payrollLog].reverse().map(entry=>(
-              <div key={entry.id} style={{borderBottom:"1px solid #21262D",padding:"10px 16px"}}>
+              <div key={entry.id} style={{borderBottom:"1px solid var(--s2)",padding:"10px 16px"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8,flexWrap:"wrap"}}>
                   <span style={{fontSize:"var(--fs-3)",color:"var(--t1)"}}>
                     {entry.periodLabel}
@@ -4927,19 +4927,19 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                   </span>
                   <span style={{display:"flex",gap:8,alignItems:"baseline"}}>
                     <span style={{fontSize:"var(--fs-2)",color:"var(--t2)"}}>{TX("nFiles",{n:entry.fileCount})}</span>
-                    <span style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-5)",color:"#F5A623"}}>
+                    <span style={{fontFamily:"var(--ff-num)",fontWeight:800,fontSize:"var(--fs-5)",color:"var(--gold)"}}>
                       ${(entry.total||0).toLocaleString()}
                     </span>
                     {onDeletePayrollLog&&(
                       <button className="hov" onClick={()=>{
                           if(window.confirm(TX("deleteLogEntry"))) onDeletePayrollLog(entry.id);
                         }}
-                        style={{background:"transparent",border:"1px solid #30363D",borderRadius:4,color:"var(--t3)",
-                          fontSize:"var(--fs-1)",padding:"3px 7px",cursor:"pointer",fontFamily:"DM Mono"}}>✕</button>
+                        style={{background:"transparent",border:"1px solid var(--bd)",borderRadius:4,color:"var(--t3)",
+                          fontSize:"var(--fs-1)",padding:"3px 7px",cursor:"pointer",fontFamily:"var(--ff-mono)"}}>✕</button>
                     )}
                     <button className="hov" onClick={()=>setOpenLog(openLog===entry.id?null:entry.id)}
-                      style={{background:"#21262D",border:"1px solid #30363D",borderRadius:4,color:"var(--t2)",
-                        fontSize:"var(--fs-1)",padding:"3px 8px",cursor:"pointer",fontFamily:"DM Mono"}}>
+                      style={{background:"var(--s2)",border:"1px solid var(--bd)",borderRadius:4,color:"var(--t2)",
+                        fontSize:"var(--fs-1)",padding:"3px 8px",cursor:"pointer",fontFamily:"var(--ff-mono)"}}>
                       {openLog===entry.id?TX("close"):TX("view")}
                     </button>
                   </span>
@@ -4949,12 +4949,12 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
                 </div>
                 {openLog===entry.id&&(
                   <div style={{marginTop:9}}>
-                    <pre style={{margin:0,background:"#0D1117",border:"1px solid #21262D",borderRadius:6,
-                      padding:"11px 13px",fontFamily:"'IBM Plex Mono','DM Mono',monospace",fontSize:"var(--fs-3)",
+                    <pre style={{margin:0,background:"var(--bg)",border:"1px solid var(--s2)",borderRadius:6,
+                      padding:"11px 13px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",
                       color:"var(--t2)",whiteSpace:"pre",overflowX:"auto",lineHeight:1.6}}>{entry.text}</pre>
                     <button className="hov" onClick={()=>{navigator.clipboard?.writeText(entry.text);}}
-                      style={{marginTop:6,background:"#21262D",border:"1px solid #30363D",borderRadius:5,
-                        color:"var(--t2)",fontSize:"var(--fs-2)",padding:"5px 12px",cursor:"pointer",fontFamily:"DM Mono"}}>
+                      style={{marginTop:6,background:"var(--s2)",border:"1px solid var(--bd)",borderRadius:5,
+                        color:"var(--t2)",fontSize:"var(--fs-2)",padding:"5px 12px",cursor:"pointer",fontFamily:"var(--ff-mono)"}}>
                       COPIAR DE NUEVO
                     </button>
                   </div>
@@ -4967,7 +4967,7 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           </div>
         )}
 
-        <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:10,padding:"12px 16px"}}>
+        <div style={{background:"var(--s1)",border:"1px solid var(--bd)",borderRadius:10,padding:"12px 16px"}}>
           <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:8}}>
             {TX("netSplitYear",{y:compYear,n:filesMo})}
           </div>
@@ -4976,15 +4976,15 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
               const demo=loanSplit({loan:417000,bps:220,loStage:k,isBM:k==="bm"},
                 {year:compYear,filesPerMonth:filesMo,trainerAssigned:k==="newbie"||k==="intermediate"});
               return (
-                <div key={k} style={{background:"#0D1117",border:"1px solid #21262D",borderRadius:6,padding:"9px 11px"}}>
+                <div key={k} style={{background:"var(--bg)",border:"1px solid var(--s2)",borderRadius:6,padding:"9px 11px"}}>
                   <div style={{fontSize:"var(--fs-3)",color:"var(--t1)",fontWeight:500}}>{P(LO_STAGES[k])}</div>
-                  <div style={{fontSize:"var(--fs-2)",color:"var(--t2)",fontFamily:"DM Mono",marginTop:4,lineHeight:1.6}}>
+                  <div style={{fontSize:"var(--fs-2)",color:"var(--t2)",fontFamily:"var(--ff-mono)",marginTop:4,lineHeight:1.6}}>
                     LO {(demo.shares.lo*100).toFixed(1)}%
                     {demo.shares.trainer>0?` · trainer ${(demo.shares.trainer*100).toFixed(1)}%`:""}
                     <br/>{demo.isBM
                       ? TX("youKeep",{n:(demo.shares.lo*100).toFixed(0)})
                       : TX("branchKeeps",{n:(demo.shares.branch*100).toFixed(1)})} · Paulo {(demo.shares.paulo*100).toFixed(0)}%
-                    <br/><span style={{color:demo.margin<0?"#E85D75":demo.isBM?"#F5A623":"#7EC8A4"}}>
+                    <br/><span style={{color:demo.margin<0?"var(--bad)":demo.isBM?"var(--gold)":"var(--mint)"}}>
                       {demo.isBM
                         ? TX("yourIncomePerFile",{d:demo.margin.toLocaleString()})
                         : TX("marginPerFile",{d:demo.margin.toLocaleString()})}
@@ -5000,14 +5000,14 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
           </div>
         </div>
 
-        <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
-          <div style={{background:"#1a2a3a",borderBottom:"2px solid #4A90D9",padding:"10px 16px",display:"flex",alignItems:"center",gap:10}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#4A90D9",letterSpacing:"1px"}}>{PL("MY PERSONAL LO COMP")} — {profile.name.toUpperCase()}</span>
+        <div style={{background:"var(--s1)",border:"1px solid var(--s2)",borderRadius:10,overflow:"hidden"}}>
+          <div style={{background:"#1a2a3a",borderBottom:"2px solid var(--blue)",padding:"10px 16px",display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--blue)",letterSpacing:"1px"}}>{PL("MY PERSONAL LO COMP")} — {profile.name.toUpperCase()}</span>
             <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>{PL("your files only")} · {BPS_RATE} {PL("bps default")}</span>
           </div>
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
             <thead>
-              <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
+              <tr style={{background:"var(--s1)",borderBottom:"1px solid var(--bd)"}}>
                 {["BORROWER","PROGRAM","LOAN AMOUNT","CLOSED","BPS","GROSS COMP"].map(h=>PL(h)).map((h,i)=>(
                   <th key={i} style={{padding:"8px 14px",textAlign:"left",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                 ))}
@@ -5015,22 +5015,22 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
             </thead>
             <tbody>
               {myClosedFiles.map((f,i)=>(
-                <tr key={f.id} style={{borderBottom:"1px solid #21262D",background:i%2===0?"#0D1117":"#161B22"}}>
-                  <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"var(--t1)",fontSize:"var(--fs-3)"}}>{f.borrower}</td>
+                <tr key={f.id} style={{borderBottom:"1px solid var(--s2)",background:i%2===0?"var(--bg)":"var(--s1)"}}>
+                  <td style={{padding:"10px 14px",fontFamily:"var(--ff-title)",fontWeight:700,color:"var(--t1)",fontSize:"var(--fs-3)"}}>{f.borrower}</td>
                   <td style={{padding:"10px 14px",color:"var(--t2)",fontSize:"var(--fs-3)"}}>{f.type}</td>
-                  <td style={{padding:"10px 14px",color:"#06D6A0",fontWeight:500}}>${f.loan.toLocaleString()}</td>
+                  <td style={{padding:"10px 14px",color:"var(--ok)",fontWeight:500}}>${f.loan.toLocaleString()}</td>
                   <td style={{padding:"10px 14px",color:"var(--t3)"}}>{f.closedAt||f.closing}</td>
                   <td style={{padding:"10px 14px",color:"var(--t2)",fontSize:"var(--fs-3)"}}>{fileCompBps(f,BPS_RATE)}</td>
-                  <td style={{padding:"10px 14px",color:"#4A90D9",fontWeight:500,fontFamily:"Syne"}}>${myComp(f).toLocaleString()}</td>
+                  <td style={{padding:"10px 14px",color:"var(--blue)",fontWeight:500,fontFamily:"var(--ff-num)"}}>${myComp(f).toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>
             {myClosedFiles.length>0&&(
               <tfoot>
-                <tr style={{background:"#0a1a2a",borderTop:"2px solid #4A90D9"}}>
-                  <td colSpan={4} style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"#4A90D9"}}>{PL("MY TOTAL PERSONAL COMP")}</td>
+                <tr style={{background:"#0a1a2a",borderTop:"2px solid var(--blue)"}}>
+                  <td colSpan={4} style={{padding:"10px 14px",fontFamily:"var(--ff-title)",fontWeight:700,color:"var(--blue)"}}>{PL("MY TOTAL PERSONAL COMP")}</td>
                   <td style={{padding:"10px 14px",color:"var(--t3)",fontSize:"var(--fs-3)"}}>{BPS_RATE} bps avg</td>
-                  <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-7)",color:"#4A90D9"}}>${myTotalComp.toLocaleString()}</td>
+                  <td style={{padding:"10px 14px",fontFamily:"var(--ff-num)",fontWeight:800,fontSize:"var(--fs-7)",color:"var(--blue)"}}>${myTotalComp.toLocaleString()}</td>
                 </tr>
               </tfoot>
             )}
@@ -5041,14 +5041,14 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
 
       {/* MY COMP TAB */}
       {prodTab==="mycomp"&&(isLO||isAdmin)&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
-        <div style={{background:"#161B22",border:"1px solid #21262D",borderRadius:10,overflow:"hidden"}}>
-          <div style={{background:"#1a2a3a",borderBottom:"2px solid #4A90D9",padding:"10px 16px",display:"flex",alignItems:"center",gap:10}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#4A90D9",letterSpacing:"1px"}}>{PL("MY PERSONAL COMP")} — {profile.name.toUpperCase()}</span>
+        <div style={{background:"var(--s1)",border:"1px solid var(--s2)",borderRadius:10,overflow:"hidden"}}>
+          <div style={{background:"#1a2a3a",borderBottom:"2px solid var(--blue)",padding:"10px 16px",display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--blue)",letterSpacing:"1px"}}>{PL("MY PERSONAL COMP")} — {profile.name.toUpperCase()}</span>
             <span style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>{PL("your closed files only")} · {BPS_RATE} {PL("bps default")}</span>
           </div>
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:"var(--fs-4)"}}>
             <thead>
-              <tr style={{background:"#161B22",borderBottom:"1px solid #30363D"}}>
+              <tr style={{background:"var(--s1)",borderBottom:"1px solid var(--bd)"}}>
                 {["BORROWER","PROGRAM","LOAN AMOUNT","CLOSED","BPS","GROSS COMP"].map(h=>PL(h)).map((h,i)=>(
                   <th key={i} style={{padding:"8px 14px",textAlign:"left",fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",fontWeight:500}}>{h}</th>
                 ))}
@@ -5056,22 +5056,22 @@ function ProductionDashboard({profile, files, closed, active, referredOut, inbou
             </thead>
             <tbody>
               {myClosedFiles.map((f,i)=>(
-                <tr key={f.id} style={{borderBottom:"1px solid #21262D",background:i%2===0?"#0D1117":"#161B22"}}>
-                  <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"var(--t1)",fontSize:"var(--fs-3)"}}>{f.borrower}</td>
+                <tr key={f.id} style={{borderBottom:"1px solid var(--s2)",background:i%2===0?"var(--bg)":"var(--s1)"}}>
+                  <td style={{padding:"10px 14px",fontFamily:"var(--ff-title)",fontWeight:700,color:"var(--t1)",fontSize:"var(--fs-3)"}}>{f.borrower}</td>
                   <td style={{padding:"10px 14px",color:"var(--t2)",fontSize:"var(--fs-3)"}}>{f.type}</td>
-                  <td style={{padding:"10px 14px",color:"#06D6A0",fontWeight:500}}>${f.loan.toLocaleString()}</td>
+                  <td style={{padding:"10px 14px",color:"var(--ok)",fontWeight:500}}>${f.loan.toLocaleString()}</td>
                   <td style={{padding:"10px 14px",color:"var(--t3)"}}>{f.closedAt||f.closing}</td>
                   <td style={{padding:"10px 14px",color:"var(--t2)",fontSize:"var(--fs-3)"}}>{fileCompBps(f,BPS_RATE)}</td>
-                  <td style={{padding:"10px 14px",color:"#4A90D9",fontWeight:500,fontFamily:"Syne"}}>${myComp(f).toLocaleString()}</td>
+                  <td style={{padding:"10px 14px",color:"var(--blue)",fontWeight:500,fontFamily:"var(--ff-num)"}}>${myComp(f).toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>
             {myClosedFiles.length>0&&(
               <tfoot>
-                <tr style={{background:"#0a1a2a",borderTop:"2px solid #4A90D9"}}>
-                  <td colSpan={4} style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:700,color:"#4A90D9"}}>{PL("MY TOTAL COMP")}</td>
+                <tr style={{background:"#0a1a2a",borderTop:"2px solid var(--blue)"}}>
+                  <td colSpan={4} style={{padding:"10px 14px",fontFamily:"var(--ff-title)",fontWeight:700,color:"var(--blue)"}}>{PL("MY TOTAL COMP")}</td>
                   <td style={{padding:"10px 14px",color:"var(--t3)",fontSize:"var(--fs-3)"}}>{BPS_RATE} bps avg</td>
-                  <td style={{padding:"10px 14px",fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-7)",color:"#4A90D9"}}>${myTotalComp.toLocaleString()}</td>
+                  <td style={{padding:"10px 14px",fontFamily:"var(--ff-num)",fontWeight:800,fontSize:"var(--fs-7)",color:"var(--blue)"}}>${myTotalComp.toLocaleString()}</td>
                 </tr>
               </tfoot>
             )}
@@ -5142,15 +5142,15 @@ function ContingencyStrip({file}){
     const late=act&&act.startBy<today();
     return (
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8,fontSize:"var(--fs-2)"}}>
-        <span style={{fontFamily:"DM Mono",color:done?"var(--t3)":c,whiteSpace:"nowrap"}}>
+        <span style={{fontFamily:"var(--ff-mono)",color:done?"var(--t3)":c,whiteSpace:"nowrap"}}>
           <b style={{fontWeight:500,letterSpacing:".5px"}}>{s.short}</b>{" "}
-          <span style={{color:done?"#30363D":"var(--t2)"}}>{mon(s.date)}</span>
+          <span style={{color:done?"var(--bd)":"var(--t2)"}}>{mon(s.date)}</span>
           {done&&<span style={{marginLeft:4,fontSize:"var(--fs-1)"}}>
             {s.outcome==="met"?"✓":s.outcome==="waived"?"⚑":s.outcome==="missed"?"✕":"—"}</span>}
         </span>
         {!done&&(
-          <span style={{fontFamily:"DM Mono",color:late?"#E85D75":"var(--t2)",textAlign:"right",whiteSpace:"nowrap"}}>
-            {act&&<span style={{color:late?"#E85D75":"var(--t2)"}}>
+          <span style={{fontFamily:"var(--ff-mono)",color:late?"var(--bad)":"var(--t2)",textAlign:"right",whiteSpace:"nowrap"}}>
+            {act&&<span style={{color:late?"var(--bad)":"var(--t2)"}}>
               {ACTION_VERB[actionStage]||"start"} by {mon(act.startBy)} · </span>}
             <span style={{color:c,fontWeight:500}}>
               {s.daysLeft<0?`${Math.abs(s.daysLeft)}d late`:`${s.daysLeft}d`}</span>
@@ -5161,20 +5161,20 @@ function ContingencyStrip({file}){
   };
 
   return (
-    <div style={{borderTop:"1px solid #21262D",paddingTop:8,display:"flex",flexDirection:"column",gap:5}}>
+    <div style={{borderTop:"1px solid var(--s2)",paddingTop:8,display:"flex",flexDirection:"column",gap:5}}>
       {row(st.appraisal,"Appraisal Ordered")}
       {row(st.loan,"Submitted to UW")}
       {(coe||st.ctc?.date)&&(
-        <div style={{display:"flex",gap:10,fontSize:"var(--fs-2)",color:"var(--t3)",fontFamily:"DM Mono",flexWrap:"wrap",
-          borderTop:"1px solid #161B22",paddingTop:5}}>
+        <div style={{display:"flex",gap:10,fontSize:"var(--fs-2)",color:"var(--t3)",fontFamily:"var(--ff-mono)",flexWrap:"wrap",
+          borderTop:"1px solid var(--s1)",paddingTop:5}}>
           {st.ctc?.date&&<span>CTC <span style={{color:LEVEL_COLOR[st.ctc.level]}}>{mon(st.ctc.date)}</span></span>}
           {coe&&<span>COE <span style={{color:LEVEL_COLOR[st.coe.level]}}>{mon(coe)}</span></span>}
           {cd&&<span title={TX("cdIssueTitle")}>
-            CD by <span style={{color:"#BD65E8"}}>{mon(cd)}</span></span>}
+            CD by <span style={{color:"var(--purple)"}}>{mon(cd)}</span></span>}
         </div>
       )}
       {conflicts.length>0&&(
-        <div style={{fontSize:"var(--fs-2)",fontFamily:"DM Mono",color:"#E85D75"}}>
+        <div style={{fontSize:"var(--fs-2)",fontFamily:"var(--ff-mono)",color:"var(--bad)"}}>
           ⚠ {conflicts.length} {(conflicts.length===1?TX("conflicts"):TX("conflictsPl")).toLowerCase()}
         </div>
       )}
@@ -5198,10 +5198,10 @@ function LenderChangeModal({file,profile,onClose,onConfirm}){
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.8)",zIndex:120,display:"flex",
       alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
-      <div className="fi" onClick={e=>e.stopPropagation()} style={{background:"#161B22",border:"1px solid #30363D",
+      <div className="fi" onClick={e=>e.stopPropagation()} style={{background:"var(--s1)",border:"1px solid var(--bd)",
         borderRadius:12,width:"100%",maxWidth:460,maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column"}}>
-        <div style={{padding:"18px 22px 14px",borderBottom:"1px solid #21262D"}}>
-          <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-7)",color:"var(--t1)"}}>{TX("changeLenderTitle")}</div>
+        <div style={{padding:"18px 22px 14px",borderBottom:"1px solid var(--s2)"}}>
+          <div style={{fontFamily:"var(--ff-title)",fontWeight:800,fontSize:"var(--fs-7)",color:"var(--t1)"}}>{TX("changeLenderTitle")}</div>
           <div style={{fontSize:"var(--fs-3)",color:"var(--t2)",marginTop:3}}>{file.borrower} · {from?from.name:"sin lender"}</div>
         </div>
 
@@ -5217,7 +5217,7 @@ function LenderChangeModal({file,profile,onClose,onConfirm}){
           </div>
 
           {cost&&(
-            <div style={{background:"#0D1117",border:`1px solid ${cost.tooLate?"#E85D75":"#21262D"}`,
+            <div style={{background:"var(--bg)",border:`1px solid ${cost.tooLate?"var(--bad)":"var(--s2)"}`,
               borderRadius:6,padding:"10px 11px",display:"flex",flexDirection:"column",gap:7}}>
               <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px"}}>{TX("whatItCosts")}</div>
 
@@ -5225,7 +5225,7 @@ function LenderChangeModal({file,profile,onClose,onConfirm}){
                 <div>
                   <div style={{display:"flex",justifyContent:"space-between",fontSize:"var(--fs-3)"}}>
                     <span style={{color:"var(--t2)"}}>{TX("compensation")}</span>
-                    <span style={{color:cost.comp.bps<0?"#E85D75":cost.comp.bps>0?"#7EC8A4":"var(--t2)",fontFamily:"DM Mono"}}>
+                    <span style={{color:cost.comp.bps<0?"var(--bad)":cost.comp.bps>0?"var(--mint)":"var(--t2)",fontFamily:"var(--ff-mono)"}}>
                       {cost.comp.bps>0?"+":""}{cost.comp.bps} bps · {cost.comp.dollars<0?"−":""}${Math.abs(cost.comp.dollars).toLocaleString()}
                     </span>
                   </div>
@@ -5238,7 +5238,7 @@ function LenderChangeModal({file,profile,onClose,onConfirm}){
               )}
 
               {cost.lockLost&&(
-                <div style={{fontSize:"var(--fs-3)",color:"#F5A623",lineHeight:1.45}}>
+                <div style={{fontSize:"var(--fs-3)",color:"var(--gold)",lineHeight:1.45}}>
                   El lock no se transfiere. Sueltas {cost.lockedRate}% y vuelves a lockear
                   al mercado del día. Si la tasa subió, la paga el cliente.
                 </div>
@@ -5246,17 +5246,17 @@ function LenderChangeModal({file,profile,onClose,onConfirm}){
 
               <div style={{display:"flex",justifyContent:"space-between",fontSize:"var(--fs-3)"}}>
                 <span style={{color:"var(--t2)"}}>{TX("landsAt")}</span>
-                <span style={{color:"#F5A623",fontFamily:"DM Mono"}}>{cost.landsAt}</span>
+                <span style={{color:"var(--gold)",fontFamily:"var(--ff-mono)"}}>{cost.landsAt}</span>
               </div>
               <div style={{display:"flex",justifyContent:"space-between",fontSize:"var(--fs-3)"}}>
                 <span style={{color:"var(--t2)"}}>{TX("reunderwrite")}</span>
-                <span style={{color:"var(--t2)",fontFamily:"DM Mono"}}>{TX("daysN",{n:cost.days.best+"–"+cost.days.worst})}</span>
+                <span style={{color:"var(--t2)",fontFamily:"var(--ff-mono)"}}>{TX("daysN",{n:cost.days.best+"–"+cost.days.worst})}</span>
               </div>
               <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",lineHeight:1.5}}>
                 {TX("travelsHint")}</div>
 
               {cost.tooLate&&(
-                <div style={{fontSize:"var(--fs-3)",color:"#E85D75",background:"rgba(232,93,117,.08)",
+                <div style={{fontSize:"var(--fs-3)",color:"var(--bad)",background:"rgba(232,93,117,.08)",
                   border:"1px solid #E85D7544",borderRadius:5,padding:"7px 9px",lineHeight:1.45}}>
                   En el peor caso este cambio ya no llega al cierre del {cost.viability.coe}.
                   La fecha tope para decidir era el {cost.viability.decideByWorst}.
@@ -5276,7 +5276,7 @@ function LenderChangeModal({file,profile,onClose,onConfirm}){
               ))}
             </select>
             {reasonId&&(
-              <div style={{fontSize:"var(--fs-2)",color:isLenderFault(reasonId)?"#F5A623":"var(--t3)",marginTop:5,lineHeight:1.45}}>
+              <div style={{fontSize:"var(--fs-2)",color:isLenderFault(reasonId)?"var(--gold)":"var(--t3)",marginTop:5,lineHeight:1.45}}>
                 {PN(REASON_CATEGORIES[reasonById(reasonId).cat])}
                 {isLenderFault(reasonId)?" · cuenta contra este lender en el scorecard":""}
               </div>
@@ -5290,17 +5290,17 @@ function LenderChangeModal({file,profile,onClose,onConfirm}){
           </div>
         </div>
 
-        <div style={{padding:"12px 22px",borderTop:"1px solid #21262D",display:"flex",gap:8}}>
+        <div style={{padding:"12px 22px",borderTop:"1px solid var(--s2)",display:"flex",gap:8}}>
           <button className="hov" disabled={!ready}
             onClick={()=>onConfirm({lenderId:toId,reasonId,notes,by:profile?.name||null})}
-            style={{flex:2,background:ready?"#F5A623":"#21262D",color:ready?"#0D1117":"#30363D",borderRadius:7,
-              padding:"10px 0",fontFamily:"DM Mono",fontSize:"var(--fs-4)",fontWeight:500,border:"none",
+            style={{flex:2,background:ready?"var(--gold)":"var(--s2)",color:ready?"var(--bg)":"var(--bd)",borderRadius:7,
+              padding:"10px 0",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-4)",fontWeight:500,border:"none",
               cursor:ready?"pointer":"not-allowed"}}>
             {TX("moveTo")} {to?to.name.toUpperCase().slice(0,16):"…"}
           </button>
           <button className="hov" onClick={onClose}
-            style={{flex:1,background:"#21262D",color:"var(--t2)",borderRadius:7,padding:"10px 0",
-              fontFamily:"DM Mono",fontSize:"var(--fs-4)",border:"none",cursor:"pointer"}}>CANCELAR</button>
+            style={{flex:1,background:"var(--s2)",color:"var(--t2)",borderRadius:7,padding:"10px 0",
+              fontFamily:"var(--ff-mono)",fontSize:"var(--fs-4)",border:"none",cursor:"pointer"}}>CANCELAR</button>
         </div>
       </div>
     </div>
@@ -5318,7 +5318,7 @@ function BackupPanel({file,backupId,setBackupId,onChangeLender}){
   const lc=v.level==="critical"?"#E85D75":v.level==="warn"?"#F5A623":"#7EC8A4";
 
   return (
-    <div style={{borderTop:"1px solid #21262D",paddingTop:11,display:"flex",flexDirection:"column",gap:8}}>
+    <div style={{borderTop:"1px solid var(--s2)",paddingTop:11,display:"flex",flexDirection:"column",gap:8}}>
       <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px"}}>{TX("backupLender")}</div>
       <select value={backupId} onChange={e=>setBackupId(e.target.value)} style={fs}>
         <option value="">— ninguno —</option>
@@ -5326,7 +5326,7 @@ function BackupPanel({file,backupId,setBackupId,onChangeLender}){
       </select>
 
       {b&&cost&&(
-        <div style={{fontSize:"var(--fs-2)",fontFamily:"DM Mono",color:cost.bps<0?"#E85D75":"#7EC8A4"}}>
+        <div style={{fontSize:"var(--fs-2)",fontFamily:"var(--ff-mono)",color:cost.bps<0?"var(--bad)":"var(--mint)"}}>
           {cost.bps===0
             ? TX("movingFree",{name:b.name,n:cost.toCeiling})
             : TX("movingCosts",{b:cost.bps,d:Math.abs(cost.dollars).toLocaleString()})}
@@ -5337,22 +5337,22 @@ function BackupPanel({file,backupId,setBackupId,onChangeLender}){
       )}
 
       {b&&v.ready&&(
-        <div style={{background:"#0D1117",border:`1px solid ${lc}44`,borderRadius:6,padding:"9px 10px"}}>
-          <div style={{fontSize:"var(--fs-3)",color:lc,fontFamily:"DM Mono"}}>
+        <div style={{background:"var(--bg)",border:`1px solid ${lc}44`,borderRadius:6,padding:"9px 10px"}}>
+          <div style={{fontSize:"var(--fs-3)",color:lc,fontFamily:"var(--ff-mono)"}}>
             {v.window==="impossible"
               ? TX("noLongerMakesIt",{d:v.decideByBest})
               : v.window==="best_case_only"
                 ? TX("onlyIfNothingFails",{d:v.decideByBest})
                 : TX("safeUntil",{d:v.decideByWorst,n:v.daysToWorst})}
           </div>
-          <div style={{marginTop:6,display:"flex",flexDirection:"column",gap:2,fontSize:"var(--fs-2)",fontFamily:"DM Mono"}}>
-            <div style={{color:v.window==="safe"?"#7EC8A4":"var(--t3)"}}>
+          <div style={{marginTop:6,display:"flex",flexDirection:"column",gap:2,fontSize:"var(--fs-2)",fontFamily:"var(--ff-mono)"}}>
+            <div style={{color:v.window==="safe"?"var(--mint)":"var(--t3)"}}>
               {TX("untilArrivesAnyway",{d:v.decideByWorst,n:v.worstDays})}
             </div>
-            <div style={{color:v.window==="best_case_only"?"#F5A623":"var(--t3)"}}>
+            <div style={{color:v.window==="best_case_only"?"var(--gold)":"var(--t3)"}}>
               {TX("betweenOnlyIfClean",{a:v.decideByWorst,b:v.decideByBest,n:v.bestDays})}
             </div>
-            <div style={{color:v.window==="impossible"?"#E85D75":"var(--t3)"}}>
+            <div style={{color:v.window==="impossible"?"var(--bad)":"var(--t3)"}}>
               {TX("afterNoMakes",{d:v.decideByBest})}
             </div>
           </div>
@@ -5360,7 +5360,7 @@ function BackupPanel({file,backupId,setBackupId,onChangeLender}){
             {TX("countedBackFromCd",{d:v.cdDeadline})}
           </div>
           {v.expiresBeforeContingency&&(
-            <div style={{fontSize:"var(--fs-2)",color:"#F5A623",marginTop:6,lineHeight:1.45}}>
+            <div style={{fontSize:"var(--fs-2)",color:"var(--gold)",marginTop:6,lineHeight:1.45}}>
               {TX("cushionBefore",{n:v.gapDays,d:v.loanContingency})}
             </div>
           )}
@@ -5368,21 +5368,21 @@ function BackupPanel({file,backupId,setBackupId,onChangeLender}){
       )}
 
       <button className="hov" onClick={onChangeLender} disabled={!file.lenderId}
-        style={{background:"rgba(245,166,35,.1)",color:file.lenderId?"#F5A623":"#30363D",borderRadius:6,
-          padding:"8px 0",fontFamily:"DM Mono",fontSize:"var(--fs-3)",border:`1px solid ${file.lenderId?"#F5A623":"#21262D"}`,
+        style={{background:"rgba(245,166,35,.1)",color:file.lenderId?"var(--gold)":"var(--bd)",borderRadius:6,
+          padding:"8px 0",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",border:`1px solid ${file.lenderId?"var(--gold)":"var(--s2)"}`,
           cursor:file.lenderId?"pointer":"not-allowed"}}>{TX("changeLender")}</button>
 
       {(file.lenderHistory||[]).length>0&&(
         <div style={{marginTop:2}}>
           <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>
             HISTORIAL · {lenderChangeCount(file)} cambio{lenderChangeCount(file)===1?"":"s"}
-            {lenderFaultChanges(file)>0&&<span style={{color:"#F5A623"}}> · {lenderFaultChanges(file)} por el lender</span>}
+            {lenderFaultChanges(file)>0&&<span style={{color:"var(--gold)"}}> · {lenderFaultChanges(file)} por el lender</span>}
           </div>
           {(file.lenderHistory||[]).slice().reverse().map((h,i)=>(
             <div key={i} style={{fontSize:"var(--fs-2)",color:"var(--t2)",marginBottom:5,lineHeight:1.5}}>
               <span style={{color:"var(--t3)"}}>{h.at}</span>{" · "}
               <span style={{color:"var(--t2)"}}>{h.fromName||"—"} → {h.toName}</span>
-              {h.compDeltaDollars!=null&&<span style={{color:h.compDeltaBps<0?"#E85D75":"#7EC8A4"}}>
+              {h.compDeltaDollars!=null&&<span style={{color:h.compDeltaBps<0?"var(--bad)":"var(--mint)"}}>
                 {" · "}{h.compDeltaBps>0?"+":""}{h.compDeltaBps} bps</span>}
               <div style={{color:"var(--t3)",fontSize:"var(--fs-2)"}}>
                 {h.reasonId?P(reasonById(h.reasonId)):"sin motivo"}
@@ -5453,7 +5453,7 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
     <div style={{background:"rgba(6,214,160,.04)",border:"1px solid #06D6A033",borderRadius:8,
       padding:14,display:"flex",flexDirection:"column",gap:10}}>
       <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#06D6A0",letterSpacing:"1px"}}>
+        <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--ok)",letterSpacing:"1px"}}>
           {isAdmin?TX("fileComp"):TX("yourComp")}
         </span>
         <span style={{marginLeft:"auto",fontSize:"var(--fs-1)",color:"var(--t3)"}}>{TX("savesWithSave")}</span>
@@ -5463,20 +5463,20 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
         <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>{TX("clientOrigin")}</div>
         {isAdmin?(
           <select value={origin} onChange={e=>setOrigin(e.target.value)}
-            style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"var(--t1)",
-              padding:"6px 9px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",width:"100%"}}>
+            style={{background:"var(--bg)",border:"1px solid var(--bd)",borderRadius:6,color:"var(--t1)",
+              padding:"6px 9px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",width:"100%"}}>
             {LEAD_ORIGINS.map(o=><option key={o.id} value={o.id}>{P(o)}</option>)}
           </select>
         ):(
           <div style={{fontSize:"var(--fs-3)",color:"var(--t2)"}}>{P(leadOrigin(origin))||"—"}</div>
         )}
         {pay.split.inHouseApplied&&(
-          <div style={{fontSize:"var(--fs-2)",color:"#F5A623",marginTop:4}}>
+          <div style={{fontSize:"var(--fs-2)",color:"var(--gold)",marginTop:4}}>
             Lead de la sucursal · {(IN_HOUSE_REDUCTION*100).toFixed(0)} puntos menos que producción propia
           </div>
         )}
         {pay.split.leadPending&&isAdmin&&(
-          <div style={{fontSize:"var(--fs-2)",color:"#BD65E8",marginTop:4}}>
+          <div style={{fontSize:"var(--fs-2)",color:"var(--purple)",marginTop:4}}>
             {TX("leadPending")}
           </div>
         )}
@@ -5490,10 +5490,10 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
           trampa: al poner 0 desaparecía el renglón, y con él el campo para
           volver a ponerlo. Un Conventional no lo ve nunca, que es correcto. */}
       {financedFeeMeta(draft)&&(
-        <div style={{borderTop:"1px solid #21262D",paddingTop:9,fontSize:"var(--fs-3)"}}>
+        <div style={{borderTop:"1px solid var(--s2)",paddingTop:9,fontSize:"var(--fs-3)"}}>
           <div style={{display:"flex",justifyContent:"space-between",color:"var(--t2)",marginBottom:3}}>
             <span>{TX("baseLoan")}</span>
-            <span style={{fontFamily:"DM Mono"}}>${(Number(draft.loan)||0).toLocaleString()}</span>
+            <span style={{fontFamily:"var(--ff-mono)"}}>${(Number(draft.loan)||0).toLocaleString()}</span>
           </div>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,marginBottom:3}}>
             <span style={{color:"var(--t2)"}}>+ {P(financedFeeMeta(draft))}</span>
@@ -5502,31 +5502,31 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
                 <input value={feePct} inputMode="decimal" placeholder="0"
                   title={TX("financedHint")}
                   onChange={e=>setFeePct(e.target.value.replace(/[^\d.]/g,""))}
-                  style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:4,color:"var(--t2)",
-                    padding:"2px 5px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",width:44,textAlign:"right"}}/>
+                  style={{background:"var(--bg)",border:"1px solid var(--bd)",borderRadius:4,color:"var(--t2)",
+                    padding:"2px 5px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",width:44,textAlign:"right"}}/>
               ):<span style={{color:"var(--t3)",fontSize:"var(--fs-3)"}}>{financedFeePct(draft)}</span>}
               <span style={{color:"var(--t3)",fontSize:"var(--fs-2)"}}>%</span>
-              <span style={{color:"var(--t2)",fontFamily:"DM Mono",minWidth:74,textAlign:"right"}}>
+              <span style={{color:"var(--t2)",fontFamily:"var(--ff-mono)",minWidth:74,textAlign:"right"}}>
                 ${financedFeeAmount(draft).toLocaleString()}
               </span>
             </span>
           </div>
           <div style={{display:"flex",justifyContent:"space-between",color:"var(--t2)",
-            borderTop:"1px solid #21262D",paddingTop:5}}>
+            borderTop:"1px solid var(--s2)",paddingTop:5}}>
             <span>{TX("compBasis")}</span>
-            <span style={{fontFamily:"DM Mono"}}>${compBasisAmount(draft).toLocaleString()}</span>
+            <span style={{fontFamily:"var(--ff-mono)"}}>${compBasisAmount(draft).toLocaleString()}</span>
           </div>
           {isAdmin&&<div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:5,lineHeight:1.5}}>{TX("financedHint")}</div>}
         </div>
       )}
 
-      <div style={{display:"flex",justifyContent:"space-between",fontSize:"var(--fs-4)",borderTop:"1px solid #21262D",paddingTop:9}}>
+      <div style={{display:"flex",justifyContent:"space-between",fontSize:"var(--fs-4)",borderTop:"1px solid var(--s2)",paddingTop:9}}>
         <span style={{color:"var(--t2)"}}>{TX("grossComm")}{isAdmin?` · ${fileCompBps(draft)} bps`:""}
-          {effBps!==null&&effBps!==Number(file.bps)?<span style={{color:"#F5A623"}}> · sin guardar</span>:null}</span>
-        <span style={{color:"var(--t1)",fontFamily:"DM Mono"}}>${pay.gross.toLocaleString()}</span>
+          {effBps!==null&&effBps!==Number(file.bps)?<span style={{color:"var(--gold)"}}> · sin guardar</span>:null}</span>
+        <span style={{color:"var(--t1)",fontFamily:"var(--ff-mono)"}}>${pay.gross.toLocaleString()}</span>
       </div>
 
-      <div style={{borderTop:"1px solid #21262D",paddingTop:8}}>
+      <div style={{borderTop:"1px solid var(--s2)",paddingTop:8}}>
         <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:6}}>
           {TX("adjustments")}
         </div>
@@ -5534,13 +5534,13 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
           <div key={fee.id} style={{display:"flex",alignItems:"center",gap:8,marginBottom:5}}>
             <input type="checkbox" checked={fee.on} disabled={!isAdmin}
               onChange={e=>setFees(fees.map((x,j)=>j===i?{...x,on:e.target.checked}:x))}
-              style={{accentColor:"#E85D75",cursor:isAdmin?"pointer":"not-allowed"}}/>
+              style={{accentColor:"var(--bad)",cursor:isAdmin?"pointer":"not-allowed"}}/>
             <span style={{fontSize:"var(--fs-3)",color:fee.on?"var(--t1)":"var(--t3)",flex:1}}>{P(fee)}</span>
             <input inputMode="numeric" value={fee.amount} disabled={!isAdmin||!fee.on}
               onChange={e=>setFees(fees.map((x,j)=>j===i?{...x,amount:Number(e.target.value.replace(/[^\d]/g,""))||0}:x))}
-              style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,
-                color:fee.on?"#E85D75":"#30363D",padding:"4px 7px",fontSize:"var(--fs-3)",
-                fontFamily:"DM Mono",width:76,textAlign:"right"}}/>
+              style={{background:"var(--bg)",border:"1px solid var(--bd)",borderRadius:5,
+                color:fee.on?"var(--bad)":"var(--bd)",padding:"4px 7px",fontSize:"var(--fs-3)",
+                fontFamily:"var(--ff-mono)",width:76,textAlign:"right"}}/>
           </div>
         ))}
         {extras.map((e,i)=>(
@@ -5549,18 +5549,18 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
               onClick={()=>setExtras(extras.map((x,j)=>j===i?{...x,kind:x.kind==="fee"?"credit":"fee"}:x))}
               title={e.kind==="fee"?TX("toCredit"):TX("toFee")}
               style={{background:"transparent",border:"none",width:15,padding:0,
-                color:ADJUSTMENT_KINDS[e.kind].color,fontSize:"var(--fs-6)",fontFamily:"DM Mono",
+                color:ADJUSTMENT_KINDS[e.kind].color,fontSize:"var(--fs-6)",fontFamily:"var(--ff-mono)",
                 cursor:isAdmin?"pointer":"default"}}>{e.kind==="fee"?"−":"+"}</button>
             <input value={e.label} disabled={!isAdmin} placeholder={e.kind==="credit"?TX("creditName"):TX("adjName")}
               onChange={ev=>setExtras(extras.map((x,j)=>j===i?{...x,label:ev.target.value}:x))}
-              style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:5,color:"var(--t1)",
-                padding:"4px 7px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",flex:1}}/>
+              style={{background:"var(--bg)",border:"1px solid var(--bd)",borderRadius:5,color:"var(--t1)",
+                padding:"4px 7px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",flex:1}}/>
             <input inputMode="numeric" value={e.amount} disabled={!isAdmin}
               onChange={ev=>setExtras(extras.map((x,j)=>j===i?{...x,amount:Number(ev.target.value.replace(/[^\d]/g,""))||0}:x))}
-              style={{background:"#0D1117",borderRadius:5,
-                border:`1px solid ${e.kind==="credit"?"#7EC8A455":"#30363D"}`,
+              style={{background:"var(--bg)",borderRadius:5,
+                border:`1px solid ${e.kind==="credit"?"#7EC8A455":"var(--bd)"}`,
                 color:ADJUSTMENT_KINDS[e.kind].color,
-                padding:"4px 7px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",width:76,textAlign:"right"}}/>
+                padding:"4px 7px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",width:76,textAlign:"right"}}/>
             {isAdmin&&(
               <button className="hov" onClick={()=>setExtras(extras.filter((_,j)=>j!==i))}
                 style={{background:"transparent",border:"none",color:"var(--t3)",fontSize:"var(--fs-5)",
@@ -5571,8 +5571,8 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
         {isAdmin&&(
           <button className="hov"
             onClick={()=>setExtras([...extras,{id:`custom_${Date.now()}`,label:"",amount:0,kind:"fee"}])}
-            style={{background:"transparent",border:"1px dashed #30363D",borderRadius:5,color:"var(--t2)",
-              fontSize:"var(--fs-2)",fontFamily:"DM Mono",padding:"5px 0",width:"100%",cursor:"pointer",marginTop:2}}>
+            style={{background:"transparent",border:"1px dashed var(--bd)",borderRadius:5,color:"var(--t2)",
+              fontSize:"var(--fs-2)",fontFamily:"var(--ff-mono)",padding:"5px 0",width:"100%",cursor:"pointer",marginTop:2}}>
             {TX("otherAdj")}
           </button>
         )}
@@ -5582,12 +5582,12 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
       </div>
 
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",
-        borderTop:"1px solid #21262D",paddingTop:8}}>
+        borderTop:"1px solid var(--s2)",paddingTop:8}}>
         <span style={{fontSize:"var(--fs-4)",color:"var(--t1)",fontWeight:500}}>NET</span>
-        <span style={{fontSize:"var(--fs-6)",color:"#06D6A0",fontFamily:"DM Mono"}}>${pay.net.toLocaleString()}</span>
+        <span style={{fontSize:"var(--fs-6)",color:"var(--ok)",fontFamily:"var(--ff-mono)"}}>${pay.net.toLocaleString()}</span>
       </div>
       {unnamed&&(
-        <div style={{fontSize:"var(--fs-2)",color:"#E85D75"}}>
+        <div style={{fontSize:"var(--fs-2)",color:"var(--bad)"}}>
           {TX("unnamedAdj")}
         </div>
       )}
@@ -5599,7 +5599,7 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
         </div>
       )}
 
-      <div style={{borderTop:"1px solid #21262D",paddingTop:8}}>
+      <div style={{borderTop:"1px solid var(--s2)",paddingTop:8}}>
         <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:6}}>
           {isAdmin?TX("distribution"):TX("yourCompShort")}
         </div>
@@ -5610,11 +5610,11 @@ function PayoutPanel({file,profile,onDraft,allFiles,pendingBps}){
           return (
             <div key={r.id} style={{marginBottom:6}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8}}>
-                <span style={{fontSize:"var(--fs-3)",color:own?"#06D6A0":"var(--t2)"}}>
+                <span style={{fontSize:"var(--fs-3)",color:own?"var(--ok)":"var(--t2)"}}>
                   {r.who}<span style={{color:"var(--t3)"}}> · {(r.pct*100).toFixed(1)}%</span>
                 </span>
-                <span style={{fontFamily:"Syne",fontWeight:800,fontSize:own?"var(--fs-6)":"var(--fs-5)",
-                  color:own?"#06D6A0":"var(--t1)"}}>${r.amount.toLocaleString()}</span>
+                <span style={{fontFamily:"var(--ff-num)",fontWeight:800,fontSize:own?"var(--fs-6)":"var(--fs-5)",
+                  color:own?"var(--ok)":"var(--t1)"}}>${r.amount.toLocaleString()}</span>
               </div>
             </div>
           );
@@ -5636,30 +5636,30 @@ function LenderStrip({file}){
   const lc=ls.level==="critical"?"#E85D75":ls.level==="warn"?"#F5A623":ls.meta.color;
 
   return (
-    <div style={{background:"rgba(74,144,217,.06)",border:`1px solid ${conf.some(c=>c.sev==="critical")?"#E85D7555":"#30363D"}`,
+    <div style={{background:"rgba(74,144,217,.06)",border:`1px solid ${conf.some(c=>c.sev==="critical")?"#E85D7555":"var(--bd)"}`,
       borderRadius:6,padding:"7px 9px",marginTop:9,display:"flex",flexDirection:"column",gap:4}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8}}>
-        <span style={{fontSize:"var(--fs-3)",color:l?"#4A90D9":"var(--t3)",fontFamily:"DM Mono",fontWeight:500,
+        <span style={{fontSize:"var(--fs-3)",color:l?"var(--blue)":"var(--t3)",fontFamily:"var(--ff-mono)",fontWeight:500,
           overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
           {lenderNameOf(file)||"sin lender"}
         </span>
         <span style={{display:"flex",gap:6,alignItems:"baseline",flexShrink:0}}>
-          {file.rate&&<span style={{fontSize:"var(--fs-3)",color:"var(--t1)",fontFamily:"DM Mono"}}>{Number(file.rate).toFixed(3)}%</span>}
+          {file.rate&&<span style={{fontSize:"var(--fs-3)",color:"var(--t1)",fontFamily:"var(--ff-mono)"}}>{Number(file.rate).toFixed(3)}%</span>}
           <span style={{fontSize:"var(--fs-1)",color:lc,border:`1px solid ${lc}66`,borderRadius:3,padding:"1px 5px",
-            fontFamily:"DM Mono",letterSpacing:".5px"}}>{ls.state==="locked"?"LOCKED":"FLOAT"}</span>
+            fontFamily:"var(--ff-mono)",letterSpacing:".5px"}}>{ls.state==="locked"?"LOCKED":"FLOAT"}</span>
         </span>
       </div>
-      <div style={{fontSize:"var(--fs-2)",color:"var(--t2)",fontFamily:"DM Mono",display:"flex",gap:8,flexWrap:"wrap"}}>
+      <div style={{fontSize:"var(--fs-2)",color:"var(--t2)",fontFamily:"var(--ff-mono)",display:"flex",gap:8,flexWrap:"wrap"}}>
         {ch&&<span style={{color:ch.color}}>{P(ch).toLowerCase()}</span>}
-        {bk&&bv.ready&&<span style={{color:bv.level==="critical"?"#E85D75":bv.level==="warn"?"#F5A623":"var(--t2)"}}>
+        {bk&&bv.ready&&<span style={{color:bv.level==="critical"?"var(--bad)":bv.level==="warn"?"var(--gold)":"var(--t2)"}}>
           respaldo {bk.name.split(" ")[0]} · viable to {mon(bv.decideByWorst)}</span>}
         {ls.state==="float"&&ls.mustLockBy&&(
-          <span style={{color:ls.level==="critical"?"#E85D75":"var(--t2)"}}>
+          <span style={{color:ls.level==="critical"?"var(--bad)":"var(--t2)"}}>
             lock by {mon(ls.mustLockBy)}{ls.daysLeft!==null?` · ${ls.daysLeft<0?`${Math.abs(ls.daysLeft)}d late`:`${ls.daysLeft}d`}`:""}
           </span>
         )}
         {ls.state==="locked"&&ls.expires&&(
-          <span style={{color:ls.coversClose?"var(--t2)":"#E85D75"}}>
+          <span style={{color:ls.coversClose?"var(--t2)":"var(--bad)"}}>
             exp {mon(ls.expires)}{ls.coversClose?` · +${ls.spare}d`:` · corto ${ls.shortBy}d`}
           </span>
         )}
@@ -5728,7 +5728,7 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
     <div style={{background:"rgba(74,144,217,.05)",border:"1px solid #4A90D933",borderRadius:8,
       padding:14,display:"flex",flexDirection:"column",gap:12}}>
       <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#4A90D9",letterSpacing:"1px"}}>{TX("lenderLock")}</span>
+        <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--blue)",letterSpacing:"1px"}}>{TX("lenderLock")}</span>
         <span style={{fontSize:"var(--fs-2)",color:"var(--t2)"}}>{TX("channelDecides")}</span>
         <span style={{marginLeft:"auto",fontSize:"var(--fs-1)",color:"var(--t3)"}}>{TX("savesWithSave")}</span>
       </div>
@@ -5750,8 +5750,8 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
             return (
               <button key={id} className="hov" onClick={()=>{setChannel(id);
                 if(!lendersFor(draft,id).some(x=>x.id===lenderId)) setLenderId("");}}
-                style={{flex:1,background:on?`${c.color}18`:"#0D1117",border:`1px solid ${on?c.color:"var(--t4)"}`,
-                  borderRadius:6,padding:"8px 6px",cursor:"pointer",fontFamily:"DM Mono",textAlign:"left"}}>
+                style={{flex:1,background:on?`${c.color}18`:"var(--bg)",border:`1px solid ${on?c.color:"var(--t4)"}`,
+                  borderRadius:6,padding:"8px 6px",cursor:"pointer",fontFamily:"var(--ff-mono)",textAlign:"left"}}>
                 <div style={{fontSize:"var(--fs-3)",color:on?c.color:"var(--t2)",fontWeight:500}}>{P(c)}</div>
                 <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:2}}>{n} lenders · {TX("cap")} {c.capBps}</div>
               </button>
@@ -5782,7 +5782,7 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
           </div>
         )}
         {hidden.length>0&&(
-          <div style={{fontSize:"var(--fs-2)",color:"#F5A623",marginTop:5,lineHeight:1.5}}>
+          <div style={{fontSize:"var(--fs-2)",color:"var(--gold)",marginTop:5,lineHeight:1.5}}>
             {TX("hiddenByChannel",{
               n:hidden.length,
               list:hidden.slice(0,4).map(x=>x.name).join(", ")
@@ -5791,12 +5791,12 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
           </div>
         )}
         {l&&(
-          <div style={{marginTop:6,display:"flex",gap:8,flexWrap:"wrap",fontSize:"var(--fs-2)",fontFamily:"DM Mono"}}>
+          <div style={{marginTop:6,display:"flex",gap:8,flexWrap:"wrap",fontSize:"var(--fs-2)",fontFamily:"var(--ff-mono)"}}>
             {l.contacts?.[0]?.ae&&<span style={{color:"var(--t2)"}}>AE {l.contacts[0].ae}</span>}
             {l.contacts?.[0]?.phone&&<a href={`tel:${l.contacts[0].phone.replace(/[^\d+]/g,"")}`}
-              style={{color:"#4A90D9",textDecoration:"none"}}>{l.contacts[0].phone}</a>}
+              style={{color:"var(--blue)",textDecoration:"none"}}>{l.contacts[0].phone}</a>}
             {l.guidelines&&<a href={l.guidelines} target="_blank" rel="noreferrer"
-              style={{color:"#BD65E8",textDecoration:"none"}}>{TX("guidelines")}</a>}
+              style={{color:"var(--purple)",textDecoration:"none"}}>{TX("guidelines")}</a>}
           </div>
         )}
       </div>
@@ -5804,11 +5804,11 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
       {/* COMPENSATION — editable where it legitimately varies by loan,
           read-only where the comp plan determines it. */}
       {isAdmin&&lenderId&&(
-        <div style={{background:"#0D1117",border:`1px solid ${comp.overCeiling?"#E85D75":"#21262D"}`,
+        <div style={{background:"var(--bg)",border:`1px solid ${comp.overCeiling?"var(--bad)":"var(--s2)"}`,
           borderRadius:6,padding:"10px 11px",display:"flex",flexDirection:"column",gap:8}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8}}>
             <span style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px"}}>{TX("compensation")}</span>
-            <span style={{fontSize:"var(--fs-1)",color:comp.meta.editable?"#7EC8A4":"var(--t2)"}}>{P(comp.meta)}</span>
+            <span style={{fontSize:"var(--fs-1)",color:comp.meta.editable?"var(--mint)":"var(--t2)"}}>{P(comp.meta)}</span>
           </div>
 
           {comp.lines.map(ln=>(
@@ -5823,32 +5823,32 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
                     :ln.id==="lenderPaid"?setLenderPaidBps(v):setBorrowerPaidBps(v);}}
                   style={{...fs,width:66,textAlign:"right",padding:"5px 7px",fontSize:"var(--fs-3)"}}/>
               ):(
-                <span style={{fontSize:"var(--fs-3)",color:"var(--t2)",fontFamily:"DM Mono",width:66,textAlign:"right"}}>{ln.bps??"—"}</span>
+                <span style={{fontSize:"var(--fs-3)",color:"var(--t2)",fontFamily:"var(--ff-mono)",width:66,textAlign:"right"}}>{ln.bps??"—"}</span>
               )}
               <span style={{fontSize:"var(--fs-1)",color:"var(--t3)",width:22}}>bps</span>
-              <span style={{fontSize:"var(--fs-3)",color:"var(--t1)",fontFamily:"DM Mono",width:74,textAlign:"right"}}>
+              <span style={{fontSize:"var(--fs-3)",color:"var(--t1)",fontFamily:"var(--ff-mono)",width:74,textAlign:"right"}}>
                 {ln.dollars!==null?`$${ln.dollars.toLocaleString()}`:"—"}
               </span>
             </div>
           ))}
 
-          <div style={{borderTop:"1px solid #21262D",paddingTop:7,display:"flex",
+          <div style={{borderTop:"1px solid var(--s2)",paddingTop:7,display:"flex",
             justifyContent:"space-between",alignItems:"baseline"}}>
             <span style={{fontSize:"var(--fs-2)",color:"var(--t2)"}}>Total</span>
-            <span style={{fontSize:"var(--fs-5)",color:comp.overCeiling?"#E85D75":"#F5A623",fontFamily:"DM Mono"}}>
+            <span style={{fontSize:"var(--fs-5)",color:comp.overCeiling?"var(--bad)":"var(--gold)",fontFamily:"var(--ff-mono)"}}>
               {comp.totalBps??"—"} bps{comp.totalDollars!==null?` · $${comp.totalDollars.toLocaleString()}`:""}
             </span>
           </div>
 
           {/* room left under the ceiling, shown as a bar so it reads at a glance */}
           <div>
-            <div style={{height:4,background:"#21262D",borderRadius:2,overflow:"hidden"}}>
+            <div style={{height:4,background:"var(--s2)",borderRadius:2,overflow:"hidden"}}>
               <div style={{height:"100%",width:`${Math.min(100,comp.pctOfCeiling??0)}%`,
-                background:comp.overCeiling?"#E85D75":comp.pctOfCeiling>=95?"#F5A623":"#7EC8A4"}}/>
+                background:comp.overCeiling?"var(--bad)":comp.pctOfCeiling>=95?"var(--gold)":"var(--mint)"}}/>
             </div>
             <div style={{display:"flex",justifyContent:"space-between",fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:4}}>
               <span>{PN(comp.meta)}</span>
-              <span style={{color:comp.overCeiling?"#E85D75":"var(--t3)"}}>
+              <span style={{color:comp.overCeiling?"var(--bad)":"var(--t3)"}}>
                 {comp.remainingBps>0?TX("ceilingLeftN",{n:comp.ceilingBps,r:comp.remainingBps}):TX("ceilingLeft",{n:comp.ceilingBps})}
               </span>
             </div>
@@ -5886,11 +5886,11 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
 
       {/* FLOATING — the deadline nobody writes on a contract */}
       {lockState==="float"&&(
-        <div style={{background:"#0D1117",border:`1px solid ${ls.level==="critical"?"#E85D7544":"#F5A62333"}`,
+        <div style={{background:"var(--bg)",border:`1px solid ${ls.level==="critical"?"#E85D7544":"#F5A62333"}`,
           borderRadius:6,padding:"9px 10px"}}>
           {ls.mustLockBy?(
             <>
-              <div style={{fontSize:"var(--fs-3)",color:ls.level==="critical"?"#E85D75":"#F5A623",fontFamily:"DM Mono"}}>
+              <div style={{fontSize:"var(--fs-3)",color:ls.level==="critical"?"var(--bad)":"var(--gold)",fontFamily:"var(--ff-mono)"}}>
                 {TX("lastDayToLock",{d:ls.mustLockBy})}
                 {ls.daysLeft!==null&&<span style={{color:"var(--t2)"}}> · {ls.daysLeft<0?`${Math.abs(ls.daysLeft)}d tarde`:`faltan ${ls.daysLeft}d`}</span>}
               </div>
@@ -5904,8 +5904,8 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
             <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:3}}>
               <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px"}}>{TX("whichTermQ")}</div>
               {ls.terms.map(t=>(
-                <div key={t.term} style={{display:"flex",gap:8,fontSize:"var(--fs-2)",fontFamily:"DM Mono",
-                  color:t.covers?"#7EC8A4":"#E85D75"}}>
+                <div key={t.term} style={{display:"flex",gap:8,fontSize:"var(--fs-2)",fontFamily:"var(--ff-mono)",
+                  color:t.covers?"var(--mint)":"var(--bad)"}}>
                   <span style={{minWidth:34}}>{t.term}d</span>
                   <span style={{color:"var(--t2)",minWidth:82}}>{t.expires}</span>
                   <span>{t.covers?TX("coversBy",{n:t.spare}):TX("shortByN",{n:t.shortBy})}</span>
@@ -5932,9 +5932,9 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
             </select>
           </div>
           {ls.expires&&(
-            <div style={{gridColumn:"1/-1",background:"#0D1117",
+            <div style={{gridColumn:"1/-1",background:"var(--bg)",
               border:`1px solid ${ls.coversClose?"#7EC8A433":"#E85D7544"}`,borderRadius:6,padding:"8px 10px"}}>
-              <div style={{fontSize:"var(--fs-3)",fontFamily:"DM Mono",color:ls.coversClose?"#7EC8A4":"#E85D75"}}>
+              <div style={{fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",color:ls.coversClose?"var(--mint)":"var(--bad)"}}>
                 Vence {ls.expires}
                 {ls.coe&&(ls.coversClose
                   ? <span style={{color:"var(--t2)"}}> · cubre el cierre con {ls.spare}d de sobra</span>
@@ -5951,7 +5951,7 @@ function LenderPanel({file,profile,onDraft,onChangeLender}){
         onChangeLender={onChangeLender}/>
 
       {conf.length>0&&conf.map((c,i)=>(
-        <div key={i} style={{fontSize:"var(--fs-3)",color:c.sev==="critical"?"#E85D75":"#F5A623",background:"#0D1117",
+        <div key={i} style={{fontSize:"var(--fs-3)",color:c.sev==="critical"?"var(--bad)":"var(--gold)",background:"var(--bg)",
           border:`1px solid ${c.sev==="critical"?"#E85D7544":"#F5A62344"}`,borderRadius:5,
           padding:"7px 9px",lineHeight:1.45}}>{P(c)}</div>
       ))}
@@ -6004,8 +6004,8 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
       <div>
         <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>{label}</div>
         <input type="date" value={d[key]} onChange={e=>setD({...d,[key]:e.target.value})}
-          style={{...fs,borderColor:typing?"#F5A623":"#30363D"}}/>
-        {typing&&<div style={{fontSize:"var(--fs-1)",color:"#F5A623",marginTop:3}}>{TX("typingYear")}</div>}
+          style={{...fs,borderColor:typing?"var(--gold)":"var(--bd)"}}/>
+        {typing&&<div style={{fontSize:"var(--fs-1)",color:"var(--gold)",marginTop:3}}>{TX("typingYear")}</div>}
         {!typing&&hint&&<div style={{fontSize:"var(--fs-1)",color:"var(--t4)",marginTop:3}}>{hint}</div>}
       </div>
     );
@@ -6015,7 +6015,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
     <div style={{background:"rgba(232,93,117,.04)",border:"1px solid #E85D7533",borderRadius:8,
       padding:14,display:"flex",flexDirection:"column",gap:12}}>
       <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#E85D75",letterSpacing:"1px"}}>{TX("contingencies")}</span>
+        <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--bad)",letterSpacing:"1px"}}>{TX("contingencies")}</span>
         <span style={{fontSize:"var(--fs-2)",color:"var(--t2)"}}>
           {TX("contClock")}
         </span>
@@ -6038,7 +6038,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
             {US_STATES.map(s=><option key={s}>{s}</option>)}
           </select>
         </div>
-        <div style={{fontSize:"var(--fs-2)",color:basis==="business"?"#F5A623":"var(--t2)",paddingBottom:8}}>
+        <div style={{fontSize:"var(--fs-2)",color:basis==="business"?"var(--gold)":"var(--t2)",paddingBottom:8}}>
           {basis==="business"
             ? TX("businessDays")
             : TX("calendarDays",{s:state})}
@@ -6056,13 +6056,13 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
       </div>
 
       {/* THE ANCHOR */}
-      <div style={{borderLeft:"2px solid #E85D75",paddingLeft:10}}>
+      <div style={{borderLeft:"2px solid var(--bad)",paddingLeft:10}}>
         {field("contractAccepted",TX("contractAccepted"),TX("anchorHint"))}
       </div>
 
       {/* CONTRACT — deposit at risk */}
       <div>
-        <div style={{fontSize:"var(--fs-2)",color:"#E85D75",letterSpacing:"1px",marginBottom:6,fontWeight:500}}>
+        <div style={{fontSize:"var(--fs-2)",color:"var(--bad)",letterSpacing:"1px",marginBottom:6,fontWeight:500}}>
           {TX("fromContract")}
         </div>
         <div id="fix-contract-dates" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
@@ -6073,7 +6073,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
 
       {/* DELIVERY CHAIN */}
       <div>
-        <div style={{fontSize:"var(--fs-2)",color:"#F5A623",letterSpacing:"1px",marginBottom:6,fontWeight:500}}>
+        <div style={{fontSize:"var(--fs-2)",color:"var(--gold)",letterSpacing:"1px",marginBottom:6,fontWeight:500}}>
           {TX("deliveryChain")}
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
@@ -6083,7 +6083,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
         </div>
         {cd&&(
           <div style={{marginTop:8,background:"rgba(189,101,232,.08)",border:"1px solid #BD65E844",
-            borderRadius:6,padding:"8px 10px",fontSize:"var(--fs-3)",color:"#BD65E8",fontFamily:"DM Mono"}}>
+            borderRadius:6,padding:"8px 10px",fontSize:"var(--fs-3)",color:"var(--purple)",fontFamily:"var(--ff-mono)"}}>
             {TX("cdReceivedBy",{d:cd})}
             <div style={{color:"var(--t2)",fontSize:"var(--fs-2)",marginTop:3}}>
               {TX("cdCounts",{d:cdMailDeadline(d.coe)})}
@@ -6120,12 +6120,12 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
       {/* CONFLICTS */}
       {conflicts.length>0&&(
         <div style={{display:"flex",flexDirection:"column",gap:6}}>
-          <div style={{fontSize:"var(--fs-2)",color:"#E85D75",letterSpacing:"1px",fontWeight:500}}>
+          <div style={{fontSize:"var(--fs-2)",color:"var(--bad)",letterSpacing:"1px",fontWeight:500}}>
             ⚠ {conflicts.length} {conflicts.length===1?TX("conflicts"):TX("conflictsPl")}
           </div>
           {conflicts.map((c,i)=>(
-            <div key={i} style={{fontSize:"var(--fs-3)",color:c.sev==="critical"?"#E85D75":"#F5A623",
-              background:"#0D1117",border:`1px solid ${c.sev==="critical"?"#E85D7544":"#F5A62344"}`,
+            <div key={i} style={{fontSize:"var(--fs-3)",color:c.sev==="critical"?"var(--bad)":"var(--gold)",
+              background:"var(--bg)",border:`1px solid ${c.sev==="critical"?"#E85D7544":"#F5A62344"}`,
               borderRadius:5,padding:"7px 9px",lineHeight:1.45}}>{P(c)}</div>
           ))}
         </div>
@@ -6138,24 +6138,24 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
           {rows.filter(r=>r.date).map(r=>{
             const ext=contingencyExtensionCount(file,r.id);
             return (
-              <div key={r.id} style={{background:"#0D1117",border:"1px solid #21262D",borderRadius:5,padding:"8px 10px"}}>
+              <div key={r.id} style={{background:"var(--bg)",border:"1px solid var(--s2)",borderRadius:5,padding:"8px 10px"}}>
                 <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
                   <span style={{fontSize:"var(--fs-2)",color:LEVEL_COLOR[r.level],fontWeight:500,minWidth:38}}>{r.short}</span>
                   <span style={{fontSize:"var(--fs-3)",color:"var(--t2)"}}>{r.date}</span>
-                  {r.contractDays!==null&&<span style={{fontSize:"var(--fs-1)",color:r.contractDays<0?"#E85D75":"#30363D"}}>
+                  {r.contractDays!==null&&<span style={{fontSize:"var(--fs-1)",color:r.contractDays<0?"var(--bad)":"var(--bd)"}}>
                     {r.contractDays} {TX("contractDaysOf",{b:r.basis==="business"?TX("bizShort"):TX("calShort")})}
                     {r.contractDays<0?" ⚠":""}</span>}
                   <span style={{fontSize:"var(--fs-2)",color:r.outcomeMeta.color,marginLeft:"auto"}}>
                     {P(r.outcomeMeta)}{ext>0?` ·${ext}×`:""}
                   </span>
                   <button className="hov" onClick={()=>setOpenId(openId===r.id?null:r.id)}
-                    style={{background:"#21262D",border:"1px solid #30363D",borderRadius:4,color:"var(--t2)",
-                      fontSize:"var(--fs-1)",padding:"3px 7px",cursor:"pointer",fontFamily:"DM Mono"}}>
+                    style={{background:"var(--s2)",border:"1px solid var(--bd)",borderRadius:4,color:"var(--t2)",
+                      fontSize:"var(--fs-1)",padding:"3px 7px",cursor:"pointer",fontFamily:"var(--ff-mono)"}}>
                     {openId===r.id?"✕":TX("record")}
                   </button>
                 </div>
                 {r.depositAtRisk&&(
-                  <div style={{fontSize:"var(--fs-2)",color:"#E85D75",marginTop:5}}>
+                  <div style={{fontSize:"var(--fs-2)",color:"var(--bad)",marginTop:5}}>
                     {TX("depositExposed")}
                   </div>
                 )}
@@ -6167,7 +6167,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
                     </select>
                     {outcomeById(oc).requiresNewDate&&(
                       <div>
-                        <div style={{fontSize:"var(--fs-1)",color:"#F5A623",marginBottom:3}}>
+                        <div style={{fontSize:"var(--fs-1)",color:"var(--gold)",marginBottom:3}}>
                           {TX("newDateAddendum")}
                         </div>
                         <input type="date" value={ocDate} onChange={e=>setOcDate(e.target.value)} style={fs}/>
@@ -6180,10 +6180,10 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
                       placeholder={TX("outcomeNote")} style={fs}/>
                     <button className="hov" onClick={()=>record(r.id)}
                       disabled={outcomeById(oc).requiresNewDate&&!ocDate}
-                      style={{background:outcomeById(oc).requiresNewDate&&!ocDate?"#161B22":"#21262D",
-                        color:outcomeById(oc).requiresNewDate&&!ocDate?"#30363D":"#7EC8A4",borderRadius:5,
-                        padding:"7px 0",fontSize:"var(--fs-3)",fontFamily:"DM Mono",
-                        border:`1px solid ${outcomeById(oc).requiresNewDate&&!ocDate?"#21262D":"#7EC8A4"}`,
+                      style={{background:outcomeById(oc).requiresNewDate&&!ocDate?"var(--s1)":"var(--s2)",
+                        color:outcomeById(oc).requiresNewDate&&!ocDate?"var(--bd)":"var(--mint)",borderRadius:5,
+                        padding:"7px 0",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",
+                        border:`1px solid ${outcomeById(oc).requiresNewDate&&!ocDate?"var(--s2)":"var(--mint)"}`,
                         cursor:outcomeById(oc).requiresNewDate&&!ocDate?"not-allowed":"pointer"}}>
                       GUARDAR RESULTADO
                     </button>
@@ -6199,8 +6199,8 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
       {derived.length>0&&(
         <div>
           <button className="hov" onClick={()=>setShowDerived(v=>!v)}
-            style={{background:"transparent",border:"none",color:"#4A90D9",fontSize:"var(--fs-2)",
-              fontFamily:"DM Mono",cursor:"pointer",padding:0}}>
+            style={{background:"transparent",border:"none",color:"var(--blue)",fontSize:"var(--fs-2)",
+              fontFamily:"var(--ff-mono)",cursor:"pointer",padding:0}}>
             {showDerived?"▾":"▸"} {TX("derivedDates")} ({derived.length})
           </button>
           {showDerived&&(
@@ -6224,7 +6224,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
                 const sig=deadlineSignal(r,file);
                 const col=r.legal?signalColor("legal"):signalColor(sig);
                 return (
-                  <div key={r.stage} style={{display:"flex",gap:8,fontSize:"var(--fs-2)",fontFamily:"DM Mono",
+                  <div key={r.stage} style={{display:"flex",gap:8,fontSize:"var(--fs-2)",fontFamily:"var(--ff-mono)",
                     color:col,alignItems:"baseline"}}>
                     <span style={{minWidth:70}}>{r.startBy}</span>
                     <span style={{flex:1}}>{r.stage}{r.legal?" ⚖":""}</span>
@@ -6239,7 +6239,7 @@ function ContingencyPanel({file,profile,onSave,onDraft}){
 
       {/* LOG */}
       {(file.contingencyLog||[]).length>0&&(
-        <div style={{borderTop:"1px solid #21262D",paddingTop:8}}>
+        <div style={{borderTop:"1px solid var(--s2)",paddingTop:8}}>
           <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{TX("history")}</div>
           {(file.contingencyLog||[]).slice().reverse().map((e,i)=>(
             <div key={i} style={{fontSize:"var(--fs-2)",color:"var(--t2)",display:"flex",gap:7,marginBottom:3}}>
@@ -6276,22 +6276,22 @@ function DpaPanel({file,lang,onSave,readOnly}){
   const P2=o=>(o&&typeof o==="object")?(o[lang]??o.es??o.en??""):o;
   const chip=(activo,label,onClick,color)=>(
     <button key={label} className="hov" disabled={readOnly} onClick={onClick}
-      style={{background:activo?(color||"#7EC8A4"):"transparent",
-        color:activo?"#0D1117":(color||"var(--t2)"),
-        border:`1px solid ${activo?(color||"#7EC8A4"):"#30363D"}`,borderRadius:5,
-        padding:"5px 11px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",
+      style={{background:activo?(color||"var(--mint)"):"transparent",
+        color:activo?"var(--bg)":(color||"var(--t2)"),
+        border:`1px solid ${activo?(color||"var(--mint)"):"var(--bd)"}`,borderRadius:5,
+        padding:"5px 11px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",
         cursor:readOnly?"default":"pointer"}}>{label}</button>
   );
 
   return (
     <div style={{background:on?"rgba(126,200,164,.05)":"transparent",
-      border:`1px solid ${on?"#7EC8A433":"#21262D"}`,borderRadius:8,
+      border:`1px solid ${on?"#7EC8A433":"var(--s2)"}`,borderRadius:8,
       padding:on?"12px 14px":"9px 14px",
       display:"flex",flexDirection:"column",gap:on?11:0}}>
       <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:on?"var(--fs-5)":"var(--fs-3)",
-          color:on?"#7EC8A4":"var(--t2)",letterSpacing:"1px"}}>{L2("dpaBlock")}</span>
-        {on&&<span style={{fontSize:"var(--fs-3)",color:"#7EC8A4",fontFamily:"DM Mono"}}>{dpaLabel(file,lang)}</span>}
+        <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:on?"var(--fs-5)":"var(--fs-3)",
+          color:on?"var(--mint)":"var(--t2)",letterSpacing:"1px"}}>{L2("dpaBlock")}</span>
+        {on&&<span style={{fontSize:"var(--fs-3)",color:"var(--mint)",fontFamily:"var(--ff-mono)"}}>{dpaLabel(file,lang)}</span>}
         <div style={{display:"flex",gap:5,marginLeft:"auto"}}>
           {chip(on,L2("yesShort"),()=>onSave(setDpa(file,{on:true})))}
           {chip(!on,L2("noShort"),()=>onSave(setDpa(file,{on:false})),"var(--t2)")}
@@ -6329,7 +6329,7 @@ function DpaPanel({file,lang,onSave,readOnly}){
         )}
 
         {!dpaComplete(file)&&(
-          <div style={{fontSize:"var(--fs-1)",color:"#F5A623"}}>{L2("dpaIncomplete")}</div>
+          <div style={{fontSize:"var(--fs-1)",color:"var(--gold)"}}>{L2("dpaIncomplete")}</div>
         )}
         <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",lineHeight:1.5}}>{L2("dpaBlockHint")}</div>
       </>)}
@@ -6356,10 +6356,10 @@ function FindingsPanel({file,profile,onSave}){
       border:`1px solid ${abiertos.length?"#E85D7544":"#7EC8A433"}`,borderRadius:8,
       padding:14,display:"flex",flexDirection:"column",gap:10}}>
       <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-        <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",
-          color:abiertos.length?"#E85D75":"#7EC8A4",letterSpacing:"1px"}}>{TX("findings")}</span>
+        <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",
+          color:abiertos.length?"var(--bad)":"var(--mint)",letterSpacing:"1px"}}>{TX("findings")}</span>
         {abiertos.length>0&&(
-          <span style={{background:"#E85D75",color:"#0D1117",borderRadius:10,padding:"1px 8px",
+          <span style={{background:"var(--bad)",color:"var(--bg)",borderRadius:10,padding:"1px 8px",
             fontSize:"var(--fs-2)",fontWeight:500}}>{TX("findingOpen",{n:abiertos.length})}</span>
         )}
       </div>
@@ -6374,7 +6374,7 @@ function FindingsPanel({file,profile,onSave}){
       {abiertos.map(f=>{
         const w=waitingMeta(f.waitingOn), edad=findingAge(f);
         return (
-          <div key={f.id} style={{background:"#0D1117",borderLeft:"2px solid #E85D75",
+          <div key={f.id} style={{background:"var(--bg)",borderLeft:"2px solid var(--bad)",
             borderRadius:"0 5px 5px 0",padding:"8px 10px"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8,flexWrap:"wrap"}}>
               <span style={{fontSize:"var(--fs-2)",color:"var(--t2)"}}>{P(gate1Item(f.item))}</span>
@@ -6382,7 +6382,7 @@ function FindingsPanel({file,profile,onSave}){
             </div>
             <div style={{fontSize:"var(--fs-3)",color:"var(--t1)",lineHeight:1.5,margin:"3px 0"}}>{f.text}</div>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
-              <span style={{fontSize:"var(--fs-1)",color:edad>=7?"#E85D75":"var(--t3)"}}>
+              <span style={{fontSize:"var(--fs-1)",color:edad>=7?"var(--bad)":"var(--t3)"}}>
                 {f.at}{f.by?" · "+String(f.by).split(" ")[0]:""}
                 {edad!==null?" · "+TX("findingDaysOpen",{n:edad}):""}
               </span>
@@ -6394,12 +6394,12 @@ function FindingsPanel({file,profile,onSave}){
                     const n=resolveFinding(file,f.id,{by:profile?.name||null});
                     onSave({findings:n.findings});
                   }}
-                  style={{background:"#21262D",border:"1px solid #7EC8A4",borderRadius:4,color:"#7EC8A4",
-                    fontSize:"var(--fs-1)",padding:"3px 9px",cursor:"pointer",fontFamily:"DM Mono"}}>
+                  style={{background:"var(--s2)",border:"1px solid var(--mint)",borderRadius:4,color:"var(--mint)",
+                    fontSize:"var(--fs-1)",padding:"3px 9px",cursor:"pointer",fontFamily:"var(--ff-mono)"}}>
                   {TX("findingResolve")}
                 </button>
               ):(
-                <span style={{fontSize:"var(--fs-1)",color:"var(--t4)",fontFamily:"DM Mono"}}>
+                <span style={{fontSize:"var(--fs-1)",color:"var(--t4)",fontFamily:"var(--ff-mono)"}}>
                   {TX("findingNotYours",{w:P(waitingMeta(f.waitingOn))})}
                 </span>
               )}
@@ -6410,12 +6410,12 @@ function FindingsPanel({file,profile,onSave}){
 
       {!open?(
         <button className="hov" onClick={()=>setOpen(true)}
-          style={{background:"transparent",border:"1px dashed #30363D",borderRadius:5,color:"var(--t2)",
-            fontSize:"var(--fs-3)",fontFamily:"DM Mono",padding:"7px 0",width:"100%",cursor:"pointer"}}>
+          style={{background:"transparent",border:"1px dashed var(--bd)",borderRadius:5,color:"var(--t2)",
+            fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",padding:"7px 0",width:"100%",cursor:"pointer"}}>
           {TX("findingAdd")}
         </button>
       ):(
-        <div style={{background:"#0D1117",border:"1px solid #21262D",borderRadius:6,
+        <div style={{background:"var(--bg)",border:"1px solid var(--s2)",borderRadius:6,
           padding:"10px 11px",display:"flex",flexDirection:"column",gap:8}}>
           <div>
             <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>{TX("findingItem")}</div>
@@ -6435,14 +6435,14 @@ function FindingsPanel({file,profile,onSave}){
                 const on=waiting===id,m=FINDING_WAITING[id];
                 return (
                   <button key={id} className="hov" onClick={()=>setWaiting(id)}
-                    style={{background:on?m.color:"transparent",color:on?"#0D1117":m.color,
+                    style={{background:on?m.color:"transparent",color:on?"var(--bg)":m.color,
                       border:`1px solid ${m.color}`,borderRadius:5,padding:"4px 9px",fontSize:"var(--fs-2)",
-                      fontFamily:"DM Mono",cursor:"pointer"}}>{P(m)}</button>
+                      fontFamily:"var(--ff-mono)",cursor:"pointer"}}>{P(m)}</button>
                 );
               })}
             </div>
           </div>
-          {!text.trim()&&<div style={{fontSize:"var(--fs-1)",color:"#F5A623"}}>{TX("findingNeedsText")}</div>}
+          {!text.trim()&&<div style={{fontSize:"var(--fs-1)",color:"var(--gold)"}}>{TX("findingNeedsText")}</div>}
           <div style={{display:"flex",gap:7}}>
             <button className="hov" disabled={!text.trim()}
               onClick={()=>{
@@ -6450,19 +6450,19 @@ function FindingsPanel({file,profile,onSave}){
                 onSave({findings:n.findings, gate1:n.gate1});
                 setText(""); setOpen(false);
               }}
-              style={{flex:2,background:text.trim()?"#E85D75":"#161B22",
-                color:text.trim()?"#0D1117":"#30363D",borderRadius:6,padding:"8px 0",
-                fontFamily:"DM Mono",fontSize:"var(--fs-3)",fontWeight:500,border:"none",
+              style={{flex:2,background:text.trim()?"var(--bad)":"var(--s1)",
+                color:text.trim()?"var(--bg)":"var(--bd)",borderRadius:6,padding:"8px 0",
+                fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",fontWeight:500,border:"none",
                 cursor:text.trim()?"pointer":"not-allowed"}}>{TX("findingSave")}</button>
             <button className="hov" onClick={()=>{setOpen(false);setText("");}}
-              style={{flex:1,background:"#21262D",color:"var(--t2)",borderRadius:6,padding:"8px 0",
-                fontFamily:"DM Mono",fontSize:"var(--fs-3)",border:"none",cursor:"pointer"}}>{TX("cancel")}</button>
+              style={{flex:1,background:"var(--s2)",color:"var(--t2)",borderRadius:6,padding:"8px 0",
+                fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",border:"none",cursor:"pointer"}}>{TX("cancel")}</button>
           </div>
         </div>
       )}
 
       {cerrados.length>0&&(
-        <div style={{borderTop:"1px solid #21262D",paddingTop:8}}>
+        <div style={{borderTop:"1px solid var(--s2)",paddingTop:8}}>
           <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>
             {TX("findingHistory")} · {cerrados.length}
           </div>
@@ -6601,20 +6601,20 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
       {/* De 480px a casi toda la pantalla. Los dieciocho bloques cabian
           en una columna angosta solo a costa de un scroll interminable;
           con ancho de verdad caben en dos columnas y cinco solapas. */}
-      <div className="fi" style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:12,width:"100%",maxWidth:1240,height:"calc(100vh - 32px)",display:"flex",flexDirection:"column",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
+      <div className="fi" style={{background:"var(--bg)",border:"1px solid var(--bd)",borderRadius:12,width:"100%",maxWidth:1240,height:"calc(100vh - 32px)",display:"flex",flexDirection:"column",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
         {/* ENCABEZADO — cada dato con su etiqueta. Antes decia
             "FHA $450,655 eLend Jose Martha" de corrido y habia que
             adivinar quien era quien. */}
         <div className="dm-head" style={{padding:"14px 22px 12px",display:"flex",justifyContent:"space-between",
           alignItems:"flex-start",gap:20,flexWrap:"wrap",flexShrink:0}}>
           <div style={{minWidth:0}}>
-            <div className="dm-name" style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:"var(--t1)",letterSpacing:"-0.4px"}}>
+            <div className="dm-name" style={{fontFamily:"var(--ff-title)",fontWeight:800,fontSize:"var(--fs-8)",color:"var(--t1)",letterSpacing:"-0.4px"}}>
               {/* Sigue al campo mientras se teclea. El input vive en la solapa
                   PRESTAMO y no aqui: el encabezado tiene su propio CSS de
                   movil (`.dm-name`, `.dm-strip`) y meterle un input rompe el
                   apilado. */}
               {borrower.trim()||file.borrower}
-              {isInbound&&<span title="Inbound referral" style={{marginLeft:9,fontSize:"var(--fs-4)",color:"#FFD166"}}>🤝</span>}
+              {isInbound&&<span title="Inbound referral" style={{marginLeft:9,fontSize:"var(--fs-4)",color:"var(--yellow)"}}>🤝</span>}
             </div>
             {/* En el telefono los cinco campos con etiqueta se comen media
                 pantalla. Se reemplazan por una tira de una linea; el dato
@@ -6653,7 +6653,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
             {closing&&(
               <div style={{textAlign:"right"}}>
                 <div style={{fontSize:"var(--fs-1)",letterSpacing:"1.3px",color:"var(--t3)",marginBottom:3}}>{TX("hdClosing")}</div>
-                <div style={{fontSize:"var(--fs-4)",color:"#F5A623"}}>{md(closing)}</div>
+                <div style={{fontSize:"var(--fs-4)",color:"var(--gold)"}}>{md(closing)}</div>
                 <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:2}}>
                   {(()=>{const d=daysTil(closing);
                     return d===null?"":d===0?TX("closingToday"):d>0?TX("hdInDays",{n:d}):TX("pastDue");})()}
@@ -6689,7 +6689,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
             cruzar la pantalla. Y la izquierda, que ya carga nombre,
             producto, monto, lender, LO y procesadora, se descarga. */}
         {!isClosed&&!inPrep&&!isReferredOut&&(
-          <div style={{padding:"9px 22px",borderTop:"1px solid #21262D",
+          <div style={{padding:"9px 22px",borderTop:"1px solid var(--s2)",
             display:"flex",alignItems:"center",gap:11,flexShrink:0,justifyContent:"flex-end"}}>
             <span style={{fontSize:"var(--fs-1)",color:"var(--t3)"}}>
               {daysInStage(file)===null?"—":`${daysInStage(file)}d`}
@@ -6702,12 +6702,12 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
                 if(onStagePick && !onStagePick(e.target.value)) return;
                 setStage(e.target.value);
                 onSave(stagePatch(file, e.target.value));}}
-              style={{background:"#0D1117",border:`1px solid ${ph.color}`,borderRadius:6,
-                color:ph.color,padding:"7px 11px",fontSize:"var(--fs-4)",fontFamily:"DM Mono",
+              style={{background:"var(--bg)",border:`1px solid ${ph.color}`,borderRadius:6,
+                color:ph.color,padding:"7px 11px",fontSize:"var(--fs-4)",fontFamily:"var(--ff-mono)",
                 minWidth:280,cursor:"pointer"}}>
-              {ALL_STAGES.map((s,i)=><option key={i} value={s.stage} style={{color:s.phase.color,background:"#0D1117"}}>[{s.phase.short}] {s.stage}</option>)}
+              {ALL_STAGES.map((s,i)=><option key={i} value={s.stage} style={{color:s.phase.color,background:"var(--bg)"}}>[{s.phase.short}] {s.stage}</option>)}
               <optgroup label="── Bank-to-Bank Referral ──">
-                <option value={REFERRED_OUT_STAGE} style={{color:"#A78BFA",background:"#0D1117"}}>🔀 REFERRED OUT — EXTERNAL BANK</option>
+                <option value={REFERRED_OUT_STAGE} style={{color:"var(--violet)",background:"var(--bg)"}}>🔀 REFERRED OUT — EXTERNAL BANK</option>
               </optgroup>
             </select>
           </div>
@@ -6717,7 +6717,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
             La activa lleva fondo Y barra dorada: solo con el subrayado se
             perdian entre el resto del texto. */}
         <div className="dm-tabs" style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",
-          borderTop:"1px solid #21262D",borderBottom:"1px solid #21262D",
+          borderTop:"1px solid var(--s2)",borderBottom:"1px solid var(--s2)",
           background:"#0A0E13",flexShrink:0}}>
           {/* Sin contadores. Un numero rojo sin explicacion asusta pero no
               informa — vuelven cuando la guia enseñe que significan. */}
@@ -6733,10 +6733,10 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
             return (
               <button key={id} className="hov dm-tab" data-tour={id} onClick={()=>setTab(id)}
                 style={{background:on?"#171D26":"transparent",border:"none",cursor:"pointer",
-                  color:on?"#F5A623":"var(--t2)",fontSize:"var(--fs-3)",fontFamily:"Syne",
+                  color:on?"var(--gold)":"var(--t2)",fontSize:"var(--fs-3)",fontFamily:"var(--ff-title)",
                   fontWeight:on?800:500,letterSpacing:"1.6px",padding:"12px 0",
-                  textAlign:"center",borderRight:i<5?"1px solid #21262D":"none",
-                  boxShadow:on?"inset 0 -2px 0 #F5A623":"none",
+                  textAlign:"center",borderRight:i<5?"1px solid var(--s2)":"none",
+                  boxShadow:on?"inset 0 -2px 0 var(--gold)":"none",
                   transition:"color .12s"}}>
                 {label}
               </button>
@@ -6772,7 +6772,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
               )}
             </select>
             {loanType&&!LOAN_TYPES.includes(loanType)&&(
-              <div style={{fontSize:"var(--fs-1)",color:"#F5A623",marginTop:4,lineHeight:1.5}}>
+              <div style={{fontSize:"var(--fs-1)",color:"var(--gold)",marginTop:4,lineHeight:1.5}}>
                 {TX("legacyTypeHint")}
               </div>
             )}
@@ -6792,8 +6792,8 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
           )}
           {isAdmin && (
             <div>
-              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>BPS COMP <span style={{color:"#F5A623"}}>{TX("reportedByDash")}</span></div>
-              <input value={bps} onChange={e=>setBps(e.target.value)} placeholder="150" style={{...fs2,color:"#F5A623"}}/>
+              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>BPS COMP <span style={{color:"var(--gold)"}}>{TX("reportedByDash")}</span></div>
+              <input value={bps} onChange={e=>setBps(e.target.value)} placeholder="150" style={{...fs2,color:"var(--gold)"}}/>
             </div>
           )}
           {isAdmin && (
@@ -6814,14 +6814,14 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
             {(()=>{const dentro=LO_LIST.some(x=>x.name===loAssigned);
               return (<>
                 <select value={loAssigned} onChange={e=>setLoAssigned(e.target.value)}
-                  style={{...fs2, ...(dentro?{}:{borderColor:"#E85D75",color:"#E85D75"})}}>
+                  style={{...fs2, ...(dentro?{}:{borderColor:"var(--bad)",color:"var(--bad)"})}}>
                   {orphanOption(loAssigned,dentro,TX("notInList"))}
                   {/* Solo los activos. Quien salio del equipo sigue saliendo
                       en sus archivos viejos y en produccion, pero no se le
                       puede dar uno nuevo. */}
                   {LO_ASSIGNABLE.map(lo=><option key={lo.name} value={lo.name}>{lo.name} · {lo.role}</option>)}
                 </select>
-                {!dentro&&<div style={{fontSize:"var(--fs-1)",color:"#E85D75",marginTop:3,
+                {!dentro&&<div style={{fontSize:"var(--fs-1)",color:"var(--bad)",marginTop:3,
                   lineHeight:1.45}}>{TX("notInListHint")}</div>}
               </>);})()}
           </div>
@@ -6832,20 +6832,20 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
                 (()=>{const dentro=PROCESSOR_IDS.includes(processor);
                   return (<>
                     <select value={processor} onChange={e=>setProcessor(e.target.value)}
-                      style={{...fs2, ...(dentro?{}:{borderColor:"#E85D75",color:"#E85D75"})}}>
+                      style={{...fs2, ...(dentro?{}:{borderColor:"var(--bad)",color:"var(--bad)"})}}>
                       {orphanOption(processor,dentro,TX("notInList"))}
                       {PROCESSOR_IDS.map(id=>(
                         <option key={id} value={id}>{PROCESSORS[id].full}</option>
                       ))}
                     </select>
-                    {!dentro&&<div style={{fontSize:"var(--fs-1)",color:"#E85D75",marginTop:3,
+                    {!dentro&&<div style={{fontSize:"var(--fs-1)",color:"var(--bad)",marginTop:3,
                       lineHeight:1.45}}>{TX("notInListHint")}</div>}
                   </>);})()
               ):(
                 <div style={{fontSize:"var(--fs-4)",color:processorOf(file).color}}>{processorOf(file).full}</div>
               )}
               {isRegistered(file)&&(
-                <div style={{fontSize:"var(--fs-2)",color:"#7EC8A4",marginTop:4}}>
+                <div style={{fontSize:"var(--fs-2)",color:"var(--mint)",marginTop:4}}>
                   {L("registeredOn",{d:registeredAt(file)})}
                   {registeredBy(file)?L("registeredBy",{who:String(registeredBy(file)).split(" ")[0]}):""}
                   {registrationCount(file)>1?` · ${L("registerTimes",{n:registrationCount(file)})}`:""}
@@ -6854,7 +6854,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
               {/* El lender cambió y el archivo volvió a Tina. Dorado: se
                   avecina un trabajo, nada está roto todavía. */}
               {needsReRegistration(file)&&(
-                <div style={{fontSize:"var(--fs-2)",color:"#F5A623",marginTop:4,lineHeight:1.5}}>
+                <div style={{fontSize:"var(--fs-2)",color:"var(--gold)",marginTop:4,lineHeight:1.5}}>
                   {L("reRegisterNeeded",{n:lenderNameOf(file)||"—"})}
                 </div>
               )}
@@ -6877,17 +6877,17 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
                 const ok=cov.complete;
                 return (
                   <div style={{marginTop:9,background:ok?"rgba(126,200,164,.08)":"rgba(245,166,35,.08)",
-                    border:`1px solid ${ok?"#7EC8A4":"#F5A623"}55`,borderRadius:6,
+                    border:`1px solid ${ok?"var(--mint)":"var(--gold)"}55`,borderRadius:6,
                     padding:"9px 11px"}}>
                     <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap"}}>
                       <span style={{fontSize:"var(--fs-1)",color:"var(--t4)",
                         letterSpacing:"1px"}}>{TX("subGate")}</span>
-                      <span style={{marginLeft:"auto",fontFamily:"DM Mono",
-                        fontSize:"var(--fs-2)",color:ok?"#7EC8A4":"#F5A623"}}>
+                      <span style={{marginLeft:"auto",fontFamily:"var(--ff-mono)",
+                        fontSize:"var(--fs-2)",color:ok?"var(--mint)":"var(--gold)"}}>
                         {cov.held}/{cov.total}
                       </span>
                     </div>
-                    <div style={{fontSize:"var(--fs-2)",color:ok?"#7EC8A4":"#F5A623",
+                    <div style={{fontSize:"var(--fs-2)",color:ok?"var(--mint)":"var(--gold)",
                       marginTop:3,lineHeight:1.5}}>
                       {ok?TX("subGateOk"):TX("subGateShort",{n:cov.missing,t:cov.total})}
                     </div>
@@ -6898,7 +6898,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
               {registerBlocked(file)&&(isAdmin||isAssistant)&&(
                 <div title={TX("registerNoLenderHint")}
                   style={{marginTop:7,width:"100%",background:"transparent",
-                    color:"#F5A623",borderRadius:6,padding:"8px 0",fontFamily:"DM Mono",
+                    color:"var(--gold)",borderRadius:6,padding:"8px 0",fontFamily:"var(--ff-mono)",
                     fontSize:"var(--fs-3)",border:"1px dashed #F5A62366",textAlign:"center",
                     cursor:"default"}}>
                   {TX("registerNoLender")}
@@ -6923,8 +6923,8 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
                   }}
                   title={TX("registerHint")}
                   style={{marginTop:7,width:"100%",background:"rgba(126,200,164,.1)",
-                    color:"#7EC8A4",borderRadius:6,padding:"8px 0",fontFamily:"DM Mono",
-                    fontSize:"var(--fs-3)",border:"1px solid #7EC8A4",cursor:"pointer"}}>
+                    color:"var(--mint)",borderRadius:6,padding:"8px 0",fontFamily:"var(--ff-mono)",
+                    fontSize:"var(--fs-3)",border:"1px solid var(--mint)",cursor:"pointer"}}>
                   {TX("register")}
                 </button>
               )}
@@ -6943,7 +6943,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
             <input value={borrower} onChange={e=>setBorrower(e.target.value)}
               placeholder={TX("phLegalName")} style={fs2}/>
             {!borrower.trim()&&(
-              <div style={{fontSize:"var(--fs-1)",color:"#F5A623",marginTop:4}}>{TX("nameEmpty")}</div>
+              <div style={{fontSize:"var(--fs-1)",color:"var(--gold)",marginTop:4}}>{TX("nameEmpty")}</div>
             )}
             {borrower.trim()&&borrower.trim()!==file.borrower&&isRegistered(file)&&(
               <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:4,lineHeight:1.5}}>
@@ -6959,7 +6959,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
               {knownPartners(allFiles||[]).map(n=><option key={n} value={n}/>)}
             </datalist>
             {referralPartner.trim()&&!knownPartners(allFiles||[]).some(n=>canonicalPartner(n)===canonicalPartner(referralPartner))&&(
-              <div style={{fontSize:"var(--fs-1)",color:"#F5A623",marginTop:4}}>{TX("newPartner")}</div>
+              <div style={{fontSize:"var(--fs-1)",color:"var(--gold)",marginTop:4}}>{TX("newPartner")}</div>
             )}
           </div>
           <div>
@@ -7001,7 +7001,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
           <div style={{background:"rgba(189,101,232,.04)",border:"1px solid #BD65E833",
             borderRadius:8,padding:14,display:"flex",flexDirection:"column",gap:10,
             gridRow:"span 3"}}>
-            <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#BD65E8",
+            <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--purple)",
               letterSpacing:"1px"}}>{L("intake")}</span>
             {/* La admisión la captura el LO al precalificar y la COMPLETA
                 procesamiento si falta algo — lo dice el propio texto del
@@ -7028,8 +7028,8 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
           <div style={{background:"rgba(126,200,164,.04)",border:"1px solid #7EC8A433",
             borderRadius:8,padding:14,display:"flex",flexDirection:"column",gap:9}}>
             <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-4)",
-                color:"#7EC8A4",letterSpacing:"1px"}}>{TX("procStatus")}</span>
+              <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-4)",
+                color:"var(--mint)",letterSpacing:"1px"}}>{TX("procStatus")}</span>
               <span style={{marginLeft:"auto",fontSize:"var(--fs-1)",
                 color:"var(--t4)"}}>{puede1003?TX("gate1Yours"):TX("procReadOnly")}</span>
             </div>
@@ -7056,7 +7056,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
               const fila=(label,valor,color)=>(
                 <div style={{display:"flex",gap:10,fontSize:"var(--fs-2)",alignItems:"baseline"}}>
                   <span style={{color:"var(--t4)",minWidth:112}}>{label}</span>
-                  <span style={{color:color||"var(--t2)",fontFamily:"DM Mono",flex:1}}>{valor}</span>
+                  <span style={{color:color||"var(--t2)",fontFamily:"var(--ff-mono)",flex:1}}>{valor}</span>
                 </div>
               );
               return (<>
@@ -7091,9 +7091,9 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
                   finally{ setChkBusy(false); }
                 }}
                 title={TX("chkHint")}
-                style={{marginTop:2,width:"100%",background:"#21262D",
+                style={{marginTop:2,width:"100%",background:"var(--s2)",
                   color:chkBusy?"var(--t4)":"var(--t2)",borderRadius:5,padding:"9px 0",
-                  fontFamily:"DM Mono",fontSize:"var(--fs-2)",border:"1px solid #30363D",
+                  fontFamily:"var(--ff-mono)",fontSize:"var(--fs-2)",border:"1px solid var(--bd)",
                   cursor:chkBusy?"wait":"pointer"}}>
                 {chkBusy?TX("chkBusy"):TX("chkPrint")}
               </button>
@@ -7113,30 +7113,30 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
           <div style={{background:"rgba(74,144,217,.05)",border:"1px solid #4A90D933",borderRadius:8,
             padding:14,display:"flex",flexDirection:"column",gap:9}}>
             <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#4A90D9",letterSpacing:"1px"}}>
+              <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--blue)",letterSpacing:"1px"}}>
                 {TX("compliance")}
               </span>
               <span style={{marginLeft:"auto",fontSize:"var(--fs-2)",
-                color:docsDone({compliance:compDraft})===PAYROLL_DOCS.length&&chkDraft?"#7EC8A4":"var(--t2)"}}>
+                color:docsDone({compliance:compDraft})===PAYROLL_DOCS.length&&chkDraft?"var(--mint)":"var(--t2)"}}>
                 {TX("docsOf",{a:docsDone({compliance:compDraft}),b:PAYROLL_DOCS.length})}
               </span>
             </div>
 
             <label style={{display:"flex",alignItems:"center",gap:8,fontSize:"var(--fs-3)",
-              color:chkDraft?"#7EC8A4":"var(--t1)",cursor:"pointer"}}>
+              color:chkDraft?"var(--mint)":"var(--t1)",cursor:"pointer"}}>
               <input type="checkbox" checked={chkDraft} onChange={e=>setChkDraft(e.target.checked)}
-                style={{accentColor:"#7EC8A4",cursor:"pointer"}}/>
+                style={{accentColor:"var(--mint)",cursor:"pointer"}}/>
               {TX("checkReceived")}
             </label>
             <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:-4,marginLeft:21}}>{TX("checkWhere")}</div>
 
-            <div style={{borderTop:"1px solid #21262D",paddingTop:8}}>
+            <div style={{borderTop:"1px solid var(--s2)",paddingTop:8}}>
               {PAYROLL_DOCS.map(d=>(
                 <label key={d.id} style={{display:"flex",alignItems:"center",gap:8,fontSize:"var(--fs-3)",
-                  color:compDraft[d.id]?"#7EC8A4":"var(--t2)",cursor:"pointer",marginBottom:5}}>
+                  color:compDraft[d.id]?"var(--mint)":"var(--t2)",cursor:"pointer",marginBottom:5}}>
                   <input type="checkbox" checked={!!compDraft[d.id]}
                     onChange={e=>setCompDraft({...compDraft,[d.id]:e.target.checked})}
-                    style={{accentColor:"#7EC8A4",cursor:"pointer"}}/>
+                    style={{accentColor:"var(--mint)",cursor:"pointer"}}/>
                   {P(d)}
                 </label>
               ))}
@@ -7168,8 +7168,8 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
           return (
           <div style={{gridColumn:"1/-1",background:"rgba(189,101,232,.05)",
             border:"1px solid #BD65E844",borderRadius:8,padding:14,marginTop:12}}>
-            <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-4)",
-              color:"#BD65E8",letterSpacing:"1px"}}>{TX("cdTitle")}</div>
+            <div style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-4)",
+              color:"var(--purple)",letterSpacing:"1px"}}>{TX("cdTitle")}</div>
             <div className="sys" style={{marginTop:4,marginBottom:11}}>{TX("cdLead")}</div>
 
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:11}}>
@@ -7178,7 +7178,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
                   {TX("cdSent")}
                 </div>
                 <input type="date" value={cdDraft ?? (salio||"")}
-                  style={{...bx,borderColor:escribiendo?"#F5A623":"#30363D"}}
+                  style={{...bx,borderColor:escribiendo?"var(--gold)":"var(--bd)"}}
                   onChange={e=>{
                     const v=e.target.value;
                     setCdDraft(v);
@@ -7186,7 +7186,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
                     // se queda en pantalla y no se pierde lo tecleado.
                     if(!v||isValidISO(v)) onSave(stampCdSent(file,v,profile?.name||null,cdDelivery(file)));
                   }}/>
-                {escribiendo&&<div style={{fontSize:"var(--fs-1)",color:"#F5A623",marginTop:3}}>
+                {escribiendo&&<div style={{fontSize:"var(--fs-1)",color:"var(--gold)",marginTop:3}}>
                   {TX("typingYear")}
                 </div>}
               </div>
@@ -7198,10 +7198,10 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
                   {[["electronic",TX("cdElec")],["mail",TX("cdMail")]].map(([k,l])=>(
                     <button key={k} className="hov"
                       onClick={()=>salio&&onSave(stampCdSent(file,salio,profile?.name||null,k))}
-                      style={{flex:1,background:cdDelivery(file)===k?"#BD65E8":"#21262D",
-                        color:cdDelivery(file)===k?"#0D1117":"var(--t2)",border:"none",
+                      style={{flex:1,background:cdDelivery(file)===k?"var(--purple)":"var(--s2)",
+                        color:cdDelivery(file)===k?"var(--bg)":"var(--t2)",border:"none",
                         borderRadius:5,padding:"6px 4px",fontSize:"var(--fs-2)",
-                        fontFamily:"DM Mono",cursor:salio?"pointer":"default"}}>{l}</button>
+                        fontFamily:"var(--ff-mono)",cursor:salio?"pointer":"default"}}>{l}</button>
                   ))}
                 </div>
                 <div className="sys" style={{marginTop:4}}>
@@ -7212,34 +7212,34 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
                 <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>
                   {TX("cdReceived")}
                 </div>
-                <div style={{fontSize:"var(--fs-4)",color:recibe?"#BD65E8":"var(--t4)",
-                  fontFamily:"DM Mono",padding:"6px 0"}}>{recibe||"—"}</div>
+                <div style={{fontSize:"var(--fs-4)",color:recibe?"var(--purple)":"var(--t4)",
+                  fontFamily:"var(--ff-mono)",padding:"6px 0"}}>{recibe||"—"}</div>
                 {primero&&<div className="sys">{TX("cdEarliest",{d:primero})}</div>}
               </div>
             </div>
 
             {pronto&&(
               <div style={{marginTop:11,background:"rgba(189,101,232,.10)",
-                border:"1px solid #BD65E8",borderRadius:6,padding:"9px 12px",
-                fontSize:"var(--fs-3)",color:"#BD65E8",lineHeight:1.55}}>
+                border:"1px solid var(--purple)",borderRadius:6,padding:"9px 12px",
+                fontSize:"var(--fs-3)",color:"var(--purple)",lineHeight:1.55}}>
                 ⚖ {TX("cdTooEarly",{f:pronto.signing,d:pronto.earliest})}
               </div>
             )}
 
-            <div id="fix-cd-fees" style={{marginTop:12,paddingTop:11,borderTop:"1px solid #21262D",
+            <div id="fix-cd-fees" style={{marginTop:12,paddingTop:11,borderTop:"1px solid var(--s2)",
               display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
               <span style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:"1px"}}>
                 {TX("cdFees")}
               </span>
               {feesAt?(
-                <span style={{fontSize:"var(--fs-3)",color:"#06D6A0",fontFamily:"DM Mono"}}>
+                <span style={{fontSize:"var(--fs-3)",color:"var(--ok)",fontFamily:"var(--ff-mono)"}}>
                   ✓ {TX("cdFeesBy",{d:feesAt,who:String(cdFeesReviewedBy(file)||"").split(" ")[0]})}
                 </span>
               ):esMiLo?(
                 <button className="hov" onClick={()=>onSave(stampCdFees(file,profile?.name||null))}
-                  style={{background:"transparent",border:"1px solid #06D6A0",borderRadius:5,
-                    color:"#06D6A0",padding:"5px 12px",fontSize:"var(--fs-2)",
-                    fontFamily:"DM Mono",cursor:"pointer"}}>{TX("cdFeesMark")}</button>
+                  style={{background:"transparent",border:"1px solid var(--ok)",borderRadius:5,
+                    color:"var(--ok)",padding:"5px 12px",fontSize:"var(--fs-2)",
+                    fontFamily:"var(--ff-mono)",cursor:"pointer"}}>{TX("cdFeesMark")}</button>
               ):(
                 <span style={{fontSize:"var(--fs-2)",color:"var(--t4)"}}>{TX("cdFeesWait")}</span>
               )}
@@ -7252,7 +7252,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
         {tab==="loan" && isInbound && (
           <div style={{background:"rgba(255,209,102,.06)",border:"1px solid #FFD16644",borderRadius:8,padding:14,display:"flex",flexDirection:"column",gap:10}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:2}}>
-              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#FFD166",letterSpacing:"1px"}}>🤝 INBOUND — REFERRING BANKER</span>
+              <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--yellow)",letterSpacing:"1px"}}>🤝 INBOUND — REFERRING BANKER</span>
               <span style={{fontSize:"var(--fs-2)",color:"var(--t2)"}}>who sent you this deal</span>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
@@ -7277,13 +7277,13 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
               <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:2}}>
                 {inBankerPhone && (
                   <a href={`tel:${inBankerPhone.replace(/[^\d+]/g,"")}`}
-                    style={{background:"rgba(255,209,102,.1)",border:"1px solid #FFD16655",borderRadius:5,padding:"4px 9px",color:"#FFD166",fontSize:"var(--fs-3)",fontFamily:"DM Mono",textDecoration:"none"}}>
+                    style={{background:"rgba(255,209,102,.1)",border:"1px solid #FFD16655",borderRadius:5,padding:"4px 9px",color:"var(--yellow)",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",textDecoration:"none"}}>
                     📱 Call banker
                   </a>
                 )}
                 {inBankerEmail && (
                   <a href={`mailto:${inBankerEmail}`}
-                    style={{background:"rgba(255,209,102,.1)",border:"1px solid #FFD16655",borderRadius:5,padding:"4px 9px",color:"#FFD166",fontSize:"var(--fs-3)",fontFamily:"DM Mono",textDecoration:"none"}}>
+                    style={{background:"rgba(255,209,102,.1)",border:"1px solid #FFD16655",borderRadius:5,padding:"4px 9px",color:"var(--yellow)",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",textDecoration:"none"}}>
                     ✉ Email banker
                   </a>
                 )}
@@ -7297,16 +7297,16 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
           const dtr=prepDaysToReview(file); const age=prepAge(file); const locked=prepLocked(file);
           return(
             <div style={{background:"rgba(126,200,164,.06)",border:"1px solid #7EC8A444",borderRadius:8,padding:14,display:"flex",flexDirection:"column",gap:8}}>
-              <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#7EC8A4",letterSpacing:"1px"}}>⏸ IN PREPARATION</div>
+              <div style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--mint)",letterSpacing:"1px"}}>⏸ IN PREPARATION</div>
               <div style={{fontSize:"var(--fs-4)",color:"var(--t1)"}}>{P(r.label)}</div>
               <div style={{fontSize:"var(--fs-3)",color:"var(--t2)"}}>
-                {TX("mvReview")} {p.reviewOn||"—"} · <span style={{color:dtr<=0?"#E85D75":"var(--t3)"}}>{dtr>0?TX("mvInDays",{n:dtr}):dtr===0?TX("mvToday"):TX("mvOverdue",{n:Math.abs(dtr)})}</span>
+                {TX("mvReview")} {p.reviewOn||"—"} · <span style={{color:dtr<=0?"var(--bad)":"var(--t3)"}}>{dtr>0?TX("mvInDays",{n:dtr}):dtr===0?TX("mvToday"):TX("mvOverdue",{n:Math.abs(dtr)})}</span>
               </div>
-              <div style={{fontSize:"var(--fs-3)",color:locked?"#E85D75":"var(--t3)"}}>
+              <div style={{fontSize:"var(--fs-3)",color:locked?"var(--bad)":"var(--t3)"}}>
                 {age}d in preparation / {PREP_MAX_DAYS} max{p.reschedules>0?` · rescheduled ${p.reschedules}×`:""}
               </div>
               <div style={{fontSize:"var(--fs-3)",color:"var(--t3)"}}>Returns to: <span style={{color:"var(--t2)"}}>{p.prevStage||"Lead Inquiry"}</span></div>
-              {p.note&&<div style={{fontSize:"var(--fs-3)",color:"var(--t2)",fontStyle:"italic",borderTop:"1px solid #21262D",paddingTop:7}}>{p.note}</div>}
+              {p.note&&<div style={{fontSize:"var(--fs-3)",color:"var(--t2)",fontStyle:"italic",borderTop:"1px solid var(--s2)",paddingTop:7}}>{p.note}</div>}
             </div>
           );
         })()}
@@ -7315,7 +7315,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
         {tab==="loan" && isReferredOut && (
           <div style={{background:"rgba(167,139,250,.06)",border:"1px solid #A78BFA44",borderRadius:8,padding:14,display:"flex",flexDirection:"column",gap:10}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:2}}>
-              <span style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-5)",color:"#A78BFA",letterSpacing:"1px"}}>🔀 OUTBOUND — RECEIVING BANKER</span>
+              <span style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-5)",color:"var(--violet)",letterSpacing:"1px"}}>🔀 OUTBOUND — RECEIVING BANKER</span>
               <span style={{fontSize:"var(--fs-2)",color:"var(--t2)"}}>who you sent this deal to</span>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
@@ -7361,13 +7361,13 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
               <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:2}}>
                 {outBankerPhone && (
                   <a href={`tel:${outBankerPhone.replace(/[^\d+]/g,"")}`}
-                    style={{background:"rgba(167,139,250,.1)",border:"1px solid #A78BFA55",borderRadius:5,padding:"4px 9px",color:"#A78BFA",fontSize:"var(--fs-3)",fontFamily:"DM Mono",textDecoration:"none"}}>
+                    style={{background:"rgba(167,139,250,.1)",border:"1px solid #A78BFA55",borderRadius:5,padding:"4px 9px",color:"var(--violet)",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",textDecoration:"none"}}>
                     📱 Call banker
                   </a>
                 )}
                 {outBankerEmail && (
                   <a href={`mailto:${outBankerEmail}`}
-                    style={{background:"rgba(167,139,250,.1)",border:"1px solid #A78BFA55",borderRadius:5,padding:"4px 9px",color:"#A78BFA",fontSize:"var(--fs-3)",fontFamily:"DM Mono",textDecoration:"none"}}>
+                    style={{background:"rgba(167,139,250,.1)",border:"1px solid #A78BFA55",borderRadius:5,padding:"4px 9px",color:"var(--violet)",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",textDecoration:"none"}}>
                     ✉ Email banker
                   </a>
                 )}
@@ -7375,20 +7375,20 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
             )}
             {/* Live fee calc — admin only */}
             {isAdmin && outStatus === "Closed (Funded)" && (
-              <div style={{background:"#0D1117",border:"1px solid #21262D",borderRadius:6,padding:12,marginTop:4}}>
+              <div style={{background:"var(--bg)",border:"1px solid var(--s2)",borderRadius:6,padding:12,marginTop:4}}>
                 <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:8}}>COMP CALCULATION</div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
                   <div>
                     <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginBottom:2}}>FEE EARNED ({REFERRAL_FEE_BPS} BPS)</div>
-                    <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#F5A623"}}>${feeEarned.toLocaleString()}</div>
+                    <div style={{fontFamily:"var(--ff-num)",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--gold)"}}>${feeEarned.toLocaleString()}</div>
                   </div>
                   <div>
                     <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginBottom:2}}>WOULD HAVE ({parseInt(bps)||BPS_RATE} BPS)</div>
-                    <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--t2)"}}>${wouldHaveEarned.toLocaleString()}</div>
+                    <div style={{fontFamily:"var(--ff-num)",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--t2)"}}>${wouldHaveEarned.toLocaleString()}</div>
                   </div>
                   <div>
                     <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginBottom:2}}>LOST COMP</div>
-                    <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"#E85D75"}}>${lostComp.toLocaleString()}</div>
+                    <div style={{fontFamily:"var(--ff-num)",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--bad)"}}>${lostComp.toLocaleString()}</div>
                   </div>
                 </div>
               </div>
@@ -7399,34 +7399,34 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
         {tab==="dates" && (isClosed && isAdmin ? (
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
             <div style={{background:"rgba(6,214,160,.06)",border:"1px solid #06D6A044",borderRadius:8,padding:12}}>
-              <div style={{fontSize:"var(--fs-2)",color:"#06D6A0",letterSpacing:"1px",marginBottom:5,fontWeight:500}}>ACTUAL CLOSE DATE <span style={{color:"var(--t3)"}}>· editable</span></div>
+              <div style={{fontSize:"var(--fs-2)",color:"var(--ok)",letterSpacing:"1px",marginBottom:5,fontWeight:500}}>ACTUAL CLOSE DATE <span style={{color:"var(--t3)"}}>· editable</span></div>
               <input type="date" value={closedAt} onChange={e=>setClosedAt(e.target.value)}
-                style={{background:"transparent",border:"none",color:"#06D6A0",fontSize:"var(--fs-5)",fontFamily:"DM Mono",width:"100%",fontWeight:500}}/>
+                style={{background:"transparent",border:"none",color:"var(--ok)",fontSize:"var(--fs-5)",fontFamily:"var(--ff-mono)",width:"100%",fontWeight:500}}/>
               <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:4,letterSpacing:"0.5px"}}>The month this counts toward production</div>
             </div>
-            <div style={{background:"#0D1117",borderRadius:8,padding:12}}>
+            <div style={{background:"var(--bg)",borderRadius:8,padding:12}}>
               <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>EXPECTED CLOSING DATE</div>
               <input type="date" value={closing} onChange={e=>setClosing(e.target.value)}
-                style={{background:"transparent",border:"none",color:"var(--t2)",fontSize:"var(--fs-5)",fontFamily:"DM Mono",width:"100%"}}/>
+                style={{background:"transparent",border:"none",color:"var(--t2)",fontSize:"var(--fs-5)",fontFamily:"var(--ff-mono)",width:"100%"}}/>
               <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:4,letterSpacing:"0.5px"}}>Original target date</div>
             </div>
           </div>
         ) : !isReferredOut ? (
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-            <div style={{background:"#0D1117",borderRadius:8,padding:12}}>
+            <div style={{background:"var(--bg)",borderRadius:8,padding:12}}>
               <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{L("closingDate")}</div>
               <input type="date" value={closing} onChange={e=>setClosing(e.target.value)}
-                style={{background:"transparent",border:"none",color:"var(--t1)",fontSize:"var(--fs-5)",fontFamily:"DM Mono",width:"100%"}}/>
+                style={{background:"transparent",border:"none",color:"var(--t1)",fontSize:"var(--fs-5)",fontFamily:"var(--ff-mono)",width:"100%"}}/>
             </div>
-            <div style={{background:"#0D1117",borderRadius:8,padding:12}}>
+            <div style={{background:"var(--bg)",borderRadius:8,padding:12}}>
               <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>{isClosed ? "CLOSED" : "DAYS IN STAGE"}</div>
               {/* Syne's zero is indistinguishable from a lowercase o at this
                   size — "0d" rendered as "od". Numbers go in DM Mono, which
                   is what the rest of the app already uses for data. */}
               <div style={{fontSize:isClosed?"var(--fs-6)":"var(--fs-10)",
-                fontFamily:isClosed?"Syne":"'IBM Plex Sans',system-ui,-apple-system,sans-serif",
+                fontFamily:isClosed?"var(--ff-title)":"var(--ff-body)",
                 fontWeight:isClosed?800:500,letterSpacing:isClosed?0:"-0.5px",
-                color:isClosed?"#06D6A0":(stageUrgency(file).level==="late"?"#E85D75":stageUrgency(file).level==="watch"?"#F5A623":"var(--t1)")}}>
+                color:isClosed?"var(--ok)":(stageUrgency(file).level==="late"?"var(--bad)":stageUrgency(file).level==="watch"?"var(--gold)":"var(--t1)")}}>
                 {isClosed ? file.closedAt : (
                   daysInStage(file)===null ? "—" : <>
                     {daysInStage(file)}
@@ -7452,8 +7452,8 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
             </div>
             <div style={{
               fontSize:"var(--fs-2)",
-              color: newNote.length > 200 ? "#E85D75" : newNote.length > 100 ? "#F5A623" : "var(--t3)",
-              fontFamily:"DM Mono",
+              color: newNote.length > 200 ? "var(--bad)" : newNote.length > 100 ? "var(--gold)" : "var(--t3)",
+              fontFamily:"var(--ff-mono)",
               letterSpacing:"0.5px"
             }}>
               {newNote.length}{newNote.length > 200 ? " · "+L("tooLong") : newNote.length > 100 ? " · "+L("keepShort") : ""}
@@ -7461,18 +7461,18 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
           </div>
           <textarea value={newNote} onChange={e=>setNewNote(e.target.value)} rows={2}
             placeholder={isReferredOut ? L("noteFromBanker") : L("notePlaceholder")}
-            style={{background:"#0D1117",border:`1px solid ${newNote.length>200?"#E85D75":"#30363D"}`,borderRadius:6,color:"var(--t1)",padding:"8px 10px",fontSize:"var(--fs-4)",fontFamily:"DM Mono",width:"100%",resize:"none"}}/>
+            style={{background:"var(--bg)",border:`1px solid ${newNote.length>200?"var(--bad)":"var(--bd)"}`,borderRadius:6,color:"var(--t1)",padding:"8px 10px",fontSize:"var(--fs-4)",fontFamily:"var(--ff-mono)",width:"100%",resize:"none"}}/>
           <button className="hov" disabled={!newNote.trim()}
             onClick={()=>{ onSave({noteLog:addNoteEntry(file,newNote,profile?.name||null,file.stage).noteLog}); setNewNote(""); }}
-            style={{marginTop:6,width:"100%",background:newNote.trim()?"rgba(126,200,164,.1)":"#161B22",
-              color:newNote.trim()?"#7EC8A4":"#30363D",borderRadius:6,padding:"7px 0",fontFamily:"DM Mono",
-              fontSize:"var(--fs-3)",border:`1px solid ${newNote.trim()?"#7EC8A4":"#21262D"}`,
+            style={{marginTop:6,width:"100%",background:newNote.trim()?"rgba(126,200,164,.1)":"var(--s1)",
+              color:newNote.trim()?"var(--mint)":"var(--bd)",borderRadius:6,padding:"7px 0",fontFamily:"var(--ff-mono)",
+              fontSize:"var(--fs-3)",border:`1px solid ${newNote.trim()?"var(--mint)":"var(--s2)"}`,
               cursor:newNote.trim()?"pointer":"not-allowed"}}>{L("addUpdate")}</button>
 
           {entries.length>0&&(
             <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:8}}>
               {(showAllNotes?entries:entries.slice(0,2)).map((n,i)=>(
-                <div key={i} style={{borderLeft:`2px solid ${i===0?"#7EC8A4":"#21262D"}`,paddingLeft:9}}>
+                <div key={i} style={{borderLeft:`2px solid ${i===0?"var(--mint)":"var(--s2)"}`,paddingLeft:9}}>
                   <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",letterSpacing:".5px"}}>
                     {n.legacy
                       ? L("noteLegacy")
@@ -7486,8 +7486,8 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
               ))}
               {entries.length>2&&(
                 <button onClick={()=>setShowAllNotes(v=>!v)}
-                  style={{background:"transparent",border:"none",color:"#4A90D9",fontSize:"var(--fs-2)",
-                    fontFamily:"DM Mono",cursor:"pointer",padding:0,textAlign:"left"}}>
+                  style={{background:"transparent",border:"none",color:"var(--blue)",fontSize:"var(--fs-2)",
+                    fontFamily:"var(--ff-mono)",cursor:"pointer",padding:0,textAlign:"left"}}>
                   {showAllNotes?L("seeLast2"):L("seeAll",{n:entries.length})}
                 </button>
               )}
@@ -7496,17 +7496,17 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
           <div style={{fontSize:"var(--fs-1)",color:"var(--t3)",marginTop:6,letterSpacing:"0.5px"}}>
             {L("noteHint")}
           </div>
-          <div style={{fontSize:"var(--fs-1)",color:"#F5A623",marginTop:3,letterSpacing:"0.5px"}}>
+          <div style={{fontSize:"var(--fs-1)",color:"var(--gold)",marginTop:3,letterSpacing:"0.5px"}}>
             {L("notesEnglishOnly")}
           </div>
         </div>
 
         {tab==="file" && (file.lastEditedBy || (file.history && file.history.length > 0)) && (
-          <div style={{background:"#0D1117",borderRadius:8,padding:12,border:"1px solid #21262D"}}>
+          <div style={{background:"var(--bg)",borderRadius:8,padding:12,border:"1px solid var(--s2)"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px"}}>{L("activity")}</div>
               <button onClick={()=>setShowHistory(s=>!s)}
-                style={{background:"transparent",border:"none",color:"var(--t2)",fontSize:"var(--fs-2)",fontFamily:"DM Mono",cursor:"pointer",letterSpacing:"1px"}}>
+                style={{background:"transparent",border:"none",color:"var(--t2)",fontSize:"var(--fs-2)",fontFamily:"var(--ff-mono)",cursor:"pointer",letterSpacing:"1px"}}>
                 {showHistory ? L("hide")+" ↑" : L("showAll")+" ↓"}
               </button>
             </div>
@@ -7521,7 +7521,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
               </div>
             )}
             {showHistory && file.history && file.history.length > 0 && (
-              <div style={{marginTop:10,paddingTop:10,borderTop:"1px solid #21262D",display:"flex",flexDirection:"column",gap:5,maxHeight:200,overflowY:"auto"}}>
+              <div style={{marginTop:10,paddingTop:10,borderTop:"1px solid var(--s2)",display:"flex",flexDirection:"column",gap:5,maxHeight:200,overflowY:"auto"}}>
                 {[...file.history].reverse().map((h,i)=>(
                   <div key={i} style={{fontSize:"var(--fs-3)",color:"var(--t2)",display:"flex",gap:8}}>
                     <span style={{color:"var(--t3)",minWidth:75,fontSize:"var(--fs-2)"}}>{timeAgo(h.at)}</span>
@@ -7529,9 +7529,9 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
                     <span style={{flex:1}}>
                       {h.action==="created" && "created file"}
                       {h.action==="edited" && `edited ${h.fields?.join(", ") || "fields"}`}
-                      {h.action==="stage_advanced" && <>advanced to <span style={{color:"#F5A623"}}>{h.to}</span></>}
-                      {h.action==="closed" && <span style={{color:"#06D6A0"}}>marked as closed</span>}
-                      {h.action==="reopened" && <span style={{color:"#F5A623"}}>reopened file</span>}
+                      {h.action==="stage_advanced" && <>advanced to <span style={{color:"var(--gold)"}}>{h.to}</span></>}
+                      {h.action==="closed" && <span style={{color:"var(--ok)"}}>marked as closed</span>}
+                      {h.action==="reopened" && <span style={{color:"var(--gold)"}}>reopened file</span>}
                     </span>
                   </div>
                 ))}
@@ -7549,14 +7549,14 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
             encendido. Si cambiaran de posicion habria que leer la barra
             cada vez en vez de ir con el dedo. */}
         <div className={"dm-foot"+(accOpen?" dm-foot-open":"")}
-          style={{padding:"11px 22px",borderTop:"1px solid #21262D",background:"#10141A",
+          style={{padding:"11px 22px",borderTop:"1px solid var(--s2)",background:"#10141A",
           flexShrink:0,display:"flex",gap:7,alignItems:"center",flexWrap:"wrap"}}>
           {/* Solo en el telefono. Abre el resto de las acciones, que ahi
               estan escondidas: nadie archiva ni borra desde el movil, y
               tocarlo por error es peor que no tenerlo. */}
           <button className="hov dm-acc" onClick={()=>setAccOpen(x=>!x)}
-            style={{background:"transparent",color:"var(--t2)",border:"1px solid #30363D",
-              borderRadius:6,padding:"8px 14px",fontFamily:"DM Mono",
+            style={{background:"transparent",color:"var(--t2)",border:"1px solid var(--bd)",
+              borderRadius:6,padding:"8px 14px",fontFamily:"var(--ff-mono)",
               fontSize:"var(--fs-3)",cursor:"pointer",whiteSpace:"nowrap"}}>
             {TX("mobActions")} {accOpen?"\u25b4":"\u25be"}
           </button>
@@ -7623,15 +7623,15 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
                   title={!on&&meta?(lang==="en"?meta.why_en:meta.why_es):""}
                   style={{background:"transparent",color:on?color:"#2B323B",
                     border:`1px solid ${on?color:"#1A1F26"}`,borderRadius:6,
-                    padding:"8px 14px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",
+                    padding:"8px 14px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",
                     cursor:"pointer",whiteSpace:"nowrap"}}>{label}</button>
               );
             };
 
             return (<>
               <button className="hov dm-save" onClick={salvar}
-                style={{background:"#F5A623",color:"#0D1117",borderRadius:6,padding:"8px 22px",
-                  fontFamily:"DM Mono",fontSize:"var(--fs-3)",fontWeight:500,border:"none",cursor:"pointer"}}>
+                style={{background:"var(--gold)",color:"var(--bg)",borderRadius:6,padding:"8px 22px",
+                  fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",fontWeight:500,border:"none",cursor:"pointer"}}>
                 {L("save")}
               </button>
 
@@ -7683,25 +7683,25 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
                   un archivo en ingles y el siguiente en espanol confunde
                   mas de lo que ayuda. */}
               {onSetLang&&(
-                <div style={{display:"flex",border:"1px solid #30363D",borderRadius:6,overflow:"hidden"}}>
+                <div style={{display:"flex",border:"1px solid var(--bd)",borderRadius:6,overflow:"hidden"}}>
                   {["es","en"].map(l=>(
                     <button key={l} className="hov" onClick={()=>onSetLang(l)}
                       title={TX("langHint")}
-                      style={{background:lang===l?"#F5A623":"transparent",
-                        color:lang===l?"#0D1117":"var(--t2)",border:"none",padding:"7px 11px",
-                        fontSize:"var(--fs-2)",fontFamily:"DM Mono",cursor:"pointer"}}>
+                      style={{background:lang===l?"var(--gold)":"transparent",
+                        color:lang===l?"var(--bg)":"var(--t2)",border:"none",padding:"7px 11px",
+                        fontSize:"var(--fs-2)",fontFamily:"var(--ff-mono)",cursor:"pointer"}}>
                       {l.toUpperCase()}
                     </button>))}
                 </div>
               )}
 
               {isAdmin&&(<>
-                <div style={{width:1,height:22,background:"#21262D",margin:"0 4px"}}/>
+                <div style={{width:1,height:22,background:"var(--s2)",margin:"0 4px"}}/>
                 <button className="hov dm-del"
                   onClick={()=>{if(confirm(TX("deleteAsk")))onDelete();}}
                   title={TX("deleteHint")}
-                  style={{background:"transparent",color:"#E85D75",border:"none",borderRadius:6,
-                    padding:"8px 14px",fontFamily:"DM Mono",fontSize:"var(--fs-3)",cursor:"pointer"}}>
+                  style={{background:"transparent",color:"var(--bad)",border:"none",borderRadius:6,
+                    padding:"8px 14px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",cursor:"pointer"}}>
                   {TX("delBtn")}
                 </button>
               </>)}
@@ -7775,11 +7775,11 @@ function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
 
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
-      <div className="fi" style={{background:"#161B22",border:"1px solid #30363D",borderRadius:12,width:"100%",maxWidth:480,maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
-        <div style={{padding:"20px 24px 16px",borderBottom:"1px solid #21262D",flexShrink:0}}>
-          <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:"var(--t1)"}}>NEW FILE</div>
+      <div className="fi" style={{background:"var(--s1)",border:"1px solid var(--bd)",borderRadius:12,width:"100%",maxWidth:480,maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
+        <div style={{padding:"20px 24px 16px",borderBottom:"1px solid var(--s2)",flexShrink:0}}>
+          <div style={{fontFamily:"var(--ff-title)",fontWeight:800,fontSize:"var(--fs-8)",color:"var(--t1)"}}>NEW FILE</div>
           {isAssistant && (
-            <div style={{fontSize:"var(--fs-3)",color:"#F5A623",marginTop:4,letterSpacing:"0.5px"}}>
+            <div style={{fontSize:"var(--fs-3)",color:"var(--gold)",marginTop:4,letterSpacing:"0.5px"}}>
               ⚠ Assistant view — please confirm the LOAN OFFICER below before adding.
             </div>
           )}
@@ -7792,14 +7792,14 @@ function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
           {/* INBOUND REFERRAL TOGGLE — at top so it's visible */}
           <label data-tour="inbound" style={{
             display:"flex",alignItems:"center",gap:10,
-            background: isInbound ? "rgba(255,209,102,.08)" : "#0D1117",
-            border: isInbound ? "1px solid #FFD16655" : "1px solid #21262D",
+            background: isInbound ? "rgba(255,209,102,.08)" : "var(--bg)",
+            border: isInbound ? "1px solid #FFD16655" : "1px solid var(--s2)",
             borderRadius:8, padding:"10px 12px", cursor:"pointer"
           }}>
             <input type="checkbox" checked={isInbound} onChange={e=>setIsInbound(e.target.checked)}
-              style={{accentColor:"#FFD166",width:16,height:16,cursor:"pointer"}}/>
+              style={{accentColor:"var(--yellow)",width:16,height:16,cursor:"pointer"}}/>
             <div style={{flex:1}}>
-              <div style={{fontSize:"var(--fs-4)",color: isInbound ? "#FFD166" : "var(--t1)",fontFamily:"Syne",fontWeight:700,letterSpacing:"0.5px"}}>
+              <div style={{fontSize:"var(--fs-4)",color: isInbound ? "var(--yellow)" : "var(--t1)",fontFamily:"var(--ff-title)",fontWeight:700,letterSpacing:"0.5px"}}>
                 🤝 This is an inbound referral from another banker
               </div>
               <div style={{fontSize:"var(--fs-2)",color:"var(--t2)",marginTop:2}}>
@@ -7811,7 +7811,7 @@ function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
           {/* INBOUND BANKER FIELDS — shown only when checkbox is checked */}
           {isInbound && (
             <div style={{background:"rgba(255,209,102,.04)",border:"1px solid #FFD16633",borderRadius:8,padding:14,display:"flex",flexDirection:"column",gap:10}}>
-              <div style={{fontSize:"var(--fs-3)",color:"#FFD166",fontFamily:"Syne",fontWeight:700,letterSpacing:"1px",marginBottom:2}}>REFERRING BANKER</div>
+              <div style={{fontSize:"var(--fs-3)",color:"var(--yellow)",fontFamily:"var(--ff-title)",fontWeight:700,letterSpacing:"1px",marginBottom:2}}>REFERRING BANKER</div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                 <div>
                   <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>BANKER NAME</div>
@@ -7871,7 +7871,7 @@ function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
 
           <div data-tour="lo">
             <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>
-              LOAN OFFICER {isAssistant && <span style={{color:"#F5A623"}}>· assigning on behalf of</span>}
+              LOAN OFFICER {isAssistant && <span style={{color:"var(--gold)"}}>· assigning on behalf of</span>}
             </div>
             <select value={lo} onChange={e=>setLo(e.target.value)} style={IS}>
               {LO_LIST.map(l=><option key={l.name} value={l.name}>{l.name} · {l.role}</option>)}
@@ -7897,7 +7897,7 @@ function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
 
         </div>
 
-        <div style={{padding:"14px 24px",borderTop:"1px solid #21262D",background:"#161B22",flexShrink:0,display:"flex",gap:8}}>
+        <div style={{padding:"14px 24px",borderTop:"1px solid var(--s2)",background:"var(--s1)",flexShrink:0,display:"flex",gap:8}}>
           <button className="hov" data-tour="submit" onClick={()=>{
             if(!borrower.trim()){
               alert(TX("borrowerRequired"));
@@ -7964,9 +7964,9 @@ function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
             }
             onAdd(newFile);
           }}
-            style={{flex:2,background:"#F5A623",color:"#0D1117",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:"var(--fs-4)",fontWeight:500,border:"none",cursor:"pointer"}}>ADD TO PIPELINE</button>
+            style={{flex:2,background:"var(--gold)",color:"var(--bg)",borderRadius:7,padding:"10px 0",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-4)",fontWeight:500,border:"none",cursor:"pointer"}}>ADD TO PIPELINE</button>
           <button className="hov" onClick={onClose}
-            style={{flex:1,background:"#21262D",color:"var(--t2)",borderRadius:7,padding:"10px 0",fontFamily:"DM Mono",fontSize:"var(--fs-4)",border:"none",cursor:"pointer"}}>CANCEL</button>
+            style={{flex:1,background:"var(--s2)",color:"var(--t2)",borderRadius:7,padding:"10px 0",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-4)",border:"none",cursor:"pointer"}}>CANCEL</button>
         </div>
       </div>
     </div>
@@ -8015,23 +8015,23 @@ function HelpModal({profile, lang, onSetLang, onClose}){
       <div key={bi} style={{margin:"0 0 10px"}}>
         {(b[lang]||P(b)).map((x,i)=>(
           <div key={i} style={{display:"flex",gap:9,fontSize:"var(--fs-4)",color:"var(--t2)",lineHeight:1.7,marginBottom:5}}>
-            <span style={{color:"#F5A623",fontFamily:"DM Mono",flexShrink:0}}>{i+1}</span><span>{x}</span>
+            <span style={{color:"var(--gold)",fontFamily:"var(--ff-mono)",flexShrink:0}}>{i+1}</span><span>{x}</span>
           </div>))}
       </div>);
     if(k==="table") return (
       <table key={bi} style={{width:"100%",borderCollapse:"collapse",margin:"0 0 12px",fontSize:"var(--fs-4)"}}>
         <thead><tr>{(b.head[lang]||b.head.es).map((h,i)=>(
-          <th key={i} style={{textAlign:"left",padding:"7px 10px",background:"#0D1117",color:"var(--t3)",
-            fontSize:"var(--fs-2)",letterSpacing:"1px",fontWeight:500,borderBottom:"1px solid #30363D"}}>{h}</th>))}</tr></thead>
+          <th key={i} style={{textAlign:"left",padding:"7px 10px",background:"var(--bg)",color:"var(--t3)",
+            fontSize:"var(--fs-2)",letterSpacing:"1px",fontWeight:500,borderBottom:"1px solid var(--bd)"}}>{h}</th>))}</tr></thead>
         <tbody>{b.rows.map((r,i)=>(
           <tr key={i}>{r.map((cell,j)=>(
-            <td key={j} style={{padding:"8px 10px",borderBottom:"1px solid #21262D",
+            <td key={j} style={{padding:"8px 10px",borderBottom:"1px solid var(--s2)",
               color:j===0?"var(--t1)":"var(--t2)"}}>{T(cell)}</td>))}</tr>))}</tbody>
       </table>);
     if(k==="kv") return (
       <div key={bi} style={{margin:"0 0 10px"}}>
         {b.rows.map((r,i)=>(
-          <div key={i} style={{borderTop:"1px solid #21262D",padding:"9px 0"}}>
+          <div key={i} style={{borderTop:"1px solid var(--s2)",padding:"9px 0"}}>
             <div style={{fontSize:"var(--fs-4)",color:"var(--t1)",marginBottom:2}}>{T(r[0])}</div>
             <div style={{fontSize:"var(--fs-4)",color:"var(--t2)",lineHeight:1.65}}>{T(r[1])}</div>
           </div>))}
@@ -8042,14 +8042,14 @@ function HelpModal({profile, lang, onSetLang, onClose}){
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:200,display:"flex",
       alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
-      <div className="fi" onClick={e=>e.stopPropagation()} style={{background:"#161B22",
-        border:"1px solid #30363D",borderRadius:12,width:"100%",maxWidth:880,
+      <div className="fi" onClick={e=>e.stopPropagation()} style={{background:"var(--s1)",
+        border:"1px solid var(--bd)",borderRadius:12,width:"100%",maxWidth:880,
         maxHeight:"calc(100vh - 40px)",display:"flex",flexDirection:"column",overflow:"hidden"}}>
 
-        <div style={{padding:"18px 22px 14px",borderBottom:"1px solid #21262D",display:"flex",
+        <div style={{padding:"18px 22px 14px",borderBottom:"1px solid var(--s2)",display:"flex",
           justifyContent:"space-between",alignItems:"flex-start",gap:12,flexShrink:0}}>
           <div>
-            <div style={{fontFamily:"Syne",fontWeight:800,fontSize:"var(--fs-8)",color:"var(--t1)",letterSpacing:"-0.5px"}}>
+            <div style={{fontFamily:"var(--ff-title)",fontWeight:800,fontSize:"var(--fs-8)",color:"var(--t1)",letterSpacing:"-0.5px"}}>
               {TX("guideTitle")}
             </div>
             <div style={{fontSize:"var(--fs-3)",color:"var(--t3)",letterSpacing:"1px",marginTop:3}}>
@@ -8057,11 +8057,11 @@ function HelpModal({profile, lang, onSetLang, onClose}){
             </div>
           </div>
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
-            <div style={{display:"flex",border:"1px solid #30363D",borderRadius:6,overflow:"hidden"}}>
+            <div style={{display:"flex",border:"1px solid var(--bd)",borderRadius:6,overflow:"hidden"}}>
               {["es","en"].map(l=>(
                 <button key={l} className="hov" onClick={()=>setLang(l)}
-                  style={{background:lang===l?"#F5A623":"transparent",color:lang===l?"#0D1117":"var(--t2)",
-                    border:"none",padding:"5px 11px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",cursor:"pointer"}}>
+                  style={{background:lang===l?"var(--gold)":"transparent",color:lang===l?"var(--bg)":"var(--t2)",
+                    border:"none",padding:"5px 11px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",cursor:"pointer"}}>
                   {l.toUpperCase()}
                 </button>))}
             </div>
@@ -8070,22 +8070,22 @@ function HelpModal({profile, lang, onSetLang, onClose}){
           </div>
         </div>
 
-        <div style={{padding:"11px 22px",borderBottom:"1px solid #21262D",background:"#0D1117",
+        <div style={{padding:"11px 22px",borderBottom:"1px solid var(--s2)",background:"var(--bg)",
           display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",flexShrink:0,
           maxHeight:120,overflowY:"auto"}}>
           <input value={q} onChange={e=>setQ(e.target.value)}
             placeholder={TX("searchGuide")}
-            style={{background:"#161B22",border:"1px solid #30363D",borderRadius:6,color:"var(--t1)",
-              padding:"6px 10px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",flex:"1 1 200px",minWidth:150}}/>
+            style={{background:"var(--s1)",border:"1px solid var(--bd)",borderRadius:6,color:"var(--t1)",
+              padding:"6px 10px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",flex:"1 1 200px",minWidth:150}}/>
           {!hits&&sections.map(x=>(
             <button key={x.id} className="hov" onClick={()=>setSecId(x.id)}
-              style={{background:secId===x.id?x.color:"var(--t4)",color:secId===x.id?"#0D1117":"var(--t2)",
-                borderRadius:6,padding:"5px 10px",fontSize:"var(--fs-3)",fontFamily:"DM Mono",fontWeight:500,
+              style={{background:secId===x.id?x.color:"var(--t4)",color:secId===x.id?"var(--bg)":"var(--t2)",
+                borderRadius:6,padding:"5px 10px",fontSize:"var(--fs-3)",fontFamily:"var(--ff-mono)",fontWeight:500,
                 border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>
               {x.icon} {T(x)}
             </button>))}
           {hits&&(
-            <span style={{fontSize:"var(--fs-3)",color:"var(--t2)",fontFamily:"DM Mono"}}>
+            <span style={{fontSize:"var(--fs-3)",color:"var(--t2)",fontFamily:"var(--ff-mono)"}}>
               {hits.length} {TX("result")}{hits.length===1?"":"s"}
             </span>)}
         </div>
@@ -8097,15 +8097,15 @@ function HelpModal({profile, lang, onSetLang, onClose}){
             </div>)}
           {shown.map((a,i)=>(
             <div key={a.id} style={{marginBottom:26,paddingBottom:i<shown.length-1?18:0,
-              borderBottom:i<shown.length-1?"1px solid #21262D":"none"}}>
-              <div style={{fontFamily:"Syne",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--t1)",marginBottom:10}}>
+              borderBottom:i<shown.length-1?"1px solid var(--s2)":"none"}}>
+              <div style={{fontFamily:"var(--ff-title)",fontWeight:700,fontSize:"var(--fs-6)",color:"var(--t1)",marginBottom:10}}>
                 {T(a)}
               </div>
               {(a.blocks||[]).map((b,j)=>block(b,j))}
             </div>))}
         </div>
 
-        <div style={{padding:"10px 22px",borderTop:"1px solid #21262D",background:"#0D1117",
+        <div style={{padding:"10px 22px",borderTop:"1px solid var(--s2)",background:"var(--bg)",
           fontSize:"var(--fs-2)",color:"var(--t3)",flexShrink:0}}>
           {TX("guideLive")}
         </div>

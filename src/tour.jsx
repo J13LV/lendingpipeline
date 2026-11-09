@@ -563,11 +563,11 @@ export function TourPanel({ profile, lang, tour, onExit }) {
 
   return (
     <div style={{
-      background: "#161B22", border: "1px solid #F5A623", borderRadius: 8,
+      background: "var(--s1)", border: "1px solid var(--gold)", borderRadius: 8,
       padding: "12px 14px", marginBottom: 4,
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 7 }}>
-        <span style={{ fontSize: "var(--fs-2)", color: "#F5A623", letterSpacing: "1px", fontFamily: "DM Mono" }}>
+        <span style={{ fontSize: "var(--fs-2)", color: "var(--gold)", letterSpacing: "1px", fontFamily: "var(--ff-mono)" }}>
           {T({ en: `STEP ${idx + 1} OF ${steps.length}`, es: `PASO ${idx + 1} DE ${steps.length}` })}
           {step.concept && <span style={{ color: "var(--t3)", marginLeft: 8 }}>
             {T({ en: "· CONCEPT", es: "· CONCEPTO" })}
@@ -583,7 +583,7 @@ export function TourPanel({ profile, lang, tour, onExit }) {
       </div>
       {donde && (
         <div style={{ fontSize: "var(--fs-2)", color: "var(--t3)", marginBottom: 10,
-          fontFamily: "DM Mono", display: "flex", gap: 6, alignItems: "baseline" }}>
+          fontFamily: "var(--ff-mono)", display: "flex", gap: 6, alignItems: "baseline" }}>
           <span style={{ color: "#FFFFFF" }}>▸</span>
           <span>{T({ en: "Pointing at", es: "Señalando" })}: {donde}</span>
         </div>
@@ -591,17 +591,17 @@ export function TourPanel({ profile, lang, tour, onExit }) {
 
       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
         {!last && (
-          <button onClick={next} style={{ ...btn, background: "#F5A623", color: "#0D1117" }}>
+          <button onClick={next} style={{ ...btn, background: "var(--gold)", color: "var(--bg)" }}>
             {T({ en: "Next", es: "Siguiente" })}
           </button>
         )}
         {idx > 0 && (
-          <button onClick={back} style={{ ...btn, background: "transparent", color: "var(--t2)", border: "1px solid #30363D" }}>
+          <button onClick={back} style={{ ...btn, background: "transparent", color: "var(--t2)", border: "1px solid var(--bd)" }}>
             {T({ en: "Back", es: "Atrás" })}
           </button>
         )}
-        <div style={{ flex: 1, height: 3, background: "#21262D", borderRadius: 2, marginLeft: 6 }}>
-          <div style={{ width: pct + "%", height: 3, background: "#F5A623", borderRadius: 2 }} />
+        <div style={{ flex: 1, height: 3, background: "var(--s2)", borderRadius: 2, marginLeft: 6 }}>
+          <div style={{ width: pct + "%", height: 3, background: "var(--gold)", borderRadius: 2 }} />
         </div>
       </div>
 

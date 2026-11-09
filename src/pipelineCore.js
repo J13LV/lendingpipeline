@@ -3625,7 +3625,7 @@ export const FINDING_WAITING = {
   borrower:  { es: "del cliente",      en: "on the borrower",  color: "#F5A623" },
   processor: { es: "de procesamiento", en: "on processing",    color: "#BD65E8" },
   lender:    { es: "del lender",       en: "on the lender",    color: "#E85D75" },
-  title:     { es: "de titulo",        en: "on title",         color: "#7EC8A4" },
+  title:     { es: "de título",        en: "on title",         color: "#7EC8A4" },
 };
 export const WAITING_IDS = Object.keys(FINDING_WAITING);
 export const waitingMeta = id => FINDING_WAITING[id] || null;
@@ -4889,18 +4889,18 @@ export const productionByState = (files, opts = {}) =>
 export const INTAKE_GROUPS = [
   { id: "property", es: "Propiedad", en: "Property" },
   { id: "borrower", es: "Prestatario", en: "Borrower" },
-  { id: "loan",     es: "Prestamo", en: "Loan" },
+  { id: "loan",     es: "Préstamo", en: "Loan" },
 ];
 
 // `dpa` marca los que alimentan la decision de DPA. `only` los condiciona
 // a otro campo: el nombre del condominio no tiene sentido si no es condo.
 export const INTAKE_FIELDS = [
   { id: "occupancy", group: "property", type: "pick", dpa: true,
-    es: "Ocupacion", en: "Occupancy",
+    es: "Ocupación", en: "Occupancy",
     opts: [
       { v: "primary",    es: "Primaria",   en: "Primary" },
       { v: "secondary",  es: "Segunda",    en: "Secondary" },
-      { v: "investment", es: "Inversion",  en: "Investment" },
+      { v: "investment", es: "Inversión",  en: "Investment" },
     ] },
   { id: "propertyType", group: "property", type: "pick", dpa: true,
     es: "Tipo de propiedad", en: "Property type",
@@ -4920,7 +4920,7 @@ export const INTAKE_FIELDS = [
     note_es: "Si tiene HOA, marcar PUD en el sistema",
     note_en: "If it has an HOA, flag PUD in the system" },
   { id: "address", group: "property", type: "text",
-    es: "Direccion", en: "Address" },
+    es: "Dirección", en: "Address" },
   { id: "parcelNumber", group: "property", type: "text",
     es: "Parcela #", en: "Parcel #" },
 
@@ -4929,7 +4929,7 @@ export const INTAKE_FIELDS = [
   { id: "coBorrower", group: "borrower", type: "text",
     es: "Co-cliente", en: "Co-borrower" },
   { id: "creditFileNumber", group: "borrower", type: "text",
-    es: "Reporte de credito #", en: "Credit report file #" },
+    es: "Reporte de crédito #", en: "Credit report file #" },
 
   { id: "salesPrice", group: "loan", type: "money", dpa: true,
     es: "Precio de compra", en: "Sales price" },
@@ -4945,7 +4945,7 @@ export const INTAKE_FIELDS = [
   { id: "sellerConcessions", group: "loan", type: "money",
     es: "Concesiones del vendedor", en: "Seller concessions" },
   { id: "earnestMoney", group: "loan", type: "money",
-    es: "Deposito de garantia", en: "Earnest money" },
+    es: "Depósito de garantía", en: "Earnest money" },
   { id: "miRequired", group: "loan", type: "yesno",
     es: "MI requerido", en: "MI required" },
   { id: "miPct", group: "loan", type: "pct", only: { miRequired: "yes" },
@@ -4965,14 +4965,14 @@ export const INTAKE_FIELDS = [
     opts: INCOME_DOC_TYPES.map(x => ({ v: x.id, es: x.es, en: x.en })),
     only: { coIncomeDocSplit: "yes" } },
   { id: "purposeOfLoan", group: "loan", type: "pick",
-    es: "Proposito del prestamo", en: "Purpose of loan",
+    es: "Propósito del préstamo", en: "Purpose of loan",
     note_es: "Decide si la hoja de procesamiento dice PURCHASE o REFINANCE",
     note_en: "Decides whether the processing sheet says PURCHASE or REFINANCE",
     opts: [
       { v: "purchase",     es: "Compra",              en: "Purchase" },
       { v: "cashout",      es: "Refi con retiro",     en: "Cash-out refi" },
       { v: "rateterm",     es: "Refi sin retiro R/T", en: "No cash-out refi R/T" },
-      { v: "construction", es: "Construccion",        en: "Construction" },
+      { v: "construction", es: "Construcción",        en: "Construction" },
       { v: "other",        es: "Otro",                en: "Other" },
     ] },
   { id: "escrowWaiver", group: "loan", type: "yesno",
@@ -5111,10 +5111,10 @@ export function coeCushionDays(file) {
 // "REQ 07/17" y despues lo cambia a "RECEIVED 07/28" — o sea que ya
 // distingue los dos momentos, solo que pisando el dato anterior.
 export const ORDERS = [
-  { id: "title",      col: 14, es: "Titulo y fees",     en: "Title and fees" },
+  { id: "title",      col: 14, es: "Título y fees",     en: "Title and fees" },
   { id: "hoi_quote",  col: 15, es: "HOI quote",         en: "HOI quote" },
   { id: "hoi_binder", col: 16, es: "HOI binder",        en: "HOI binder" },
-  { id: "appraisal",  col: 20, es: "Tasacion",          en: "Appraisal" },
+  { id: "appraisal",  col: 20, es: "Tasación",          en: "Appraisal" },
   { id: "condo_docs", col: 21, es: "Docs de condominio",en: "Condo docs" },
 ];
 export const orderById = id => ORDERS.find(o => o.id === id) || null;
@@ -5555,7 +5555,7 @@ export function stampRegistrationDate(file, campo) {
 // `only` los condiciona igual que en admision — pedir el numero de caso FHA
 // en un Conventional es ruido, no un dato faltante.
 export const MILESTONES = [
-  { id: "fha_case",     es: "Numero de caso FHA pedido", en: "FHA case number requested",
+  { id: "fha_case",     es: "Número de caso FHA pedido", en: "FHA case number requested",
     only: f => baseProductOf(f?.type) === "fha" },
   { id: "icd_task",     es: "Task de ICD",               en: "File task for ICD" },
   { id: "resubmit_ctc", es: "Re-sometido para CTC",      en: "File resubmitted for CTC",
@@ -5673,7 +5673,7 @@ export function stampRegistration(file, by) {
 // en la cola.
 export const TASK_SEVERITY = {
   deposit: { rank: 1, signal: "broken",
-    es: "Deposito en riesgo", en: "Deposit at risk" },
+    es: "Depósito en riesgo", en: "Deposit at risk" },
   legal:   { rank: 2, signal: "legal",
     es: "Plazo de ley",       en: "Legal deadline" },
   closing: { rank: 3, signal: "broken",
@@ -6245,11 +6245,11 @@ export const QUEUE_GROUPS = [
     note_en: "There is an open finding — it does not move until it is resolved" },
   { id: "new",      order: 2, color: "#F5A623",
     es: "Nuevos · sin ordenar", en: "New · nothing ordered",
-    note_es: "Recien registrados. Titulo, HOI y tasacion de un tiro",
+    note_es: "Recién registrados. Título, HOI y tasación de un tiro",
     note_en: "Just registered. Title, HOI and appraisal in one shot" },
   { id: "vendor",   order: 3, color: "#4A90D9",
     es: "Esperando vendor", en: "Waiting on vendor",
-    note_es: "Pedido hecho, todavia no llega",
+    note_es: "Pedido hecho, todavía no llega",
     note_en: "Ordered, not received yet" },
   { id: "ready_uw", order: 4, color: "#BD65E8",
     es: "Listos para someter", en: "Ready to submit",
