@@ -6648,6 +6648,29 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
   // sigue el cambio. Sin esto la pantalla se queda en la etapa vieja.
   useEffect(()=>{ setStage(file.stage); },[file.stage]);
 
+  // ─── CERRAR SIN PERDER NADA ───
+  // Escape no cerraba la ventana, y el clic en el fondo la cerraba en
+  // silencio aunque hubiera cambios a medias. Ahora las tres salidas (✕,
+  // fondo y Escape) pasan por aquí: si se escribió algo desde que se abrió,
+  // pregunta antes de tirarlo. GUARDAR sigue cerrando directo.
+  // "Escribió algo" = cualquier cambio en un campo de la ventana. Algunos
+  // bloques guardan solos al tocarlos; en esos la pregunta sobra, pero
+  // preguntar de más cuesta un clic y no preguntar cuesta el trabajo.
+  const sucio=useRef(false);
+  const cerrar=()=>{
+    if(sucio.current && !window.confirm(TX("dmDiscardAsk"))) return;
+    onClose();
+  };
+  const cerrarRef=useRef(cerrar);
+  cerrarRef.current=cerrar;
+  const subVentana=showCancel||showChange;
+  useEffect(()=>{
+    if(subVentana) return;     // Escape es de la ventanita de encima
+    const tecla=e=>{ if(e.key==="Escape"&&!e.defaultPrevented) cerrarRef.current(); };
+    document.addEventListener("keydown",tecla);
+    return ()=>document.removeEventListener("keydown",tecla);
+  },[subVentana]);
+
   const [loanType,setLoanType]=useState(file.type);
   const [loanAmt,setLoanAmt]=useState(String(file.loan||""));
   const [bps,setBps]=useState(String(file.bps||""));
@@ -6694,7 +6717,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
   const inPrep = stage === PREP_STAGE;
   const archivedFile = !!file.archived;
   const isInbound = !!file.isInbound;
-  const fs2={background:"#0D1117",border:"1px solid #30363D",borderRadius:6,color:"var(--t1)",padding:"8px 10px",fontSize:"var(--fs-5)",fontFamily:"'IBM Plex Sans',system-ui,-apple-system,sans-serif",width:"100%"};
+  const fs2={background:"var(--bg)",border:"1px solid var(--bd)",borderRadius:6,color:"var(--t1)",padding:"8px 10px",fontSize:"var(--fs-5)",fontFamily:"var(--ff-body)",width:"100%"};
 
   // Live fee calculations for referred-out files
   const finalLoanForCalc = parseInt(outFinalLoan)||parseInt(loanAmt)||file.loan||0;
@@ -6703,11 +6726,12 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
   const lostComp = wouldHaveEarned - feeEarned;
 
   return(
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.8)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={onClose}>
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.8)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={cerrar}>
       {/* De 480px a casi toda la pantalla. Los dieciocho bloques cabian
           en una columna angosta solo a costa de un scroll interminable;
           con ancho de verdad caben en dos columnas y cinco solapas. */}
-      <div className="fi" style={{background:"var(--bg)",border:"1px solid var(--bd)",borderRadius:12,width:"100%",maxWidth:1240,height:"calc(100vh - 32px)",display:"flex",flexDirection:"column",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
+      <div className="fi" role="dialog" aria-modal="true" aria-label={file.borrower} style={{background:"var(--bg)",border:"1px solid var(--bd)",borderRadius:12,width:"100%",maxWidth:1240,height:"calc(100vh - 32px)",display:"flex",flexDirection:"column",overflow:"hidden"}} onClick={e=>e.stopPropagation()}
+        onChangeCapture={()=>{sucio.current=true;}}>
         {/* ENCABEZADO — cada dato con su etiqueta. Antes decia
             "FHA $450,655 eLend Jose Martha" de corrido y habia que
             adivinar quien era quien. */}
@@ -6782,7 +6806,24 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
                   </div>
                 </div>
               );})()}
-            <button onClick={onClose} style={{background:"transparent",border:"none",color:"var(--t3)",
+            {/* IDIOMA — vivía en el pie, pegado a BORRAR: uno iba a cambiar a
+                inglés y tenía al lado lo único que no se deshace. Arriba,
+                junto a la ✕, queda con los otros ajustes de la ventana.
+                Cambia la preferencia de quien lo toca, no del archivo. */}
+            {onSetLang&&(
+              <div className="dm-lang" style={{display:"flex",border:"1px solid var(--bd)",borderRadius:6,overflow:"hidden",marginTop:2}}>
+                {["es","en"].map(l=>(
+                  <button key={l} className="hov" onClick={()=>onSetLang(l)}
+                    title={TX("langHint")}
+                    style={{background:lang===l?"var(--gold)":"transparent",
+                      color:lang===l?"var(--bg)":"var(--t2)",border:"none",padding:"5px 9px",
+                      fontSize:"var(--fs-2)",fontFamily:"var(--ff-mono)",cursor:"pointer"}}>
+                    {l.toUpperCase()}
+                  </button>))}
+              </div>
+            )}
+            <button onClick={cerrar} aria-label={TX("dmClose")} title={TX("dmCloseHint")}
+              style={{background:"transparent",border:"none",color:"var(--t3)",
               fontSize:"var(--fs-8)",cursor:"pointer",padding:"2px 0 0 4px",lineHeight:1}}>✕</button>
           </div>
         </div>
@@ -6819,12 +6860,13 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
           </div>
         )}
 
-        {/* SOLAPAS — estiradas a todo el ancho, en cinco partes iguales.
+        {/* SOLAPAS — estiradas a todo el ancho, en seis partes iguales (eran
+            cinco columnas para seis solapas y EXPEDIENTE caía sola abajo).
             La activa lleva fondo Y barra dorada: solo con el subrayado se
             perdian entre el resto del texto. */}
-        <div className="dm-tabs" style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",
+        <div className="dm-tabs" style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",
           borderTop:"1px solid var(--s2)",borderBottom:"1px solid var(--s2)",
-          background:"#0A0E13",flexShrink:0}}>
+          background:"var(--bg)",flexShrink:0}}>
           {/* Sin contadores. Un numero rojo sin explicacion asusta pero no
               informa — vuelven cuando la guia enseñe que significan. */}
           {[
@@ -6838,7 +6880,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
             const on=tab===id;
             return (
               <button key={id} className="hov dm-tab" data-tour={id} onClick={()=>setTab(id)}
-                style={{background:on?"#171D26":"transparent",border:"none",cursor:"pointer",
+                style={{background:on?"var(--s1)":"transparent",border:"none",cursor:"pointer",
                   color:on?"var(--gold)":"var(--t2)",fontSize:"var(--fs-3)",fontFamily:"var(--ff-title)",
                   fontWeight:on?800:500,letterSpacing:"1.6px",padding:"12px 0",
                   textAlign:"center",borderRight:i<5?"1px solid var(--s2)":"none",
@@ -6860,7 +6902,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
             solapa; dentro de cada una, las columnas se llenan solas y en
             móvil se apilan. */}
         <div className="dm-body" style={{flex:1,overflowY:"auto",padding:"16px 22px",display:"grid",
-          gridTemplateColumns:"53% 47%",gap:14,alignItems:"start",alignContent:"start"}}>
+          gridTemplateColumns:"minmax(0,53fr) minmax(0,47fr)",gap:14,alignItems:"start",alignContent:"start"}}>
         {/* ESTRUCTURA — lo que define el prestamo. Columna izquierda. */}
         <div style={{display:tab==="loan"?"grid":"none",gridTemplateColumns:"1fr 1fr",gap:10,alignSelf:"start"}}>
           <div>
@@ -6898,7 +6940,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
           )}
           {isAdmin && (
             <div>
-              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>BPS COMP <span style={{color:"var(--gold)"}}>{TX("reportedByDash")}</span></div>
+              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>{TX("bpsComp")} <span style={{color:"var(--gold)"}}>{TX("reportedByDash")}</span></div>
               <input value={bps} onChange={e=>setBps(e.target.value)} placeholder="150" style={{...fs2,color:"var(--gold)"}}/>
             </div>
           )}
@@ -7069,12 +7111,12 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
             )}
           </div>
           <div>
-            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>📱 PHONE</div>
+            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>📱 {TX("phone")}</div>
             <input type="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="(702) 555-1234" style={fs2}/>
           </div>
           <div>
-            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>✉ EMAIL</div>
-            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="borrower@email.com" style={fs2}/>
+            <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>✉ {TX("email")}</div>
+            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder={TX("phEmail")} style={fs2}/>
           </div>
         </div>
 
@@ -7525,7 +7567,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
                 style={{background:"transparent",border:"none",color:"var(--t1)",fontSize:"var(--fs-5)",fontFamily:"var(--ff-mono)",width:"100%"}}/>
             </div>
             <div style={{background:"var(--bg)",borderRadius:8,padding:12}}>
-              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>{isClosed ? "CLOSED" : "DAYS IN STAGE"}</div>
+              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:4}}>{isClosed ? TX("mvStat_CLOSED") : TX("daysInStage")}</div>
               {/* Syne's zero is indistinguishable from a lowercase o at this
                   size — "0d" rendered as "od". Numbers go in DM Mono, which
                   is what the rest of the app already uses for data. */}
@@ -7554,7 +7596,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
         <div style={{display:tab==="file"?"block":"none"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:5}}>
             <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px"}}>
-              NOTES <span style={{color:"var(--t4)"}}>· STATUS · BLOCKER · NEXT</span>
+              {TX("notes")} <span style={{color:"var(--t4)"}}>{TX("notesShape")}</span>
             </div>
             <div style={{
               fontSize:"var(--fs-2)",
@@ -7655,7 +7697,7 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
             encendido. Si cambiaran de posicion habria que leer la barra
             cada vez en vez de ir con el dedo. */}
         <div className={"dm-foot"+(accOpen?" dm-foot-open":"")}
-          style={{padding:"11px 22px",borderTop:"1px solid var(--s2)",background:"#10141A",
+          style={{padding:"11px 22px",borderTop:"1px solid var(--s2)",background:"var(--s1)",
           flexShrink:0,display:"flex",gap:7,alignItems:"center",flexWrap:"wrap"}}>
           {/* Solo en el telefono. Abre el resto de las acciones, que ahi
               estan escondidas: nadie archiva ni borra desde el movil, y
@@ -7742,25 +7784,25 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
               </button>
 
               {archivedFile?(
-                btn("restore",TX("restoreBtn"),"#7EC8A4",onRestore,{on:true})
+                btn("restore",TX("restoreBtn"),"var(--mint)",onRestore,{on:true})
               ):isClosed?(
                 btn("reopen",TX("reopenBtn"),"var(--t2)",onReopen,{on:true})
               ):isReferredOut?(
-                btn("pull",TX("pullBack"),"#A78BFA",()=>{
+                btn("pull",TX("pullBack"),"var(--violet)",()=>{
                   if(confirm(TX("pullBackAsk",{n:file.borrower}))){
                     onSave(stagePatch(file, "Lead Inquiry", {referredOut:null}));
                     onClose();
                   }
                 },{on:true})
               ):inPrep?(<>
-                {btn("continue",TX("continueBtn"),"#4A90D9",onContinuePrep,{on:true})}
-                {btn("resched",TX("reschedBtn"),"#F5A623",onPrep,{on:!prepLocked(file),
+                {btn("continue",TX("continueBtn"),"var(--blue)",onContinuePrep,{on:true})}
+                {btn("resched",TX("reschedBtn"),"var(--gold)",onPrep,{on:!prepLocked(file),
                   why_es:`Pasó el tope de ${PREP_MAX_DAYS} días — devuélvelo o archívalo`,
                   why_en:`Past the ${PREP_MAX_DAYS}-day cap — return it or archive it`})}
                 {btn("arch",TX("archBtn"),"var(--t2)",onArchive,{on:true})}
               </>):(<>
                 {btn("advance",L("advance")+" →","var(--t2)",onAdvance,A.advance)}
-                {btn("close",L("closeFile")+" ✓","#06D6A0",
+                {btn("close",L("closeFile")+" ✓","var(--ok)",
                   ()=>{
                     if(!confirm(TX("closeAsk",{n:file.borrower}))) return;
                     const d=window.prompt(TX("closeDateAsk"), file.closing||today());
@@ -7768,47 +7810,37 @@ function DetailModal({file,profile,allFiles,L,lang,onSetLang,abrirEn,irA,onClose
                     if(!okDate(d)){ window.alert(TX("closeDateBad")); return; }
                     onCloseFile(d);
                   },A.close)}
-                {btn("refer",TX("referBtn"),"#A78BFA",()=>{
+                {btn("refer",TX("referBtn"),"var(--violet)",()=>{
                   if(confirm(TX("referAsk",{n:file.borrower}))){
                     setStage(REFERRED_OUT_STAGE);
                     onSave(stagePatch(file, REFERRED_OUT_STAGE));
                   }
                 },A.refer)}
-                {canCancelContract(file)&&btn("cancelct",TX("cancelBtn"),"#F5A623",
+                {canCancelContract(file)&&btn("cancelct",TX("cancelBtn"),"var(--gold)",
                   ()=>setShowCancel(true),{on:true})}
-                {btn("prep",TX("prepBtn"),"#7EC8A4",onPrep,A.prep)}
+                {btn("prep",TX("prepBtn"),"var(--mint)",onPrep,A.prep)}
                 {btn("arch",TX("archBtn"),"var(--t2)",onArchive,A.archive)}
               </>)}
 
               <div style={{flex:1,minWidth:12}}/>
 
-              {/* IDIOMA — el toggle vivia solo en la barra principal, que
-                  el archivo tapa por completo. Martha y Tina abrian su
-                  cola y no tenian como cambiarlo sin cerrar todo.
-                  Cambia la preferencia de quien lo toca, no del archivo:
-                  un archivo en ingles y el siguiente en espanol confunde
-                  mas de lo que ayuda. */}
-              {onSetLang&&(
-                <div style={{display:"flex",border:"1px solid var(--bd)",borderRadius:6,overflow:"hidden"}}>
-                  {["es","en"].map(l=>(
-                    <button key={l} className="hov" onClick={()=>onSetLang(l)}
-                      title={TX("langHint")}
-                      style={{background:lang===l?"var(--gold)":"transparent",
-                        color:lang===l?"var(--bg)":"var(--t2)",border:"none",padding:"7px 11px",
-                        fontSize:"var(--fs-2)",fontFamily:"var(--ff-mono)",cursor:"pointer"}}>
-                      {l.toUpperCase()}
-                    </button>))}
-                </div>
-              )}
-
+              {/* BORRAR — solo, al fondo a la derecha, con un separador de
+                  verdad. Un OK por costumbre no basta para lo único que no se
+                  deshace: hay que escribir la palabra. ARCHIVAR, que sí se
+                  deshace, queda a la izquierda con las acciones de siempre. */}
               {isAdmin&&(<>
-                <div style={{width:1,height:22,background:"var(--s2)",margin:"0 4px"}}/>
+                <div style={{width:1,height:22,background:"var(--bd)",margin:"0 10px 0 18px"}}/>
                 <button className="hov dm-del"
-                  onClick={()=>{if(confirm(TX("deleteAsk")))onDelete();}}
+                  onClick={()=>{
+                    const r=window.prompt(TX("deleteTypeAsk",{n:file.borrower,w:TX("delBtn")}));
+                    if(r===null) return;
+                    if(r.trim().toUpperCase()!==TX("delBtn")){ window.alert(TX("deleteTypeBad",{w:TX("delBtn")})); return; }
+                    onDelete();
+                  }}
                   title={TX("deleteHint")}
-                  style={{background:"transparent",color:"var(--bad)",border:"none",borderRadius:6,
+                  style={{background:"transparent",color:"var(--bad)",border:"1px solid rgba(232,93,117,.35)",borderRadius:6,
                     padding:"8px 14px",fontFamily:"var(--ff-mono)",fontSize:"var(--fs-3)",cursor:"pointer"}}>
-                  {TX("delBtn")}
+                  🗑 {TX("delBtn")}
                 </button>
               </>)}
             </>);
@@ -7928,11 +7960,11 @@ function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
                   <input value={inBankerCompany} onChange={e=>setInBankerCompany(e.target.value)} placeholder="XYZ Mortgage" style={IS}/>
                 </div>
                 <div>
-                  <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>📱 PHONE</div>
+                  <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>📱 {TX("phone")}</div>
                   <input type="tel" value={inBankerPhone} onChange={e=>setInBankerPhone(e.target.value)} placeholder="(702) 555-0000" style={IS}/>
                 </div>
                 <div>
-                  <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>✉ EMAIL</div>
+                  <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>✉ {TX("email")}</div>
                   <input type="email" value={inBankerEmail} onChange={e=>setInBankerEmail(e.target.value)} placeholder="banker@company.com" style={IS}/>
                 </div>
               </div>
@@ -7946,12 +7978,12 @@ function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
 
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
             <div data-tour="phone">
-              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>📱 PHONE</div>
+              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>📱 {TX("phone")}</div>
               <input type="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="(702) 555-1234" style={IS}/>
             </div>
             <div data-tour="email">
-              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>✉ EMAIL</div>
-              <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="borrower@email.com" style={IS}/>
+              <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>✉ {TX("email")}</div>
+              <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder={TX("phEmail")} style={IS}/>
             </div>
           </div>
 
@@ -7996,7 +8028,7 @@ function AddModal({profile, onClose, onAdd, existingFiles, training, lang}){
 
           <div data-tour="note">
             <div style={{fontSize:"var(--fs-2)",color:"var(--t3)",letterSpacing:"1px",marginBottom:5}}>
-              NOTES <span style={{color:"var(--t4)"}}>· STATUS · BLOCKER · NEXT</span>
+              {TX("notes")} <span style={{color:"var(--t4)"}}>{TX("notesShape")}</span>
             </div>
             <input value={note} onChange={e=>setNote(e.target.value)} placeholder="Subm 4/12 · UW queue · review by 4/15" style={IS}/>
           </div>

@@ -324,7 +324,7 @@ export const UI = {
 
 
   // ─── textos explicativos · los que más importan traducir ───
-  savesWithSave:{ es:"se guarda con SAVE ↓", en:"saves with SAVE ↓" },
+  savesWithSave:{ es:"se guarda con GUARDAR ↓", en:"saves with SAVE ↓" },
   unsaved:     { es:" · sin guardar", en:" · unsaved" },
   unassigned:  { es:"— sin asignar —", en:"— unassigned —" },
   typingYear:  { es:"escribiendo el año…", en:"typing the year…" },
@@ -1194,6 +1194,16 @@ export const UI = {
   plNoRefPartners:{ es:"Todavía no hay socios referidores. Agrega el nombre del socio en tus archivos para verlos aquí.",
                   en:"No referral partners tracked yet. Add partner names to your files to see them here." },
   plNoBankerRefs:{ es:"Todavía no hay referidos con banqueros.", en:"No banker referrals tracked yet." },
+  phEmail:      { es:"cliente@correo.com", en:"borrower@email.com" },
+  notesShape:   { es:"· ESTADO · BLOQUEO · SIGUIENTE", en:"· STATUS · BLOCKER · NEXT" },
+  bpsComp:      { es:"COMP EN BPS", en:"BPS COMP" },
+  dmDiscardAsk: { es:"¿Cerrar sin guardar? Lo que cambiaste y no guardaste con GUARDAR se pierde.",
+                  en:"Close without saving? Anything you changed and didn't SAVE will be lost." },
+  dmClose:      { es:"Cerrar", en:"Close" },
+  dmCloseHint:  { es:"Cerrar (Esc)", en:"Close (Esc)" },
+  deleteTypeAsk:{ es:"Vas a borrar {n} para siempre. Esto no se puede deshacer.\n\nSi solo quieres sacarlo de la lista, usa ARCHIVAR.\n\nPara confirmar, escribe {w}:",
+                  en:"You're about to delete {n} permanently. This cannot be undone.\n\nIf you just want it off the list, use ARCHIVE.\n\nTo confirm, type {w}:" },
+  deleteTypeBad:{ es:"No se borró: había que escribir {w}.", en:"Not deleted: you needed to type {w}." },
   mvTools:      { es:"HERRAMIENTAS",       en:"TOOLS" },
   mvToolsHint:  { es:"Respaldo, restaurar, hoja de Martha, entrenamiento y tamaño del texto",
                   en:"Backup, restore, Martha's sheet, training and text size" },
